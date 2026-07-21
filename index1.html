@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BC Tools – Nástroje pro obrázky zdarma</title>
+<link rel="icon" href="/favicon.png">
+<link rel="shortcut icon" href="/favicon.png">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+/* ===== TOKENS ===== */
+:root{
+  --bg2:#020617;
+  --glass:rgba(15,23,42,.82);
+  --border:rgba(255,255,255,.14);
+  --text:#e5e7eb;
+  --accent:#f1f5f9;
+  --accent2:#cbd5e1;
+}
+
+*{box-sizing:border-box;}
+html{
+  scroll-behavior:smooth;
+}
+
+/* Light theme: inverts the whole dark design instead of rewriting
+   every color declaration. hue-rotate corrects the inverted hues
+   back to their original color family. */
+html[data-theme="light"]{
+  filter:invert(1) hue-rotate(180deg);
+}
+
+/* Cancel the inversion specifically on the brand-colored elements
+   (purple/cyan cards, tool tabs, and their accents) so their exact
+   brightness and hue stay identical in both light and dark mode. */
+html[data-theme="light"] #page-mainpage .card.convert::before,
+html[data-theme="light"] #page-mainpage .card.compress::before,
+html[data-theme="light"] #page-convert .tool-app::before,
+html[data-theme="light"] #page-compress .tool-app::before,
+html[data-theme="light"] #page-convert .tool-drop.active,
+html[data-theme="light"] #page-compress .tool-drop.active,
+html[data-theme="light"] .cp-info-section::before,
+html[data-theme="light"] .page-glow.theme-convert,
+html[data-theme="light"] .page-glow.theme-compress,
+html[data-theme="light"] #page-convert .cv-guide-drop,
+html[data-theme="light"] #page-compress .cv-guide-drop,
+html[data-theme="light"] .result img{
+  filter:invert(1) hue-rotate(180deg);
+}
+body{
+  margin:0;
+  font-family:system-ui, sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,#050816,#020617);
+  min-height:100vh;
+}
+
+/* ===== TABS NAV ===== */
+.site-nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  height:68px;
+  padding:0 28px;
+  background:#1d243686;
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.site-nav-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:26px;
+  font-weight:900;
+  color:#ffffff;
+  text-decoration:none;
+  letter-spacing:-0.02em;
+  white-space:nowrap;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+/* ===== SWAPPABLE GRAPHIC SLOTS =====
+   Every logo/icon lives in one of these sized slots (sm/md/lg).
+   To swap in real art later, replace the whole
+   <span class="gfx-placeholder gfx-*">...</span> with EITHER:
+
+   1) Inline SVG (recommended — lets your icon inherit theme colors):
+      <svg class="gfx-*" viewBox="0 0 24 24" fill="none">
+        <path d="..." stroke="currentColor" stroke-width="2"/>
+      </svg>
+      Keep the same gfx-sm/gfx-md/gfx-lg class so sizing matches exactly.
+      Using stroke="currentColor" or stroke="var(--accent)" lets the icon
+      pick up the site's blue/purple palette automatically.
+
+   2) An SVG file reference (simpler, fixed colors baked into the file):
+      <img class="gfx-*" src="assets/your-icon.svg" alt="...">
+
+   No other CSS changes needed either way — the gfx-sm/md/lg classes
+   handle sizing for span, img, and inline svg alike. */
+.gfx-placeholder, img.gfx-sm, img.gfx-md, img.gfx-lg,
+svg.gfx-sm, svg.gfx-md, svg.gfx-lg{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  object-fit:contain;
+  color:var(--text);
+}
+
+.gfx-placeholder{
+  border:1px dashed rgba(255,255,255,.3);
+  border-radius:6px;
+  text-align:center;
+  line-height:1.15;
+  overflow:hidden;
+  padding:2px;
+}
+
+.gfx-sm{width:24px;height:24px;font-size:6px;}
+.gfx-md{width:34px;height:34px;font-size:7px;}
+.gfx-lg{width:46px;height:46px;font-size:8px;}
+
+.site-nav-links{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:nowrap;
+  justify-content:flex-end;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.site-nav-links button{
+  padding:8px 16px;
+  border-radius:999px;
+  font-size:15px;
+  font-weight:700;
+  color:var(--text);
+  background:none;
+  border:1px solid transparent;
+  cursor:pointer;
+  font-family:inherit;
+  transition:.2s;
+}
+
+.site-nav-links button:hover{
+  color:#e5e7eb;
+  border-color:rgba(255,255,255,.14);
+}
+
+.site-nav-links button.active{
+  color:#020617;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+}
+
+@media (max-width:520px){
+  .site-nav{height:60px;padding:0 16px;}
+  .site-nav-brand{font-size:20px;}
+  .site-nav-links button{padding:7px 12px;font-size:15px;}
+}
+
+/* ===== PAGES ===== */
+.page{
+  display:none;
+}
+.page.active{
+  display:block;
+}
+
+/* ===== MAINPAGE ===== */
+#page-mainpage main{
+  max-width:1100px;
+  margin:0 auto;
+  padding:64px 24px 100px;
+}
+
+#page-mainpage .hero{
+  text-align:center;
+  padding:40px 0 56px;
+}
+
+#page-mainpage .hero h1{
+  margin:0 0 18px;
+  font-size:clamp(36px, 5.2vw, 58px);
+  line-height:1.1;
+  letter-spacing:-0.03em;
+}
+
+#page-mainpage .hero p{
+  margin:0 auto;
+  max-width:640px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.7;
+}
+
+#page-mainpage .about{
+  max-width:760px;
+  margin:0 auto 10px;
+  text-align:center;
+}
+
+#page-mainpage .about p{
+  margin:0 0 24px;
+  font-size:16px;
+  line-height:5;
+}
+
+#page-mainpage .about-features{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+  margin:60px 0 28px;
+
+}
+
+#page-mainpage .about-features span{
+  padding:8px 18px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#1d243686;
+  font-size:15px;
+  font-weight:700;
+  color:var(--text);
+}
+
+#page-mainpage .cards-heading{
+  text-align:center;
+  font-size:clamp(26px, 3vw, 34px);
+  font-weight:900;
+  letter-spacing:-0.02em;
+  margin:60px 0 28px;
+}
+
+#page-mainpage .cards{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:24px;
+}
+
+@media (max-width:720px){
+  #page-mainpage .cards{grid-template-columns:1fr;}
+}
+
+#page-mainpage .card{
+  position:relative;
+  display:block;
+  width:100%;
+  text-align:left;
+  padding:36px;
+  border-radius:28px;
+  border:none;
+  outline:none;
+  color:var(--text);
+  overflow:hidden;
+  cursor:pointer;
+  font-family:inherit;
+  transition:filter .2s ease;
+}
+
+#page-mainpage .card:hover{
+  filter:brightness(1.08);
+}
+
+#page-mainpage .card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  border-radius:28px;
+}
+
+#page-mainpage .card.convert::before{
+  background:linear-gradient(155deg, #b45ce7);
+}
+
+#page-mainpage .card.compress::before{
+  background:linear-gradient(155deg, #60c8e7);
+}
+
+#page-mainpage .card-icon{
+  position:relative;
+  z-index:1;
+  width:46px;
+  height:46px;
+  margin-bottom:20px;
+}
+
+#page-mainpage .card h2{
+  position:relative;
+  z-index:1;
+  margin:0 0 12px;
+  font-size:28px;
+  letter-spacing:-0.02em;
+  color:var(--text);
+}
+
+#page-mainpage .card p{
+  position:relative;
+  z-index:1;
+  margin:0 0 20px;
+  font-size:15px;
+  line-height:1.6;
+  color:var(--text);
+}
+
+#page-mainpage .card-cta{
+  position:relative;
+  z-index:1;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-weight:800;
+  font-size:15px;
+}
+
+#page-mainpage footer{
+  text-align:center;
+  padding:32px 24px;
+  font-size:15px;
+}
+
+#page-mainpage footer a{
+  color:var(--text);
+}
+
+/* ===== SHARED TOOL STYLES (convert + compress) ===== */
+.tool-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:48px 18px 80px;
+}
+
+.tool-app{
+  position:relative;
+  width:1100px;
+  max-width:94vw;
+  border-radius:36px;
+  padding:36px;
+}
+.tool-app::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:36px;
+}
+
+/* Convert: full solid color fill, no glass/blur */
+#page-convert .tool-app::before{
+  background:linear-gradient(155deg,#b968e7);
+}
+
+/* Compress: full solid color fill, no glass/blur */
+#page-compress .tool-app::before{
+  background:linear-gradient(155deg,#6acae7);
+}
+
+/* Page glow disabled — tabs use solid color fills instead */
+.page-glow{
+  position:fixed;
+  inset:-150px;
+  filter:blur(70px);
+  z-index:-1;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(var(--glow-shift, 0px));
+  transition:opacity .3s ease, transform .1s linear;
+}
+
+.tool-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+
+.tool-help-btn{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  border:1.5px solid currentColor;
+  background:none;
+  color:inherit;
+  font-weight:900;
+  font-style:italic;
+  font-family:Georgia, "Times New Roman", serif;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  opacity:.85;
+  transition:.2s;
+}
+
+.tool-help-btn:hover{
+  opacity:1;
+  background:rgba(0,0,0,.15);
+}
+
+/* ===== HELP OVERLAY ===== */
+.tool-help-overlay{
+  display:none;
+  position:absolute;
+  inset:0;
+  z-index:80;
+  background:rgba(0,0,0,.6);
+  border-radius:36px;
+  overflow:hidden;
+}
+
+.tool-help-overlay.open{
+  display:block;
+}
+
+.tool-help-close{
+  position:absolute;
+  top:20px;
+  right:20px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  z-index:3;
+  transition:.2s;
+}
+
+.tool-help-close:hover{
+  background:rgba(255,255,255,.3);
+}
+
+.tool-help-bubble{
+  position:absolute;
+  max-width:230px;
+  background:#0f172a;
+  color:#fff;
+  padding:14px 16px;
+  border-radius:16px;
+  font-size:14px;
+  line-height:1.5;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.14);
+  z-index:2;
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity .25s ease, transform .25s ease;
+}
+
+.tool-help-overlay.open .tool-help-bubble{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.tool-help-bubble .step-num{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:rgba(255,255,255,.18);
+  font-weight:900;
+  font-size:12px;
+  margin-right:8px;
+}
+
+.tool-help-arrow{
+  position:absolute;
+  width:14px;
+  height:14px;
+  background:#0f172a;
+  border-left:1px solid rgba(255,255,255,.14);
+  border-top:1px solid rgba(255,255,255,.14);
+  transform:rotate(45deg);
+}
+
+.nav-close-btn{
+  color:var(--text);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  border:none;
+  background:none;
+  line-height:1;
+  cursor:pointer;
+  font-family:inherit;
+  transition:.2s;
+}
+
+.nav-close-btn svg{
+  width:20px;
+  height:20px;
+}
+
+.nav-close-btn.visible{
+  display:flex;
+}
+
+.nav-close-btn:hover{
+  color:#ffffff;
+}
+
+.tool-logo{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  font-size:28px;
+  font-weight:900;
+}
+
+.tool-logo svg{
+  width:34px;
+  height:34px;
+}
+
+.tool-drop{
+  margin-top:24px;
+  padding:56px 24px;
+  border-radius:28px;
+  border:2px dashed var(--border);
+  text-align:center;
+  cursor:pointer;
+  transition:.25s;
+  font-size:22px;
+  font-weight:800;
+  color:#ffffff;
+}
+
+.tool-drop:hover{
+  border-color:var(--accent);
+  transform:scale(1.01);
+}
+
+.tool-drop.active{
+  border-color:var(--accent);
+  background:rgba(255,255,255,.06);
+}
+
+#page-convert .tool-drop.active{
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+
+#page-compress .tool-drop.active{
+  border-color:#30c4ff;
+  background:rgba(48,196,255,.1);
+}
+
+.tool-controls{
+  display:grid;
+  grid-template-columns:1fr 1.2fr;
+  gap:20px;
+  margin-top:24px;
+  align-items:stretch;
+}
+
+@media (max-width:720px){
+  .tool-controls{grid-template-columns:1fr;}
+  .tool-format-buttons{grid-template-columns:repeat(2, 1fr);}
+}
+
+.tool-format-buttons{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+}
+
+.tool-format-btn{
+  height:74px;
+  border-radius:26px;
+  border:1px solid rgba(255,255,255,.22);
+  background:transparent;
+  color:#ffffff;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.tool-format-btn:hover{
+  border-color:rgba(255,255,255,.4);
+  background:rgba(255,255,255,.04);
+}
+
+.tool-format-btn.active{
+  background:rgba(0,0,0,.28);
+  color:var(--text);
+  border-color:rgba(0,0,0,.4);
+}
+
+.tool-primary-btn{
+  height:74px;
+  padding:0 32px;
+  border-radius:26px;
+  border:1px solid rgba(0,0,0,.4);
+  cursor:pointer;
+  font-weight:900;
+  font-size:20px;
+  background:rgba(0,0,0,.28);
+  color:var(--text);
+  transition:.2s;
+}
+
+.tool-primary-btn:hover{
+  border-color:rgba(255,255,255,.4);
+  background:rgba(0,0,0,.36);
+}
+
+.tool-primary-btn:disabled{
+  opacity:.7;
+  cursor:not-allowed;
+  transform:none;
+}
+
+.tool-status{
+  color:var(--text);
+  margin-top:22px;
+  min-height:24px;
+  font-size:15px;
+}
+
+.tool-contact{
+  color:var(--text);
+  margin-top:18px;
+  font-size:15px;
+  text-align:right;
+}
+
+.tool-contact a{
+  text-decoration:none;
+}
+
+.tool-contact a:hover{
+  text-decoration:underline;
+}
+
+/* compression level buttons (compress tab only) */
+.compress-level-buttons{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+}
+
+.compress-level-btn{
+  height:74px;
+  border-radius:26px;
+  border:1px solid rgba(255,255,255,.22);
+  background:transparent;
+  color:#ffffff;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+  padding:0 12px;
+  line-height:1.1;
+}
+
+.compress-level-btn:hover{
+  border-color:rgba(255,255,255,.4);
+  background:rgba(255,255,255,.04);
+}
+
+.compress-level-btn.active{
+  background:rgba(0,0,0,.28);
+  color:var(--text);
+  border-color:rgba(0,0,0,.4);
+}
+
+.compress-level-btn span{
+  display:block;
+  font-size:15px;
+  font-weight:600;
+}
+
+.selected-compression{
+  margin-top:10px;
+  font-size:15px;
+}
+
+.tool-results{
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+  gap:14px;
+}
+
+.tool-results:empty{
+  display:none;
+}
+
+.result{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:10px;
+  font-size:15px;
+}
+
+.result img{
+  width:100%;
+  height:90px;
+  object-fit:cover;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+.result-name{
+  color:#fff;
+  font-weight:700;
+  word-break:break-all;
+}
+
+.result-size{
+  color:var(--text);
+  margin-top:2px;
+}
+
+/* ===== CONVERT TAB EXTRAS (restored from original) ===== */
+
+.nav-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.nav-share-wrap{
+  position:relative;
+}
+
+.nav-share-btn,
+.nav-theme-btn{
+  color:var(--text);
+  width:36px;
+  height:36px;
+  padding:0;
+  border:none;
+  background:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.2s;
+  font-family:inherit;
+}
+
+.nav-share-btn:hover,
+.nav-theme-btn:hover{
+  color:#e5e7eb;
+}
+
+.nav-theme-btn svg{
+  width:20px;
+  height:20px;
+}
+
+.nav-share-icon{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.15;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.nav-share-menu{
+  position:absolute;
+  top:44px;
+  right:0;
+  width:190px;
+  padding:8px;
+  border-radius:18px;
+  background:rgba(15,23,42,.96);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 24px 70px rgba(0,0,0,.45);
+  display:none;
+  gap:6px;
+  z-index:60;
+}
+
+.nav-share-menu.open{
+  display:grid;
+}
+
+.nav-share-menu button{
+  height:42px;
+  padding:0 12px;
+  border-radius:12px;
+  border:0;
+  background:transparent;
+  color:#ffffff;
+  font-size:15px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+}
+
+.nav-share-menu button:hover{
+  background:rgba(255,255,255,.08);
+}
+
+.cv-hero-content{
+  width:920px;
+  max-width:94vw;
+}
+
+.cv-hero-content h1,
+.cv-hero-content h2{
+  margin:0 0 22px;
+  font-size:clamp(34px, 5vw, 58px);
+  line-height:1.1;
+  letter-spacing:-0.03em;
+}
+
+.cv-hero-content p{
+  margin:0 auto 16px;
+  max-width:720px;
+  font-size:clamp(16px, 1.8vw, 19px);
+  line-height:1.7;
+}
+
+.cv-hero-note{
+  opacity:.9;
+}
+
+.cv-guide-section{
+  padding:70px 24px;
+  position:relative;
+}
+
+.cv-guide-wrap{
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.cv-guide-head{
+  text-align:center;
+  margin-bottom:36px;
+}
+
+.cv-guide-head h2{
+  margin:0 0 14px;
+  font-size:clamp(32px, 4.4vw, 50px);
+  letter-spacing:-0.03em;
+}
+
+.cv-guide-head p{
+  margin:0 auto;
+  max-width:640px;
+  font-size:16px;
+  line-height:1.6;
+}
+
+.cv-guide-grid{
+  display:grid;
+  grid-template-columns:1fr minmax(0,1.3fr) 1fr;
+  gap:24px;
+  align-items:center;
+}
+
+@media (max-width:980px){
+  .cv-guide-grid{grid-template-columns:1fr;}
+}
+
+.cv-guide-side{
+  display:grid;
+  gap:16px;
+}
+
+.cv-guide-note{
+  padding:18px;
+  border-radius:22px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.cv-guide-note .step{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  margin-bottom:10px;
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#020617;
+  font-weight:900;
+  font-size:15px;
+}
+
+.cv-guide-note h3{
+  margin:0 0 6px;
+  font-size:19px;
+}
+
+.cv-guide-note p{
+  margin:0;
+  font-size:15px;
+  line-height:1.55;
+}
+
+.cv-guide-card{
+  position:relative;
+  background:var(--glass);
+  backdrop-filter:blur(18px);
+  border:1px solid var(--border);
+  border-radius:32px;
+  padding:28px;
+  box-shadow:0 30px 90px rgba(0,0,0,.4);
+  pointer-events:none;
+}
+
+.cv-guide-card-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:22px;
+  font-weight:900;
+  margin-bottom:18px;
+}
+
+.cv-guide-card-header svg{
+  width:28px;
+  height:28px;
+}
+
+.cv-guide-drop{
+  padding:44px 18px;
+  border-radius:24px;
+  border:2px dashed rgba(255,255,255,.35);
+  text-align:center;
+  font-weight:800;
+  color:#fff;
+}
+
+#page-convert .cv-guide-drop{
+  border-color:rgba(118,38,245,.55);
+}
+
+#page-compress .cv-guide-drop{
+  border-color:rgba(48,196,255,.55);
+}
+
+.cv-guide-controls{
+  display:grid;
+  grid-template-columns:1fr 1.2fr;
+  gap:14px;
+  margin-top:18px;
+}
+
+@media (max-width:600px){
+  .cv-guide-controls{grid-template-columns:1fr;}
+}
+
+.cv-guide-format-buttons{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.cv-guide-format-btn{
+  height:56px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  color:#fff;
+}
+
+.cv-guide-format-btn.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#020617;
+  border-color:transparent;
+}
+
+.cv-guide-main-btn{
+  height:56px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#020617;
+}
+
+.cv-back-to-top{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  margin:32px auto 0;
+  padding:0 20px;
+  height:48px;
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#020617;
+  font-weight:900;
+  font-size:15px;
+  border:none;
+  cursor:pointer;
+}
+
+.cv-back-to-top:hover{
+  transform:translateY(-2px);
+}
+
+.cv-guide-footer{
+  text-align:center;
+}
+
+/* ===== SEO CONTENT COMPONENTS COMPRESS ===== */
+.content-section-compress{
+  max-width:900px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+.content-section-compress h2{
+  margin:0 0 14px;
+  font-size:clamp(28px, 3.6vw, 40px);
+  letter-spacing:-0.02em;
+  text-align:center;
+}
+
+.content-section-compress > p.lead{
+  color:var(--text);
+  margin:0 auto 32px;
+  max-width:680px;
+  text-align:center;
+  font-size:16px;
+  line-height:1.7;
+}
+
+.content-section-compress p{
+  color:var(--text);
+  font-size:15px;
+  line-height:1.7;
+}
+
+/* comparison table */
+.info-table-compress{
+  width:100%;
+  border-collapse:collapse;
+  border-radius:20px;
+  overflow:hidden;
+  background:#68e1ff21;
+  border:1px solid var(--border);
+}
+
+.info-table-compress th,
+.info-table-compress td{
+  padding:14px 16px;
+  text-align:left;
+  font-size:15px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.info-table-compress th{
+  background:#68e1ff21;
+  color:#fff;
+  font-weight:800;
+}
+
+.info-table-compress td{
+  color:var(--text);
+}
+
+.info-table-compress tr:last-child td{
+  border-bottom:none;
+}
+
+.info-table-compress td:first-child,
+.info-table-compress th:first-child{
+  color:#fff;
+  font-weight:700;
+}
+
+
+/* use cases */
+.use-case-grid-compress{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:16px;
+}
+
+.use-case-compress{
+  padding:20px;
+  border-radius:20px;
+  background:#68e1ff21;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.use-case-compress h3{
+  margin:0 0 8px;
+  font-size:18px;
+  color:#fff;
+}
+
+.use-case-compress p{
+  color:var(--text);
+  margin:0;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* FAQ accordion */
+.faq-list-compress{
+  display:grid;
+  gap:10px;
+}
+
+.faq-item-compress{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  background:#68e1ff21;
+  padding:4px 20px;
+}
+
+.faq-item-compress summary{
+  padding:16px 0;
+  font-weight:700;
+  color:#fff;
+  cursor:pointer;
+  list-style:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.faq-item-compress summary::-webkit-details-marker{
+  display:none;
+}
+
+.faq-item-compress summary::after{
+  content:"+";
+  font-size:20px;
+  flex-shrink:0;
+  transition:transform .2s;
+}
+
+.faq-item-compress[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.faq-item-compress p{
+  color:var(--text);
+  margin:0 0 18px;
+  font-size:15px;
+}
+
+/* ===== SEO CONTENT COMPONENTS CONVERT ===== */
+.content-section-convert{
+  max-width:900px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+.content-section-convert h2{
+  margin:0 0 14px;
+  font-size:clamp(28px, 3.6vw, 40px);
+  letter-spacing:-0.02em;
+  text-align:center;
+}
+
+.content-section-convert > p.lead{
+  color:var(--text);
+  margin:0 auto 32px;
+  max-width:680px;
+  text-align:center;
+  font-size:16px;
+  line-height:1.7;
+}
+
+.content-section-convert p{
+  color:var(--text);
+  font-size:15px;
+  line-height:1.7;
+}
+
+/* comparison table */
+.info-table-convert{
+  width:100%;
+  border-collapse:collapse;
+  border-radius:20px;
+  overflow:hidden;
+  background:#d670ff21;
+  border:1px solid var(--border);
+}
+
+.info-table-convert th,
+.info-table-convert td{
+  padding:14px 16px;
+  text-align:left;
+  font-size:15px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.info-table-convert th{
+  background:#d670ff21;
+  color:#fff;
+  font-weight:800;
+}
+
+.info-table-convert td{
+  color:var(--text);
+}
+
+.info-table-convert tr:last-child td{
+  border-bottom:none;
+}
+
+.info-table-convert td:first-child,
+.info-table-convert th:first-child{
+  color:#fff;
+  font-weight:700;
+}
+
+
+/* use cases */
+.use-case-grid-convert{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:16px;
+}
+
+.use-case-convert{
+  padding:20px;
+  border-radius:20px;
+  background:#d670ff21;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.use-case-convert h3{
+  margin:0 0 8px;
+  font-size:18px;
+  color:#fff;
+}
+
+.use-case-convert p{
+  color:var(--text);
+  margin:0;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* FAQ accordion */
+.faq-list-convert{
+  display:grid;
+  gap:10px;
+}
+
+.faq-item-convert{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  background:#d670ff21;
+  padding:4px 20px;
+}
+
+.faq-item-convert summary{
+  padding:16px 0;
+  font-weight:700;
+  color:#fff;
+  cursor:pointer;
+  list-style:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.faq-item-convert summary::-webkit-details-marker{
+  display:none;
+}
+
+.faq-item-convert summary::after{
+  content:"+";
+  font-size:20px;
+  flex-shrink:0;
+  transition:transform .2s;
+}
+
+.faq-item-convert[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.faq-item-convert p{
+  color:var(--text);
+  margin:0 0 18px;
+  font-size:15px;
+}
+
+/* ===== SEO CONTENT COMPONENTS MAINPAGE ===== */
+.content-section-mainpage{
+  max-width:900px;
+  margin:0 auto;
+  padding:60px 24px;
+}
+
+.content-section-mainpage h2{
+  margin:0 0 14px;
+  font-size:clamp(28px, 3.6vw, 40px);
+  letter-spacing:-0.02em;
+  text-align:center;
+}
+
+.content-section-mainpage > p.lead{
+  color:var(--text);
+  margin:0 auto 32px;
+  max-width:680px;
+  text-align:center;
+  font-size:16px;
+  line-height:1.7;
+}
+
+.content-section-mainpage p{
+  color:var(--text);
+  font-size:15px;
+  line-height:1.7;
+}
+
+/* comparison table */
+.info-table-mainpage{
+  width:100%;
+  border-collapse:collapse;
+  border-radius:20px;
+  overflow:hidden;
+  background:#fbff0000;
+  border:1px solid var(--border);
+}
+
+.info-table-mainpage th,
+.info-table-mainpage td{
+  padding:14px 16px;
+  text-align:left;
+  font-size:15px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.info-table-mainpage th{
+  background:rgba(255,255,255,.04);
+  color:#fff;
+  font-weight:800;
+}
+
+.info-table-mainpage td{
+  color:var(--text);
+}
+
+.info-table-mainpage tr:last-child td{
+  border-bottom:none;
+}
+
+.info-table-mainpage td:first-child,
+.info-table-mainpage th:first-child{
+  color:#fff;
+  font-weight:700;
+}
+
+
+/* use cases */
+.use-case-grid-mainpage{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:16px;
+}
+
+.use-case-mainpage{
+  padding:20px;
+  border-radius:20px;
+  background:#1d243686;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.use-case-mainpage h3{
+  margin:0 0 8px;
+  font-size:18px;
+  color:#fff;
+}
+
+.use-case-mainpage p{
+  color:var(--text);
+  margin:0;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* FAQ accordion */
+.faq-list-mainpage{
+  display:grid;
+  gap:10px;
+}
+
+.faq-item-mainpage{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  background:#1d243686;
+  padding:4px 20px;
+}
+
+.faq-item-mainpage summary{
+  padding:16px 0;
+  font-weight:700;
+  color:#fff;
+  cursor:pointer;
+  list-style:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.faq-item-mainpage summary::-webkit-details-marker{
+  display:none;
+}
+
+.faq-item-mainpage summary::after{
+  content:"+";
+  font-size:20px;
+  flex-shrink:0;
+  transition:transform .2s;
+}
+
+.faq-item-mainpage[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.faq-item-mainpage p{
+  color:var(--text);
+  margin:0 0 18px;
+  font-size:15px;
+}
+
+/* mainpage "why us" grid */
+#page-mainpage .why-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:16px;
+}
+
+#page-mainpage .why-card{
+  padding:22px;
+  border-radius:20px;
+  background:#1d243686;
+  border:1px solid rgba(255,255,255,.08);
+  text-align:center;
+}
+
+#page-mainpage .why-card h3{
+  margin:0 0 8px;
+  font-size:20px;
+  color:#fff;
+}
+
+#page-mainpage .why-card p{
+  color:var(--text);
+  margin:0;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* Compress info sections (mirrors cv-info-section but blue-only theme) */
+.cp-info-section{
+  min-height:44vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 24px;
+  position:relative;
+  isolation:isolate;
+  opacity:0;
+  transform:translateY(30px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+
+.cp-info-section.visible{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.cp-info-section::before{
+  content:"";
+  position:absolute;
+  inset:-120px;
+  filter:blur(100px);
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(1100px at 50% 58%, rgba(48,196,255,.4), transparent 68%);
+}
+
+.cp-info-section .cv-hero-content h2{
+  margin:0 0 22px;
+}
+</style>
+</head>
+<body>
+
+<div class="page-glow" id="pageGlow"></div>
+
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <span class="gfx-placeholder gfx-md">(logo.txt)</span>
+    BC Tools
+  </button>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Přepnout světlý a tmavý režim" title="Přepnout světlý a tmavý režim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+        <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Sdílet" title="Sdílet">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" data-share="copy">Kopírovat odkaz</button>
+        <button type="button" data-share="whatsapp">WhatsApp</button>
+        <button type="button" data-share="facebook">Facebook</button>
+        <button type="button" data-share="x">X</button>
+        <button type="button" data-share="email">E-mail</button>
+      </div>
+    </div>
+    <button type="button" class="nav-close-btn" id="navCloseBtn" data-goto="mainpage" aria-label="Zpět na hlavní stránku" title="Zpět na hlavní stránku">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== MAINPAGE ===================== -->
+<section class="page active" id="page-mainpage">
+  <main>
+    <div class="hero">
+      <h1>Nástroje pro obrázky, rychle a zdarma</h1>
+      <p>Pracujte s obrázky přímo v prohlížeči. Žádné nahrávání na server – Maximální soukromí.</p>
+    </div>
+
+    <div class="about-features">
+        <span>Bez otravných reklam</span>
+        <span>Žádná registrace</span>
+        <span>Neomezené použití</span>
+        <span>Vytvořeno tvůrci pro tvůrce</span>
+    </div>
+
+    <h2 class="cards-heading">Aktuálně nabízíme dvě hlavní funkce:</h2>
+
+    <div class="cards">
+      <button type="button" class="card convert" data-goto="convert">
+        <span class="gfx-placeholder gfx-lg card-icon">(icon-convert.txt)</span>
+        <h2>Convert</h2>
+        <p>Převádějte obrázky mezi formáty JPG, PNG, WEBP i SVG. Vložte soubory, vyberte formát a stáhněte hotové obrázky během vteřiny.</p>
+        <span class="card-cta">Otevřít →</span>
+      </button>
+
+      <button type="button" class="card compress" data-goto="compress">
+        <span class="gfx-placeholder gfx-lg card-icon">(icon-compress.txt)</span>
+        <h2>Compress</h2>
+        <p>Zmenšete velikost obrázků při zachování kvality. Vyberte úroveň komprese a stáhněte zkomprimované soubory hromadně jako ZIP.</p>
+        <span class="card-cta">Otevřít →</span>
+      </button>
+    </div>
+  </main>
+
+  <div class="content-section-mainpage">
+    <h2>Proč BC Tools</h2>
+    <p class="lead">Vytvořili jsme BC Tools jako rychlou alternativu k těžkopádným desktopovým programům a nástrojům, které vyžadují nahrání souborů na cizí server. Vše běží přímo ve vašem prohlížeči.</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <h3>Soukromí</h3>
+        <p>Obrázky nikdy neopustí váš počítač ani telefon. Zpracování probíhá lokálně v prohlížeči.</p>
+      </div>
+      <div class="why-card">
+        <h3>Rychlost</h3>
+        <p>Žádné čekání na nahrání a stažení ze serveru. Výsledek máte během pár vteřin.</p>
+      </div>
+      <div class="why-card">
+        <h3>Zdarma</h3>
+        <p>Bez registrace, bez předplatného a bez skrytých limitů na počet obrázků.</p>
+      </div>
+      <div class="why-card">
+        <h3>Hromadné zpracování</h3>
+        <p>Nahrajte více obrázků najednou a stáhněte je jako jeden přehledný ZIP soubor.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-mainpage">
+    <h2>Kdy se BC Tools hodí</h2>
+    <p class="lead">Ať už spravujete web, posíláte přílohy e-mailem, nebo jen chcete ušetřit místo v telefonu, BC Tools vám ušetří čas.</p>
+    <div class="use-case-grid-mainpage">
+      <div class="use-case-mainpage">
+        <h3>Weby a e-shopy</h3>
+        <p>Zmenšete obrázky produktů a fotografií, aby se web načítal rychleji a lépe se umísťoval ve vyhledávačích.</p>
+      </div>
+      <div class="use-case-mainpage">
+        <h3>E-mailové přílohy</h3>
+        <p>Komprimujte fotky tak, aby prošly limitem velikosti přílohy a přesto zůstaly čitelné.</p>
+      </div>
+      <div class="use-case-mainpage">
+        <h3>Sociální sítě</h3>
+        <p>Převeďte obrázky do formátu, který síť vyžaduje, bez nutnosti instalovat další aplikace.</p>
+      </div>
+      <div class="use-case-mainpage">
+        <h3>Archivace a úložiště</h3>
+        <p>Zmenšete velikost fotoarchivu, aniž byste museli mazat originální soubory.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-mainpage">
+    <h2>Časté otázky</h2>
+    <div class="faq-list-mainpage">
+      <details class="faq-item-mainpage">
+        <summary>Je BC Tools opravdu zdarma?</summary>
+        <p>Ano. Convert i Compress jsou plně zdarma, bez omezení počtu použití a bez nutnosti registrace.</p>
+      </details>
+      <details class="faq-item-mainpage">
+        <summary>Ukládáte moje obrázky na server?</summary>
+        <p>Ne. Veškeré zpracování probíhá přímo ve vašem prohlížeči pomocí JavaScriptu. Soubory nikdy neopustí vaše zařízení.</p>
+      </details>
+      <details class="faq-item-mainpage">
+        <summary>Jaké formáty obrázků podporujete?</summary>
+        <p>Convert podporuje převod mezi JPG, PNG, WEBP a SVG. Compress podporuje kompresi JPG, PNG, WEBP i SVG souborů.</p>
+      </details>
+      <details class="faq-item-mainpage">
+        <summary>Kolik obrázků mohu zpracovat najednou?</summary>
+        <p>Počet obrázků není nijak omezen. U velkého množství souborů může zpracování trvat o něco déle, protože vše počítá váš prohlížeč.</p>
+      </details>
+      <details class="faq-item-mainpage">
+        <summary>Funguje BC Tools na mobilu?</summary>
+        <p>Ano, obě aplikace fungují v mobilním i desktopovém prohlížeči bez nutnosti instalace.</p>
+      </details>
+    </div>
+  </div>
+
+  <footer>
+    &copy; <span id="year"></span> -company to be entered- &middot; <a href="mailto:bkkonverthelp@gmail.com">Kontakt</a>
+  </footer>
+</section>
+
+<!-- ===================== CONVERT ===================== -->
+<section class="page" id="page-convert">
+  <div id="cvTop" class="tool-wrap">
+    <div class="tool-app">
+      <div class="tool-header">
+        <div class="tool-logo">
+          <span class="gfx-placeholder gfx-md">(icon-convert.txt)</span>
+          Convert
+        </div>
+      </div>
+
+      <div class="tool-drop" id="cvDrop">
+        Klikněte nebo přetáhněte obrázky
+      </div>
+      <input type="file" id="cvInput" accept="image/*,.svg" multiple hidden>
+
+      <div class="tool-controls">
+        <div class="tool-format-buttons" id="cvFormatButtons">
+          <button type="button" class="tool-format-btn" data-value="image/jpeg">JPG</button>
+          <button type="button" class="tool-format-btn" data-value="image/png">PNG</button>
+          <button type="button" class="tool-format-btn" data-value="image/webp">WEBP</button>
+          <button type="button" class="tool-format-btn" data-value="image/svg+xml">SVG</button>
+        </div>
+        <button class="tool-primary-btn" id="cvConvertBtn">Konvertovat a stáhnout</button>
+      </div>
+
+      <div class="tool-status" id="cvStatus"></div>
+
+    </div>
+  </div>
+
+  <div class="content-section-convert">
+    <h2>Porovnání formátů JPG, PNG, WEBP i SVG</h2>
+    <p class="lead">Každý formát se hodí na něco jiného. Tady je rychlý přehled, který vám pomůže vybrat ten správný.</p>
+    <table class="info-table-convert">
+      <thead>
+        <tr>
+          <th>Formát</th>
+          <th>Komprese</th>
+          <th>Průhlednost</th>
+          <th>Nejlepší pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>JPG</td>
+          <td>Ztrátová, malá velikost</td>
+          <td>Ne</td>
+          <td>Fotografie, web</td>
+        </tr>
+        <tr>
+          <td>PNG</td>
+          <td>Bezztrátová, větší velikost</td>
+          <td>Ano</td>
+          <td>Loga, grafika, screenshoty</td>
+        </tr>
+        <tr>
+          <td>WEBP</td>
+          <td>Ztrátová i bezztrátová, nejmenší velikost</td>
+          <td>Ano</td>
+          <td>Moderní weby, rychlé načítání</td>
+        </tr>
+        <tr>
+          <td>SVG</td>
+          <td>Bezztrátová (obrázek vložený do vektorového souboru)</td>
+          <td>Ano</td>
+          <td>Univerzální vkládání do webu, ikony, loga</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="content-section-convert">
+    <h2>Kdy Convert použít</h2>
+    <div class="use-case-grid-convert">
+      <div class="use-case-convert">
+        <h3>Nekompatibilní formát</h3>
+        <p>Nástroj nebo platforma přijímá jen JPG, ale vy máte obrázek v PNG nebo WEBP.</p>
+      </div>
+      <div class="use-case-convert">
+        <h3>Potřebujete průhlednost</h3>
+        <p>Převeďte JPG na PNG, pokud potřebujete přidat průhledné pozadí.</p>
+      </div>
+      <div class="use-case-convert">
+        <h3>Rychlejší web</h3>
+        <p>Převeďte staré JPG a PNG obrázky na WEBP pro menší velikost a rychlejší načítání stránek.</p>
+      </div>
+      <div class="use-case-convert">
+        <h3>Univerzální formát pro vkládání</h3>
+        <p>Převeďte obrázek do SVG, pokud potřebujete formát, který se snadno vkládá do webových stránek a zachová průhlednost.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-convert">
+    <h2>Časté otázky o Convert</h2>
+    <div class="faq-list-convert">
+      <details class="faq-item-convert">
+        <summary>Ztratím při převodu kvalitu obrázku?</summary>
+        <p>Při převodu do JPG nebo WEBP dochází k mírné ztrátové kompresi. Převod do PNG je bezztrátový.</p>
+      </details>
+      <details class="faq-item-convert">
+        <summary>Můžu převést více obrázků najednou?</summary>
+        <p>Ano, až 5 obrázků lze stáhnout samostatně, více jak 5 obrázků se pak převede a stáhne v jednom ZIP souboru.</p>
+      </details>
+      <details class="faq-item-convert">
+        <summary>Je WEBP lepší než JPG?</summary>
+        <p>WEBP obvykle dosahuje menší velikosti souboru při srovnatelné kvalitě, ale JPG má širší podporu ve starších aplikacích.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COMPRESS ===================== -->
+<section class="page" id="page-compress">
+  <div id="cpTop" class="tool-wrap">
+    <div class="tool-app">
+      <div class="tool-header">
+        <div class="tool-logo">
+          <span class="gfx-placeholder gfx-md">(icon-compress.txt)</span>
+          Compress
+        </div>
+      </div>
+
+      <div class="tool-drop" id="cpDrop">
+        Klikněte nebo přetáhněte obrázky
+      </div>
+      <input type="file" id="cpInput" accept="image/*" multiple hidden>
+
+      <div class="tool-controls">
+        <div class="compress-level-buttons" id="cpLevelButtons">
+          <button type="button" class="compress-level-btn" data-quality="0.8" data-label="Nízká">
+            Nízká<span>Malá úspora</span>
+          </button>
+          <button type="button" class="compress-level-btn" data-quality="0.6" data-label="Střední">
+            Střední<span>Vyvážená</span>
+          </button>
+          <button type="button" class="compress-level-btn" data-quality="0.4" data-label="Vysoká">
+            Vysoká<span>Max. úspora</span>
+          </button>
+        </div>
+        <button class="tool-primary-btn" id="cpCompressBtn">Komprimovat a stáhnout ZIP</button>
+      </div>
+
+      <div class="selected-compression" id="cpSelectedCompression"></div>
+      <div class="tool-status" id="cpStatus"></div>
+      <div class="tool-results" id="cpResults"></div>
+
+    </div>
+  </div>
+
+  <div class="content-section-compress">
+    <h2>Porovnání úrovní komprese</h2>
+    <p class="lead">Vyšší komprese znamená menší soubor, ale i větší ztrátu kvality. Tady je orientační přehled.</p>
+    <table class="info-table-compress">
+      <thead>
+        <tr>
+          <th>Úroveň</th>
+          <th>Úspora místa</th>
+          <th>Kvalita</th>
+          <th>Nejlepší pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nízká</td>
+          <td>Malá</td>
+          <td>Téměř beze změny</td>
+          <td>Tisk, archivace</td>
+        </tr>
+        <tr>
+          <td>Střední</td>
+          <td>Vyvážená</td>
+          <td>Velmi dobrá</td>
+          <td>Web, e-mail</td>
+        </tr>
+        <tr>
+          <td>Vysoká</td>
+          <td>Maximální</td>
+          <td>Znatelně nižší</td>
+          <td>Náhledy, rychlé sdílení</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="content-section-compress">
+    <h2>Kdy Compress použít</h2>
+    <div class="use-case-grid-compress">
+      <div class="use-case-compress">
+        <h3>Rychlejší web</h3>
+        <p>Menší obrázky znamenají rychlejší načítání stránek a lepší hodnocení ve vyhledávačích.</p>
+      </div>
+      <div class="use-case-compress">
+        <h3>Limit e-mailové přílohy</h3>
+        <p>Zmenšete fotky tak, aby se vešly do limitu přílohy, a přesto zůstaly čitelné.</p>
+      </div>
+      <div class="use-case-compress">
+        <h3>Úspora místa</h3>
+        <p>Zmenšete velikost fotoarchivu v telefonu nebo v cloudovém úložišti.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-compress">
+    <h2>Časté otázky o Compress</h2>
+    <div class="faq-list-compress">
+      <details class="faq-item-compress">
+        <summary>O kolik se obrázek zmenší?</summary>
+        <p>Záleží na obrázku a zvolené úrovni, obvykle jde o úsporu 30–80 % původní velikosti souboru.</p>
+      </details>
+      <details class="faq-item-compress">
+        <summary>Ztratí obrázek kvalitu?</summary>
+        <p>Mírně, v závislosti na zvolené úrovni. Nízká úroveň je téměř bez viditelné ztráty, vysoká úroveň přináší větší úsporu na úkor kvality.</p>
+      </details>
+      <details class="faq-item-compress">
+        <summary>Podporujete i PNG soubory?</summary>
+        <p>Ano. PNG soubory se pro lepší kompresi převedou na JPG, což výrazně zmenší jejich velikost.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+
+/* ===== TAB SWITCHING ===== */
+function gotoPage(name){
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll('.tab-btn[data-goto="' + name + '"]').forEach(b => b.classList.add("active"));
+
+  const navCloseBtn = document.getElementById("navCloseBtn");
+  if (navCloseBtn){
+    navCloseBtn.classList.toggle("visible", name !== "mainpage");
+  }
+
+  const pageGlow = document.getElementById("pageGlow");
+  if (pageGlow){
+    pageGlow.className = "page-glow" + (name !== "mainpage" ? " theme-" + name : "");
+  }
+
+  window.scrollTo(0, 0);
+  try {
+    if (location.hash !== "#" + name){
+      history.pushState(null, "", "#" + name);
+    }
+  } catch (e) {
+    /* file:// pages can block pushState — safe to ignore, tab switching still works */
+  }
+}
+
+window.addEventListener("popstate", () => {
+  const name = (location.hash || "#mainpage").slice(1);
+  if (["mainpage", "convert", "compress"].includes(name)){
+    gotoPage(name);
+  }
+});
+
+document.querySelectorAll("[data-goto]").forEach(el => {
+  el.addEventListener("click", () => gotoPage(el.dataset.goto));
+});
+
+const startPage = (location.hash || "#mainpage").slice(1);
+if (["mainpage", "convert", "compress"].includes(startPage)) {
+  gotoPage(startPage);
+}
+
+/* ===== CONVERT TOOL ===== */
+(function(){
+  const drop = document.getElementById("cvDrop");
+  const input = document.getElementById("cvInput");
+  const formatButtons = document.querySelectorAll("#cvFormatButtons .tool-format-btn");
+  const convertBtn = document.getElementById("cvConvertBtn");
+  const status = document.getElementById("cvStatus");
+
+  let files = [];
+  let selectedFormat = "";
+
+  formatButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedFormat = btn.dataset.value;
+      formatButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+
+  drop.addEventListener("click", () => input.click());
+
+  ["dragenter", "dragover"].forEach(evt => drop.addEventListener(evt, e => {
+    e.preventDefault();
+    drop.classList.add("active");
+  }));
+  ["dragleave", "drop"].forEach(evt => drop.addEventListener(evt, e => {
+    e.preventDefault();
+    drop.classList.remove("active");
+  }));
+
+  function renderStatus(){
+    if (files.length > 0){
+      const count = files.length;
+      let word = "souborů";
+      if (count === 1) word = "soubor";
+      else if (count >= 2 && count <= 4) word = "soubory";
+      status.textContent = `Připraveno k převodu: ${count} ${word}`;
+    } else {
+      status.textContent = "";
+    }
+  }
+
+  function isImageFile(f){
+    return f.type.startsWith("image/") || /\.svg$/i.test(f.name);
+  }
+
+  input.addEventListener("change", e => {
+    files = [...e.target.files].filter(isImageFile);
+    renderStatus();
+  });
+
+  drop.addEventListener("drop", e => {
+    files = [...e.dataTransfer.files].filter(isImageFile);
+    renderStatus();
+  });
+
+  function convertImageFile(file, mimeType){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        // Some SVGs have no intrinsic width/height (viewBox-only), which can
+        // report as 0 — fall back to a sane default so conversion still works.
+        const width = img.naturalWidth || img.width || 512;
+        const height = img.naturalHeight || img.height || 512;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        if (mimeType === "image/svg+xml"){
+          // Wrap the rendered raster image inside a valid .svg file.
+          // This is NOT a true vector trace — it embeds the pixel image
+          // as base64 inside SVG markup, which is the simple/fast approach.
+          canvas.toBlob(pngBlob => {
+            URL.revokeObjectURL(objectUrl);
+            if (!pngBlob) { reject(new Error("Nepodařilo se vytvořit obrázek pro SVG.")); return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+              const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><image href="${reader.result}" width="${width}" height="${height}"/></svg>`;
+              resolve(new Blob([svgMarkup], { type: "image/svg+xml" }));
+            };
+            reader.onerror = () => reject(new Error("Nepodařilo se zakódovat obrázek do SVG."));
+            reader.readAsDataURL(pngBlob);
+          }, "image/png");
+          return;
+        }
+
+        canvas.toBlob(blob => {
+          URL.revokeObjectURL(objectUrl);
+          if (!blob) { reject(new Error("Nepodařilo se vytvořit blob.")); return; }
+          resolve(blob);
+        }, mimeType, 0.95);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(`Nepodařilo se načíst soubor ${file.name}`));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function downloadBlob(blob, fileName){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  convertBtn.addEventListener("click", async () => {
+    if (files.length === 0){
+      status.textContent = "Nejdřív vyber alespoň jeden obrázek.";
+      return;
+    }
+    if (!selectedFormat){
+      status.textContent = "Nejdřív vyber výstupní formát.";
+      return;
+    }
+
+    status.textContent = `Převod probíhá... 0 z ${files.length}`;
+    convertBtn.disabled = true;
+    convertBtn.textContent = "Probíhá převod...";
+
+    const useZip = files.length > 5;
+
+    try {
+      const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/svg+xml": "svg" };
+      const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
+      const zip = useZip ? new JSZip() : null;
+      let done = 0;
+
+      for (const file of files){
+        const blob = await convertImageFile(file, selectedFormat);
+        const outputName = file.name.replace(/\.[^.]+$/, "") + "." + extension;
+
+        if (useZip){
+          zip.file(outputName, blob);
+        } else {
+          downloadBlob(blob, outputName);
+        }
+
+        done++;
+        status.textContent = `Převod probíhá... ${done} z ${files.length}`;
+      }
+
+      if (useZip){
+        status.textContent = "Balení ZIP souboru...";
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        downloadBlob(zipBlob, "bkconvert-images.zip");
+        status.textContent = `Hotovo. ZIP obsahuje ${files.length} obrázků.`;
+      } else {
+        const word = files.length === 1 ? "obrázek" : "obrázky";
+        status.textContent = `Hotovo. Staženo ${files.length} ${word}.`;
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = "Při převodu došlo k chybě.";
+    } finally {
+      convertBtn.disabled = false;
+      convertBtn.textContent = "Konvertovat a stáhnout";
+    }
+  });
+})();
+
+/* ===== COMPRESS TOOL ===== */
+(function(){
+  const drop = document.getElementById("cpDrop");
+  const input = document.getElementById("cpInput");
+  const levelButtons = document.querySelectorAll("#cpLevelButtons .compress-level-btn");
+  const compressBtn = document.getElementById("cpCompressBtn");
+  const status = document.getElementById("cpStatus");
+  const results = document.getElementById("cpResults");
+  const selectedCompression = document.getElementById("cpSelectedCompression");
+
+  let files = [];
+  let selectedQuality = null;
+
+  levelButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedQuality = Number(btn.dataset.quality);
+      levelButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedCompression.textContent = `Úroveň komprese: ${btn.dataset.label}`;
+    });
+  });
+
+  drop.addEventListener("click", () => input.click());
+
+  ["dragenter", "dragover"].forEach(evt => drop.addEventListener(evt, e => {
+    e.preventDefault();
+    drop.classList.add("active");
+  }));
+  ["dragleave", "drop"].forEach(evt => drop.addEventListener(evt, e => {
+    e.preventDefault();
+    drop.classList.remove("active");
+  }));
+
+  function formatKB(bytes){
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  function renderStatus(){
+    if (files.length > 0){
+      const count = files.length;
+      let word = "obrázků";
+      if (count === 1) word = "obrázek";
+      else if (count >= 2 && count <= 4) word = "obrázky";
+
+      const hasPng = files.some(f => f.type === "image/png");
+      if (hasPng){
+        status.innerHTML = `Připraveno ke kompresi: ${count} ${word}. <span style="color:var(--text)">PNG bude pro lepší kompresi převedeno na JPG.</span>`;
+      } else {
+        status.textContent = `Připraveno ke kompresi: ${count} ${word}`;
+      }
+    } else {
+      status.textContent = "";
+    }
+  }
+
+  function renderPreviewCards(items){
+    results.innerHTML = "";
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "result";
+      card.innerHTML = `
+        <img src="${item.src}" alt="${item.name}">
+        <div class="result-name">${item.name}</div>
+        <div class="result-size">${item.info}</div>
+      `;
+      results.appendChild(card);
+    });
+  }
+
+  function showSelectedPreviews(){
+    if (files.length === 0){ results.innerHTML = ""; return; }
+    const items = files.slice(0, 5).map(file => ({
+      src: URL.createObjectURL(file),
+      name: file.name,
+      info: `Původní velikost: ${formatKB(file.size)}`
+    }));
+    renderPreviewCards(items);
+  }
+
+  function setFiles(fileList){
+    files = [...fileList].filter(f => f.type.startsWith("image/"));
+    renderStatus();
+    showSelectedPreviews();
+  }
+
+  input.addEventListener("change", e => setFiles(e.target.files));
+  drop.addEventListener("drop", e => setFiles(e.dataTransfer.files));
+
+  function getOutputMimeType(file){
+    if (file.type === "image/webp") return "image/webp";
+    return "image/jpeg";
+  }
+
+  function getOutputExtension(mimeType){
+    return mimeType === "image/webp" ? "webp" : "jpg";
+  }
+
+  function downloadBlob(blob, fileName){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function compressImageFile(file, qualityRatio, outputMimeType){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (outputMimeType === "image/jpeg"){
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(blob => {
+          URL.revokeObjectURL(objectUrl);
+          if (!blob) { reject(new Error(`Nepodařilo se zkomprimovat soubor ${file.name}`)); return; }
+          resolve(blob);
+        }, outputMimeType, qualityRatio);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(`Nepodařilo se načíst soubor ${file.name}`));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  compressBtn.addEventListener("click", async () => {
+    const previewItems = [];
+
+    if (files.length === 0){
+      status.textContent = "Nejdřív vyberte alespoň jeden obrázek.";
+      return;
+    }
+    if (selectedQuality === null){
+      status.textContent = "Nejdřív vyberte úroveň komprese.";
+      return;
+    }
+
+    compressBtn.disabled = true;
+    compressBtn.textContent = "Probíhá komprese...";
+    status.textContent = `Komprese probíhá... 0 z ${files.length}`;
+
+    const useZip = files.length > 5;
+
+    try {
+      const zip = useZip ? new JSZip() : null;
+      let done = 0;
+
+      for (const file of files){
+        const outputMimeType = getOutputMimeType(file);
+        const extension = getOutputExtension(outputMimeType);
+        const compressedBlob = await compressImageFile(file, selectedQuality, outputMimeType);
+        const outputName = file.name.replace(/\.[^.]+$/, "") + "_compressed." + extension;
+
+        if (useZip){
+          zip.file(outputName, compressedBlob);
+        } else {
+          downloadBlob(compressedBlob, outputName);
+        }
+
+        done++;
+        status.textContent = `Komprese probíhá... ${done} z ${files.length}`;
+
+        if (previewItems.length < 5){
+          const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / file.size) * 100));
+          previewItems.push({
+            src: URL.createObjectURL(compressedBlob),
+            name: outputName,
+            info: `${formatKB(file.size)} → ${formatKB(compressedBlob.size)} • -${savedPercent}%`
+          });
+        }
+      }
+
+      renderPreviewCards(previewItems);
+
+      if (useZip){
+        status.textContent = "Balení ZIP souboru...";
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        downloadBlob(zipBlob, "bkcompress-images.zip");
+        status.textContent = `Hotovo. ZIP obsahuje ${files.length} komprimovaných obrázků.`;
+      } else {
+        const word = files.length === 1 ? "obrázek" : "obrázky";
+        status.textContent = `Hotovo. Staženo ${files.length} zkomprimovaných ${word}.`;
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = "Při kompresi došlo k chybě.";
+    } finally {
+      compressBtn.disabled = false;
+      compressBtn.textContent = "Komprimovat a stáhnout ZIP";
+    }
+  });
+})();
+
+/* ===== NAV SHARE BUTTON (works on Convert + Compress) ===== */
+(function(){
+  const shareBtn = document.getElementById("navShareBtn");
+  const shareMenu = document.getElementById("navShareMenu");
+
+  if (shareBtn && shareMenu){
+    shareBtn.addEventListener("click", async () => {
+      const shareData = {
+        title: "BC Tools",
+        text: "Vyzkoušej BC Tools pro práci s obrázky.",
+        url: window.location.href
+      };
+      if (window.innerWidth <= 768 && navigator.share){
+        try { await navigator.share(shareData); }
+        catch (e){ /* user cancelled or share unsupported, ignore */ }
+        return;
+      }
+      shareMenu.classList.toggle("open");
+    });
+
+    shareMenu.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-share]");
+      if (!btn) return;
+      const pageUrl = encodeURIComponent(window.location.href);
+      const pageText = encodeURIComponent("Vyzkoušej BC Tools pro práci s obrázky.");
+
+      if (btn.dataset.share === "copy"){
+        try { await navigator.clipboard.writeText(window.location.href); }
+        catch { /* clipboard unavailable, ignore */ }
+      }
+      if (btn.dataset.share === "whatsapp") window.open(`https://wa.me/?text=${pageText}%20${pageUrl}`, "_blank");
+      if (btn.dataset.share === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`, "_blank");
+      if (btn.dataset.share === "x") window.open(`https://twitter.com/intent/tweet?text=${pageText}&url=${pageUrl}`, "_blank");
+      if (btn.dataset.share === "email") window.location.href = `mailto:?subject=BC Tools&body=${pageText}%0A%0A${pageUrl}`;
+
+      shareMenu.classList.remove("open");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!shareBtn.contains(e.target) && !shareMenu.contains(e.target)){
+        shareMenu.classList.remove("open");
+      }
+    });
+  }
+})();
+
+/* ===== COMPRESS TAB EXTRAS ===== */
+(function(){
+  const backToTop = document.getElementById("cpBackToTop");
+  const cpTop = document.getElementById("cpTop");
+
+  if (backToTop && cpTop){
+    backToTop.addEventListener("click", () => {
+      cpTop.scrollIntoView({ behavior: "smooth" });
+    });
+  }
+
+  const cpInfoSections = document.querySelectorAll("#page-compress .cp-info-section");
+  const cpObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      entry.target.classList.toggle("visible", entry.isIntersecting);
+    });
+  }, { threshold: 0.28 });
+  cpInfoSections.forEach(el => cpObserver.observe(el));
+})();
+
+/* ===== FAQ ACCORDION: only one open at a time, per section ===== */
+document.querySelectorAll("[class*='faq-list']").forEach(list => {
+  list.querySelectorAll("[class*='faq-item']").forEach(item => {
+    item.addEventListener("toggle", () => {
+      if (item.open){
+        list.querySelectorAll("[class*='faq-item']").forEach(other => {
+          if (other !== item) other.open = false;
+        });
+      }
+    });
+  });
+});
+
+/* ===== LIGHT/DARK THEME TOGGLE ===== */
+(function(){
+  const themeBtn = document.getElementById("navThemeBtn");
+  const root = document.documentElement;
+
+  function applyTheme(theme){
+    if (theme === "light"){
+      root.setAttribute("data-theme", "light");
+    } else {
+      root.removeAttribute("data-theme");
+    }
+  }
+
+  let saved = null;
+  try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable, ignore */ }
+  if (saved === "light") applyTheme("light");
+
+  if (themeBtn){
+    themeBtn.addEventListener("click", () => {
+      const isLight = root.getAttribute("data-theme") === "light";
+      const next = isLight ? "dark" : "light";
+      applyTheme(next);
+      try { localStorage.setItem("bc-theme", next); } catch (e) { /* storage unavailable, ignore */ }
+    });
+  }
+})();
+
+/* ===== HELP OVERLAY (bubbles pointing at drop zone / options / button) ===== */
+(function(){
+  function positionHelpBubbles(overlay, toolApp){
+    const appRect = toolApp.getBoundingClientRect();
+
+    overlay.querySelectorAll(".tool-help-bubble").forEach(bubble => {
+      const target = document.getElementById(bubble.dataset.target);
+      if (!target) return;
+      const targetRect = target.getBoundingClientRect();
+
+      const targetCenterX = targetRect.left + targetRect.width / 2 - appRect.left;
+      const targetTop = targetRect.top - appRect.top;
+      const targetBottom = targetRect.bottom - appRect.top;
+      const placeBelow = targetTop < appRect.height / 2;
+
+      const bubbleWidth = bubble.offsetWidth;
+      const bubbleHeight = bubble.offsetHeight;
+
+      let left = targetCenterX - bubbleWidth / 2;
+      const minLeft = 16;
+      const maxLeft = appRect.width - bubbleWidth - 16;
+      left = Math.max(minLeft, Math.min(left, maxLeft));
+
+      let top = placeBelow ? targetBottom + 18 : targetTop - bubbleHeight - 18;
+      top = Math.max(16, Math.min(top, appRect.height - bubbleHeight - 16));
+
+      bubble.style.left = left + "px";
+      bubble.style.top = top + "px";
+
+      const arrow = bubble.querySelector(".tool-help-arrow");
+      if (arrow){
+        let arrowLeft = targetCenterX - left - 7;
+        arrowLeft = Math.max(14, Math.min(arrowLeft, bubbleWidth - 28));
+        arrow.style.left = arrowLeft + "px";
+        if (placeBelow){
+          arrow.style.top = "-7px";
+          arrow.style.bottom = "auto";
+        } else {
+          arrow.style.top = "auto";
+          arrow.style.bottom = "-7px";
+        }
+      }
+    });
+  }
+
+  function setupHelpOverlay(prefix){
+    const btn = document.getElementById(prefix + "HelpBtn");
+    const overlay = document.getElementById(prefix + "HelpOverlay");
+    const closeBtn = document.getElementById(prefix + "HelpClose");
+    if (!btn || !overlay || !closeBtn) return;
+    const toolApp = overlay.closest(".tool-app");
+    if (!toolApp) return;
+
+    function open(){
+      overlay.classList.add("open");
+      positionHelpBubbles(overlay, toolApp);
+    }
+    function close(){
+      overlay.classList.remove("open");
+    }
+
+    btn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+
+    window.addEventListener("resize", () => {
+      if (overlay.classList.contains("open")) positionHelpBubbles(overlay, toolApp);
+    });
+  }
+
+  setupHelpOverlay("cv");
+  setupHelpOverlay("cp");
+})();
+
+/* ===== PARALLAX GLOW: drifts with scroll at a fraction of speed ===== */(function(){
+  let ticking = false;
+  function updateGlow(){
+    const shift = window.scrollY * 0.15;
+    document.documentElement.style.setProperty("--glow-shift", shift + "px");
+    ticking = false;
+  }
+  window.addEventListener("scroll", () => {
+    if (!ticking){
+      requestAnimationFrame(updateGlow);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
