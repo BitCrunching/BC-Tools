@@ -23,7 +23,7 @@ BitCrunching is a modern alternative tool suite — a lightweight, serverless we
 
 BitCrunching is designed to evolve over time into a full suite of digital file utilities:
 
-- [x] **Images:** Conversion, compression, combining, and metadata clearing
+- [x] **Images:** Conversion, compression, combining, metadata clearing and more coming soon
 - [ ] **Audio:** In-browser audio trimming, conversion, and bitrate adjustment
 - [ ] **Video:** Fast clips processing and GIF creation
 - [ ] **Code:** Formatting and minification tools
