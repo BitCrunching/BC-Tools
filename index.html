@@ -3946,6 +3946,19 @@ footer a{
 </footer>
 
 <script>
+/* Restore the real path after 404.html bounced a direct link/refresh back to "/" */
+(function(){
+  try {
+    const redirectPath = sessionStorage.getItem("bc-redirect-path");
+    if (redirectPath){
+      sessionStorage.removeItem("bc-redirect-path");
+      if (redirectPath !== location.pathname + location.search + location.hash){
+        history.replaceState(null, "", redirectPath);
+      }
+    }
+  } catch (e) { /* sessionStorage unavailable — safe to ignore */ }
+})();
+
 document.getElementById("year").textContent = new Date().getFullYear();
 
 /* ===== TRANSLATIONS ===== */
@@ -4790,6 +4803,17 @@ function pluralWord(dict, count, baseKey){
 })();
 
 /* ===== TAB SWITCHING ===== */
+const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"];
+
+function nameToPath(name){
+  return name === "mainpage" ? "/creativehub" : "/" + name;
+}
+
+function pathToName(pathname){
+  const seg = pathname.replace(/^\/|\/$/g, "");
+  return (seg === "" || seg === "creativehub") ? "mainpage" : seg;
+}
+
 function gotoPage(name){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + name).classList.add("active");
@@ -4810,8 +4834,9 @@ function gotoPage(name){
 
   window.scrollTo(0, 0);
   try {
-    if (location.hash !== "#" + name){
-      history.pushState(null, "", "#" + name);
+    const path = nameToPath(name);
+    if (location.pathname !== path){
+      history.pushState(null, "", path);
     }
   } catch (e) {
     /* file:// pages can block pushState — safe to ignore, tab switching still works */
@@ -4819,8 +4844,8 @@ function gotoPage(name){
 }
 
 window.addEventListener("popstate", () => {
-  const name = (location.hash || "#mainpage").slice(1);
-  if (["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"].includes(name)){
+  const name = pathToName(location.pathname);
+  if (VALID_PAGES.includes(name)){
     gotoPage(name);
   }
 });
@@ -4870,8 +4895,8 @@ document.addEventListener("click", (e) => {
   gotoPage("golden-rules");
 });
 
-const startPage = (location.hash || "#mainpage").slice(1);
-if (["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"].includes(startPage)) {
+const startPage = pathToName(location.pathname);
+if (VALID_PAGES.includes(startPage)) {
   gotoPage(startPage);
 }
 
