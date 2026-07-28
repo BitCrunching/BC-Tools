@@ -21,6 +21,31 @@ ROUTES = {
         "title": "Terms of Use – BC Tools",
         "description": "Terms of Use for BC Tools: free, browser-based, server-free image tools. Read how the service works and what using it means for you.",
     },
+    "privacy": {
+        "page_id": "page-privacy",
+        "title": "Privacy Policy – BC Tools",
+        "description": "Privacy Policy for BC Tools: free, browser-based, server-free image tools. Learn what data is (and isn't) collected when you use the service.",
+    },
+    "cookies": {
+        "page_id": "page-cookies",
+        "title": "Cookie Policy – BC Tools",
+        "description": "Cookie Policy for BC Tools: free, browser-based, server-free image tools. Learn how cookies are used on the site.",
+    },
+    "about": {
+        "page_id": "page-about",
+        "title": "About Us – BC Tools",
+        "description": "About BC Tools: free, browser-based, server-free image tools built to work fast without uploading your files anywhere.",
+    },
+    "faq": {
+        "page_id": "page-faq",
+        "title": "FAQ – BC Tools",
+        "description": "Frequently asked questions about BC Tools: free, browser-based, server-free image tools.",
+    },
+    "golden-rules": {
+        "page_id": "page-golden-rules",
+        "title": "Golden Rules – BC Tools",
+        "description": "Golden Rules for choosing image formats, compression, and settings with BC Tools.",
+    },
 }
 
 
