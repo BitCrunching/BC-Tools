@@ -4771,8 +4771,16 @@ function pluralWord(dict, count, baseKey){
 /* ===== TAB SWITCHING ===== */
 const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"];
 
+/* Routes that have a real generated static file at <name>/index.html
+   (see build_static_routes.py) — these need a trailing slash so the URL
+   already matches the actual file location and never triggers GitHub
+   Pages' 301 redirect from "/name" to "/name/" (which caused a visible
+   flicker on refresh). Keep this in sync with ROUTES in that script. */
+const STATIC_ROUTES = ["terms"];
+
 function nameToPath(name){
-  return name === "mainpage" ? "/creativehub" : "/" + name;
+  if (name === "mainpage") return "/creativehub";
+  return STATIC_ROUTES.includes(name) ? "/" + name + "/" : "/" + name;
 }
 
 function pathToName(pathname){
