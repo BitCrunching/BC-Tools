@@ -103,7 +103,10 @@ html[data-theme="light"] .result img,
 html[data-theme="light"] .combine-file-thumb img,
 html[data-theme="light"] .exif-file-thumb img,
 html[data-theme="light"] .site-logo,
-html[data-theme="light"] .engine-status-card{
+html[data-theme="light"] .engine-status-card,
+html[data-theme="light"] .mp-colors-bg-shape,
+html[data-theme="light"] .cookie-banner.docked,
+html[data-theme="light"] .no-invert{
   filter:invert(1) hue-rotate(180deg);
 }
 body{
@@ -133,6 +136,9 @@ html[data-theme="light"] body{
   display:none;
 }
 
+/* Hand-authored colors for both themes (not the auto invert-filter trick
+   used elsewhere) — this is a fixed overlay, and the filter also inverts
+   shadows/borders, which silently made it nearly invisible in light mode. */
 .cookie-banner{
   position:fixed;
   left:16px;
@@ -146,31 +152,47 @@ html[data-theme="light"] body{
   margin:0 auto;
   padding:20px 24px;
   background:#1d2436;
-  border:1px solid var(--border);
+  border:1px solid rgba(255,255,255,.14);
   border-radius:20px;
-  box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
+
+html[data-theme="light"] .cookie-banner{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
 }
 
 .cookie-banner p{
   margin:0;
   font-size:14px;
   line-height:1.5;
-  color:var(--text);
+  color:#e5e7eb;
+}
+
+html[data-theme="light"] .cookie-banner p{
+  color:#1d2436;
 }
 
 .cookie-banner a{
-  color:var(--accent);
+  color:#f1f5f9;
   text-decoration:underline;
   cursor:pointer;
+}
+
+html[data-theme="light"] .cookie-banner a{
+  color:#1d2436;
 }
 
 .cookie-banner-categories{
   display:flex;
   flex-direction:column;
   gap:4px;
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
+  border-top:1px solid rgba(255,255,255,.14);
+  border-bottom:1px solid rgba(255,255,255,.14);
   padding:10px 0;
+}
+
+html[data-theme="light"] .cookie-banner-categories{
+  border-color:rgba(29,36,54,.25);
 }
 
 .cookie-toggle-row{
@@ -180,15 +202,37 @@ html[data-theme="light"] body{
   gap:12px;
   padding:6px 0;
   font-size:14px;
-  color:var(--text);
+  color:#e5e7eb;
   cursor:pointer;
+}
+
+html[data-theme="light"] .cookie-toggle-row{
+  color:#1d2436;
+}
+
+.cookie-toggle-status{
+  font-family:"Courier New", Courier, monospace;
+  font-weight:700;
+  color:#ff6b6b;
+}
+
+.cookie-toggle-status.is-allowed{
+  color:#4ade80;
+}
+
+html[data-theme="light"] .cookie-toggle-status{
+  color:#dc2626;
+}
+
+html[data-theme="light"] .cookie-toggle-status.is-allowed{
+  color:#16a34a;
 }
 
 .cookie-toggle-row input[type="checkbox"]{
   width:18px;
   height:18px;
   flex:0 0 auto;
-  accent-color:var(--accent);
+  accent-color:#4ade80;
   cursor:pointer;
 }
 
@@ -199,35 +243,113 @@ html[data-theme="light"] body{
 
 .cookie-banner-actions{
   display:flex;
+  align-items:center;
   justify-content:flex-end;
   gap:10px;
+}
+
+/* Confirmation that "Confirm choices" actually did something — the
+   docked panel deliberately doesn't dismiss itself, so without this
+   there'd be no visible feedback at all. */
+.cookie-banner-saved{
+  margin-right:auto;
+  font-family:"Courier New", Courier, monospace;
+  font-weight:700;
+  font-size:11px;
+  letter-spacing:.05em;
+  color:#4ade80;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+
+.cookie-banner-saved.is-visible{
+  opacity:1;
+}
+
+html[data-theme="light"] .cookie-banner-saved{
+  color:#16a34a;
+}
+
+/* Docked panel auto-saves on every toggle, so an explicit confirm is
+   redundant there — the floating consent prompt still needs it.
+   Exception: a visitor who hasn't consented yet still needs a way to
+   confirm, otherwise "decline everything" is unreachable (nothing
+   changes, so no auto-save ever fires). Hence .needs-consent. */
+.cookie-banner.docked #cookieBannerSave{
+  display:none;
+}
+
+.cookie-banner.docked.needs-consent #cookieBannerSave{
+  display:inline-flex;
+  align-items:center;
 }
 
 .cookie-banner-actions button{
   height:40px;
   padding:0 18px;
   border-radius:14px;
-  border:1px solid var(--border);
+  border:1px solid rgba(255,255,255,.14);
   cursor:pointer;
   font-weight:700;
   font-size:14px;
-  background:rgba(0,0,0,.28);
-  color:var(--text);
-  transition:.2s;
+  background:rgba(255,255,255,.08);
+  color:#e5e7eb;
+}
+
+html[data-theme="light"] .cookie-banner-actions button{
+  border-color:rgba(29,36,54,.25);
+  background:rgba(29,36,54,.06);
+  color:#1d2436;
 }
 
 .cookie-banner-actions button:hover{
-  background:rgba(0,0,0,.36);
+  background:rgba(255,255,255,.14);
+}
+
+html[data-theme="light"] .cookie-banner-actions button:hover{
+  background:rgba(29,36,54,.12);
 }
 
 #cookieBannerAcceptAll{
-  background:var(--accent);
+  background:#4ade80;
   color:#111;
-  border-color:var(--accent);
+  border-color:#4ade80;
 }
 
 #cookieBannerAcceptAll:hover{
-  background:var(--accent2);
+  background:#6ee7a3;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll{
+  background:#16a34a;
+  color:#fff;
+  border-color:#16a34a;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll:hover{
+  background:#15803d;
+}
+
+/* Once everything is allowed, "Accept All" has nothing left to do, so it
+   flips to a red "Disable all" — and back again once all are off. */
+#cookieBannerAcceptAll.is-disable-all{
+  background:#ef4444;
+  color:#111;
+  border-color:#ef4444;
+}
+
+#cookieBannerAcceptAll.is-disable-all:hover{
+  background:#f87171;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all{
+  background:#dc2626;
+  color:#fff;
+  border-color:#dc2626;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
+  background:#b91c1c;
 }
 
 @media (max-width:600px){
@@ -359,10 +481,10 @@ main{
 
 .hero p{
   margin:0 auto 16px;
-  max-width:none;
+  max-width:700px;
   font-size:clamp(17px, 1.8vw, 19px);
-  line-height:1.5;
-  text-align:center;
+  line-height:1.6;
+  text-align:left;
 }
 
 .hero p:first-of-type{
@@ -377,6 +499,7 @@ main{
    used elsewhere): that filter also inverts shadows/borders, so a black
    shadow meant for depth turns white and vanishes against a light page. */
 .engine-status-card{
+  position:relative;
   margin:32px auto 0;
   max-width:680px;
   text-align:left;
@@ -450,6 +573,76 @@ html[data-theme="light"] .engine-status-title{
   flex-direction:column;
   gap:8px;
   position:relative;
+}
+
+.engine-status-content{
+  filter:blur(6px);
+  transition:filter .4s ease;
+}
+
+.engine-status-card.revealed .engine-status-content{
+  filter:none;
+}
+
+.engine-status-reveal-overlay{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  background:rgba(0,0,0,.25);
+  cursor:pointer;
+  transition:opacity .4s ease;
+}
+
+.engine-status-card.revealed .engine-status-reveal-overlay{
+  opacity:0;
+  pointer-events:none;
+}
+
+.engine-status-reveal-label{
+  font-family:"Courier New", Courier, monospace;
+  font-size:11px;
+  letter-spacing:.05em;
+  color:#9ca3af;
+  opacity:.8;
+}
+
+.engine-status-reveal-btn{
+  font-family:"Courier New", Courier, monospace;
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.05em;
+  color:#4ade80;
+  background:none;
+  border:1px solid rgba(74,222,128,.4);
+  border-radius:6px;
+  padding:8px 20px;
+  cursor:pointer;
+}
+
+.engine-status-reveal-btn:hover{
+  background:rgba(74,222,128,.12);
+}
+
+html[data-theme="light"] .engine-status-reveal-overlay{
+  background:rgba(255,255,255,.5);
+}
+
+html[data-theme="light"] .engine-status-reveal-label{
+  color:#4b5568;
+}
+
+html[data-theme="light"] .engine-status-reveal-btn{
+  color:#16a34a;
+  border-color:rgba(22,163,74,.4);
+}
+
+html[data-theme="light"] .engine-status-reveal-btn:hover{
+  background:rgba(22,163,74,.12);
 }
 
 .engine-status-row{
@@ -539,6 +732,69 @@ html[data-theme="light"] .engine-status-glitch{
   .engine-status-card{display:none;}
 }
 
+.next-tools-preview{
+  margin-top:20px;
+  max-width:900px;
+  display:flex;
+  align-items:center;
+  gap:32px;
+}
+
+.next-tools-preview-text{
+  flex:1 1 auto;
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+  text-align:left;
+}
+
+/* Widths below mirror the real tool cards' grid math exactly:
+   #page-mainpage .cards is minmax(240px,1fr) with a 24px gap inside a
+   max-width:1100px container (which has 24px of its own left/right
+   padding, so content width caps at 1052px). Column count only changes
+   at 816px and 1080px viewport width — verified against live measurements
+   of div.card.convert at several widths, not guessed. */
+/* Reserved slot for a future SVG (added later) — just the outer frame for now. */
+.tool-card-blueprint{
+  position:relative;
+  overflow:hidden;
+  flex:0 0 auto;
+  width:260px;
+  min-height:215px;
+  padding:36px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:28px;
+  background:none;
+}
+
+html[data-theme="light"] .tool-card-blueprint{
+  border-color:rgba(29,36,54,.25);
+}
+
+/* Asteroids drifting across the empty tool slot. The rocks themselves are
+   created and animated from JS (see the asteroid-field driver) so each
+   pass can differ in count, size, path and speed — five varied cycles
+   read as endless variation rather than one obvious loop. Only dark-mode
+   colours are authored; the #app-shell invert filter handles light mode,
+   same as the rest of the site. */
+.tool-card-asteroid{
+  position:absolute;
+  top:0;
+  left:0;
+  display:block;
+  background:#9ca3af;
+  will-change:transform;
+}
+
+.tool-card-asteroid.is-comet{
+  background:#ffffff;
+  border-radius:50%;
+}
+
+@media (max-width:768px){
+  .next-tools-preview{display:none;}
+}
+
 #page-mainpage .cards-heading{
   text-align:center;
   font-size:clamp(28px, 3.6vw, 40px);
@@ -555,6 +811,11 @@ html[data-theme="light"] .engine-status-glitch{
 
 @media (max-width:768px){
   #page-mainpage .cards{grid-template-columns:1fr;}
+  #page-mainpage .card{
+    max-width:435px;
+    max-height:215px;
+    margin:0 auto;
+  }
 }
 
 #page-mainpage .card{
@@ -1017,7 +1278,6 @@ footer a{
   border-radius:18px;
   background:rgba(15,23,42,.96);
   border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 24px 70px rgba(0,0,0,.45);
   display:none;
   gap:6px;
   z-index:60;
@@ -2131,24 +2391,115 @@ footer a{
 
 /* mainpage "why us" grid */
 .about-article{
-  max-width:760px;
+  max-width:700px;
   margin:0 auto;
   padding:0 24px 80px;
-  text-align:center;
+  text-align:left;
+}
+
+.mp-colors-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.mp-colors-article{
+  position:relative;
+  z-index:1;
+  margin-top:0;
+}
+
+.mp-colors-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.mp-colors-bg-shape{
+  position:absolute;
+  display:block;
+  border-radius:28px;
+  background:var(--shape-color);
+  opacity:.45;
+  filter:blur(1px);
+  animation:mp-colors-drift 16s ease-in-out infinite;
+}
+
+@keyframes mp-colors-drift{
+  0%, 100%{ transform:translate(0, 0) rotate(0deg); }
+  50%{ transform:translate(36px, -44px) rotate(8deg); }
+}
+
+/* Purple gets its own gentler, purely horizontal drift. */
+@keyframes mp-colors-drift-x{
+  0%, 100%{ transform:translateX(0); }
+  50%{ transform:translateX(18px); }
+}
+
+/* Per-shape colour, size and placement. Kept in CSS rather than inline
+   style attributes so the mobile overrides below can actually win. */
+.shape-purple{
+  --shape-color:#b45ce7;
+  width:245px;
+  height:286px;
+  top:-30px;
+  left:10%;
+  animation-name:mp-colors-drift-x;
+  animation-duration:20s;
+  animation-delay:0s;
+}
+
+.shape-green{
+  --shape-color:#4ade80;
+  width:245px;
+  height:286px;
+  top:180px;
+  right:5%;
+  animation-delay:-5s;
+}
+
+.shape-salmon{
+  --shape-color:#ec6f63;
+  width:200px;
+  height:230px;
+  bottom:-20px;
+  left:32%;
+  animation-delay:-10s;
+}
+
+/* Mobile: 15% smaller and shifted down so they sit clear of the text. */
+@media (max-width:768px){
+  .shape-purple{
+    width:208px;
+    height:243px;
+    top:10px;
+  }
+  .shape-green{
+    width:208px;
+    height:243px;
+    top:320px;
+    right:calc(5% - 15px);
+  }
+  .shape-salmon{
+    width:170px;
+    height:196px;
+    bottom:0;
+  }
 }
 
 .about-article p{
   color:var(--text);
   margin:0 0 16px;
   font-size:clamp(17px, 1.8vw, 19px);
-  line-height:1.7;
+  line-height:1.6;
 }
 
 .about-section-heading{
   font-size:clamp(28px, 3.6vw, 40px);
   margin:0 0 20px;
   color:#fff;
-  text-align:center;
+  text-align:left;
 }
 
 .about-story-heading{
@@ -2202,22 +2553,162 @@ footer a{
   cursor:pointer;
 }
 
-.cookie-settings-btn{
+/* Hand-authored colors for both themes (same as the intro terminal /
+   status card), not the auto invert-filter trick — see the note near
+   .engine-status-card for why. */
+/* Terminal label, inline on the same line as the panel's intro text. */
+/* Deliberately uncolored — inherits the panel's normal text color. */
+.cookie-dock-inline-label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-right:6px;
+  white-space:nowrap;
+}
+
+/* Where the cookie banner re-parents itself while on the Cookies page. */
+.cookie-banner-dock{
+  margin-top:8px;
+}
+
+/* Base rule must come BEFORE the media query below: equal specificity
+   means source order decides, so a later `display:none` would beat the
+   query's `display:inline-flex` and hide the button at every width. */
+.cookie-mobile-settings-btn{
+  display:none;
+  align-items:center;
   margin-top:8px;
   height:44px;
   padding:0 20px;
   border-radius:14px;
-  border:1px solid var(--border);
+  border:1px solid rgba(255,255,255,.14);
   cursor:pointer;
   font-weight:700;
   font-size:14px;
-  background:rgba(0,0,0,.28);
-  color:var(--text);
-  transition:.2s;
+  background:rgba(255,255,255,.08);
+  color:#e5e7eb;
 }
 
-.cookie-settings-btn:hover{
-  background:rgba(0,0,0,.36);
+/* Nothing ever docks here on mobile, so don't leave an empty gap —
+   mobile gets a plain button that reopens the floating banner instead. */
+@media (max-width:768px){
+  .cookie-banner-dock{
+    display:none;
+  }
+  .cookie-mobile-settings-btn{
+    display:inline-flex;
+  }
+}
+
+/* Docked state: same element as the floating banner, but sitting inline
+   in the page instead of pinned to the viewport. Can't tween between
+   position:fixed and static, so the swap is covered by a quick fade. */
+/* Sized and cornered to match the loading/intro terminal card (16px
+   radius, 678px wide). Height follows its content, so spacing is kept
+   tight to land close to the intro card's ~212px. */
+.cookie-banner.docked{
+  position:static;
+  left:auto;
+  right:auto;
+  bottom:auto;
+  width:100%;
+  max-width:678px;
+  margin:0 auto;
+  padding:14px 16px;
+  gap:8px;
+  border-radius:16px;
+  font-family:"Courier New", Courier, monospace;
+  letter-spacing:.02em;
+}
+
+/* Terminal look belongs only to the docked dev_tools_banner — the
+   floating consent prompt stays clean and modern (system font). */
+.cookie-banner.docked p,
+.cookie-banner.docked .cookie-toggle-row{
+  font-size:15px;
+  font-weight:700;
+}
+
+.cookie-banner.docked .cookie-banner-categories{
+  padding:6px 0;
+  gap:0;
+}
+
+.cookie-banner.docked .cookie-toggle-row{
+  padding:3px 0;
+}
+
+.cookie-banner.docked .cookie-banner-actions button{
+  font-family:"Courier New", Courier, monospace;
+  font-size:15px;
+  letter-spacing:.02em;
+  border-radius:10px;
+}
+
+/* The ...allowed/...disabled readout is part of the terminal panel only. */
+.cookie-toggle-status{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-toggle-status{
+  display:inline;
+}
+
+/* Three wordings, swapped by CSS rather than JS — the i18n layer rewrites
+   innerHTML on language change, which would clobber a JS text swap.
+   Base "hidden" rules come first so the media query below can win. */
+.cookie-banner-text-docked,
+.cookie-banner-text-mobile{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-banner-text-floating{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-banner-text-docked{
+  display:block;
+}
+
+/* On mobile, only on the Cookies page itself, drop the "We use cookies"
+   preamble and the Cookie Policy link — the visitor is already reading
+   that policy. Everywhere else the full wording stays. */
+@media (max-width:768px){
+  .cookie-banner.on-cookies-page .cookie-banner-text-floating{
+    display:none;
+  }
+  .cookie-banner.on-cookies-page .cookie-banner-text-mobile{
+    display:block;
+  }
+}
+
+.cookie-banner.cookie-banner-fading{
+  opacity:0;
+}
+
+.cookie-banner{
+  transition:opacity .18s ease;
+}
+
+.cookie-settings-btn-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#e5e7eb;
+  opacity:.5;
+}
+
+html[data-theme="light"] .cookie-settings-btn-dot{
+  background:#1d2436;
+}
+
+.cookie-settings-btn-cursor{
+  animation:cookie-settings-cursor-blink 1s step-end infinite;
+}
+
+@keyframes cookie-settings-cursor-blink{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:0; }
 }
 
 .terms-article a:hover{
@@ -2328,28 +2819,37 @@ footer a{
 </style>
 </head>
 <body>
-<div id="app-shell">
 <div id="cookieBanner" class="cookie-banner" hidden>
-  <p data-i18n="cookie_banner_text">We use cookies to understand how visitors use our site. You can choose which cookies to allow below — see our <a data-goto="cookies">Cookie Policy</a> for details.</p>
+  <p class="cookie-banner-text-floating" data-i18n="cookie_banner_text">We use cookies. Choose which categories to allow below — see our <a data-goto="cookies">Cookie Policy</a> for details.</p>
+  <p class="cookie-banner-text-mobile" data-i18n="cookie_banner_text_mobile">Choose which categories to allow</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot"></span><span class="cookie-settings-btn-dot"></span><span class="cookie-settings-btn-dot"></span>
+      <span data-i18n="ck_settings_btn">&gt; dev_tools_banner</span><span class="cookie-settings-btn-cursor">_</span>
+    </span>
+    <span data-i18n="cookie_banner_text_docked">Choose which categories to allow below</span>
+  </p>
   <div class="cookie-banner-categories">
     <label class="cookie-toggle-row">
       <span data-i18n="cookie_cat_necessary">Necessary (always on)</span>
       <input type="checkbox" checked disabled>
     </label>
     <label class="cookie-toggle-row">
-      <span data-i18n="cookie_cat_analytics">Analytics (Google Analytics)</span>
+      <span><span data-i18n="cookie_cat_analytics">Analytics (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
       <input type="checkbox" id="cookieToggleAnalytics">
     </label>
     <label class="cookie-toggle-row">
-      <span data-i18n="cookie_cat_advertising">Advertising (Google AdSense)</span>
+      <span><span data-i18n="cookie_cat_advertising">Advertising (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
       <input type="checkbox" id="cookieToggleAdvertising">
     </label>
   </div>
   <div class="cookie-banner-actions">
+    <span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
     <button type="button" id="cookieBannerAcceptAll" data-i18n="cookie_banner_accept_all">Accept All</button>
-    <button type="button" id="cookieBannerSave" data-i18n="cookie_banner_save">Save preferences</button>
+    <button type="button" id="cookieBannerSave" data-i18n="cookie_banner_save">Confirm choices</button>
   </div>
 </div>
+<div id="app-shell">
 
 <div class="site-nav">
   <button type="button" class="site-nav-brand" data-goto="mainpage">
@@ -2416,26 +2916,31 @@ footer a{
   <main>
     <div class="hero">
       <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
-      <p data-i18n="mp_hero_p1">Welcome to the Creative Hub — from a planet yet to be discovered.</p>
-      <p data-i18n="mp_hero_p2">Somewhere between Earth and the outer edges of the universe, an idea was born: creativity should not be limited by complicated tools, endless ads, or scattered solutions across the digital galaxy.</p>
-      <p data-i18n="mp_hero_p3">BC Tools brings together browser-based tools for images, videos, audio, and code — creating a single Creative Hub where ideas can travel freely from imagination to reality. Built for creators exploring new possibilities, designed to be fast, simple, and accessible from anywhere in the universe.</p>
-      <p data-i18n="mp_hero_p4">We asked its developer, who may or may not be human, about the origin of the BC Tools logo. He answered.<br><em>"Your species is not ready to understand it yet."</em></p>
-      <p data-i18n="mp_hero_p5">We decided not to ask further questions.</p>
+      <p data-i18n="mp_hero_p1">Get into our world... where creativity travels faster than light. <span class="no-invert">⚡</span></p>
+      <p data-i18n="mp_hero_p2">At the heart of BC Tools is the Creative Hub — a growing collection of browser-based tools for images, video, audio, and code. Built for creators who want to explore, create, and bring ideas to life faster.</p>
+      <p data-i18n="mp_hero_p3">Fast, simple, and accessible from anywhere in the universe.</p>
+      <p data-i18n="mp_hero_p4">...wait our systems detected an unauthorized memory leak from the BC Tools archive. You probably shouldn't read it.</p>
 
-      <div class="engine-status-card">
-        <div class="engine-status-header">
-          <span class="engine-status-dot" id="engineStatusDot1"></span>
-          <span class="engine-status-dot" id="engineStatusDot2"></span>
-          <span class="engine-status-dot" id="engineStatusDot3"></span>
-          <span class="engine-status-title" data-i18n="engine_status_title">BC-TOOLS_CLASSIFIED_MEMORY: LEAKED</span>
+      <div class="engine-status-card" id="engineStatusCard">
+        <div class="engine-status-content">
+          <div class="engine-status-header">
+            <span class="engine-status-dot" id="engineStatusDot1"></span>
+            <span class="engine-status-dot" id="engineStatusDot2"></span>
+            <span class="engine-status-dot" id="engineStatusDot3"></span>
+            <span class="engine-status-title" data-i18n="engine_status_title">BC-TOOLS_CLASSIFIED_MEMORY: LEAKED</span>
+          </div>
+          <div class="engine-status-body">
+            <div class="engine-status-glitch" aria-hidden="true">0x7F3A_&amp;%$#_dGVzdA==_0b1010110_&amp;&amp;NULL&amp;&amp;_0xE4_~~~_#error_stack_corrupted#_¯\_(ツ)_/¯</div>
+            <div class="engine-status-row" data-i18n="engine_status_row1">&gt; Browser data extraction: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no data leaks</span></div>
+            <div class="engine-status-row" data-i18n="engine_status_row2">&gt; Server upload: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no server found</span></div>
+            <div class="engine-status-row" data-i18n="engine_status_row3">&gt; User tracking: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">cookies restrictions</span></div>
+            <div class="engine-status-row" data-i18n="engine_status_row4">&gt; Intrusive ad placement: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">clean-ad environment enforced</span></div>
+            <div class="engine-status-glitch" aria-hidden="true">#!/dev/null_0x9B2C_&amp;&amp;01001000_&gt;&gt;&gt;_play_non-disturbing_ad_below_&lt;&lt;&lt;_~0x00~_(╯°□°)╯︵┻━┻</div>
+          </div>
         </div>
-        <div class="engine-status-body">
-          <div class="engine-status-glitch" aria-hidden="true">0x7F3A_&amp;%$#_dGVzdA==_0b1010110_&amp;&amp;NULL&amp;&amp;_0xE4_~~~_#error_stack_corrupted#_¯\_(ツ)_/¯</div>
-          <div class="engine-status-row" data-i18n="engine_status_row1">&gt; Browser data extraction: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no data leaks</span></div>
-          <div class="engine-status-row" data-i18n="engine_status_row2">&gt; Server upload: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no server found</span></div>
-          <div class="engine-status-row" data-i18n="engine_status_row3">&gt; User tracking: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">cookies restrictions</span></div>
-          <div class="engine-status-row" data-i18n="engine_status_row4">&gt; Intrusive ad placement: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">clean-ad environment enforced</span></div>
-          <div class="engine-status-glitch" aria-hidden="true">#!/dev/null_0x9B2C_&amp;&amp;01001000_&gt;&gt;&gt;_play_non-disturbing_ad_below_&lt;&lt;&lt;_~0x00~_(╯°□°)╯︵┻━┻</div>
+        <div class="engine-status-reveal-overlay" id="engineStatusRevealOverlay">
+          <div class="engine-status-reveal-label" id="engineStatusRevealLabel">context_hidden</div>
+          <button type="button" class="engine-status-reveal-btn" id="engineStatusRevealBtn">&gt; read</button>
         </div>
       </div>
     </div>
@@ -2489,6 +2994,31 @@ footer a{
         <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">no tools found (<span class="engine-status-eye" id="loadingToolsEyeL">・</span>_<span class="engine-status-eye" id="loadingToolsEyeR">・</span>;)</span></div>
         <div class="engine-status-row"><span data-i18n="loading_tools_row2">&gt; Preparing tools</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
       </div>
+    </div>
+
+    <div class="next-tools-preview">
+      <p class="next-tools-preview-text" data-i18n="next_tools_preview_text">We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.</p>
+      <div class="tool-card-blueprint" id="nextToolSvgSlot" aria-hidden="true">
+      </div>
+    </div>
+
+    <div class="mp-colors-wrap">
+      <div class="mp-colors-bg" aria-hidden="true">
+        <span class="mp-colors-bg-shape shape-purple"></span>
+        <span class="mp-colors-bg-shape shape-green"></span>
+        <span class="mp-colors-bg-shape shape-salmon"></span>
+      </div>
+      <article class="about-article mp-colors-article">
+        <h2 class="about-section-heading" data-i18n="mp_colors_heading">Harnessing the Power of the Sun...</h2>
+        <p data-i18n="mp_colors_p1">Every star in the universe carries its own energy signature. Some burn with golden light, some glow in deep blues, and some produce colors that scientists still refuse to explain.</p>
+        <p data-i18n="mp_colors_p2">During the development of BC Tools, our explorer discovered an important fact: creativity itself has energy.</p>
+        <p data-i18n="mp_colors_p3">After studying creative signals across different worlds, we found that lifeless interfaces were causing a serious decrease in inspiration levels. The solution was clear — more color, more energy, and fewer grey rectangles pretending to help people create.</p>
+        <p data-i18n="mp_colors_p4">The Creative Hub was designed with vibrant colors to reflect the way ideas actually appear: unpredictable, energetic, and constantly evolving.</p>
+        <p data-i18n="mp_colors_p5">These colors are not just decoration. They are signals from a creative universe — a visual language designed to make every tool feel alive and every creation feel like a journey.</p>
+        <p data-i18n="mp_colors_p6">As BC Tools continues to expand, new colors and new discoveries will join the collection.</p>
+        <p data-i18n="mp_colors_p7">Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia.</p>
+        <p data-i18n="mp_colors_p8">We have not been able to verify these claims, but we sure did get hungry.</p>
+      </article>
     </div>
   </main>
 
@@ -3024,8 +3554,9 @@ footer a{
       <p><strong data-i18n="ck_s2_sub3_heading">Third-Party Advertising Cookies (Google AdSense):</strong> <span data-i18n="ck_s2_sub3_p">This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance.</span></p>
 
       <h2 data-i18n="ck_s3_heading">3. Consent and Control</h2>
-      <p data-i18n="ck_s3_p">In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time using the button below, or clear/disable cookies entirely through your web browser's configuration menu.</p>
-      <button type="button" id="cookieSettingsBtn" class="cookie-settings-btn" data-i18n="ck_settings_btn">Manage cookie preferences</button>
+      <p data-i18n="ck_s3_p">In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time in the panel below, or clear/disable cookies entirely through your web browser's configuration menu.</p>
+      <div id="cookieBannerDock" class="cookie-banner-dock"></div>
+      <button type="button" id="cookieMobileSettingsBtn" class="cookie-mobile-settings-btn" data-i18n="ck_mobile_settings_btn">Manage cookie preferences</button>
     </article>
   </main>
 </section>
@@ -4364,11 +4895,14 @@ footer a{
   } catch (e) { /* sessionStorage unavailable — safe to ignore */ }
 })();
 
-/* Glitch lines: each character sits in its own fixed-width slot (so the
-   text never reflows). The two lines animate independently and differently. */
-const glitchLines = document.querySelectorAll(".engine-status-glitch");
-
-glitchLines.forEach((el, lineIndex) => {
+/* Intro terminal glitch lines: each character sits in its own fixed-width
+   slot (so the text never reflows). The two lines animate independently
+   and differently. Deliberately NOT started on page load — the whole
+   point of this easter egg is that it should be easy to overlook, so the
+   animation only kicks in once the visitor actually reveals the card
+   (see the reveal-button handler below). */
+function startIntroTerminalGlitchLines(){
+document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   const chars = Array.from(el.textContent);
   el.textContent = "";
   const spans = chars.map(ch => {
@@ -4436,11 +4970,110 @@ glitchLines.forEach((el, lineIndex) => {
     scheduleFlicker();
   }
 });
+}
 
-/* Top-left status dots: cycle through a fixed sequence of colors, each
-   held for its own duration, then loop. "none" clears back to the
-   default dim dot color. */
+/* Asteroid field in the empty "next tool" slot. Five hand-tuned cycles
+   play in rotation — different rock counts, sizes, paths and speeds,
+   including one super-fast comet — so it reads as endless variation
+   instead of one repeating loop. Add another entry to CYCLES to extend
+   it; nothing else needs changing. Coordinates are relative to the card
+   (260 x ~215), starting off-frame and ending past the far edge. */
 (function(){
+  const slot = document.getElementById("nextToolSvgSlot");
+  if (!slot || typeof Element.prototype.animate !== "function") return;
+
+  const ROCK = "52% 48% 45% 55% / 48% 58% 42% 52%";
+  const ROCK2 = "58% 42% 47% 53% / 50% 61% 39% 50%";
+  const ROCK3 = "44% 56% 63% 37% / 57% 43% 57% 43%";
+
+  const CYCLES = [
+    /* 1 — loose trio, big, classic top-left to bottom-right */
+    [
+      { w:26, h:22, from:[-30,-30], to:[300,260], rot:240,  dur:3000, delay:0,   op:.30, r:ROCK2 },
+      { w:15, h:13, from:[60,-30],  to:[300,300], rot:-190, dur:3000, delay:150, r:ROCK3 },
+      { w:34, h:29, from:[-45,30],  to:[320,230], rot:160,  dur:3000, delay:80,  op:.22, r:ROCK }
+    ],
+    /* 2 — two smaller rocks skimming the upper half, a little quicker */
+    [
+      { w:13, h:11, from:[-25,-20], to:[300,150], rot:300, dur:2400, delay:0,   op:.28, r:ROCK3 },
+      { w:19, h:16, from:[-40,20],  to:[300,210], rot:-220, dur:2600, delay:300, r:ROCK2 }
+    ],
+    /* 3 — super-fast comet, with one slow drifter behind it */
+    [
+      { w:8,  h:8,  from:[-30,-25], to:[300,250], rot:0,   dur:700,  delay:0,    op:.85, comet:true },
+      { w:30, h:26, from:[-45,60],  to:[300,200], rot:120, dur:3400, delay:400,  op:.20, r:ROCK }
+    ],
+    /* 4 — scattered shower of four small rocks */
+    [
+      { w:11, h:9,  from:[-20,-25], to:[290,240], rot:200,  dur:2800, delay:0,   op:.28, r:ROCK3 },
+      { w:14, h:12, from:[40,-30],  to:[300,280], rot:-160, dur:3000, delay:220, r:ROCK2 },
+      { w:9,  h:8,  from:[-35,15],  to:[300,190], rot:260,  dur:2600, delay:420, r:ROCK },
+      { w:17, h:14, from:[110,-35], to:[290,300], rot:140,  dur:3200, delay:120, r:ROCK2 }
+    ],
+    /* 5 — one huge slow boulder plus a quick little chip */
+    [
+      { w:44, h:38, from:[-55,-20], to:[310,250], rot:90,   dur:4200, delay:0,   op:.18, r:ROCK },
+      { w:10, h:9,  from:[-25,50],  to:[300,180], rot:-320, dur:1500, delay:900, r:ROCK3 }
+    ]
+  ];
+
+  const GAP = 1800;
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  let index = 0;
+  let timer = null;
+
+  function runCycle(){
+    slot.querySelectorAll(".tool-card-asteroid").forEach(el => el.remove());
+    const rocks = CYCLES[index];
+    let longest = 0;
+
+    rocks.forEach(rock => {
+      const el = document.createElement("span");
+      el.className = "tool-card-asteroid" + (rock.comet ? " is-comet" : "");
+      el.style.width = rock.w + "px";
+      el.style.height = rock.h + "px";
+      if (rock.r) el.style.borderRadius = rock.r;
+      slot.appendChild(el);
+
+      /* fill:"both" matters: with only "forwards", a rock with a delay has
+         no animation applied during that delay, so it sits fully visible
+         at its CSS default (top-left corner) and then jumps to its start
+         point. "both" applies the first keyframe during the delay too.
+         Rocks are solid — every path starts and ends fully outside the
+         card, and overflow:hidden clips them, so no fade is needed. */
+      el.animate([
+        { transform:`translate(${rock.from[0]}px, ${rock.from[1]}px) rotate(0deg)` },
+        { transform:`translate(${rock.to[0]}px, ${rock.to[1]}px) rotate(${rock.rot}deg)` }
+      ], { duration:rock.dur, delay:rock.delay, easing:"linear", fill:"both" });
+
+      longest = Math.max(longest, rock.dur + rock.delay);
+    });
+
+    index = (index + 1) % CYCLES.length;
+    timer = setTimeout(runCycle, longest + GAP);
+  }
+
+  /* The whole preview is display:none below 769px, so there's no point
+     creating rocks and running timers on phones — start only on desktop,
+     and stop again if the viewport shrinks past the breakpoint. */
+  function sync(){
+    if (desktopQuery.matches){
+      if (timer === null) runCycle();
+    } else if (timer !== null){
+      clearTimeout(timer);
+      timer = null;
+      slot.querySelectorAll(".tool-card-asteroid").forEach(el => el.remove());
+    }
+  }
+
+  desktopQuery.addEventListener("change", sync);
+  sync();
+})();
+
+/* Intro terminal status dots: cycle through a fixed sequence of colors,
+   each held for its own duration, then loop. "none" clears back to the
+   default dim dot color. Also deliberately not started until reveal. */
+function startIntroTerminalDots(){
   const dot1 = document.getElementById("engineStatusDot1");
   const dot2 = document.getElementById("engineStatusDot2");
   const dot3 = document.getElementById("engineStatusDot3");
@@ -4483,25 +5116,88 @@ glitchLines.forEach((el, lineIndex) => {
     }, sequence[step].hold);
   }
   next();
+}
+
+/* Intro terminal: starts blurred behind a "read" button. Its animations
+   (glitch lines + status dots) only start once the visitor clicks reveal
+   — kept dormant until then so it stays easy to overlook. The choice is
+   remembered (localStorage, same mechanism as theme/language) so it
+   doesn't ask again on return visits. */
+(function(){
+  const card = document.getElementById("engineStatusCard");
+  const btn = document.getElementById("engineStatusRevealBtn");
+  const label = document.getElementById("engineStatusRevealLabel");
+  if (!card || !btn || !label) return;
+
+  /* The card is display:none below 769px, so don't spin up its animation
+     loops there — a visitor who revealed it on desktop would otherwise
+     have both loops running forever against an invisible element. They
+     start if the viewport later grows past the breakpoint. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  let animationsStarted = false;
+
+  function startAnimations(){
+    /* Guard against running twice: a second call would rebuild the glitch
+       spans and orphan the first set, leaving its timers running forever
+       on detached nodes (and two dot sequences fighting each other). */
+    if (animationsStarted || !desktopQuery.matches) return;
+    animationsStarted = true;
+    startIntroTerminalGlitchLines();
+    startIntroTerminalDots();
+  }
+
+  function reveal(){
+    card.classList.add("revealed");
+    startAnimations();
+  }
+
+  desktopQuery.addEventListener("change", () => {
+    if (card.classList.contains("revealed")) startAnimations();
+  });
+
+  let alreadyRevealed = false;
+  try { alreadyRevealed = localStorage.getItem("bc-intro-terminal-revealed") === "1"; } catch (e) { /* storage unavailable, ignore */ }
+
+  if (alreadyRevealed){
+    label.textContent = "context_revealed";
+    reveal();
+  } else {
+    let pending = false;
+    btn.addEventListener("click", () => {
+      if (pending) return;
+      pending = true;
+      label.textContent = "context_revealed";
+      try { localStorage.setItem("bc-intro-terminal-revealed", "1"); } catch (e) { /* storage unavailable, ignore */ }
+      /* Delay so the "context_revealed" label swap is clearly visible
+         before the blur clears and animations kick in. */
+      setTimeout(reveal, 500);
+    });
+  }
 })();
 
 /* Confused loading-tools face: both eyes blink together, (・_・;) -> (-_-;)
    -> (・_・;). Only the two eye characters swap — "(", "_", ";", ")" are
    static text nodes that JS never touches, so nothing shifts. Re-queries
    each time since a language switch replaces the row's innerHTML. */
-setInterval(() => {
-  const eyeL = document.getElementById("loadingToolsEyeL");
-  const eyeR = document.getElementById("loadingToolsEyeR");
-  if (!eyeL || !eyeR) return;
-  eyeL.textContent = "-";
-  eyeR.textContent = "-";
-  setTimeout(() => {
-    const eyeLNow = document.getElementById("loadingToolsEyeL");
-    const eyeRNow = document.getElementById("loadingToolsEyeR");
-    if (eyeLNow) eyeLNow.textContent = "・";
-    if (eyeRNow) eyeRNow.textContent = "・";
-  }, 180);
-}, 5000);
+(function(){
+  /* Its banner is display:none below 769px, so skip the blink there
+     rather than ticking forever against a hidden element. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  setInterval(() => {
+    if (!desktopQuery.matches) return;
+    const eyeL = document.getElementById("loadingToolsEyeL");
+    const eyeR = document.getElementById("loadingToolsEyeR");
+    if (!eyeL || !eyeR) return;
+    eyeL.textContent = "-";
+    eyeR.textContent = "-";
+    setTimeout(() => {
+      const eyeLNow = document.getElementById("loadingToolsEyeL");
+      const eyeRNow = document.getElementById("loadingToolsEyeR");
+      if (eyeLNow) eyeLNow.textContent = "・";
+      if (eyeRNow) eyeRNow.textContent = "・";
+    }, 180);
+  }, 5000);
+})();
 
 /* Cookie consent banner: per-category choice, gates GA4/AdSense
    (Consent Mode starts fully denied in <head>) */
@@ -4530,40 +5226,208 @@ setInterval(() => {
     });
   }
 
+  const savedNotice = document.getElementById("cookieBannerSaved");
+  let savedNoticeTimer = null;
+
+  function flashSavedNotice(){
+    if (!savedNotice) return;
+    let dict = null;
+    try { dict = translations[currentLang] || translations.en; } catch (e) { dict = null; }
+    savedNotice.textContent = (dict && dict.cookie_banner_saved) || "> preferences_saved";
+    savedNotice.classList.add("is-visible");
+    clearTimeout(savedNoticeTimer);
+    savedNoticeTimer = setTimeout(() => {
+      savedNotice.classList.remove("is-visible");
+    }, 2200);
+  }
+
+  /* Tracks whether the visitor has ever recorded a choice. Drives both
+     the floating banner's visibility and whether the docked panel needs
+     an explicit confirm button. */
+  function refreshConsentState(){
+    banner.classList.toggle("needs-consent", !readSaved());
+  }
+
   function savePrefs(prefs){
     applyConsent(prefs);
     try { localStorage.setItem("bc-cookie-consent", JSON.stringify(prefs)); } catch (e) { /* storage unavailable, ignore */ }
-    banner.hidden = true;
+    refreshConsentState();
+    /* While docked into the Cookies page the banner is part of the page
+       content, so it stays put — show a confirmation instead, since
+       dismissing only applies to the floating version. */
+    if (banner.classList.contains("docked")){
+      flashSavedNotice();
+    } else {
+      banner.hidden = true;
+    }
+  }
+
+  /* Terminal-style "...allowed" / "...disabled" readout next to each
+     category. Reads the translation dict when it's available, but falls
+     back to English: `currentLang` is declared with `let` further down
+     this script, so touching it during this block's first run would hit
+     the temporal dead zone — hence the try/catch. Re-rendered on
+     bc:langchange once the i18n layer is live. */
+  const analyticsStatus = document.getElementById("cookieStatusAnalytics");
+  const advertisingStatus = document.getElementById("cookieStatusAdvertising");
+
+  function statusText(allowed){
+    let dict = null;
+    try { dict = translations[currentLang] || translations.en; } catch (e) { dict = null; }
+    const key = allowed ? "cookie_status_allowed" : "cookie_status_disabled";
+    const fallback = allowed ? "...allowed" : "...disabled";
+    return (dict && dict[key]) || fallback;
+  }
+
+  /* "Accept All" is pointless once everything is already allowed, so it
+     becomes a red "Disable all", and flips back once all are off. A
+     partial selection keeps "Accept All", since that still does something.
+     Note this overrides the button's data-i18n text, so it has to re-run
+     after a language change (applyLanguage sets innerHTML, then fires
+     bc:langchange — our listener runs after that). */
+  function renderActionButton(){
+    const allOn = analyticsToggle.checked && advertisingToggle.checked;
+    let dict = null;
+    try { dict = translations[currentLang] || translations.en; } catch (e) { dict = null; }
+    const key = allOn ? "cookie_banner_disable_all" : "cookie_banner_accept_all";
+    const fallback = allOn ? "Disable all" : "Accept All";
+    acceptAllBtn.textContent = (dict && dict[key]) || fallback;
+    acceptAllBtn.classList.toggle("is-disable-all", allOn);
+  }
+
+  function renderStatuses(){
+    [[analyticsStatus, analyticsToggle], [advertisingStatus, advertisingToggle]].forEach(([out, input]) => {
+      if (!out) return;
+      out.textContent = statusText(input.checked);
+      out.classList.toggle("is-allowed", input.checked);
+    });
+    renderActionButton();
+  }
+
+  function syncTogglesFromSaved(){
+    const current = readSaved() || { analytics: false, advertising: false };
+    analyticsToggle.checked = !!current.analytics;
+    advertisingToggle.checked = !!current.advertising;
+    renderStatuses();
   }
 
   const saved = readSaved();
   if (saved){
     applyConsent(saved);
-    analyticsToggle.checked = !!saved.analytics;
-    advertisingToggle.checked = !!saved.advertising;
+    syncTogglesFromSaved();
   } else {
     banner.hidden = false;
   }
+  renderStatuses();
+  refreshConsentState();
+
+  /* Docked on the Cookies page, each toggle saves itself immediately —
+     it reads as a settings panel, so an extra confirm step is friction.
+     Two cases keep the explicit confirm instead:
+     - the floating banner (a first-time prompt, where idly flipping a
+       checkbox shouldn't count as a final decision, and it needs a
+       deliberate action to dismiss);
+     - a docked panel for someone who hasn't consented yet, so silently
+       auto-saving doesn't record consent they never confirmed. */
+  function onToggleChange(){
+    renderStatuses();
+    const isDocked = banner.classList.contains("docked");
+    const alreadyChose = !banner.classList.contains("needs-consent");
+    if (isDocked && alreadyChose){
+      savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
+    }
+  }
+
+  analyticsToggle.addEventListener("change", onToggleChange);
+  advertisingToggle.addEventListener("change", onToggleChange);
+  document.addEventListener("bc:langchange", renderStatuses);
 
   acceptAllBtn.addEventListener("click", () => {
-    analyticsToggle.checked = true;
-    advertisingToggle.checked = true;
-    savePrefs({ analytics: true, advertising: true });
+    /* Acts as "allow all" unless everything is already on, in which case
+       it's showing "Disable all" and turns everything off instead. */
+    const turnOn = !(analyticsToggle.checked && advertisingToggle.checked);
+    analyticsToggle.checked = turnOn;
+    advertisingToggle.checked = turnOn;
+    renderStatuses();
+    savePrefs({ analytics: turnOn, advertising: turnOn });
   });
 
   saveBtn.addEventListener("click", () => {
     savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
   });
 
-  const settingsBtn = document.getElementById("cookieSettingsBtn");
-  if (settingsBtn){
-    settingsBtn.addEventListener("click", () => {
-      const current = readSaved() || { analytics: false, advertising: false };
-      analyticsToggle.checked = !!current.analytics;
-      advertisingToggle.checked = !!current.advertising;
+  /* Mobile has no docked panel, so the Cookies page gets a plain button
+     that just reopens the floating banner. */
+  const mobileSettingsBtn = document.getElementById("cookieMobileSettingsBtn");
+  if (mobileSettingsBtn){
+    mobileSettingsBtn.addEventListener("click", () => {
+      syncTogglesFromSaved();
       banner.hidden = false;
     });
   }
+
+  /* The same banner element serves both roles: it floats over every page
+     as the usual consent overlay, and re-parents itself inline into the
+     Cookies page so preferences can be changed right there. Called by
+     gotoPage() on every route change. */
+  const dock = document.getElementById("cookieBannerDock");
+  const bannerHome = banner.parentNode;
+  const bannerNextSibling = banner.nextSibling;
+  let pendingDock = null;
+  let placementTimer = null;
+
+  /* Docking is a desktop-only treatment — matches the other terminal
+     easter eggs, which are all hidden below 768px. On mobile the banner
+     always stays floating. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+
+  window.bcSyncCookieBannerPlacement = function(pageName){
+    /* Marks which page the banner is currently overlaying, so CSS can
+       shorten its text on the Cookies page only. Must be set before the
+       early-returns below: on mobile nothing ever docks, so shouldDock
+       and isDocked are both always false and this function would bail
+       out before reaching them. */
+    banner.classList.toggle("on-cookies-page", pageName === "cookies");
+
+    if (!dock) return;
+    const shouldDock = pageName === "cookies" && desktopQuery.matches;
+    const isDocked = banner.classList.contains("docked");
+    /* Compare against any move already in flight, not just the current
+       DOM state — the class only updates when the 180ms fade completes,
+       so fast navigation could otherwise queue conflicting moves. */
+    const settledTarget = pendingDock === null ? isDocked : pendingDock;
+    if (shouldDock === settledTarget) return;
+
+    pendingDock = shouldDock;
+    banner.classList.add("cookie-banner-fading");
+    clearTimeout(placementTimer);
+    placementTimer = setTimeout(() => {
+      if (shouldDock){
+        dock.appendChild(banner);
+        banner.classList.add("docked");
+        banner.hidden = false;
+        syncTogglesFromSaved();
+      } else {
+        bannerHome.insertBefore(banner, bannerNextSibling);
+        banner.classList.remove("docked");
+        /* Restore the floating banner's own visibility rule: only shown
+           when the visitor hasn't chosen yet. */
+        banner.hidden = !!readSaved();
+      }
+      refreshConsentState();
+      banner.classList.remove("cookie-banner-fading");
+      pendingDock = null;
+      placementTimer = null;
+    }, 180);
+  };
+
+  /* Re-evaluate when the viewport crosses the breakpoint, so rotating a
+     tablet or resizing a window doesn't leave it stuck in the wrong mode. */
+  desktopQuery.addEventListener("change", () => {
+    window.bcSyncCookieBannerPlacement(pathToName(location.pathname));
+  });
+
+  window.bcSyncCookieBannerPlacement(pathToName(location.pathname));
 })();
 
 document.getElementById("year").textContent = new Date().getFullYear();
@@ -4654,11 +5518,21 @@ const translations = {
     engine_status_row4: "&gt; Rušivá reklama: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">vynuceno prostředí bez reklam</span>",
     loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">nenalezeny žádné nástroje (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
     loading_tools_row2: "&gt; Připravujeme nástroje",
-    mp_hero_p1: "Vítejte v Creative Hubu — z planety, která ještě nebyla objevena.",
-    mp_hero_p2: "Někde mezi Zemí a vnějšími okraji vesmíru se zrodil nápad: kreativita by neměla být omezena komplikovanými nástroji, nekonečnými reklamami nebo roztříštěnými řešeními napříč digitální galaxií.",
-    mp_hero_p3: "BC Tools spojuje nástroje přímo v prohlížeči pro obrázky, videa, zvuk a kód — a vytváří jediný Creative Hub, kde se nápady mohou volně přesouvat od fantazie k realitě. Postavený pro tvůrce objevující nové možnosti, navržený tak, aby byl rychlý, jednoduchý a dostupný odkudkoli ve vesmíru.",
-    mp_hero_p4: "Zeptali jsme se hlavního vývojáře, který možná je a možná není člověk, na původ loga BC Tools. Odpověděl.<br><em>\"Váš druh na to ještě není připraven.\"</em>",
-    mp_hero_p5: "Rozhodli jsme se dál se neptat.",
+    next_tools_preview_text: "Vyvíjíme více nových nástrojů zároveň. Pro lidské použití jsou schváleny pouze ty, které přežijí naše drsné kosmické testování.",
+    mp_colors_heading: "Využívání síly Slunce...",
+    mp_colors_p1: "Každá hvězda ve vesmíru nese svůj vlastní energetický podpis. Některé hoří zlatým světlem, jiné září hlubokou modří a některé vytvářejí barvy, které si vědci stále odmítají vysvětlit.",
+    mp_colors_p2: "Během vývoje BC Tools náš průzkumník objevil důležitý fakt: kreativita sama má barvu.",
+    mp_colors_p3: "Po analýze milionů kreativních signálů napříč různými galaxiemi jsme zjistili, že chladná, neživá rozhraní způsobují vážný pokles úrovně fantazie. Řešení bylo zřejmé — více barev, více energie a o něco méně šedých obdélníků, které předstírají, že inspirují lidi.",
+    mp_colors_p4: "Creative Hub byl navržen s živými barvami, které odrážejí to, jak se nápady skutečně cítí: nečekaně, energicky a v neustálé proměně.",
+    mp_colors_p5: "Zelená představuje růst a nové možnosti.",
+    mp_colors_p6: "Fialová představuje fantazii a objevování.",
+    mp_colors_p7: "Lososová představuje kreativitu, vyjádření a lidský dotek.",
+    mp_colors_p8: "Společně tvoří vizuální jazyk BC Tools — místo, kde se technologie setkává s kreativitou někde mezi Zemí a neznámem.",
+    mp_colors_p9: "Náš vývojář tvrdí, že barvy byly pečlivě vybrány pomocí pokročilých kosmických výpočtů.<br>Tyto výpočty se nám nepodařilo ověřit.<br>Většinou proto, že jsou napsané v jazyce, který se zdá být starší než naše planeta.",
+    mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než světlo. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p2: "Jádrem BC Tools je Creative Hub — rostoucí sbírka nástrojů přímo v prohlížeči pro obrázky, video, zvuk a kód. Postavený pro tvůrce, kteří chtějí objevovat, tvořit a rychleji přivádět nápady k životu.",
+    mp_hero_p3: "Rychlé, jednoduché a dostupné odkudkoli ve vesmíru.",
+    mp_hero_p4: "Než budete pokračovat, naše systémy zaznamenaly neoprávněný únik paměti z archivu BC Tools.<br>Asi byste si to neměli číst.",
     mp_cards_heading: "Začněte s Creative Hubem:",
     mp_card_convert_desc: "Převádějte obrázky mezi formáty JPG, PNG, WEBP, SVG i PDF.",
     mp_card_compress_desc: "Komprimujte obrázky na libovolnou velikost bez viditelné ztráty kvality.",
@@ -4851,12 +5725,19 @@ const translations = {
     footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Join our discord</a>",
     footer_contact_address: "Contactweg 129<br>1014BJ Amsterdam<br>Netherlands",
     cookie_banner_text: "We use cookies. Choose which categories to allow below — see our <a data-goto=\"cookies\">Cookie Policy</a> for details.",
+    cookie_banner_text_docked: "Choose which categories to allow below",
+    cookie_banner_text_mobile: "Choose which categories to allow",
     cookie_cat_necessary: "Necessary (always on)",
     cookie_cat_analytics: "Analytics (Google Analytics)",
     cookie_cat_advertising: "Advertising (Google AdSense)",
+    cookie_status_allowed: "...allowed",
+    cookie_status_disabled: "...disabled",
     cookie_banner_accept_all: "Accept All",
-    cookie_banner_save: "Save preferences",
-    ck_settings_btn: "Manage cookie preferences",
+    cookie_banner_disable_all: "Disable all",
+    cookie_banner_save: "Confirm choices",
+    cookie_banner_saved: "> preferences_saved",
+    ck_settings_btn: "&gt; dev_tools_banner",
+    ck_mobile_settings_btn: "Manage cookie preferences",
     mp_about_our_goals_heading: "Our/his goals",
     mp_about_our_story_heading: "Our/his story",
     mp_about_our_values_heading: "Our/his Beliefs",
@@ -4884,7 +5765,7 @@ const translations = {
     ck_s2_sub3_heading: "Third-Party Advertising Cookies (Google AdSense):",
     ck_s2_sub3_p: "This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance.",
     ck_s3_heading: "3. Consent and Control",
-    ck_s3_p: "In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time using the button below, or clear/disable cookies entirely through your web browser's configuration menu.",
+    ck_s3_p: "In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time in the panel below, or clear/disable cookies entirely through your web browser's configuration menu.",
     mp_privacy_heading: "Privacy Policy",
     mp_footer_privacy: "Privacy Policy",
     tu_updated: "Last Updated: July 2026",
@@ -4929,11 +5810,20 @@ const translations = {
     engine_status_row4: "&gt; Intrusive ad placement: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">clean-ad environment enforced</span>",
     loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">no tools found (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
     loading_tools_row2: "&gt; Preparing tools",
-    mp_hero_p1: "Welcome to the Creative Hub — from a planet yet to be discovered.",
-    mp_hero_p2: "Somewhere between Earth and the outer edges of the universe, an idea was born: creativity should not be limited by complicated tools, endless ads, or scattered solutions across the digital galaxy.",
-    mp_hero_p3: "BC Tools brings together browser-based tools for images, videos, audio, and code — creating a single Creative Hub where ideas can travel freely from imagination to reality. Built for creators exploring new possibilities, designed to be fast, simple, and accessible from anywhere in the universe.",
-    mp_hero_p4: "We asked its developer, who may or may not be human, about the origin of the BC Tools logo. He answered.<br><em>\"Your species is not ready to understand it yet.\"</em>",
-    mp_hero_p5: "We decided not to ask further questions.",
+    next_tools_preview_text: "We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.",
+    mp_colors_heading: "Harnessing the Power of the Sun...",
+    mp_colors_p1: "Every star in the universe carries its own energy signature. Some burn with golden light, some glow in deep blues, and some produce colors that scientists still refuse to explain.",
+    mp_colors_p2: "During the development of BC Tools, our explorer discovered an important fact: creativity itself has energy.",
+    mp_colors_p3: "After studying creative signals across different worlds, we found that lifeless interfaces were causing a serious decrease in inspiration levels. The solution was clear — more color, more energy, and fewer grey rectangles pretending to help people create.",
+    mp_colors_p4: "The Creative Hub was designed with vibrant colors to reflect the way ideas actually appear: unpredictable, energetic, and constantly evolving.",
+    mp_colors_p5: "These colors are not just decoration. They are signals from a creative universe — a visual language designed to make every tool feel alive and every creation feel like a journey.",
+    mp_colors_p6: "As BC Tools continues to expand, new colors and new discoveries will join the collection.",
+    mp_colors_p7: "Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia.",
+    mp_colors_p8: "We have not been able to verify these claims, but we sure did get hungry.",
+    mp_hero_p1: "Get into our world... where creativity travels faster than light. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p2: "At the heart of BC Tools is the Creative Hub — a growing collection of browser-based tools for images, video, audio, and code. Built for creators who want to explore, create, and bring ideas to life faster.",
+    mp_hero_p3: "Fast, simple, and accessible from anywhere in the universe.",
+    mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools archive. You probably shouldn't read it.",
     mp_cards_heading: "Start with Creative Hub:",
     mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, SVG and PDF.",
     mp_card_compress_desc: "Reduce image size while keeping quality.",
@@ -5204,11 +6094,21 @@ const translations = {
     engine_status_row4: "&gt; Nachalne reklamy: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">wymuszone środowisko bez reklam</span>",
     loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">nie znaleziono narzędzi (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
     loading_tools_row2: "&gt; Przygotowywanie narzędzi",
-    mp_hero_p1: "Witamy w Creative Hub — z planety, która nie została jeszcze odkryta.",
-    mp_hero_p2: "Gdzieś między Ziemią a zewnętrznymi krańcami wszechświata narodził się pomysł: kreatywność nie powinna być ograniczana skomplikowanymi narzędziami, niekończącymi się reklamami czy rozproszonymi rozwiązaniami w cyfrowej galaktyce.",
-    mp_hero_p3: "BC Tools łączy narzędzia działające w przeglądarce do obrazów, wideo, dźwięku i kodu — tworząc jeden Creative Hub, w którym pomysły mogą swobodnie podróżować od wyobraźni do rzeczywistości. Stworzony dla twórców odkrywających nowe możliwości, zaprojektowany tak, by był szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
-    mp_hero_p4: "Zapytaliśmy jego twórcę, który być może — a być może nie — jest człowiekiem, o pochodzenie logo BC Tools. Odpowiedział.<br><em>\"Wasz gatunek nie jest jeszcze gotowy, by to zrozumieć.\"</em>",
-    mp_hero_p5: "Postanowiliśmy nie zadawać więcej pytań.",
+    next_tools_preview_text: "Pracujemy nad wieloma nowymi narzędziami jednocześnie. Do użytku przez ludzi dopuszczone są tylko te, które przetrwają nasze surowe testy kosmiczne.",
+    mp_colors_heading: "Wykorzystując moc Słońca...",
+    mp_colors_p1: "Każda gwiazda we wszechświecie niesie swoją własną sygnaturę energetyczną. Niektóre płoną złotym światłem, inne jarzą się głębokim błękitem, a niektóre wytwarzają kolory, których naukowcy wciąż odmawiają wyjaśnić.",
+    mp_colors_p2: "Podczas rozwoju BC Tools nasz odkrywca dokonał ważnego odkrycia: sama kreatywność ma kolor.",
+    mp_colors_p3: "Po przeanalizowaniu milionów sygnałów kreatywnych w różnych galaktykach odkryliśmy, że zimne, pozbawione życia interfejsy powodowały poważny spadek poziomu wyobraźni. Rozwiązanie było oczywiste — więcej koloru, więcej energii i nieco mniej szarych prostokątów udających, że inspirują ludzi.",
+    mp_colors_p4: "Creative Hub został zaprojektowany z żywymi kolorami odzwierciedlającymi to, jak pomysły naprawdę się czują: nieoczekiwanie, energicznie i w ciągłej zmianie.",
+    mp_colors_p5: "Zielony reprezentuje wzrost i nowe możliwości.",
+    mp_colors_p6: "Fioletowy reprezentuje wyobraźnię i odkrywanie.",
+    mp_colors_p7: "Łososiowy reprezentuje kreatywność, ekspresję i ludzki dotyk.",
+    mp_colors_p8: "Razem tworzą wizualny język BC Tools — miejsce, w którym technologia spotyka się z kreatywnością gdzieś między Ziemią a nieznanym.",
+    mp_colors_p9: "Nasz twórca twierdzi, że kolory zostały starannie wybrane za pomocą zaawansowanych obliczeń kosmicznych.<br>Nie byliśmy w stanie zweryfikować tych obliczeń.<br>Głównie dlatego, że są napisane w języku, który wydaje się starszy niż nasza planeta.",
+    mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż światło. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p2: "Sercem BC Tools jest Creative Hub — rosnąca kolekcja narzędzi działających w przeglądarce dla obrazów, wideo, dźwięku i kodu. Stworzony dla twórców, którzy chcą odkrywać, tworzyć i szybciej wcielać pomysły w życie.",
+    mp_hero_p3: "Szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
+    mp_hero_p4: "Zanim przejdziesz dalej, nasze systemy wykryły nieautoryzowany wyciek pamięci z archiwum BC Tools.<br>Prawdopodobnie nie powinieneś tego czytać.",
     mp_cards_heading: "Zacznij od Creative Hub:",
     mp_card_convert_desc: "Konwertuj obrazy między formatami JPG, PNG, WEBP, SVG i PDF.",
     mp_card_compress_desc: "Zmniejsz rozmiar obrazu przy zachowaniu jakości.",
@@ -5500,6 +6400,11 @@ function gotoPage(name){
   }
   document.querySelectorAll(".tool-help-overlay").forEach(el => el.classList.remove("open"));
   document.querySelectorAll(".tool-help-target-badge").forEach(b => b.remove());
+
+  /* Cookie banner floats over every page, but docks inline into /cookies */
+  if (typeof window.bcSyncCookieBannerPlacement === "function"){
+    window.bcSyncCookieBannerPlacement(name);
+  }
 
   window.scrollTo(0, 0);
   const path = nameToPath(name);
@@ -6783,7 +7688,7 @@ document.querySelectorAll("[class*='faq-list']").forEach(list => {
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable, ignore */ }
-  if (saved === "light") applyTheme("light");
+  if (saved !== "dark") applyTheme("light");
 
   if (themeBtn){
     themeBtn.addEventListener("click", () => {
