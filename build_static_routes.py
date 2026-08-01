@@ -14,6 +14,7 @@ import os
 import re
 
 SOURCE = "index.html"
+SITE_URL = "https://bitcrunching.com"
 
 ROUTES = {
     "terms": {
@@ -21,10 +22,35 @@ ROUTES = {
         "title": "Terms of Use – BC Tools",
         "description": "Terms of Use for BC Tools: free, browser-based, server-free image tools. Read how the service works and what using it means for you.",
     },
+    "privacy": {
+        "page_id": "page-privacy",
+        "title": "Privacy Policy – BC Tools",
+        "description": "Privacy Policy for BC Tools: free, browser-based, server-free image tools. Learn what data is (and isn't) collected when you use the service.",
+    },
+    "cookies": {
+        "page_id": "page-cookies",
+        "title": "Cookie Policy – BC Tools",
+        "description": "Cookie Policy for BC Tools: free, browser-based, server-free image tools. Learn how cookies are used on the site.",
+    },
+    "about": {
+        "page_id": "page-about",
+        "title": "About Us – BC Tools",
+        "description": "About BC Tools: free, browser-based, server-free image tools built to work fast without uploading your files anywhere.",
+    },
+    "faq": {
+        "page_id": "page-faq",
+        "title": "FAQ – BC Tools",
+        "description": "Frequently asked questions about BC Tools: free, browser-based, server-free image tools.",
+    },
+    "golden-rules": {
+        "page_id": "page-golden-rules",
+        "title": "Golden Rules – BC Tools",
+        "description": "Golden Rules for choosing image formats, compression, and settings with BC Tools.",
+    },
 }
 
 
-def build_route(html, page_id, title, description):
+def build_route(html, slug, page_id, title, description):
     # Deactivate the default mainpage section, activate the target page instead.
     html = html.replace(
         '<section class="page active" id="page-mainpage">',
@@ -43,21 +69,66 @@ def build_route(html, page_id, title, description):
     # Unique <title> and <meta name="description"> per route, for real SEO
     # value and so a crawler doesn't see the generic homepage title everywhere.
     html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html, count=1)
-    if "<meta name=\"description\"" in html:
-        html = re.sub(
-            r'<meta name="description"[^>]*>',
-            f'<meta name="description" content="{description}">',
-            html,
-            count=1,
-        )
-    else:
-        html = html.replace(
-            "</title>",
-            f'</title>\n<meta name="description" content="{description}">',
-            1,
-        )
+    html = re.sub(
+        r'<meta name="description"[^>]*>',
+        f'<meta name="description" content="{description}">',
+        html,
+        count=1,
+    )
+
+    # Canonical URL + Open Graph/Twitter overrides, so each route points to
+    # itself (not the homepage) and social link previews show the right
+    # title/description instead of the generic mainpage copy.
+    page_url = f"{SITE_URL}/{slug}/"
+    html = re.sub(
+        r'<link rel="canonical"[^>]*>',
+        f'<link rel="canonical" href="{page_url}">',
+        html,
+        count=1,
+    )
+    html = re.sub(
+        r'<meta property="og:title"[^>]*>',
+        f'<meta property="og:title" content="{title}">',
+        html,
+        count=1,
+    )
+    html = re.sub(
+        r'<meta property="og:description"[^>]*>',
+        f'<meta property="og:description" content="{description}">',
+        html,
+        count=1,
+    )
+    html = re.sub(
+        r'<meta property="og:url"[^>]*>',
+        f'<meta property="og:url" content="{page_url}">',
+        html,
+        count=1,
+    )
+    html = re.sub(
+        r'<meta name="twitter:title"[^>]*>',
+        f'<meta name="twitter:title" content="{title}">',
+        html,
+        count=1,
+    )
+    html = re.sub(
+        r'<meta name="twitter:description"[^>]*>',
+        f'<meta name="twitter:description" content="{description}">',
+        html,
+        count=1,
+    )
 
     return html
+
+
+def build_sitemap(slugs):
+    urls = [f"{SITE_URL}/"] + [f"{SITE_URL}/{slug}/" for slug in slugs]
+    entries = "\n".join(f"  <url><loc>{url}</loc></url>" for url in urls)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{entries}\n"
+        "</urlset>\n"
+    )
 
 
 def main():
@@ -65,12 +136,17 @@ def main():
         source_html = f.read()
 
     for slug, cfg in ROUTES.items():
-        out_html = build_route(source_html, cfg["page_id"], cfg["title"], cfg["description"])
+        out_html = build_route(source_html, slug, cfg["page_id"], cfg["title"], cfg["description"])
         os.makedirs(slug, exist_ok=True)
         out_path = os.path.join(slug, "index.html")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(out_html)
         print(f"built {out_path} ({len(out_html)} bytes)")
+
+    sitemap = build_sitemap(ROUTES.keys())
+    with open("sitemap.xml", "w", encoding="utf-8") as f:
+        f.write(sitemap)
+    print("built sitemap.xml")
 
 
 if __name__ == "__main__":
