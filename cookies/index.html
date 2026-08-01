@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cookie Policy – BC Tools</title>
 <meta name="description" content="Cookie Policy for BC Tools: free, browser-based, server-free image tools. Learn how cookies are used on the site.">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3037236608651508" crossorigin="anonymous"></script>
 <link rel="canonical" href="https://bitcrunching.com/cookies/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
@@ -2213,7 +2214,7 @@ footer a{
 
 .content-section-compress p{
   color:var(--text);
-  font-size:15px;
+  font-size:clamp(15px, 1.8vw, 19px);
   line-height:1.7;
 }
 
@@ -2318,34 +2319,6 @@ footer a{
 .info-table-exif th:first-child{
   color:#fff;
   font-weight:700;
-}
-
-
-/* use cases */
-.use-case-grid-compress{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-  gap:16px;
-}
-
-.use-case-compress{
-  padding:20px;
-  border-radius:20px;
-  background:#68e1ff21;
-  border:1px solid rgba(255,255,255,.08);
-}
-
-.use-case-compress h3{
-  margin:0 0 8px;
-  font-size:18px;
-  color:#fff;
-}
-
-.use-case-compress p{
-  color:var(--text);
-  margin:0;
-  font-size:15px;
-  line-height:1.6;
 }
 
 /* ===== SEO CONTENT COMPONENTS CONVERT ===== */
@@ -2458,6 +2431,9 @@ footer a{
 .fmt-icon-pdf::before{ content:"📄"; }
 .fmt-icon-pros::before{ content:"👍"; }
 .fmt-icon-cons::before{ content:"⚠️"; }
+.fmt-icon-low::before{ content:"🔍"; }
+.fmt-icon-medium::before{ content:"⚖️"; }
+.fmt-icon-high::before{ content:"🪶"; }
 
 .format-pick-sublist{
   margin:0;
@@ -2509,6 +2485,80 @@ footer a{
   color:var(--text);
   font-weight:700;
   font-size:clamp(15px, 1.8vw, 19px);
+}
+
+/* "Best suited for" mobile-only ratings list, shown instead of the
+   3-column pros/cons/use-case grid on narrow screens where 3 columns
+   get cramped. Both blocks render into the DOM; the media query below
+   decides which one is visible. */
+.format-pick-bestsuited{
+  display:none;
+  flex-direction:column;
+  gap:2px;
+}
+
+.format-pick-bestsuited-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 4px;
+  border-bottom:1px solid var(--border);
+}
+
+.format-pick-bestsuited-row:last-child{
+  border-bottom:none;
+}
+
+.format-pick-bestsuited-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text);
+  font-size:15px;
+}
+
+.format-pick-bestsuited-rating{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+
+.format-pick-bestsuited-rating[data-rating="optimal"],
+.format-pick-bestsuited-rating[data-rating="recommended"]{
+  color:#4ade80;
+  background:#4ade8021;
+}
+
+.format-pick-bestsuited-rating[data-rating="acceptable"],
+.format-pick-bestsuited-rating[data-rating="limited"]{
+  color:#facc15;
+  background:#facc1521;
+}
+
+.format-pick-bestsuited-rating[data-rating="unsupported"]{
+  color:#f87171;
+  background:#f8717121;
+}
+
+.fmt-icon-cat-photos::before{ content:"📷"; }
+.fmt-icon-cat-websites::before{ content:"🌐"; }
+.fmt-icon-cat-transparency::before{ content:"✨"; }
+.fmt-icon-cat-logos::before{ content:"🎨"; }
+.fmt-icon-cat-documents::before{ content:"📄"; }
+.fmt-icon-cat-screenshots::before{ content:"🖥️"; }
+.fmt-icon-cat-oldbrowsers::before{ content:"🕰️"; }
+.fmt-icon-cat-vector::before{ content:"📐"; }
+.fmt-icon-cat-printing::before{ content:"🖨️"; }
+.fmt-icon-cat-multi::before{ content:"🖼️"; }
+
+@media (max-width: 640px){
+  .format-pick-detail-grid{ display:none; }
+  .format-pick-bestsuited{ display:flex; }
 }
 
 /* comparison table */
@@ -2627,47 +2677,6 @@ footer a{
 }
 }
 
-
-/* use cases */
-.use-case-grid-convert{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-  gap:16px;
-}
-
-.use-case-convert{
-  padding:20px;
-  border-radius:20px;
-  background:#d670ff21;
-  border:1px solid rgba(255,255,255,.08);
-}
-
-.use-case-convert h3{
-  margin:0 0 8px;
-  font-size:18px;
-  color:#fff;
-}
-
-.use-case-convert p{
-  color:var(--text);
-  margin:0;
-  font-size:15px;
-  line-height:1.6;
-}
-
-.use-case-combine{
-  padding:20px;
-  border-radius:20px;
-  background:#ec6f6321;
-  border:1px solid rgba(255,255,255,.08);
-}
-
-.use-case-exif{
-  padding:20px;
-  border-radius:20px;
-  background:#4ade8021;
-  border:1px solid rgba(255,255,255,.08);
-}
 
 /* FAQ accordion */
 .faq-group-heading{
@@ -3138,7 +3147,7 @@ footer a{
             <button type="button" data-lang="en" class="active">English</button>
             <button type="button" data-lang="cs">Čeština</button>
             <button type="button" data-lang="pl">Polski</button>
-            <button type="button" data-lang="g7">Sector 7G</button>
+            <button type="button" data-lang="g7">7G</button>
           </div>
         </div>
         <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Toggle light and dark mode" title="Toggle light and dark mode" data-i18n-label="nav_theme">
@@ -3491,7 +3500,7 @@ footer a{
 
     <h3 data-i18n="cv_article1_heading">New to converting images?</h3>
     <p data-i18n="cv_article1_p">Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
-    <p data-i18n="cv_article1_p2">Do you want to know more? Read in full — just <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert">one click away.</a></p>
+    <p data-i18n="cv_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert">just one click away.</a></p>
   </div>
 </section>
 
@@ -3547,59 +3556,12 @@ footer a{
   </div>
 
   <div class="content-section-compress">
+    <h3 id="cpPickHeading" data-i18n="cp_pick_heading">Not sure which level to use?</h3>
+    <div id="cpPickText" data-i18n="cp_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Low</p><ul class="format-pick-sublist"><li>Best possible quality, barely visible change.</li><li>Printing, archiving, professional work.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Medium</p><ul class="format-pick-sublist"><li>Balanced size and quality.</li><li>Web, email, everyday sharing.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> High</p><ul class="format-pick-sublist"><li>Smallest file size, more visible loss.</li><li>Previews, quick sharing, drafts.</li></ul></div></div></div>
+
     <h3 data-i18n="cp_article1_heading">New to compressing images?</h3>
     <p data-i18n="cp_article1_p">Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.</p>
-    <p data-i18n="cp_article1_p2">Do you want to know more? Read in full — just <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress">one click away.</a></p>
-
-    <h2 data-i18n="cp_uc_heading">When to use Compress</h2>
-    <div class="use-case-grid-compress">
-      <div class="use-case-compress">
-        <h3 data-i18n="cp_uc1_title">Faster website</h3>
-        <p data-i18n="cp_uc1_desc">Smaller images mean faster page loading and better search engine rankings.</p>
-      </div>
-      <div class="use-case-compress">
-        <h3 data-i18n="cp_uc2_title">Email attachment limits</h3>
-        <p data-i18n="cp_uc2_desc">Shrink photos so they fit within attachment size limits while staying readable.</p>
-      </div>
-      <div class="use-case-compress">
-        <h3 data-i18n="cp_uc3_title">Saving space</h3>
-        <p data-i18n="cp_uc3_desc">Reduce the size of your photo archive on your phone or in cloud storage.</p>
-      </div>
-    </div>
-
-    <h2 class="content-section-subheading" data-i18n="cp_table_heading">Comparing compression levels</h2>
-    <p class="lead" data-i18n="cp_table_lead">Higher compression means a smaller file, but also more quality loss. Here's a rough overview.</p>
-    <table class="info-table-compress">
-      <thead>
-        <tr>
-          <th data-i18n="cp_th_level">Level</th>
-          <th data-i18n="cp_th_savings">Space saved</th>
-          <th data-i18n="cp_th_quality">Quality</th>
-          <th data-i18n="cp_th_bestfor">Best for</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td data-label="Level" data-i18n-cell-label="cp_th_level" data-i18n="cp_level_low">Low</td>
-          <td class="stars-cell" data-label="Space saved" data-i18n-cell-label="cp_th_savings" data-stars="★☆☆"><span class="cell-text" data-i18n="cp_td_low_savings">Small</span></td>
-          <td data-label="Quality" data-i18n-cell-label="cp_th_quality" data-i18n="cp_td_low_quality">Almost unchanged</td>
-          <td data-label="Best for" data-i18n-cell-label="cp_th_bestfor" data-i18n="cp_td_low_best">Printing, archiving</td>
-        </tr>
-        <tr>
-          <td data-label="Level" data-i18n-cell-label="cp_th_level" data-i18n="cp_level_medium">Medium</td>
-          <td class="stars-cell" data-label="Space saved" data-i18n-cell-label="cp_th_savings" data-stars="★★☆"><span class="cell-text" data-i18n="cp_td_medium_savings">Balanced</span></td>
-          <td data-label="Quality" data-i18n-cell-label="cp_th_quality" data-i18n="cp_td_medium_quality">Very good</td>
-          <td data-label="Best for" data-i18n-cell-label="cp_th_bestfor" data-i18n="cp_td_medium_best">Web, email</td>
-        </tr>
-        <tr>
-          <td data-label="Level" data-i18n-cell-label="cp_th_level" data-i18n="cp_level_high">High</td>
-          <td class="stars-cell" data-label="Space saved" data-i18n-cell-label="cp_th_savings" data-stars="★★★"><span class="cell-text" data-i18n="cp_td_high_savings">Maximum</span></td>
-          <td data-label="Quality" data-i18n-cell-label="cp_th_quality" data-i18n="cp_td_high_quality">Noticeably lower</td>
-          <td data-label="Best for" data-i18n-cell-label="cp_th_bestfor" data-i18n="cp_td_high_best">Previews, quick sharing</td>
-        </tr>
-      </tbody>
-    </table>
-    <button type="button" class="golden-rules-link go-to-golden-rules" data-tool="compress" data-i18n="gr_read_guide">Read more about it →</button>
+    <p data-i18n="cp_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress">just one click away.</a></p>
   </div>
 </section>
 
@@ -3641,24 +3603,7 @@ footer a{
   <div class="content-section-convert">
     <h3 data-i18n="cb_article1_heading">New to combining images?</h3>
     <p data-i18n="cb_article1_p">Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.</p>
-    <p data-i18n="cb_article1_p2">Do you want to know more? Read in full — just <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine">one click away.</a></p>
-
-    <h2 data-i18n="cb_uc_heading">When to use Combine</h2>
-    <div class="use-case-grid-convert">
-      <div class="use-case-convert use-case-combine">
-        <h3 data-i18n="cb_uc1_title">Scanned documents</h3>
-        <p data-i18n="cb_uc1_desc">Merge multiple scanned pages into a single PDF instead of sending them one by one.</p>
-      </div>
-      <div class="use-case-convert use-case-combine">
-        <h3 data-i18n="cb_uc2_title">Invoices and reports</h3>
-        <p data-i18n="cb_uc2_desc">Combine several invoices or report sections into one file to send or archive together.</p>
-      </div>
-      <div class="use-case-convert use-case-combine">
-        <h3 data-i18n="cb_uc3_title">Job applications</h3>
-        <p data-i18n="cb_uc3_desc">Combine your cover letter, resume, and portfolio into a single PDF for easy submission.</p>
-      </div>
-    </div>
-    <button type="button" class="golden-rules-link go-to-golden-rules" data-tool="combine" data-i18n="gr_read_guide">Read more about it →</button>
+    <p data-i18n="cb_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine">just one click away.</a></p>
   </div>
 
 </section>
@@ -3702,24 +3647,7 @@ footer a{
   <div class="content-section-convert">
     <h3 data-i18n="ex_article1_heading">New to cleaning images?</h3>
     <p data-i18n="ex_article1_p">Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p data-i18n="ex_article1_p2">Do you want to know more? Read in full — just <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif">one click away.</a></p>
-
-    <h2 data-i18n="ex_uc_heading">When to use Cleanly</h2>
-    <div class="use-case-grid-convert">
-      <div class="use-case-convert use-case-exif">
-        <h3 data-i18n="ex_uc1_title">Selling items online</h3>
-        <p data-i18n="ex_uc1_desc">Remove your home's GPS location from photos before posting them on marketplace listings.</p>
-      </div>
-      <div class="use-case-convert use-case-exif">
-        <h3 data-i18n="ex_uc2_title">Sharing on social media</h3>
-        <p data-i18n="ex_uc2_desc">Strip location and device data before posting photos publicly, so strangers can't see where they were taken.</p>
-      </div>
-      <div class="use-case-convert use-case-exif">
-        <h3 data-i18n="ex_uc3_title">Sending to clients or press</h3>
-        <p data-i18n="ex_uc3_desc">Clean up camera and editing metadata before sending professional photos to clients or publications.</p>
-      </div>
-    </div>
-    <button type="button" class="golden-rules-link go-to-golden-rules" data-tool="exif" data-i18n="gr_read_guide">Read more about it →</button>
+    <p data-i18n="ex_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif">just one click away.</a></p>
   </div>
 
 </section>
@@ -5935,13 +5863,6 @@ const translations = {
     ex_help1: "Sem přetáhněte JPEG nebo PNG obrázky, nebo klikněte a vyberte je z počítače.",
     ex_help2: "Podívejte se, jaká metadata byla v každé fotce nalezena – poloha, fotoaparát, datum – ještě před jejich odstraněním.",
     ex_help3: "Klikněte a čisté kopie vašich fotek se automaticky stáhnou.",
-    ex_uc_heading: "Kdy Cleanly použít",
-    ex_uc1_title: "Prodej věcí online",
-    ex_uc1_desc: "Odstraňte GPS polohu svého domova z fotek před zveřejněním v inzerátech.",
-    ex_uc2_title: "Sdílení na sociálních sítích",
-    ex_uc2_desc: "Odstraňte polohu a údaje o zařízení před veřejným zveřejněním fotek, aby cizí lidé neviděli, kde byly pořízeny.",
-    ex_uc3_title: "Odesílání klientům nebo médiím",
-    ex_uc3_desc: "Vyčistěte metadata o fotoaparátu a úpravách před odesláním profesionálních fotek klientům nebo publikacím.",
     ex_faq1_q: "Jaká metadata tento nástroj najde?",
     ex_faq1_a: "GPS polohu, výrobce a model fotoaparátu, datum a čas pořízení fotky a případně použitý editační software – pokud jsou v souboru přítomny.",
     ex_faq2_q: "Sníží odstranění metadat kvalitu obrázku?",
@@ -6024,13 +5945,6 @@ const translations = {
     cb_help1: "Sem přetáhněte PDF soubory, nebo klikněte a vyberte je z počítače.",
     cb_help2: "Přetáhněte soubory do pořadí, ve kterém je chcete sloučit.",
     cb_help3: "Klikněte a sloučené PDF se automaticky stáhne.",
-    cb_uc_heading: "Kdy Combine použít",
-    cb_uc1_title: "Naskenované dokumenty",
-    cb_uc1_desc: "Sloučte více naskenovaných stránek do jednoho PDF místo posílání jednotlivě.",
-    cb_uc2_title: "Faktury a reporty",
-    cb_uc2_desc: "Spojte více faktur nebo částí reportu do jednoho souboru pro odeslání nebo archivaci.",
-    cb_uc3_title: "Žádosti o zaměstnání",
-    cb_uc3_desc: "Spojte průvodní dopis, životopis a portfolio do jednoho PDF pro snadné odeslání.",
     cb_faq1_q: "Záleží na pořadí souborů?",
     cb_faq1_a: "Ano. Stránky se sloučí přesně v pořadí zobrazeném v seznamu, takže před sloučením přetáhněte soubory do požadovaného pořadí.",
     cb_faq2_q: "Existuje limit počtu PDF, které mohu sloučit?",
@@ -6054,7 +5968,7 @@ const translations = {
     cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro běžné fotografie.</li><li>Malé soubory, skvělá kompatibilita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro loga, snímky obrazovky a průhlednost.</li><li>Bezztrátová kvalita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro weby.</li><li>Menší soubory s podporou průhlednosti.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> SVG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro vektorovou grafiku a ikony.</li><li>Zůstává dokonale ostré v jakékoli velikosti.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro sdílení více obrázků jako jednoho dokumentu.</li><li>Můžete je také sloučit pomocí našeho nástroje Combine.</li></ul></div></div>",
     cv_article1_heading: "Začínáte s konverzí obrázků?",
     cv_article1_p: "Každý formát obrázku byl navržen k řešení jiného problému a výběr toho správného má větší vliv na velikost souboru a kvalitu než téměř jakékoli jiné rozhodnutí, které při přípravě obrázků uděláte. Tady je to, co se skutečně děje pod pokličkou u každého z nich, a kdy na tom opravdu záleží.",
-    cv_article1_p2: "Chcete vědět víc? Přečtěte si vše — je to jen <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">jedno kliknutí daleko.</a>",
+    cv_article1_p2: "Chcete vědět víc? Přečtěte si vše — je to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">jen jedno kliknutí daleko.</a>",
     cv_read_guide: "Přečíst si více zde →",
     cv_fh_jpg_name: "JPG",
     cv_fh_jpg_bestfor: "Fotografie, sociální sítě, běžné sdílení",
@@ -6161,28 +6075,9 @@ const translations = {
     cp_help2: "Vyberte úroveň komprese podle toho, kolik místa chcete ušetřit.",
     cp_help3: "Vaše vybrané soubory se zobrazí zde – zkontrolujte je před kompresí a odeberte, co nepotřebujete.",
     cp_help4: "Klikněte a obrázky se zkomprimují a stáhnou.",
-    cp_table_heading: "Porovnání úrovní komprese",
-    cp_table_lead: "Vyšší komprese znamená menší soubor, ale i větší ztrátu kvality. Tady je orientační přehled.",
-    cp_th_level: "Úroveň",
-    cp_th_savings: "Úspora místa",
-    cp_th_quality: "Kvalita",
-    cp_th_bestfor: "Nejlepší pro",
-    cp_td_low_savings: "Malá",
-    cp_td_low_quality: "Téměř beze změny",
-    cp_td_low_best: "Tisk, archivace",
-    cp_td_medium_savings: "Vyvážená",
-    cp_td_medium_quality: "Velmi dobrá",
-    cp_td_medium_best: "Web, e-mail",
-    cp_td_high_savings: "Maximální",
-    cp_td_high_quality: "Znatelně nižší",
-    cp_td_high_best: "Náhledy, rychlé sdílení",
-    cp_uc_heading: "Kdy Compress použít",
-    cp_uc1_title: "Rychlejší web",
-    cp_uc1_desc: "Menší obrázky znamenají rychlejší načítání stránek a lepší hodnocení ve vyhledávačích.",
-    cp_uc2_title: "Limit e-mailové přílohy",
-    cp_uc2_desc: "Zmenšete fotky tak, aby se vešly do limitu přílohy, a přesto zůstaly čitelné.",
-    cp_uc3_title: "Úspora místa",
-    cp_uc3_desc: "Zmenšete velikost fotoarchivu v telefonu nebo v cloudovém úložišti.",
+    cp_article1_heading: "Začínáte s kompresí obrázků?",
+    cp_article1_p: "Komprese vypadá jako jeden posuvník, ale ve skutečnosti za ní stojí dva zásadně odlišné přístupy ke zmenšování, a vědět, který právě pracuje, vysvětlí téměř každý výsledek, který uvidíte. Tady je to, co se skutečně děje, když komprimujete, a jak vybrat správnou úroveň.",
+    cp_article1_p2: "Chcete vědět víc? Přečtěte si vše — je to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"compress\">jen jedno kliknutí daleko.</a>",
     cp_faq1_q: "O kolik se obrázek zmenší?",
     cp_faq1_a: "Záleží na obrázku a zvolené úrovni, obvykle jde o úsporu 30–80 % původní velikosti souboru.",
     cp_faq2_q: "Ztratí obrázek kvalitu?",
@@ -6314,13 +6209,6 @@ const translations = {
     ex_help1: "Drop your JPEG or PNG images here, or click to choose them from your computer.",
     ex_help2: "See exactly what metadata was found in each photo — location, camera, date — before anything is removed.",
     ex_help3: "Click and clean copies of your photos will download automatically.",
-    ex_uc_heading: "When to use Cleanly",
-    ex_uc1_title: "Selling items online",
-    ex_uc1_desc: "Remove your home's GPS location from photos before posting them on marketplace listings.",
-    ex_uc2_title: "Sharing on social media",
-    ex_uc2_desc: "Strip location and device data before posting photos publicly, so strangers can't see where they were taken.",
-    ex_uc3_title: "Sending to clients or press",
-    ex_uc3_desc: "Clean up camera and editing metadata before sending professional photos to clients or publications.",
     ex_faq1_q: "What metadata does this tool find?",
     ex_faq1_a: "GPS location, camera make and model, the date and time the photo was taken, and any editing software recorded in the file — if present.",
     ex_faq2_q: "Does stripping metadata reduce image quality?",
@@ -6329,7 +6217,7 @@ const translations = {
     ex_faq3_a: "No. Everything happens locally in your browser using the File API and JavaScript libraries (exif-js) — your photos and their metadata are never uploaded to a server.",
     ex_article1_heading: "New to cleaning images?",
     ex_article1_p: "Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.",
-    ex_article1_p2: "Do you want to know more? Read in full — just one click away.",
+    ex_article1_p2: "Do you want to know more? Read in full — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"exif\">just one click away.</a>",
     ex_status_processing: "Removing metadata…",
     ex_status_progress: "Processing… {done} of {total}",
     ex_status_zipping: "Building ZIP file…",
@@ -6406,13 +6294,6 @@ const translations = {
     cb_help1: "Drop your PDF files here, or click to choose them from your computer.",
     cb_help2: "Drag the files into the order you want them combined.",
     cb_help3: "Click and your combined PDF will download automatically.",
-    cb_uc_heading: "When to use Combine",
-    cb_uc1_title: "Scanned documents",
-    cb_uc1_desc: "Merge multiple scanned pages into a single PDF instead of sending them one by one.",
-    cb_uc2_title: "Invoices and reports",
-    cb_uc2_desc: "Combine several invoices or report sections into one file to send or archive together.",
-    cb_uc3_title: "Job applications",
-    cb_uc3_desc: "Combine your cover letter, resume, and portfolio into a single PDF for easy submission.",
     cb_faq1_q: "Does the order of the files matter?",
     cb_faq1_a: "Yes. Pages are combined in exactly the order shown in the list, so drag the files into the order you want before combining.",
     cb_faq2_q: "Is there a limit to how many PDFs I can combine?",
@@ -6421,7 +6302,7 @@ const translations = {
     cb_faq3_a: "No. All processing happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your files are never uploaded to a server.",
     cb_article1_heading: "New to combining images?",
     cb_article1_p: "Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.",
-    cb_article1_p2: "Do you want to know more? Read in full — just one click away.",
+    cb_article1_p2: "Do you want to know more? Read in full — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"combine\">just one click away.</a>",
     cb_status_combining: "Combining PDFs…",
     cb_status_done: "Done. Combined {count} files into one PDF.",
     cb_status_error: "Something went wrong combining the PDFs. Please check the files and try again.",
@@ -6439,7 +6320,7 @@ const translations = {
     cv_table_lead: "Each format is suited to something different. Here's a quick overview to help you pick the right one.",
     cv_article1_heading: "New to converting images?",
     cv_article1_p: "Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.",
-    cv_article1_p2: "Do you want to know more? Read in full — just <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">one click away.</a>",
+    cv_article1_p2: "Do you want to know more? Read in full — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">just one click away.</a>",
     cv_read_guide: "Read more here →",
     cv_fh_jpg_name: "JPG",
     cv_fh_jpg_bestfor: "Photos, social media, everyday sharing",
@@ -6453,6 +6334,16 @@ const translations = {
     cv_fh_jpg_use2: "Smartphone pictures",
     cv_fh_jpg_use3: "Social media posts",
     cv_fh_jpg_use4: "Email attachments",
+    cv_fh_jpg_bs1_label: "Photos",
+    cv_fh_jpg_bs1_rating: "Optimal",
+    cv_fh_jpg_bs2_label: "Websites",
+    cv_fh_jpg_bs2_rating: "Recommended",
+    cv_fh_jpg_bs3_label: "Transparency",
+    cv_fh_jpg_bs3_rating: "Unsupported",
+    cv_fh_jpg_bs4_label: "Logos",
+    cv_fh_jpg_bs4_rating: "Limited",
+    cv_fh_jpg_bs5_label: "Documents",
+    cv_fh_jpg_bs5_rating: "Acceptable",
     cv_fh_png_name: "PNG",
     cv_fh_png_bestfor: "Logos, screenshots, graphics, transparency",
     cv_fh_png_pro1: "Lossless image quality",
@@ -6465,6 +6356,16 @@ const translations = {
     cv_fh_png_use2: "Screenshots",
     cv_fh_png_use3: "User interface designs",
     cv_fh_png_use4: "Transparent graphics",
+    cv_fh_png_bs1_label: "Logos",
+    cv_fh_png_bs1_rating: "Optimal",
+    cv_fh_png_bs2_label: "Screenshots",
+    cv_fh_png_bs2_rating: "Optimal",
+    cv_fh_png_bs3_label: "Transparency",
+    cv_fh_png_bs3_rating: "Optimal",
+    cv_fh_png_bs4_label: "Photos",
+    cv_fh_png_bs4_rating: "Limited",
+    cv_fh_png_bs5_label: "Websites",
+    cv_fh_png_bs5_rating: "Acceptable",
     cv_fh_webp_name: "WEBP",
     cv_fh_webp_bestfor: "Websites, blogs, modern apps",
     cv_fh_webp_pro1: "Smaller files than JPG and PNG",
@@ -6477,6 +6378,16 @@ const translations = {
     cv_fh_webp_use2: "Blog posts",
     cv_fh_webp_use3: "Online stores",
     cv_fh_webp_use4: "Landing pages",
+    cv_fh_webp_bs1_label: "Websites",
+    cv_fh_webp_bs1_rating: "Optimal",
+    cv_fh_webp_bs2_label: "Photos",
+    cv_fh_webp_bs2_rating: "Recommended",
+    cv_fh_webp_bs3_label: "Transparency",
+    cv_fh_webp_bs3_rating: "Optimal",
+    cv_fh_webp_bs4_label: "Older browsers",
+    cv_fh_webp_bs4_rating: "Limited",
+    cv_fh_webp_bs5_label: "Documents",
+    cv_fh_webp_bs5_rating: "Unsupported",
     cv_fh_svg_name: "SVG",
     cv_fh_svg_bestfor: "Icons, illustrations, vector logos",
     cv_fh_svg_pro1: "Stays perfectly sharp at any size",
@@ -6489,6 +6400,16 @@ const translations = {
     cv_fh_svg_use2: "Icons",
     cv_fh_svg_use3: "Illustrations",
     cv_fh_svg_use4: "Diagrams",
+    cv_fh_svg_bs1_label: "Icons & logos",
+    cv_fh_svg_bs1_rating: "Optimal",
+    cv_fh_svg_bs2_label: "Vector art",
+    cv_fh_svg_bs2_rating: "Optimal",
+    cv_fh_svg_bs3_label: "Photos",
+    cv_fh_svg_bs3_rating: "Unsupported",
+    cv_fh_svg_bs4_label: "Websites",
+    cv_fh_svg_bs4_rating: "Recommended",
+    cv_fh_svg_bs5_label: "Documents",
+    cv_fh_svg_bs5_rating: "Unsupported",
     cv_fh_pdf_name: "PDF",
     cv_fh_pdf_bestfor: "Documents, printing, combining multiple images",
     cv_fh_pdf_pro1: "Combines multiple images into one document",
@@ -6501,7 +6422,18 @@ const translations = {
     cv_fh_pdf_use2: "Portfolios",
     cv_fh_pdf_use3: "Printable documents",
     cv_fh_pdf_use4: "Sharing multiple images in one file",
+    cv_fh_pdf_bs1_label: "Documents",
+    cv_fh_pdf_bs1_rating: "Optimal",
+    cv_fh_pdf_bs2_label: "Printing",
+    cv_fh_pdf_bs2_rating: "Optimal",
+    cv_fh_pdf_bs3_label: "Multiple images",
+    cv_fh_pdf_bs3_rating: "Recommended",
+    cv_fh_pdf_bs4_label: "Photos",
+    cv_fh_pdf_bs4_rating: "Limited",
+    cv_fh_pdf_bs5_label: "Websites",
+    cv_fh_pdf_bs5_rating: "Unsupported",
     cv_fh_label_bestfor: "Best for:",
+    cv_fh_label_bestsuited: "Best suited for",
     cv_fh_label_pros: "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it",
     cv_fh_label_cons: "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind",
     cv_fh_label_use: "Typical use cases",
@@ -6546,38 +6478,44 @@ const translations = {
     cp_help2: "Choose a compression level based on how much space you want to save.",
     cp_help3: "Your selected files show up here — check them before compressing, and remove any you don't need.",
     cp_help4: "Click and the images will compress and download.",
-    cp_table_heading: "Comparing compression levels",
-    cp_table_lead: "Higher compression means a smaller file, but also more quality loss. Here's a rough overview.",
     cp_article1_heading: "New to compressing images?",
     cp_article1_p: "Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.",
-    cp_article1_p2: "Do you want to know more? Read in full — just one click away.",
-    cp_th_level: "Level",
-    cp_th_savings: "Space saved",
-    cp_th_quality: "Quality",
-    cp_th_bestfor: "Best for",
-    cp_td_low_savings: "Small",
-    cp_td_low_quality: "Almost unchanged",
-    cp_td_low_best: "Printing, archiving",
-    cp_td_medium_savings: "Balanced",
-    cp_td_medium_quality: "Very good",
-    cp_td_medium_best: "Web, email",
-    cp_td_high_savings: "Maximum",
-    cp_td_high_quality: "Noticeably lower",
-    cp_td_high_best: "Previews, quick sharing",
-    cp_uc_heading: "When to use Compress",
-    cp_uc1_title: "Faster website",
-    cp_uc1_desc: "Smaller images mean faster page loading and better search engine rankings.",
-    cp_uc2_title: "Email attachment limits",
-    cp_uc2_desc: "Shrink photos so they fit within attachment size limits while staying readable.",
-    cp_uc3_title: "Saving space",
-    cp_uc3_desc: "Reduce the size of your photo archive on your phone or in cloud storage.",
+    cp_article1_p2: "Do you want to know more? Read in full — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"compress\">just one click away.</a>",
     cp_faq1_q: "How much will the image shrink?",
     cp_faq1_a: "It depends on the image and chosen level, but it's usually a 30–80% reduction in the original file size.",
     cp_faq2_q: "Will the image lose quality?",
     cp_faq2_a: "Slightly, depending on the level chosen. Low level has almost no visible loss; high level gives bigger savings at the cost of quality.",
     cp_faq3_q: "Do you support PNG files too?",
     cp_faq3_a: "Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.",
-    cp_selected_level: "Compression level:"
+    cp_selected_level: "Compression level:",
+    cp_pick_heading: "Not sure which level to use?",
+    cp_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-low\" aria-hidden=\"true\"></span> Low</p><ul class=\"format-pick-sublist\"><li>Best possible quality, barely visible change.</li><li>Printing, archiving, professional work.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-medium\" aria-hidden=\"true\"></span> Medium</p><ul class=\"format-pick-sublist\"><li>Balanced size and quality.</li><li>Web, email, everyday sharing.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-high\" aria-hidden=\"true\"></span> High</p><ul class=\"format-pick-sublist\"><li>Smallest file size, more visible loss.</li><li>Previews, quick sharing, drafts.</li></ul></div></div>",
+    cp_fh_low_name: "Low",
+    cp_fh_low_bestfor: "Printing, archiving, professional client delivery",
+    cp_fh_low_pro1: "Best possible quality",
+    cp_fh_low_pro2: "Barely any visible difference from the original",
+    cp_fh_low_con1: "Smallest amount of space saved",
+    cp_fh_low_con2: "Not ideal if file size is your main concern",
+    cp_fh_low_use1: "Print-ready photos",
+    cp_fh_low_use2: "Long-term archives",
+    cp_fh_low_use3: "Professional client deliverables",
+    cp_fh_medium_name: "Medium",
+    cp_fh_medium_bestfor: "Web, email, everyday sharing",
+    cp_fh_medium_pro1: "Balanced size and quality",
+    cp_fh_medium_pro2: "Good default for most situations",
+    cp_fh_medium_con1: "Slight quality loss under close inspection",
+    cp_fh_medium_use1: "Website images",
+    cp_fh_medium_use2: "Email attachments",
+    cp_fh_medium_use3: "Everyday photo sharing",
+    cp_fh_high_name: "High",
+    cp_fh_high_bestfor: "Previews, quick sharing, drafts",
+    cp_fh_high_pro1: "Smallest file size",
+    cp_fh_high_pro2: "Fastest to upload or send",
+    cp_fh_high_con1: "Noticeably lower quality",
+    cp_fh_high_con2: "Not suitable for printing or professional use",
+    cp_fh_high_use1: "Quick previews",
+    cp_fh_high_use2: "Draft versions",
+    cp_fh_high_use3: "Messaging apps with size limits"
   },
   pl: {
     footer_contact_heading: "Skontaktuj się z nami",
@@ -6702,13 +6640,6 @@ const translations = {
     ex_help1: "Przeciągnij tutaj obrazy JPEG lub PNG albo kliknij, aby wybrać je z komputera.",
     ex_help2: "Zobacz dokładnie, jakie metadane zostały znalezione w każdym zdjęciu — lokalizację, aparat, datę — zanim cokolwiek zostanie usunięte.",
     ex_help3: "Kliknij, a czyste kopie Twoich zdjęć zostaną automatycznie pobrane.",
-    ex_uc_heading: "Kiedy używać Cleanly",
-    ex_uc1_title: "Sprzedaż przedmiotów online",
-    ex_uc1_desc: "Usuń lokalizację GPS swojego domu ze zdjęć przed zamieszczeniem ich w ogłoszeniach.",
-    ex_uc2_title: "Udostępnianie w mediach społecznościowych",
-    ex_uc2_desc: "Usuń dane o lokalizacji i urządzeniu przed publicznym udostępnieniem zdjęć, aby obcy nie widzieli, gdzie zostały zrobione.",
-    ex_uc3_title: "Wysyłanie do klientów lub mediów",
-    ex_uc3_desc: "Wyczyść metadane aparatu i edycji przed wysłaniem profesjonalnych zdjęć klientom lub publikacjom.",
     ex_faq1_q: "Jakie metadane znajduje to narzędzie?",
     ex_faq1_a: "Lokalizację GPS, markę i model aparatu, datę i godzinę wykonania zdjęcia oraz wszelkie oprogramowanie do edycji zapisane w pliku — jeśli są obecne.",
     ex_faq2_q: "Czy usunięcie metadanych obniża jakość obrazu?",
@@ -6791,13 +6722,6 @@ const translations = {
     cb_help1: "Przeciągnij tutaj pliki PDF albo kliknij, aby wybrać je z komputera.",
     cb_help2: "Przeciągnij pliki w kolejności, w jakiej mają zostać połączone.",
     cb_help3: "Kliknij, a połączony PDF zostanie automatycznie pobrany.",
-    cb_uc_heading: "Kiedy używać Combine",
-    cb_uc1_title: "Zeskanowane dokumenty",
-    cb_uc1_desc: "Połącz wiele zeskanowanych stron w jeden plik PDF zamiast wysyłać je pojedynczo.",
-    cb_uc2_title: "Faktury i raporty",
-    cb_uc2_desc: "Połącz kilka faktur lub sekcji raportu w jeden plik do wysłania lub archiwizacji.",
-    cb_uc3_title: "Podania o pracę",
-    cb_uc3_desc: "Połącz list motywacyjny, CV i portfolio w jeden plik PDF do łatwego wysłania.",
     cb_faq1_q: "Czy kolejność plików ma znaczenie?",
     cb_faq1_a: "Tak. Strony są łączone dokładnie w kolejności widocznej na liście, więc przeciągnij pliki w żądaną kolejność przed połączeniem.",
     cb_faq2_q: "Czy istnieje limit liczby plików PDF, które mogę połączyć?",
@@ -6821,7 +6745,7 @@ const translations = {
     cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do codziennych zdjęć.</li><li>Małe pliki, świetna kompatybilność.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do logo, zrzutów ekranu i przezroczystości.</li><li>Bezstratna jakość.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Najlepszy do stron internetowych.</li><li>Mniejsze pliki z obsługą przezroczystości.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> SVG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do grafiki wektorowej i ikon.</li><li>Pozostaje idealnie ostry w każdym rozmiarze.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Najlepszy do udostępniania wielu obrazów jako jednego dokumentu.</li><li>Możesz je również połączyć za pomocą naszego narzędzia Combine.</li></ul></div></div>",
     cv_article1_heading: "Zaczynasz konwertować obrazy?",
     cv_article1_p: "Każdy format obrazu został zaprojektowany, aby rozwiązać inny problem, a wybór właściwego ma większy wpływ na rozmiar pliku i jakość niż niemal każda inna decyzja, którą podejmiesz podczas przygotowywania obrazów. Oto, co faktycznie dzieje się pod maską w każdym z nich i kiedy naprawdę ma to znaczenie.",
-    cv_article1_p2: "Chcesz wiedzieć więcej? Przeczytaj w całości — to tylko <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">jedno kliknięcie stąd.</a>",
+    cv_article1_p2: "Chcesz wiedzieć więcej? Przeczytaj w całości — to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">tylko jedno kliknięcie stąd.</a>",
     cv_read_guide: "Przeczytaj więcej tutaj →",
     cv_fh_jpg_name: "JPG",
     cv_fh_jpg_bestfor: "Zdjęcia, media społecznościowe, codzienne udostępnianie",
@@ -6928,28 +6852,9 @@ const translations = {
     cp_help2: "Wybierz poziom kompresji w zależności od tego, ile miejsca chcesz zaoszczędzić.",
     cp_help3: "Twoje wybrane pliki pojawiają się tutaj — sprawdź je przed kompresją i usuń te, których nie potrzebujesz.",
     cp_help4: "Kliknij, a obrazy zostaną skompresowane i pobrane.",
-    cp_table_heading: "Porównanie poziomów kompresji",
-    cp_table_lead: "Wyższa kompresja oznacza mniejszy plik, ale też większą utratę jakości. Oto ogólne zestawienie.",
-    cp_th_level: "Poziom",
-    cp_th_savings: "Zaoszczędzone miejsce",
-    cp_th_quality: "Jakość",
-    cp_th_bestfor: "Najlepszy do",
-    cp_td_low_savings: "Małe",
-    cp_td_low_quality: "Niemal bez zmian",
-    cp_td_low_best: "Druk, archiwizacja",
-    cp_td_medium_savings: "Zrównoważone",
-    cp_td_medium_quality: "Bardzo dobra",
-    cp_td_medium_best: "Internet, e-mail",
-    cp_td_high_savings: "Maksymalne",
-    cp_td_high_quality: "Zauważalnie niższa",
-    cp_td_high_best: "Podglądy, szybkie udostępnianie",
-    cp_uc_heading: "Kiedy używać Compress",
-    cp_uc1_title: "Szybsza strona internetowa",
-    cp_uc1_desc: "Mniejsze obrazy oznaczają szybsze ładowanie strony i lepsze pozycjonowanie w wyszukiwarkach.",
-    cp_uc2_title: "Limity załączników e-mail",
-    cp_uc2_desc: "Zmniejsz zdjęcia, aby zmieściły się w limitach rozmiaru załączników, zachowując czytelność.",
-    cp_uc3_title: "Oszczędność miejsca",
-    cp_uc3_desc: "Zmniejsz rozmiar archiwum zdjęć na telefonie lub w chmurze.",
+    cp_article1_heading: "Zaczynasz kompresować obrazy?",
+    cp_article1_p: "Kompresja wygląda jak pojedynczy suwak, ale w rzeczywistości działają za nią dwa zupełnie różne podejścia do zmniejszania, a wiedza, które z nich właśnie pracuje, wyjaśnia niemal każdy wynik, jaki zobaczysz. Oto, co naprawdę dzieje się, gdy kompresujesz, i jak wybrać właściwy poziom.",
+    cp_article1_p2: "Chcesz wiedzieć więcej? Przeczytaj w całości — to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"compress\">tylko jedno kliknięcie stąd.</a>",
     cp_faq1_q: "O ile zmniejszy się obraz?",
     cp_faq1_a: "Zależy to od obrazu i wybranego poziomu, ale zwykle jest to redukcja o 30–80% oryginalnego rozmiaru pliku.",
     cp_faq2_q: "Czy obraz straci na jakości?",
@@ -7081,13 +6986,6 @@ const translations = {
     ex_help1: "Zhrraepf eiaeuurr ZjPfIGh aerr PfXGh oinnaghizz khirri, aerr klloikq tkae kkhaeaezzi tkkhinn phrraenn eiaeuurr kaennpfuutkirr.",
     ex_help2: "Zzii ikshaktkllei vvkhatk nnitkazhatka vvazz phaeuuxzh oix iakkh pfkhaetkae — llaekatkoiaex, kannirra, zhatki — viphaerri axeitkkhoixgh oizz rrinnaewizh.",
     ex_help3: "Klloikq axzh klliax kaepfoiizz aeph eiaeuurr pfkhaetkaezz vvoillll zhaevvxllaeazh auutkaennatkoikallllei.",
-    ex_uc_heading: "Vvkhix tkae uuzzi Klliaxllei",
-    ex_uc1_title: "Zzilllloixgh oitkinnzz aexlloixi",
-    ex_uc1_desc: "Rrinnaewi eiaeuurr khaenni'zz GhPfZz llaekatkoiaex phrraenn pfkhaetkaezz viphaerri pfaezztkoixgh tkkhinn aex nnarrqitkpfllaki lloizztkoixghzz.",
-    ex_uc2_title: "Zzkharroixgh aex zzaekoiall nnizhoia",
-    ex_uc2_desc: "Zztkrroipf llaekatkoiaex axzh zhiwoiki zhatka viphaerri pfaezztkoixgh pfkhaetkaezz pfuuvlloikllei, zzae zztkrraxghirrzz kax'tk zzii vvkhirri tkkhiei vvirri tkaqix.",
-    ex_uc3_title: "Zzixzhoixgh tkae klloiixtkzz aerr pfrrizzzz",
-    ex_uc3_desc: "Klliax uupf kannirra axzh izhoitkoixgh nnitkazhatka viphaerri zzixzhoixgh pfrraephizzzzoiaexall pfkhaetkaezz tkae klloiixtkzz aerr pfuuvlloikatkoiaexzz.",
     ex_faq1_q: "Vvkhatk nnitkazhatka zhaeizz tkkhoizz tkaeaell phoixzh?",
     ex_faq1_a: "GhPfZz llaekatkoiaex, kannirra nnaqi axzh nnaezhill, tkkhi zhatki axzh tkoinni tkkhi pfkhaetkae vvazz tkaqix, axzh axei izhoitkoixgh zzaephtkvvarri rrikaerrzhizh oix tkkhi phoilli — oiph pfrrizzixtk.",
     ex_faq2_q: "Zhaeizz zztkrroipfpfoixgh nnitkazhatka rrizhuuki oinnaghi qhuualloitkei?",
@@ -7170,13 +7068,6 @@ const translations = {
     cb_help1: "Zhrraepf eiaeuurr PfZhPh phoillizz khirri, aerr klloikq tkae kkhaeaezzi tkkhinn phrraenn eiaeuurr kaennpfuutkirr.",
     cb_help2: "Zhrragh tkkhi phoillizz oixtkae tkkhi aerrzhirr eiaeuu vvaxtk tkkhinn kaennvoixizh.",
     cb_help3: "Klloikq axzh eiaeuurr kaennvoixizh PfZhPh vvoillll zhaevvxllaeazh auutkaennatkoikallllei.",
-    cb_uc_heading: "Vvkhix tkae uuzzi Kaennvoixi",
-    cb_uc1_title: "Zzkaxxizh zhaekuunnixtkzz",
-    cb_uc1_desc: "Nnirrghi nnuulltkoipflli zzkaxxizh pfaghizz oixtkae a zzoixghlli PfZhPh oixzztkiazh aeph zzixzhoixgh tkkhinn aexi vei aexi.",
-    cb_uc2_title: "Oixwaeoikizz axzh rripfaerrtkzz",
-    cb_uc2_desc: "Kaennvoixi zziwirrall oixwaeoikizz aerr rripfaerrtk zziktkoiaexzz oixtkae aexi phoilli tkae zzixzh aerr arrkkhoiwi tkaeghitkkhirr.",
-    cb_uc3_title: "Zjaev apfpflloikatkoiaexzz",
-    cb_uc3_desc: "Kaennvoixi eiaeuurr kaewirr llitktkirr, rrizzuunni, axzh pfaerrtkphaelloiae oixtkae a zzoixghlli PfZhPh phaerr iazzei zzuuvnnoizzzzoiaex.",
     cb_faq1_q: "Zhaeizz tkkhi aerrzhirr aeph tkkhi phoillizz nnatktkirr?",
     cb_faq1_a: "Eiizz. Pfaghizz arri kaennvoixizh oix ikshaktkllei tkkhi aerrzhirr zzkhaevvx oix tkkhi lloizztk, zzae zhrragh tkkhi phoillizz oixtkae tkkhi aerrzhirr eiaeuu vvaxtk viphaerri kaennvoixoixgh.",
     cb_faq2_q: "Oizz tkkhirri a lloinnoitk tkae khaevv nnaxei PfZhPhzz Oi kax kaennvoixi?",
@@ -7200,7 +7091,7 @@ const translations = {
     cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> ZjPfGh</p><ul class=\"format-pick-sublist\"><li>Vizztk phaerr iwirreizhaei pfkhaetkaezz.</li><li>Zznnallll phoillizz, ghrriatk kaennpfatkoivoilloitkei.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PfXGh</p><ul class=\"format-pick-sublist\"><li>Vizztk phaerr llaeghaezz, zzkrriixzzkhaetkzz, axzh tkrraxzzpfarrixkei.</li><li>Llaezzzzllizzzz qhuualloitkei.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> VvIVPf</p><ul class=\"format-pick-sublist\"><li>Vizztk phaerr vvivzzoitkizz.</li><li>Zznnallllirr phoillizz vvoitkkh tkrraxzzpfarrixkei zzuupfpfaerrtk.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> ZzWGh</p><ul class=\"format-pick-sublist\"><li>Vizztk phaerr wiktkaerr ghrrapfkhoikzz axzh oikaexzz.</li><li>Zztkaeizz pfirrphiktkllei zzkharrpf atk axei zzoizxi.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PfZhPh</p><ul class=\"format-pick-sublist\"><li>Vizztk phaerr zzkharroixgh nnuulltkoipflli oinnaghizz azz aexi zhaekuunnixtk.</li><li>Eiaeuu kax allzzae nnirrghi tkkhinn vvoitkkh aeuurr Kaennvoixi tkaeaell.</li></ul></div></div>",
     cv_article1_heading: "Xivv tkae kaexwirrtkoixgh oinnaghizz?",
     cv_article1_p: "Iwirrei oinnaghi phaerrnnatk vvazz zhizzoighxizh tkae zzaellwi a zhoiphphirrixtk pfrraevllinn, axzh pfoikqoixgh tkkhi rroighkhtk aexi khazz a voighghirr iphphiktk aex eiaeuurr phoilli zzoizxi axzh qhuualloitkei tkkhax allnnaezztk axei aetkkhirr zhikoizzoiaex eiaeuu'llll nnaqi vvkhix pfrripfarroixgh oinnaghizz. Khirri'zz vvkhatk'zz aktkuuallllei khapfpfixoixgh uuxzhirr tkkhi khaeaezh vvoitkkh iakkh aexi, axzh vvkhix oitk ghixuuoixillei nnatktkirrzz.",
-    cv_article1_p2: "Zhae eiaeuu vvaxtk tkae qxaevv nnaerri? Rriazh oix phuullll — zjuuzztk <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">aexi klloikq avvaei.</a>",
+    cv_article1_p2: "Zhae eiaeuu vvaxtk tkae qxaevv nnaerri? Rriazh oix phuullll — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">zjuuzztk aexi klloikq avvaei.</a>",
     cv_read_guide: "Rriazh nnaerri khirri →",
     cv_fh_jpg_name: "ZjPfGh",
     cv_fh_jpg_bestfor: "Pfkhaetkaezz, zzaekoiall nnizhoia, iwirreizhaei zzkharroixgh",
@@ -7307,28 +7198,9 @@ const translations = {
     cp_help2: "Kkhaeaezzi a kaennpfrrizzzzoiaex lliwill vazzizh aex khaevv nnuukkh zzpfaki eiaeuu vvaxtk tkae zzawi.",
     cp_help3: "Eiaeuurr zzilliktkizh phoillizz zzkhaevv uupf khirri — kkhikq tkkhinn viphaerri kaennpfrrizzzzoixgh, axzh rrinnaewi axei eiaeuu zhaex'tk xiizh.",
     cp_help4: "Klloikq axzh tkkhi oinnaghizz vvoillll kaennpfrrizzzz axzh zhaevvxllaeazh.",
-    cp_table_heading: "Kaennpfarroixgh kaennpfrrizzzzoiaex lliwillzz",
-    cp_table_lead: "Khoighkhirr kaennpfrrizzzzoiaex nniaxzz a zznnallllirr phoilli, vuutk allzzae nnaerri qhuualloitkei llaezzzz. Khirri'zz a rraeuughkh aewirrwoiivv.",
-    cp_th_level: "Lliwill",
-    cp_th_savings: "Zzpfaki zzawizh",
-    cp_th_quality: "Qhuualloitkei",
-    cp_th_bestfor: "Vizztk phaerr",
-    cp_td_low_savings: "Zznnallll",
-    cp_td_low_quality: "Allnnaezztk uuxkkhaxghizh",
-    cp_td_low_best: "Pfrroixtkoixgh, arrkkhoiwoixgh",
-    cp_td_medium_savings: "Vallaxkizh",
-    cp_td_medium_quality: "Wirrei ghaeaezh",
-    cp_td_medium_best: "Vviv, innaoill",
-    cp_td_high_savings: "Nnakshoinnuunn",
-    cp_td_high_quality: "Xaetkoikiavllei llaevvirr",
-    cp_td_high_best: "Pfrriwoiivvzz, qhuuoikq zzkharroixgh",
-    cp_uc_heading: "Vvkhix tkae uuzzi Kaennpfrrizzzz",
-    cp_uc1_title: "Phazztkirr vvivzzoitki",
-    cp_uc1_desc: "Zznnallllirr oinnaghizz nniax phazztkirr pfaghi llaeazhoixgh axzh vitktkirr zziarrkkh ixghoixi rraxqoixghzz.",
-    cp_uc2_title: "Innaoill atktkakkhnnixtk lloinnoitkzz",
-    cp_uc2_desc: "Zzkhrroixq pfkhaetkaezz zzae tkkhiei phoitk vvoitkkhoix atktkakkhnnixtk zzoizxi lloinnoitkzz vvkhoilli zztkaeioixgh rriazhavlli.",
-    cp_uc3_title: "Zzawoixgh zzpfaki",
-    cp_uc3_desc: "Rrizhuuki tkkhi zzoizxi aeph eiaeuurr pfkhaetkae arrkkhoiwi aex eiaeuurr pfkhaexi aerr oix kllaeuuzh zztkaerraghi.",
+    cp_article1_heading: "Xivv tkae kaennpfrrizzzzoixgh oinnaghizz?",
+    cp_article1_p: "Kaennpfrrizzzzoiaex llaeaeqzz lloiqi a zzoixghlli zzlloizhirr, vuutk tkkhirri arri tkvvae ghixuuoixillei zhoiphphirrixtk apfpfrraeakkhizz zhaeoixgh tkkhi zzkhrroixqoixgh uuxzhirrxiatkkh, axzh qxaevvoixgh vvkhoikkh aexi oizz atk vvaerrq ikshpfllaoixzz allnnaezztk iwirrei rrizzuulltk eiaeuu'llll zzii. Khirri'zz vvkhatk'zz aktkuuallllei khapfpfixoixgh vvkhix eiaeuu kaennpfrrizzzz, axzh khaevv tkae pfoikq tkkhi rroighkhtk lliwill.",
+    cp_article1_p2: "Zhae eiaeuu vvaxtk tkae qxaevv nnaerri? Rriazh oix phuullll — <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"compress\">zjuuzztk aexi klloikq avvaei.</a>",
     cp_faq1_q: "Khaevv nnuukkh vvoillll tkkhi oinnaghi zzkhrroixq?",
     cp_faq1_a: "Oitk zhipfixzhzz aex tkkhi oinnaghi axzh kkhaezzix lliwill, vuutk oitk'zz uuzzuuallllei a 30–80% rrizhuuktkoiaex oix tkkhi aerroighoixall phoilli zzoizxi.",
     cp_faq2_q: "Vvoillll tkkhi oinnaghi llaezzi qhuualloitkei?",
@@ -7430,6 +7302,10 @@ function pluralWord(dict, count, baseKey){
 /* ===== TAB SWITCHING ===== */
 const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"];
 
+/* Legal/policy pages never show ads — keep in sync with anywhere ads
+   might otherwise be requested. */
+const AD_EXCLUDED_PAGES = ["terms", "privacy", "cookies"];
+
 /* Routes with a generated static file at <name>/index.html (see
    build_static_routes.py) — need a trailing slash so the URL matches the
    file location and skips GitHub Pages' 301 redirect flicker. Keep in
@@ -7486,6 +7362,18 @@ function gotoPage(name){
       page_path: path,
       page_title: document.title
     });
+  }
+
+  /* Same problem for AdSense: Auto ads only scans the DOM once on
+     load, so client-side route changes need an explicit nudge to
+     place ads in the newly-visible page. Skipped entirely on
+     legal/policy pages. */
+  if (!AD_EXCLUDED_PAGES.includes(name)){
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error("[adsense] push failed:", err);
+    }
   }
 }
 
@@ -7579,8 +7467,38 @@ if (VALID_PAGES.includes(startPage)) {
   const formatHelperText = document.getElementById("cvFormatHelperText");
   let lastPickedFormat = null;
 
+  /* Icon per "Best suited for" row, keyed by format then row index —
+     not translated, since the icon is the same regardless of language.
+     Row labels/ratings themselves come from cv_fh_<fmt>_bs<N>_label
+     and cv_fh_<fmt>_bs<N>_rating in `translations`. */
+  const BEST_SUITED_ICONS = {
+    jpg: ["photos", "websites", "transparency", "logos", "documents"],
+    png: ["logos", "screenshots", "transparency", "photos", "websites"],
+    webp: ["websites", "photos", "transparency", "oldbrowsers", "documents"],
+    svg: ["vector", "vector", "photos", "websites", "documents"],
+    pdf: ["documents", "printing", "multi", "photos", "websites"]
+  };
+
   function buildFormatPickList(items){
     return "<ul class=\"format-pick-sublist\">" + items.map(item => "<li>" + item + "</li>").join("") + "</ul>";
+  }
+
+  function buildBestSuitedList(shortPrefix, fkey, dict, heading){
+    const icons = BEST_SUITED_ICONS[shortPrefix] || [];
+    const rows = [];
+    for (let i = 1; i <= 6; i++){
+      const label = dict[fkey + "_bs" + i + "_label"];
+      const rating = dict[fkey + "_bs" + i + "_rating"];
+      if (label === undefined || rating === undefined) break;
+      const icon = icons[i - 1] || "photos";
+      rows.push(
+        "<div class=\"format-pick-bestsuited-row\">" +
+          "<span class=\"format-pick-bestsuited-label\"><span class=\"fmt-icon fmt-icon-cat-" + icon + "\" aria-hidden=\"true\"></span> " + label + "</span>" +
+          "<span class=\"format-pick-bestsuited-rating\" data-rating=\"" + rating.toLowerCase() + "\">" + rating + "</span>" +
+        "</div>"
+      );
+    }
+    return "<div class=\"format-pick-bestsuited\"><p class=\"format-pick-subheading\">" + heading + "</p>" + rows.join("") + "</div>";
   }
 
   /* Numbered keys (pro1, pro2, ...) read from `translations`, one place
@@ -7618,6 +7536,7 @@ if (VALID_PAGES.includes(startPage)) {
       const labelPros = dict.cv_fh_label_pros || "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it";
       const labelCons = dict.cv_fh_label_cons || "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind";
       const labelUse = dict.cv_fh_label_use || "Typical use cases";
+      const labelBestSuited = dict.cv_fh_label_bestsuited || "Best suited for";
       const great = dict.cv_fh_great || "great choice!";
       const changed = dict.cv_fh_changed || "changed your mind?";
       if (formatHelperHeading){
@@ -7625,6 +7544,7 @@ if (VALID_PAGES.includes(startPage)) {
         formatHelperHeading.textContent = "Oh " + name + ", " + (isChange ? changed : great);
       }
       lastPickedFormat = value;
+      const bestSuitedList = buildBestSuitedList(prefix, fkey, dict, labelBestSuited);
       formatHelperText.innerHTML =
         "<div class=\"format-pick-detail\">" +
           "<p class=\"format-pick-bestfor\"><strong>" + labelBestFor + "</strong> " + bestFor + "</p>" +
@@ -7633,6 +7553,7 @@ if (VALID_PAGES.includes(startPage)) {
             "<div><p class=\"format-pick-subheading\">" + labelCons + "</p>" + buildFormatPickList(cons) + "</div>" +
             "<div><p class=\"format-pick-subheading\">" + labelUse + "</p>" + buildFormatPickList(useCases) + "</div>" +
           "</div>" +
+          bestSuitedList +
         "</div>";
     } catch (err) {
       console.error("[format-helper] failed to render:", err);
@@ -8083,6 +8004,66 @@ if (VALID_PAGES.includes(startPage)) {
   let files = [];
   let selectedQuality = null;
 
+  const pickHeading = document.getElementById("cpPickHeading");
+  const pickText = document.getElementById("cpPickText");
+  let lastPickedLevel = null;
+
+  function buildPickList(items){
+    return "<ul class=\"format-pick-sublist\">" + items.map(item => "<li>" + item + "</li>").join("") + "</ul>";
+  }
+
+  function readPickNumbered(dict, prefix, field){
+    const out = [];
+    for (let i = 1; i <= 6; i++){
+      const val = dict[prefix + "_" + field + i];
+      if (val === undefined) break;
+      out.push(val);
+    }
+    return out;
+  }
+
+  /* Guarded like the Convert format helper — a bad/missing key here
+     must never take down the level-button click handler. */
+  function updateLevelHelper(levelKey){
+    try {
+      const dict = translations[currentLang] || translations.en;
+      if (!levelKey || !dict || !pickText) return;
+      const fkey = "cp_fh_" + levelKey;
+      const name = dict[fkey + "_name"];
+      const bestFor = dict[fkey + "_bestfor"];
+      if (name === undefined || bestFor === undefined) return;
+      const pros = readPickNumbered(dict, fkey, "pro");
+      const cons = readPickNumbered(dict, fkey, "con");
+      const useCases = readPickNumbered(dict, fkey, "use");
+      const labelBestFor = dict.cv_fh_label_bestfor || "Best for:";
+      const labelPros = dict.cv_fh_label_pros || "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it";
+      const labelCons = dict.cv_fh_label_cons || "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind";
+      const labelUse = dict.cv_fh_label_use || "Typical use cases";
+      const great = dict.cv_fh_great || "great choice!";
+      const changed = dict.cv_fh_changed || "changed your mind?";
+      if (pickHeading){
+        const isChange = lastPickedLevel !== null && lastPickedLevel !== levelKey;
+        pickHeading.textContent = "Oh " + name + ", " + (isChange ? changed : great);
+      }
+      lastPickedLevel = levelKey;
+      pickText.innerHTML =
+        "<div class=\"format-pick-detail\">" +
+          "<p class=\"format-pick-bestfor\"><strong>" + labelBestFor + "</strong> " + bestFor + "</p>" +
+          "<div class=\"format-pick-detail-grid\">" +
+            "<div><p class=\"format-pick-subheading\">" + labelPros + "</p>" + buildPickList(pros) + "</div>" +
+            "<div><p class=\"format-pick-subheading\">" + labelCons + "</p>" + buildPickList(cons) + "</div>" +
+            "<div><p class=\"format-pick-subheading\">" + labelUse + "</p>" + buildPickList(useCases) + "</div>" +
+          "</div>" +
+        "</div>";
+    } catch (err) {
+      console.error("[level-helper] failed to render:", err);
+    }
+  }
+
+  document.addEventListener("bc:langchange", () => {
+    if (lastPickedLevel) updateLevelHelper(lastPickedLevel);
+  });
+
   levelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       selectedQuality = Number(btn.dataset.quality);
@@ -8091,6 +8072,7 @@ if (VALID_PAGES.includes(startPage)) {
       const levelDict = translations[currentLang] || translations.en;
       const levelName = levelDict["cp_level_" + btn.dataset.levelKey] || btn.dataset.label;
       selectedCompression.textContent = `${levelDict.cp_selected_level} ${levelName}`;
+      updateLevelHelper(btn.dataset.levelKey);
       updateAllEstimates();
     });
   });
