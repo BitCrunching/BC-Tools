@@ -1,0 +1,38 @@
+name: Build static routes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "build_static_routes.py"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Regenerate static route pages
+        run: python3 build_static_routes.py
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add terms about faq cookies privacy golden-rules sitemap.xml
+          if git diff --cached --quiet; then
+            echo "No changes to static routes."
+          else
+            git commit -m "Regenerate static routes from index.html [skip ci]"
+            git push
+          fi
