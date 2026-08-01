@@ -1,0 +1,16 @@
+name: Announce Release on Discord
+
+on:
+  release:
+    types: [published] # Triggers whenever you publish a release or pre-release on GitHub
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Release Announcement
+        uses: SethCohen/github-releases-to-discord@v1
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          color: '3066993' # Custom embed color (Hex/Decimal)
+          username: 'Bitcrouching System'
