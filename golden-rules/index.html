@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Golden Rules – BC Tools</title>
 <meta name="description" content="Golden Rules for choosing image formats, compression, and settings with BC Tools.">
+<!-- AdSense disabled until further notice — placeholder ad-slot IDs
+     cause console errors once this script actually tries to fill them.
+     Re-enable by uncommenting once real ad units exist.
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3037236608651508" crossorigin="anonymous"></script>
+-->
 <link rel="canonical" href="https://bitcrunching.com/golden-rules/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
@@ -248,9 +252,9 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:"Courier New", Courier, monospace;
+  font-family:monospace;
   font-weight:700;
-  font-size:11px;
+  font-size:12px;
   letter-spacing:.05em;
   color:#4ade80;
   opacity:0;
@@ -893,7 +897,7 @@ html[data-theme="light"] .engine-status-glitch{
 }
 
 .loading_tools_banner{
-  margin-top:28px;
+  margin-top:48px;
 }
 
 .loading_tools_dots{
@@ -903,6 +907,14 @@ html[data-theme="light"] .engine-status-glitch{
   white-space:nowrap;
   vertical-align:bottom;
   animation:loading_tools_dots_grow 1.6s step-end infinite;
+}
+
+.loading_tools_dots-red{
+  color:#f87171;
+}
+
+.loading_tools_dots-green{
+  color:#4ade80;
 }
 
 @keyframes loading_tools_dots_grow{
@@ -946,11 +958,9 @@ html[data-theme="light"] .engine-status-glitch{
   padding:36px;
   border:1px solid rgba(255,255,255,.25);
   border-radius:28px;
-  background:none;
-}
-
-html[data-theme="light"] .tool-card-blueprint{
-  border-color:rgba(29,36,54,.25);
+  /* Space stays dark regardless of theme — a light-mode starfield
+     wouldn't read as space. */
+  background:#202124;
 }
 
 /* Rocks are generated/animated from JS (asteroid-field driver); five
@@ -1054,6 +1064,7 @@ html[data-theme="light"] .tool-card-blueprint{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
   gap:24px;
+  margin-bottom:56px;
 }
 
 @media (max-width:768px){
@@ -1339,12 +1350,29 @@ footer a{
   margin-bottom:8px;
 }
 
+/* Live "safe & private" check badge — hidden until a real check has
+   actually run (see startPrivacyCheck/finishPrivacyCheck), so it never
+   claims something unverified. Intentionally uncolored/plain, not a
+   colored trust-badge, matching the terminal aesthetic used elsewhere. */
+.privacy-check-badge{
+  display:none;
+  font-family:monospace;
+  font-size:12px;
+  font-weight:700;
+  color:var(--text);
+  white-space:nowrap;
+}
+
+.privacy-check-badge.visible{
+  display:inline-block;
+}
+
 /* ===== HELP OVERLAY ===== */
 .tool-help-overlay{
   display:none;
   position:absolute;
   inset:0;
-  z-index:80;
+  z-index:20;
   pointer-events:none;
 }
 
@@ -1361,7 +1389,7 @@ footer a{
   font-size:15px;
   line-height:1.6;
   border:1px solid rgba(255,255,255,.14);
-  z-index:81;
+  z-index:21;
   opacity:0;
   transform:translateY(10px) scale(.96);
   transition:opacity .3s ease, transform .3s ease;
@@ -1450,7 +1478,7 @@ footer a{
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:90;
+  z-index:30;
   pointer-events:none;
 }
 
@@ -1717,7 +1745,17 @@ footer a{
   color:var(--text);
   margin-top:22px;
   min-height:24px;
-  font-size:15px;
+  font-size:12px;
+  font-weight:700;
+  font-family:monospace;
+}
+
+/* Terminal-style "> " prefix on any status message (ready/progress/
+   done/error) — CSS-only, so it applies to every tool automatically
+   without touching each translated string. */
+.tool-status:not(:empty)::before{
+  content:"> ";
+  font-weight:700;
 }
 
 /* ===== COMBINE TAB (PDF merge, reorderable list) ===== */
@@ -1982,7 +2020,15 @@ footer a{
 
 .selected-compression{
   margin-top:10px;
-  font-size:15px;
+  color:var(--text);
+  font-size:12px;
+  font-weight:700;
+  font-family:monospace;
+}
+
+.selected-compression:not(:empty)::before{
+  content:"> ";
+  font-weight:700;
 }
 
 .tool-results{
@@ -2567,6 +2613,10 @@ footer a{
 .fmt-icon-cat-vector::before{ content:"📐"; }
 .fmt-icon-cat-printing::before{ content:"🖨️"; }
 .fmt-icon-cat-multi::before{ content:"🖼️"; }
+.fmt-icon-cat-quality::before{ content:"🔍"; }
+.fmt-icon-cat-filesize::before{ content:"📦"; }
+.fmt-icon-cat-webemail::before{ content:"📧"; }
+.fmt-icon-cat-sharing::before{ content:"⚡"; }
 
 .format-pick-mobile-extra{
   display:none;
@@ -2780,7 +2830,7 @@ footer a{
 
 /* FAQ accordion */
 .faq-group-heading{
-  max-width:900px;
+  max-width:772px;
   margin:48px auto 16px;
   padding:24px 24px 0;
   font-size:22px;
@@ -2796,7 +2846,7 @@ footer a{
 }
 
 .faq-list-mainpage{
-  max-width:900px;
+  max-width:772px;
   margin:0 auto 8px;
   padding:0 24px;
   display:grid;
@@ -3126,6 +3176,49 @@ footer a{
   color:#020617;
 }
 
+/* Ad slots (Golden Rules): top/bottom sit in normal content flow;
+   rails are fixed to the viewport edges and only shown once there's
+   enough width beside the 820px content column to hold them without
+   overlapping it. All data-ad-slot values below are placeholders —
+   replace with real slot IDs from the AdSense dashboard once created. */
+.ad-slot{
+  max-width:820px;
+  margin:0 auto 32px;
+  padding:0 24px;
+  text-align:center;
+  overflow:hidden;
+}
+
+#page-faq .ad-slot{
+  max-width:772px;
+}
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
 .golden-rules-articles{
   display:none;
   max-width:820px;
@@ -3294,10 +3387,10 @@ footer a{
   <main>
     <div class="hero">
       <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
-      <p data-i18n="mp_hero_p1">Get into our world... where creativity travels faster than light. <span class="no-invert">⚡</span></p>
+      <p data-i18n="mp_hero_p1">Get into our world... where creativity travels faster than the speed of light. <span class="no-invert">⚡</span></p>
       <p data-i18n="mp_hero_p2">At the heart of BC Tools is the Creative Hub — a growing collection of browser-based tools for images, video, audio, and code. Built for creators who want to explore, create, and bring ideas to life faster.</p>
       <p data-i18n="mp_hero_p3">Fast, simple, and accessible from anywhere in the universe.</p>
-      <p data-i18n="mp_hero_p4">...wait our systems detected an unauthorized memory leak from the BC Tools archive. You probably shouldn't read it.</p>
+      <p data-i18n="mp_hero_p4">...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.</p>
 
       <div class="engine-status-card" id="engineStatusCard">
         <div class="engine-status-content">
@@ -3321,6 +3414,10 @@ footer a{
           <button type="button" class="engine-status-reveal-btn" id="engineStatusRevealBtn">&gt; read</button>
         </div>
       </div>
+    </div>
+
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
     </div>
 
     <h2 class="cards-heading" data-i18n="mp_cards_heading">Start with Creative Hub:</h2>
@@ -3389,6 +3486,10 @@ footer a{
       </div>
     </div>
 
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000011"></ins>
+    </div>
+
     <div class="mp-colors-wrap">
       <div class="mp-colors-bg" aria-hidden="true">
         <span class="mp-colors-bg-shape shape-purple"></span>
@@ -3406,6 +3507,10 @@ footer a{
         <p data-i18n="mp_colors_p7">Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia.</p>
         <p data-i18n="mp_colors_p8">We have not been able to verify these claims, but we sure did get hungry.</p>
       </article>
+    </div>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012" data-ad-format="auto" data-full-width-responsive="true"></ins>
     </div>
   </main>
 
@@ -3445,6 +3550,10 @@ footer a{
             <div class="engine-status-row backlog-coms-row" data-i18n="backlog_coms_line3"><span class="backlog-coms-meta">sent 12:19pm, Friday</span>&gt; <span class="backlog-coms-sender">sender_Neptun:</span> Well, it's HR department's problem now...</div>
           </div>
         </div>
+
+        <div class="ad-slot ad-slot-banner">
+          <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000019"></ins>
+        </div>
       </article>
     </div>
   </main>
@@ -3472,6 +3581,10 @@ footer a{
         <summary data-i18n="mp_faq6_q">What is Sector 7G?</summary>
         <p data-i18n="mp_faq6_a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
       </details>
+    </div>
+
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
     </div>
 
     <h2 class="faq-group-heading">Convert</h2>
@@ -3504,6 +3617,10 @@ footer a{
         <summary data-i18n="cp_faq3_q">Do you support PNG files too?</summary>
         <p data-i18n="cp_faq3_a">Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.</p>
       </details>
+    </div>
+
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
     </div>
 
     <h2 class="faq-group-heading">Combine</h2>
@@ -3549,6 +3666,7 @@ footer a{
           <span class="gfx-md icon-convert" role="img" aria-label="Convert icon"></span>
           Convert
         </div>
+        <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
       </div>
 
       <div class="tool-drop" id="cvDrop" data-i18n="cv_drop_text">Click or drag and drop images or a PDF</div>
@@ -3595,6 +3713,10 @@ footer a{
   </div>
 
   <div class="content-section-convert">
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
+    </div>
+
     <h3 id="cvFormatHelperHeading" data-i18n="cv_pick_heading">Not sure which format to use?</h3>
     <div id="cvFormatHelperText" data-i18n="cv_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p><ul class="format-pick-sublist"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p><ul class="format-pick-sublist"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p><ul class="format-pick-sublist"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-svg" aria-hidden="true"></span> SVG</p><ul class="format-pick-sublist"><li>Best for vector graphics and icons.</li><li>Stays perfectly sharp at any size.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p><ul class="format-pick-sublist"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div></div>
 
@@ -3612,6 +3734,10 @@ footer a{
     <h3 data-i18n="cv_article1_heading">New to converting images?</h3>
     <p data-i18n="cv_article1_p">Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
     <p data-i18n="cv_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert">just one click away.</a></p>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000015" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
   </div>
 </section>
 
@@ -3624,6 +3750,7 @@ footer a{
           <span class="gfx-md icon-compress" role="img" aria-label="Compress icon"></span>
           Compress
         </div>
+        <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
       </div>
 
       <div class="tool-drop" id="cpDrop" data-i18n="cp_drop_text">Click or drag and drop images</div>
@@ -3667,6 +3794,10 @@ footer a{
   </div>
 
   <div class="content-section-compress">
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
+    </div>
+
     <h3 id="cpPickHeading" data-i18n="cp_pick_heading">Not sure which level to use?</h3>
     <div id="cpPickText" data-i18n="cp_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Low</p><ul class="format-pick-sublist"><li>Best possible quality, barely visible change.</li><li>Printing, archiving, professional work.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Medium</p><ul class="format-pick-sublist"><li>Balanced size and quality.</li><li>Web, email, everyday sharing.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> High</p><ul class="format-pick-sublist"><li>Smallest file size, more visible loss.</li><li>Previews, quick sharing, drafts.</li></ul></div></div></div>
 
@@ -3682,6 +3813,10 @@ footer a{
     <h3 data-i18n="cp_article1_heading">New to compressing images?</h3>
     <p data-i18n="cp_article1_p">Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.</p>
     <p data-i18n="cp_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress">just one click away.</a></p>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
   </div>
 </section>
 
@@ -3694,6 +3829,7 @@ footer a{
           <span class="gfx-md icon-combine" role="img" aria-label="Combine icon"></span>
           Combine
         </div>
+        <span class="privacy-check-badge" id="cbPrivacyBadge" aria-live="polite"></span>
       </div>
 
       <div class="tool-drop" id="cbDrop" data-i18n="cb_drop_text">Click or drag and drop PDF files</div>
@@ -3724,6 +3860,10 @@ footer a{
     <h3 data-i18n="cb_article1_heading">New to combining images?</h3>
     <p data-i18n="cb_article1_p">Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.</p>
     <p data-i18n="cb_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine">just one click away.</a></p>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000017" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
   </div>
 
 </section>
@@ -3737,6 +3877,7 @@ footer a{
           <span class="gfx-md icon-cleanly" role="img" aria-label="Cleanly icon"></span>
           Cleanly
         </div>
+        <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
       </div>
 
       <div class="tool-drop" id="exDrop" data-i18n="ex_drop_text">Click or drag and drop JPEG or PNG images</div>
@@ -3768,6 +3909,10 @@ footer a{
     <h3 data-i18n="ex_article1_heading">New to cleaning images?</h3>
     <p data-i18n="ex_article1_p">Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
     <p data-i18n="ex_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif">just one click away.</a></p>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
   </div>
 
 </section>
@@ -3788,6 +3933,7 @@ footer a{
       <ul>
         <li data-i18n="tu_s1_li1">Your files are never uploaded to our servers. We do not collect, view, store, or possess any content or files you process through our tools.</li>
       </ul>
+      <p data-i18n="tu_s1_verify">You can verify this yourself: every tool runs a live network check during processing and shows the result right in the tool header — look for the "&gt; BC_Tools_bot:" line after using any tool. Please report to us immediately if you encounter a safety breach.</p>
 
       <h2 data-i18n="tu_s2_heading">2. Intellectual Property Rights</h2>
       <p data-i18n="tu_s2_p">All content, code, custom styling, layout structures, and graphical assets featured on BC Tools are the exclusive property of BitCrunching and are protected by international copyright laws.</p>
@@ -3844,7 +3990,15 @@ footer a{
       <p data-i18n="pp_s2_p">Our website and domain utilize standard third-party infrastructure. These platforms process basic, non-identifiable network data (like IP addresses) solely to keep the site online and secure.</p>
 
       <h2 data-i18n="pp_s3_heading">3. Google AdSense &amp; Advertising Cookies</h2>
-      <p data-i18n="pp_s3_p">To help keep our tools free, this website may display advertisements managed by Google AdSense, which would use cookies to serve relevant ads. For full details on how these cookies work and how to control them, please see our <a data-goto="cookies">Cookie Policy</a>.</p>
+      <p data-i18n="pp_s3_p">To help keep our tools free, this website may display advertisements managed by third parties i.e. Google AdSense, which would use cookies to serve relevant ads. For full details on how these cookies work and how to control them, please see our <a data-goto="cookies">Cookie Policy</a>.</p>
+
+      <div class="engine-status-card ad-terminal-banner">
+        <div class="engine-status-body">
+          <div class="engine-status-row"><span data-i18n="pp_ad_terminal_row1">&gt; Adsense_bot: <span class="engine-status-error">deploying ads</span></span><span class="loading_tools_dots loading_tools_dots-red" aria-hidden="true">...</span></div>
+          <div class="engine-status-row"><span data-i18n="pp_ad_terminal_row2">&gt; BC_Tools_bot: optimizing user experience</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
+          <div class="engine-status-row" data-i18n="pp_ad_terminal_row3">&gt; BC_Tools_bot: <span class="engine-status-value">clean-ad interface confirmed.</span></div>
+        </div>
+      </div>
 
       <h2 data-i18n="pp_s4_heading">4. Contact &amp; Impressum</h2>
       <p data-i18n="pp_s4_p">For any legal inquiries, support, or data privacy questions, you can contact the site operator directly via email at <a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a> or find our full contact details in the <a class="go-to-contact">footer below</a>.</p>
@@ -3868,7 +4022,7 @@ footer a{
       <h2 data-i18n="ck_s2_heading">2. How We Use Cookies</h2>
       <p><strong data-i18n="ck_s2_sub1_heading">Essential Storage (localStorage):</strong> <span data-i18n="ck_s2_sub1_p">We use basic local storage to remember your direct visual settings (e.g., UI dark mode or language preferences). These do not track personal information.</span></p>
       <p><strong data-i18n="ck_s2_sub2_heading">Analytics Cookies (Google Analytics):</strong> <span data-i18n="ck_s2_sub2_p">We use Google Analytics to understand how visitors use our site — for example, which tools are popular and how the site can be improved. These cookies are blocked by default and are only set once you accept them via our cookie banner.</span></p>
-      <p><strong data-i18n="ck_s2_sub3_heading">Third-Party Advertising Cookies (Google AdSense):</strong> <span data-i18n="ck_s2_sub3_p">This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance.</span></p>
+      <p><strong data-i18n="ck_s2_sub3_heading">Third-Party Advertising Cookies e.g. Google AdSense:</strong> <span data-i18n="ck_s2_sub3_p">This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance. They do not track your personal data. <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">More on this here</a>.</span></p>
 
       <h2 data-i18n="ck_s3_heading">3. Consent and Control</h2>
       <p data-i18n="ck_s3_p">In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time in the panel below, or clear/disable cookies entirely through your web browser's configuration menu.</p>
@@ -3892,6 +4046,9 @@ footer a{
       <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
     </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
 
     <div class="golden-rules-articles active" data-tool="convert" data-lang="en">
 
@@ -5165,6 +5322,10 @@ footer a{
       </details>
     </div>
 
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
   </main>
 </section>
 
@@ -5905,8 +6066,8 @@ const translations = {
     ck_s2_sub1_p: "Používáme základní lokální úložiště k zapamatování vašich vizuálních nastavení (např. tmavého režimu rozhraní nebo jazykových preferencí). Tyto údaje nesledují žádné osobní informace.",
     ck_s2_sub2_heading: "Analytické cookies (Google Analytics):",
     ck_s2_sub2_p: "Používáme Google Analytics, abychom pochopili, jak návštěvníci náš web používají — například které nástroje jsou oblíbené a jak web zlepšit. Tyto cookies jsou ve výchozím nastavení blokovány a nastaví se pouze tehdy, pokud je odsouhlasíte prostřednictvím našeho banneru cookies.",
-    ck_s2_sub3_heading: "Cookies třetích stran pro reklamu (Google AdSense):",
-    ck_s2_sub3_p: "Tento web může v budoucnu zobrazovat reklamy spravované službou Google AdSense. Jakmile budou aktivní, Google by umísťoval do vašeho prohlížeče cookies za účelem zobrazování relevantních reklam, prevence podvodů s reklamami a měření jejich výkonu.",
+    ck_s2_sub3_heading: "Reklamní cookies třetích stran, např. Google AdSense:",
+    ck_s2_sub3_p: "Tento web může v budoucnu zobrazovat reklamy spravované službou Google AdSense. Jakmile budou aktivní, Google by umísťoval do vašeho prohlížeče cookies za účelem zobrazování relevantních reklam, prevence podvodů s reklamami a měření jejich výkonu. Nesledují vaše osobní údaje. <a href=\"https://policies.google.com/technologies/ads\" target=\"_blank\" rel=\"noopener\">Více zde</a>.",
     ck_s3_heading: "3. Souhlas a kontrola",
     ck_s3_p: "V souladu s evropskými zákony o elektronickém soukromí (ePrivacy) jsou analytické i reklamní cookies při prvním načtení tohoto webu ve výchozím nastavení blokovány. Aktivují se pouze tehdy, pokud k tomu výslovně udělíte souhlas prostřednictvím banneru cookies na našem webu. Svou volbu můžete kdykoli změnit v panelu níže, nebo cookies zcela vymazat či zakázat přímo v konfiguračním menu vašeho webového prohlížeče.",
     mp_privacy_heading: "Mimozemský protokol soukromí",
@@ -5918,6 +6079,9 @@ const translations = {
     tu_s1_heading: "1. Záruka zpracování bez serveru a soukromí",
     tu_s1_p: "Naše Služby fungují zcela na straně klienta. To znamená, že veškeré zpracování souborů – včetně konverze obrázků, komprese, slučování souborů a odstraňování metadat – probíhá přímo ve vašem webovém prohlížeči, bez použití serveru.",
     tu_s1_li1: "Vaše soubory nikdy nenahráváme na naše servery. Neshromažďujeme, neprohlížíme, neukládáme ani nedisponujeme žádným obsahem či soubory, které zpracováváte pomocí našich nástrojů.",
+    tu_s1_verify: "Můžete si to ověřit sami: každý nástroj během zpracování spouští živou kontrolu sítě a výsledek zobrazí přímo v záhlaví nástroje — hledejte řádek „&gt; BC_Tools_bot:“ po použití kteréhokoli nástroje. Pokud narazíte na bezpečnostní incident, neprodleně nás prosím kontaktujte.",
+    privacy_check_ok: "stažení lokální a soukromé",
+    privacy_check_warn: "POZOR! - ({count}) narušení soukromí - {host}",
     tu_s2_heading: "2. Práva duševního vlastnictví",
     tu_s2_p: "Veškerý obsah, kód, vlastní styly, struktury rozvržení a grafické prvky na BC Tools jsou výhradním vlastnictvím společnosti BitCrunching a jsou chráněny mezinárodními zákony o autorských právech.",
     tu_s2_li1: "Naše nástroje můžete používat pro osobní i komerční tvůrčí projekty.",
@@ -5938,7 +6102,10 @@ const translations = {
     pp_s2_heading: "2. Hostingová infrastruktura",
     pp_s2_p: "Naše webová stránka a doména využívají standardní infrastrukturu třetích stran. Tyto platformy zpracovávají základní, neidentifikovatelná síťová data (například IP adresy) výhradně za účelem zajištění bezpečného provozu webu.",
     pp_s3_heading: "3. Google AdSense a reklamní cookies",
-    pp_s3_p: "Abychom naše nástroje mohli udržet zdarma, může tento web v budoucnu zobrazovat reklamy spravované službou Google AdSense, která by k zobrazování relevantních reklam používala cookies. Podrobnosti o tom, jak tyto cookies fungují a jak je můžete ovládat, najdete v našem <a data-goto=\"cookies\">Registru cookies</a>.",
+    pp_s3_p: "Abychom naše nástroje mohli udržet zdarma, může tento web v budoucnu zobrazovat reklamy spravované třetími stranami, tj. službou Google AdSense, která by k zobrazování relevantních reklam používala cookies. Podrobnosti o tom, jak tyto cookies fungují a jak je můžete ovládat, najdete v našem <a data-goto=\"cookies\">Registru cookies</a>.",
+    pp_ad_terminal_row1: "&gt; Adsense_bot: <span class=\"engine-status-error\">nasazuje reklamy</span>",
+    pp_ad_terminal_row2: "&gt; BC_Tools_bot: optimalizuje uživatelský zážitek",
+    pp_ad_terminal_row3: "&gt; BC_Tools_bot: <span class=\"engine-status-value\">rozhraní bez reklam potvrzeno.</span>",
     page_title: "BC Tools – Nástroje pro obrázky zdarma",
     nav_lang: "Změnit jazyk",
     nav_help: "Nápověda",
@@ -5969,10 +6136,10 @@ const translations = {
     mp_colors_p6: "Jak se BC Tools bude rozšiřovat, přidají se do kolekce nové barvy a nové objevy.",
     mp_colors_p7: "Náš vývojář tvrdí, že barvy byly pečlivě vytvořeny pomocí pokročilých digitálních barevných kmenů z jeho domovské planety Bonbonia.",
     mp_colors_p8: "Tato tvrzení se nám nepodařilo ověřit, ale rozhodně nám z toho vyhládlo.",
-    mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než světlo. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než rychlost světla. <span class=\"no-invert\">⚡</span>",
     mp_hero_p2: "Jádrem BC Tools je Creative Hub — rostoucí sbírka nástrojů přímo v prohlížeči pro obrázky, video, zvuk a kód. Postavený pro tvůrce, kteří chtějí objevovat, tvořit a rychleji přivádět nápady k životu.",
     mp_hero_p3: "Rychlé, jednoduché a dostupné odkudkoli ve vesmíru.",
-    mp_hero_p4: "...počkat, naše systémy zaznamenaly neoprávněný únik paměti z archivu BC Tools. Asi byste si to neměli číst.",
+    mp_hero_p4: "...počkat, naše systémy zaznamenaly neoprávněný únik paměti z interního úložiště BC Tools, který byste si asi neměli číst.",
     mp_cards_heading: "Začněte s Creative Hubem:",
     mp_card_convert_desc: "Převádějte obrázky mezi formáty JPG, PNG, WEBP, SVG i PDF.",
     mp_card_compress_desc: "Komprimujte obrázky na libovolnou velikost bez viditelné ztráty kvality.",
@@ -6111,10 +6278,6 @@ const translations = {
     cv_fh_jpg_con1: "Nepodporuje průhlednost",
     cv_fh_jpg_con2: "Kvalita klesá při opakovaném úpravě a ukládání",
     cv_fh_jpg_con3: "Není nejlepší volbou pro loga, grafiku nebo text",
-    cv_fh_jpg_use1: "Rodinné fotografie",
-    cv_fh_jpg_use2: "Fotky z mobilu",
-    cv_fh_jpg_use3: "Příspěvky na sociálních sítích",
-    cv_fh_jpg_use4: "E-mailové přílohy",
     cv_fh_jpg_bs1_label: "Fotky",
     cv_fh_jpg_bs1_rating: "Optimální",
     cv_fh_jpg_bs2_label: "Weby",
@@ -6133,10 +6296,6 @@ const translations = {
     cv_fh_png_con1: "Větší velikost souboru než JPG",
     cv_fh_png_con2: "Obvykle zbytečné pro běžné fotografie",
     cv_fh_png_con3: "Neškáluje donekonečna jako vektorová grafika",
-    cv_fh_png_use1: "Firemní loga",
-    cv_fh_png_use2: "Snímky obrazovky",
-    cv_fh_png_use3: "Návrhy uživatelského rozhraní",
-    cv_fh_png_use4: "Průhledná grafika",
     cv_fh_png_bs1_label: "Loga",
     cv_fh_png_bs1_rating: "Optimální",
     cv_fh_png_bs2_label: "Snímky obrazovky",
@@ -6155,10 +6314,6 @@ const translations = {
     cv_fh_webp_pro4: "Pomáhá rychlejšímu načítání stránek",
     cv_fh_webp_con1: "Některý starší software jej nemusí podporovat",
     cv_fh_webp_con2: "Ne každá platforma přijímá nahrávání WEBP",
-    cv_fh_webp_use1: "Obrázky na webu",
-    cv_fh_webp_use2: "Příspěvky na blogu",
-    cv_fh_webp_use3: "Internetové obchody",
-    cv_fh_webp_use4: "Vstupní stránky",
     cv_fh_webp_bs1_label: "Weby",
     cv_fh_webp_bs1_rating: "Optimální",
     cv_fh_webp_bs2_label: "Fotky",
@@ -6177,10 +6332,6 @@ const translations = {
     cv_fh_svg_con1: "Nevhodné pro fotografie",
     cv_fh_svg_con2: "Převod fotografie na SVG nevytvoří skutečnou vektorovou grafiku",
     cv_fh_svg_con3: "Některé weby a aplikace nepodporují nahrávání SVG",
-    cv_fh_svg_use1: "Značková loga",
-    cv_fh_svg_use2: "Ikony",
-    cv_fh_svg_use3: "Ilustrace",
-    cv_fh_svg_use4: "Diagramy",
     cv_fh_svg_bs1_label: "Ikony a loga",
     cv_fh_svg_bs1_rating: "Optimální",
     cv_fh_svg_bs2_label: "Vektorová grafika",
@@ -6199,10 +6350,6 @@ const translations = {
     cv_fh_pdf_con1: "Není to formát obrázku",
     cv_fh_pdf_con2: "Obtížnější úprava jednotlivých obrázků později",
     cv_fh_pdf_con3: "Velké dokumenty mohou mít větší velikost souboru",
-    cv_fh_pdf_use1: "Zprávy",
-    cv_fh_pdf_use2: "Portfolia",
-    cv_fh_pdf_use3: "Tiskové dokumenty",
-    cv_fh_pdf_use4: "Sdílení více obrázků v jednom souboru",
     cv_fh_pdf_bs1_label: "Dokumenty",
     cv_fh_pdf_bs1_rating: "Optimální",
     cv_fh_pdf_bs2_label: "Tisk",
@@ -6217,7 +6364,6 @@ const translations = {
     cv_fh_label_bestsuited: "Nejlépe vhodné pro",
     cv_fh_label_pros: "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Proč se vám bude líbit",
     cv_fh_label_cons: "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Co mít na paměti",
-    cv_fh_label_use: "Nejlepší využití pro",
     cv_fh_great: "skvělá volba!",
     cv_fh_changed: "rozmysleli jste si to?",
     cv_th_format: "Formát",
@@ -6281,26 +6427,47 @@ const translations = {
     cp_fh_low_pro2: "Téměř žádný viditelný rozdíl oproti originálu",
     cp_fh_low_con1: "Nejmenší úspora místa",
     cp_fh_low_con2: "Není ideální, pokud vám jde hlavně o velikost souboru",
-    cp_fh_low_use1: "Fotky připravené k tisku",
-    cp_fh_low_use2: "Dlouhodobé archivy",
-    cp_fh_low_use3: "Profesionální výstupy pro klienty",
+    cp_fh_low_bs1_label: "Tisk a archivace",
+    cp_fh_low_bs1_rating: "Optimální",
+    cp_fh_low_bs2_label: "Zachování kvality",
+    cp_fh_low_bs2_rating: "Optimální",
+    cp_fh_low_bs3_label: "Úspora velikosti",
+    cp_fh_low_bs3_rating: "Omezeně",
+    cp_fh_low_bs4_label: "Web a e-mail",
+    cp_fh_low_bs4_rating: "Přijatelné",
+    cp_fh_low_bs5_label: "Rychlé sdílení",
+    cp_fh_low_bs5_rating: "Omezeně",
     cp_fh_medium_name: "Střední",
     cp_fh_medium_bestfor: "Web, e-mail, běžné sdílení",
     cp_fh_medium_pro1: "Vyvážená velikost a kvalita",
     cp_fh_medium_pro2: "Dobrá výchozí volba pro většinu situací",
     cp_fh_medium_con1: "Mírná ztráta kvality při bližším pohledu",
-    cp_fh_medium_use1: "Obrázky na web",
-    cp_fh_medium_use2: "E-mailové přílohy",
-    cp_fh_medium_use3: "Běžné sdílení fotek",
+    cp_fh_medium_bs1_label: "Web a e-mail",
+    cp_fh_medium_bs1_rating: "Optimální",
+    cp_fh_medium_bs2_label: "Zachování kvality",
+    cp_fh_medium_bs2_rating: "Doporučeno",
+    cp_fh_medium_bs3_label: "Úspora velikosti",
+    cp_fh_medium_bs3_rating: "Doporučeno",
+    cp_fh_medium_bs4_label: "Tisk a archivace",
+    cp_fh_medium_bs4_rating: "Omezeně",
+    cp_fh_medium_bs5_label: "Rychlé sdílení",
+    cp_fh_medium_bs5_rating: "Doporučeno",
     cp_fh_high_name: "Vysoká",
     cp_fh_high_bestfor: "Náhledy, rychlé sdílení, koncepty",
     cp_fh_high_pro1: "Nejmenší velikost souboru",
     cp_fh_high_pro2: "Nejrychlejší nahrání nebo odeslání",
     cp_fh_high_con1: "Znatelně nižší kvalita",
     cp_fh_high_con2: "Nevhodné pro tisk nebo profesionální použití",
-    cp_fh_high_use1: "Rychlé náhledy",
-    cp_fh_high_use2: "Pracovní verze",
-    cp_fh_high_use3: "Aplikace pro zprávy s limitem velikosti"
+    cp_fh_high_bs1_label: "Rychlé sdílení",
+    cp_fh_high_bs1_rating: "Optimální",
+    cp_fh_high_bs2_label: "Úspora velikosti",
+    cp_fh_high_bs2_rating: "Optimální",
+    cp_fh_high_bs3_label: "Zachování kvality",
+    cp_fh_high_bs3_rating: "Omezeně",
+    cp_fh_high_bs4_label: "Web a e-mail",
+    cp_fh_high_bs4_rating: "Doporučeno",
+    cp_fh_high_bs5_label: "Tisk a archivace",
+    cp_fh_high_bs5_rating: "Nepodporováno"
   },
   en: {
     footer_contact_heading: "Get in touch with us",
@@ -6347,8 +6514,8 @@ const translations = {
     ck_s2_sub1_p: "We use basic local storage to remember your direct visual settings (e.g., UI dark mode or language preferences). These do not track personal information.",
     ck_s2_sub2_heading: "Analytics Cookies (Google Analytics):",
     ck_s2_sub2_p: "We use Google Analytics to understand how visitors use our site — for example, which tools are popular and how the site can be improved. These cookies are blocked by default and are only set once you accept them via our cookie banner.",
-    ck_s2_sub3_heading: "Third-Party Advertising Cookies (Google AdSense):",
-    ck_s2_sub3_p: "This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance.",
+    ck_s2_sub3_heading: "Third-Party Advertising Cookies e.g. Google AdSense:",
+    ck_s2_sub3_p: "This site may display advertisements managed by Google AdSense in the future. When active, Google would place cookies on your browser to serve relevant ads, prevent ad fraud, and measure ad performance. They do not track your personal data. <a href=\"https://policies.google.com/technologies/ads\" target=\"_blank\" rel=\"noopener\">More on this here</a>.",
     ck_s3_heading: "3. Consent and Control",
     ck_s3_p: "In compliance with European ePrivacy laws, analytics and advertising cookies are blocked by default when you first load this website. They are only enabled if you explicitly give consent via our on-site cookie banner. You can change your choice at any time in the panel below, or clear/disable cookies entirely through your web browser's configuration menu.",
     mp_privacy_heading: "Alien Privacy Protocol",
@@ -6360,6 +6527,9 @@ const translations = {
     tu_s1_heading: "1. No-Server & Privacy Guarantee",
     tu_s1_p: "Our Services operate entirely on the client side. This means all file processing—including image conversion, compression, file combining, and metadata stripping—takes place directly within your web browser, no server used.",
     tu_s1_li1: "Your files are never uploaded to our servers. We do not collect, view, store, or possess any content or files you process through our tools.",
+    tu_s1_verify: "You can verify this yourself: every tool runs a live network check during processing and shows the result right in the tool header — look for the \"&gt; BC_Tools_bot:\" line after using any tool. Please report to us immediately if you encounter a safety breach.",
+    privacy_check_ok: "download local & private",
+    privacy_check_warn: "ATTENTION! - ({count}) privacy breach - {host}",
     tu_s2_heading: "2. Intellectual Property Rights",
     tu_s2_p: "All content, code, custom styling, layout structures, and graphical assets featured on BC Tools are the exclusive property of BitCrunching and are protected by international copyright laws.",
     tu_s2_li1: "You may use our tools for personal or commercial creative projects.",
@@ -6380,7 +6550,10 @@ const translations = {
     pp_s2_heading: "2. Hosting Infrastructure",
     pp_s2_p: "Our website and domain utilize standard third-party infrastructure. These platforms process basic, non-identifiable network data (like IP addresses) solely to keep the site online and secure.",
     pp_s3_heading: "3. Google AdSense & Advertising Cookies",
-    pp_s3_p: "To help keep our tools free, this website may display advertisements managed by Google AdSense, which would use cookies to serve relevant ads. For full details on how these cookies work and how to control them, please see our <a data-goto=\"cookies\">Cookie Registry</a>.",
+    pp_s3_p: "To help keep our tools free, this website may display advertisements managed by third parties i.e. Google AdSense, which would use cookies to serve relevant ads. For full details on how these cookies work and how to control them, please see our <a data-goto=\"cookies\">Cookie Registry</a>.",
+    pp_ad_terminal_row1: "&gt; Adsense_bot: <span class=\"engine-status-error\">deploying ads</span>",
+    pp_ad_terminal_row2: "&gt; BC_Tools_bot: optimizing user experience",
+    pp_ad_terminal_row3: "&gt; BC_Tools_bot: <span class=\"engine-status-value\">clean-ad interface confirmed.</span>",
     page_title: "BC Tools – Free Image Tools",
     nav_lang: "Change language",
     nav_help: "Help",
@@ -6411,10 +6584,10 @@ const translations = {
     mp_colors_p6: "As BC Tools continues to expand, new colors and new discoveries will join the collection.",
     mp_colors_p7: "Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia.",
     mp_colors_p8: "We have not been able to verify these claims, but we sure did get hungry.",
-    mp_hero_p1: "Get into our world... where creativity travels faster than light. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1: "Get into our world... where creativity travels faster than the speed of light. <span class=\"no-invert\">⚡</span>",
     mp_hero_p2: "At the heart of BC Tools is the Creative Hub — a growing collection of browser-based tools for images, video, audio, and code. Built for creators who want to explore, create, and bring ideas to life faster.",
     mp_hero_p3: "Fast, simple, and accessible from anywhere in the universe.",
-    mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools archive. You probably shouldn't read it.",
+    mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.",
     mp_cards_heading: "Start with Creative Hub:",
     mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, SVG and PDF.",
     mp_card_compress_desc: "Reduce image size while keeping quality.",
@@ -6553,10 +6726,6 @@ const translations = {
     cv_fh_jpg_con1: "Doesn't support transparency",
     cv_fh_jpg_con2: "Quality decreases when repeatedly edited and saved",
     cv_fh_jpg_con3: "Not the best choice for logos, graphics, or text",
-    cv_fh_jpg_use1: "Family photos",
-    cv_fh_jpg_use2: "Smartphone pictures",
-    cv_fh_jpg_use3: "Social media posts",
-    cv_fh_jpg_use4: "Email attachments",
     cv_fh_jpg_bs1_label: "Photos",
     cv_fh_jpg_bs1_rating: "Optimal",
     cv_fh_jpg_bs2_label: "Websites",
@@ -6575,10 +6744,6 @@ const translations = {
     cv_fh_png_con1: "Larger file sizes than JPG",
     cv_fh_png_con2: "Usually unnecessary for regular photos",
     cv_fh_png_con3: "Doesn't scale infinitely like vector graphics",
-    cv_fh_png_use1: "Company logos",
-    cv_fh_png_use2: "Screenshots",
-    cv_fh_png_use3: "User interface designs",
-    cv_fh_png_use4: "Transparent graphics",
     cv_fh_png_bs1_label: "Logos",
     cv_fh_png_bs1_rating: "Optimal",
     cv_fh_png_bs2_label: "Screenshots",
@@ -6597,10 +6762,6 @@ const translations = {
     cv_fh_webp_pro4: "Helps web pages load faster",
     cv_fh_webp_con1: "Some older software may not support it",
     cv_fh_webp_con2: "Not every platform accepts WEBP uploads",
-    cv_fh_webp_use1: "Website images",
-    cv_fh_webp_use2: "Blog posts",
-    cv_fh_webp_use3: "Online stores",
-    cv_fh_webp_use4: "Landing pages",
     cv_fh_webp_bs1_label: "Websites",
     cv_fh_webp_bs1_rating: "Optimal",
     cv_fh_webp_bs2_label: "Photos",
@@ -6619,10 +6780,6 @@ const translations = {
     cv_fh_svg_con1: "Not suitable for photographs",
     cv_fh_svg_con2: "Converting a photo to SVG won't create true vector artwork",
     cv_fh_svg_con3: "Some websites and apps don't support SVG uploads",
-    cv_fh_svg_use1: "Brand logos",
-    cv_fh_svg_use2: "Icons",
-    cv_fh_svg_use3: "Illustrations",
-    cv_fh_svg_use4: "Diagrams",
     cv_fh_svg_bs1_label: "Icons & logos",
     cv_fh_svg_bs1_rating: "Optimal",
     cv_fh_svg_bs2_label: "Vector art",
@@ -6641,10 +6798,6 @@ const translations = {
     cv_fh_pdf_con1: "Not an image format",
     cv_fh_pdf_con2: "Harder to edit individual images later",
     cv_fh_pdf_con3: "Large documents can result in larger file sizes",
-    cv_fh_pdf_use1: "Reports",
-    cv_fh_pdf_use2: "Portfolios",
-    cv_fh_pdf_use3: "Printable documents",
-    cv_fh_pdf_use4: "Sharing multiple images in one file",
     cv_fh_pdf_bs1_label: "Documents",
     cv_fh_pdf_bs1_rating: "Optimal",
     cv_fh_pdf_bs2_label: "Printing",
@@ -6659,7 +6812,6 @@ const translations = {
     cv_fh_label_bestsuited: "Best suited for",
     cv_fh_label_pros: "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it",
     cv_fh_label_cons: "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind",
-    cv_fh_label_use: "Best use for",
     cv_fh_great: "great choice!",
     cv_fh_changed: "changed your mind?",
     cv_th_format: "Format",
@@ -6723,26 +6875,47 @@ const translations = {
     cp_fh_low_pro2: "Barely any visible difference from the original",
     cp_fh_low_con1: "Smallest amount of space saved",
     cp_fh_low_con2: "Not ideal if file size is your main concern",
-    cp_fh_low_use1: "Print-ready photos",
-    cp_fh_low_use2: "Long-term archives",
-    cp_fh_low_use3: "Professional client deliverables",
+    cp_fh_low_bs1_label: "Printing & archiving",
+    cp_fh_low_bs1_rating: "Optimal",
+    cp_fh_low_bs2_label: "Quality retention",
+    cp_fh_low_bs2_rating: "Optimal",
+    cp_fh_low_bs3_label: "File size savings",
+    cp_fh_low_bs3_rating: "Limited",
+    cp_fh_low_bs4_label: "Web & email",
+    cp_fh_low_bs4_rating: "Acceptable",
+    cp_fh_low_bs5_label: "Quick sharing",
+    cp_fh_low_bs5_rating: "Limited",
     cp_fh_medium_name: "Medium",
     cp_fh_medium_bestfor: "Web, email, everyday sharing",
     cp_fh_medium_pro1: "Balanced size and quality",
     cp_fh_medium_pro2: "Good default for most situations",
     cp_fh_medium_con1: "Slight quality loss under close inspection",
-    cp_fh_medium_use1: "Website images",
-    cp_fh_medium_use2: "Email attachments",
-    cp_fh_medium_use3: "Everyday photo sharing",
+    cp_fh_medium_bs1_label: "Web & email",
+    cp_fh_medium_bs1_rating: "Optimal",
+    cp_fh_medium_bs2_label: "Quality retention",
+    cp_fh_medium_bs2_rating: "Recommended",
+    cp_fh_medium_bs3_label: "File size savings",
+    cp_fh_medium_bs3_rating: "Recommended",
+    cp_fh_medium_bs4_label: "Printing & archiving",
+    cp_fh_medium_bs4_rating: "Limited",
+    cp_fh_medium_bs5_label: "Quick sharing",
+    cp_fh_medium_bs5_rating: "Recommended",
     cp_fh_high_name: "High",
     cp_fh_high_bestfor: "Previews, quick sharing, drafts",
     cp_fh_high_pro1: "Smallest file size",
     cp_fh_high_pro2: "Fastest to upload or send",
     cp_fh_high_con1: "Noticeably lower quality",
     cp_fh_high_con2: "Not suitable for printing or professional use",
-    cp_fh_high_use1: "Quick previews",
-    cp_fh_high_use2: "Draft versions",
-    cp_fh_high_use3: "Messaging apps with size limits"
+    cp_fh_high_bs1_label: "Quick sharing",
+    cp_fh_high_bs1_rating: "Optimal",
+    cp_fh_high_bs2_label: "File size savings",
+    cp_fh_high_bs2_rating: "Optimal",
+    cp_fh_high_bs3_label: "Quality retention",
+    cp_fh_high_bs3_rating: "Limited",
+    cp_fh_high_bs4_label: "Web & email",
+    cp_fh_high_bs4_rating: "Recommended",
+    cp_fh_high_bs5_label: "Printing & archiving",
+    cp_fh_high_bs5_rating: "Unsupported"
   },
   pl: {
     footer_contact_heading: "Skontaktuj się z nami",
@@ -6789,8 +6962,8 @@ const translations = {
     ck_s2_sub1_p: "Używamy podstawowego lokalnego przechowywania danych, aby zapamiętać Twoje bezpośrednie ustawienia wizualne (np. tryb ciemny interfejsu lub preferencje językowe). Nie śledzą one żadnych danych osobowych.",
     ck_s2_sub2_heading: "Pliki cookie analityczne (Google Analytics):",
     ck_s2_sub2_p: "Używamy Google Analytics, aby zrozumieć, jak odwiedzający korzystają z naszej strony — na przykład które narzędzia są popularne i jak można ulepszyć stronę. Te pliki cookie są domyślnie zablokowane i zostaną ustawione tylko wtedy, gdy zaakceptujesz je za pomocą naszego banera cookie.",
-    ck_s2_sub3_heading: "Pliki cookie reklamowe stron trzecich (Google AdSense):",
-    ck_s2_sub3_p: "Ta strona może w przyszłości wyświetlać reklamy zarządzane przez Google AdSense. Gdy będą aktywne, Google umieszczałby pliki cookie w Twojej przeglądarce, aby wyświetlać odpowiednie reklamy, zapobiegać oszustwom reklamowym i mierzyć skuteczność reklam.",
+    ck_s2_sub3_heading: "Pliki cookie reklamowe stron trzecich, np. Google AdSense:",
+    ck_s2_sub3_p: "Ta strona może w przyszłości wyświetlać reklamy zarządzane przez Google AdSense. Gdy będą aktywne, Google umieszczałby pliki cookie w Twojej przeglądarce, aby wyświetlać odpowiednie reklamy, zapobiegać oszustwom reklamowym i mierzyć skuteczność reklam. Nie śledzą Twoich danych osobowych. <a href=\"https://policies.google.com/technologies/ads\" target=\"_blank\" rel=\"noopener\">Więcej informacji tutaj</a>.",
     ck_s3_heading: "3. Zgoda i kontrola",
     ck_s3_p: "Zgodnie z europejskimi przepisami ePrivacy pliki cookie analityczne i reklamowe są domyślnie zablokowane przy pierwszym wczytaniu tej strony. Zostaną włączone tylko wtedy, gdy wyraźnie wyrazisz zgodę za pomocą naszego banera cookie na stronie. Możesz zmienić swój wybór w dowolnym momencie w panelu poniżej lub całkowicie wyczyścić/wyłączyć pliki cookie bezpośrednio w menu konfiguracyjnym przeglądarki internetowej.",
     mp_privacy_heading: "Kosmiczny protokół prywatności",
@@ -6802,6 +6975,9 @@ const translations = {
     tu_s1_heading: "1. Gwarancja przetwarzania bez serwera i prywatności",
     tu_s1_p: "Nasze Usługi działają całkowicie po stronie klienta. Oznacza to, że całe przetwarzanie plików — w tym konwersja obrazów, kompresja, łączenie plików i usuwanie metadanych — odbywa się bezpośrednio w Twojej przeglądarce internetowej, bez użycia serwera.",
     tu_s1_li1: "Twoje pliki nigdy nie są przesyłane na nasze serwery. Nie gromadzimy, nie przeglądamy, nie przechowujemy ani nie posiadamy żadnych treści ani plików przetwarzanych za pomocą naszych narzędzi.",
+    tu_s1_verify: "Możesz to sprawdzić sam: każde narzędzie uruchamia podczas przetwarzania na żywo kontrolę sieci i pokazuje wynik prosto w nagłówku narzędzia — szukaj linii „&gt; BC_Tools_bot:” po użyciu dowolnego narzędzia. Jeśli napotkasz naruszenie bezpieczeństwa, prosimy o natychmiastowy kontakt.",
+    privacy_check_ok: "pobieranie lokalne i prywatne",
+    privacy_check_warn: "UWAGA! - ({count}) naruszenie prywatności - {host}",
     tu_s2_heading: "2. Prawa własności intelektualnej",
     tu_s2_p: "Cała zawartość, kod, niestandardowe style, struktury układu i zasoby graficzne prezentowane w BC Tools są wyłączną własnością BitCrunching i są chronione międzynarodowymi przepisami dotyczącymi praw autorskich.",
     tu_s2_li1: "Możesz korzystać z naszych narzędzi w projektach osobistych lub komercyjnych.",
@@ -6822,7 +6998,10 @@ const translations = {
     pp_s2_heading: "2. Infrastruktura hostingowa",
     pp_s2_p: "Nasza strona internetowa i domena korzystają ze standardowej infrastruktury stron trzecich. Platformy te przetwarzają podstawowe, niemożliwe do zidentyfikowania dane sieciowe (takie jak adresy IP) wyłącznie w celu utrzymania bezpiecznego działania strony.",
     pp_s3_heading: "3. Google AdSense i pliki cookie reklamowe",
-    pp_s3_p: "Aby pomóc utrzymać nasze narzędzia za darmo, ta strona może w przyszłości wyświetlać reklamy zarządzane przez Google AdSense, które wykorzystywałyby pliki cookie do wyświetlania odpowiednich reklam. Pełne informacje o tym, jak działają te pliki cookie i jak nimi zarządzać, znajdziesz w naszym <a data-goto=\"cookies\">Rejestrze plików cookie</a>.",
+    pp_s3_p: "Aby pomóc utrzymać nasze narzędzia za darmo, ta strona może w przyszłości wyświetlać reklamy zarządzane przez podmioty trzecie, tj. Google AdSense, które wykorzystywałyby pliki cookie do wyświetlania odpowiednich reklam. Pełne informacje o tym, jak działają te pliki cookie i jak nimi zarządzać, znajdziesz w naszym <a data-goto=\"cookies\">Rejestrze plików cookie</a>.",
+    pp_ad_terminal_row1: "&gt; Adsense_bot: <span class=\"engine-status-error\">wdraża reklamy</span>",
+    pp_ad_terminal_row2: "&gt; BC_Tools_bot: optymalizuje komfort użytkownika",
+    pp_ad_terminal_row3: "&gt; BC_Tools_bot: <span class=\"engine-status-value\">interfejs bez reklam potwierdzony.</span>",
     page_title: "BC Tools – Darmowe narzędzia do obrazów",
     nav_lang: "Zmień język",
     nav_help: "Pomoc",
@@ -6853,10 +7032,10 @@ const translations = {
     mp_colors_p6: "W miarę rozwoju BC Tools do kolekcji dołączą nowe kolory i nowe odkrycia.",
     mp_colors_p7: "Nasz twórca twierdzi, że kolory zostały starannie wykonane przy użyciu zaawansowanych cyfrowych szczepów kolorów z jego rodzinnej planety Bonbonia.",
     mp_colors_p8: "Nie udało nam się zweryfikować tych twierdzeń, ale z pewnością zgłodnieliśmy.",
-    mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż światło. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż prędkość światła. <span class=\"no-invert\">⚡</span>",
     mp_hero_p2: "Sercem BC Tools jest Creative Hub — rosnąca kolekcja narzędzi działających w przeglądarce dla obrazów, wideo, dźwięku i kodu. Stworzony dla twórców, którzy chcą odkrywać, tworzyć i szybciej wcielać pomysły w życie.",
     mp_hero_p3: "Szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
-    mp_hero_p4: "...czekaj, nasze systemy wykryły nieautoryzowany wyciek pamięci z archiwum BC Tools. Prawdopodobnie nie powinieneś tego czytać.",
+    mp_hero_p4: "...czekaj, nasze systemy wykryły nieautoryzowany wyciek pamięci z wewnętrznego magazynu BC Tools, którego prawdopodobnie nie powinieneś czytać.",
     mp_cards_heading: "Zacznij od Creative Hub:",
     mp_card_convert_desc: "Konwertuj obrazy między formatami JPG, PNG, WEBP, SVG i PDF.",
     mp_card_compress_desc: "Zmniejsz rozmiar obrazu przy zachowaniu jakości.",
@@ -6995,10 +7174,6 @@ const translations = {
     cv_fh_jpg_con1: "Nie obsługuje przezroczystości",
     cv_fh_jpg_con2: "Jakość spada przy wielokrotnej edycji i zapisywaniu",
     cv_fh_jpg_con3: "Nie najlepszy wybór do logo, grafik czy tekstu",
-    cv_fh_jpg_use1: "Zdjęcia rodzinne",
-    cv_fh_jpg_use2: "Zdjęcia ze smartfona",
-    cv_fh_jpg_use3: "Posty w mediach społecznościowych",
-    cv_fh_jpg_use4: "Załączniki e-mail",
     cv_fh_jpg_bs1_label: "Zdjęcia",
     cv_fh_jpg_bs1_rating: "Optymalne",
     cv_fh_jpg_bs2_label: "Strony internetowe",
@@ -7017,10 +7192,6 @@ const translations = {
     cv_fh_png_con1: "Większe pliki niż JPG",
     cv_fh_png_con2: "Zwykle niepotrzebny do zwykłych zdjęć",
     cv_fh_png_con3: "Nie skaluje się w nieskończoność jak grafika wektorowa",
-    cv_fh_png_use1: "Logo firmowe",
-    cv_fh_png_use2: "Zrzuty ekranu",
-    cv_fh_png_use3: "Projekty interfejsu użytkownika",
-    cv_fh_png_use4: "Grafiki przezroczyste",
     cv_fh_png_bs1_label: "Logo",
     cv_fh_png_bs1_rating: "Optymalne",
     cv_fh_png_bs2_label: "Zrzuty ekranu",
@@ -7039,10 +7210,6 @@ const translations = {
     cv_fh_webp_pro4: "Przyspiesza wczytywanie stron",
     cv_fh_webp_con1: "Niektóre starsze oprogramowanie może go nie obsługiwać",
     cv_fh_webp_con2: "Nie każda platforma akceptuje pliki WEBP",
-    cv_fh_webp_use1: "Obrazy na stronie",
-    cv_fh_webp_use2: "Wpisy na blogu",
-    cv_fh_webp_use3: "Sklepy internetowe",
-    cv_fh_webp_use4: "Strony docelowe",
     cv_fh_webp_bs1_label: "Strony internetowe",
     cv_fh_webp_bs1_rating: "Optymalne",
     cv_fh_webp_bs2_label: "Zdjęcia",
@@ -7061,10 +7228,6 @@ const translations = {
     cv_fh_svg_con1: "Nieodpowiedni do fotografii",
     cv_fh_svg_con2: "Konwersja zdjęcia na SVG nie stworzy prawdziwej grafiki wektorowej",
     cv_fh_svg_con3: "Niektóre strony i aplikacje nie obsługują przesyłania SVG",
-    cv_fh_svg_use1: "Logo marki",
-    cv_fh_svg_use2: "Ikony",
-    cv_fh_svg_use3: "Ilustracje",
-    cv_fh_svg_use4: "Diagramy",
     cv_fh_svg_bs1_label: "Ikony i logo",
     cv_fh_svg_bs1_rating: "Optymalne",
     cv_fh_svg_bs2_label: "Grafika wektorowa",
@@ -7083,10 +7246,6 @@ const translations = {
     cv_fh_pdf_con1: "To nie jest format obrazu",
     cv_fh_pdf_con2: "Trudniejsza późniejsza edycja pojedynczych obrazów",
     cv_fh_pdf_con3: "Duże dokumenty mogą mieć większy rozmiar pliku",
-    cv_fh_pdf_use1: "Raporty",
-    cv_fh_pdf_use2: "Portfolia",
-    cv_fh_pdf_use3: "Dokumenty do druku",
-    cv_fh_pdf_use4: "Udostępnianie wielu obrazów w jednym pliku",
     cv_fh_pdf_bs1_label: "Dokumenty",
     cv_fh_pdf_bs1_rating: "Optymalne",
     cv_fh_pdf_bs2_label: "Druk",
@@ -7101,7 +7260,6 @@ const translations = {
     cv_fh_label_bestsuited: "Najlepiej nadaje się do",
     cv_fh_label_pros: "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Dlaczego Ci się spodoba",
     cv_fh_label_cons: "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Na co uważać",
-    cv_fh_label_use: "Najlepsze zastosowanie do",
     cv_fh_great: "świetny wybór!",
     cv_fh_changed: "zmieniłeś zdanie?",
     cv_th_format: "Format",
@@ -7165,26 +7323,47 @@ const translations = {
     cp_fh_low_pro2: "Niemal niezauważalna różnica względem oryginału",
     cp_fh_low_con1: "Najmniejsza oszczędność miejsca",
     cp_fh_low_con2: "Nie jest idealny, jeśli najważniejszy jest rozmiar pliku",
-    cp_fh_low_use1: "Zdjęcia gotowe do druku",
-    cp_fh_low_use2: "Długoterminowe archiwa",
-    cp_fh_low_use3: "Profesjonalne materiały dla klientów",
+    cp_fh_low_bs1_label: "Druk i archiwizacja",
+    cp_fh_low_bs1_rating: "Optymalne",
+    cp_fh_low_bs2_label: "Zachowanie jakości",
+    cp_fh_low_bs2_rating: "Optymalne",
+    cp_fh_low_bs3_label: "Oszczędność rozmiaru",
+    cp_fh_low_bs3_rating: "Ograniczone",
+    cp_fh_low_bs4_label: "Internet i e-mail",
+    cp_fh_low_bs4_rating: "Akceptowalne",
+    cp_fh_low_bs5_label: "Szybkie udostępnianie",
+    cp_fh_low_bs5_rating: "Ograniczone",
     cp_fh_medium_name: "Średni",
     cp_fh_medium_bestfor: "Internet, e-mail, codzienne udostępnianie",
     cp_fh_medium_pro1: "Zrównoważony rozmiar i jakość",
     cp_fh_medium_pro2: "Dobry domyślny wybór w większości sytuacji",
     cp_fh_medium_con1: "Niewielka utrata jakości przy bliższym oglądaniu",
-    cp_fh_medium_use1: "Obrazy na stronę internetową",
-    cp_fh_medium_use2: "Załączniki e-mail",
-    cp_fh_medium_use3: "Codzienne udostępnianie zdjęć",
+    cp_fh_medium_bs1_label: "Internet i e-mail",
+    cp_fh_medium_bs1_rating: "Optymalne",
+    cp_fh_medium_bs2_label: "Zachowanie jakości",
+    cp_fh_medium_bs2_rating: "Zalecane",
+    cp_fh_medium_bs3_label: "Oszczędność rozmiaru",
+    cp_fh_medium_bs3_rating: "Zalecane",
+    cp_fh_medium_bs4_label: "Druk i archiwizacja",
+    cp_fh_medium_bs4_rating: "Ograniczone",
+    cp_fh_medium_bs5_label: "Szybkie udostępnianie",
+    cp_fh_medium_bs5_rating: "Zalecane",
     cp_fh_high_name: "Wysoki",
     cp_fh_high_bestfor: "Podglądy, szybkie udostępnianie, wersje robocze",
     cp_fh_high_pro1: "Najmniejszy rozmiar pliku",
     cp_fh_high_pro2: "Najszybsze przesyłanie lub wysyłanie",
     cp_fh_high_con1: "Zauważalnie niższa jakość",
     cp_fh_high_con2: "Nieodpowiedni do druku lub użytku profesjonalnego",
-    cp_fh_high_use1: "Szybkie podglądy",
-    cp_fh_high_use2: "Wersje robocze",
-    cp_fh_high_use3: "Aplikacje do wiadomości z limitem rozmiaru"
+    cp_fh_high_bs1_label: "Szybkie udostępnianie",
+    cp_fh_high_bs1_rating: "Optymalne",
+    cp_fh_high_bs2_label: "Oszczędność rozmiaru",
+    cp_fh_high_bs2_rating: "Optymalne",
+    cp_fh_high_bs3_label: "Zachowanie jakości",
+    cp_fh_high_bs3_rating: "Ograniczone",
+    cp_fh_high_bs4_label: "Internet i e-mail",
+    cp_fh_high_bs4_rating: "Zalecane",
+    cp_fh_high_bs5_label: "Druk i archiwizacja",
+    cp_fh_high_bs5_rating: "Nieobsługiwane"
   },
   g7: {
     footer_contact_heading: "Ghitk oix tkaeuukkh vvoitkkh uuzz",
@@ -7231,8 +7410,8 @@ const translations = {
     ck_s2_sub1_p: "Vvi uuzzi vazzoik llaekall zztkaerraghi tkae rrinninnvirr eiaeuurr zhoirriktk woizzuuall zzitktkoixghzz (i.gh., UuOi zharrq nnaezhi aerr llaxghuuaghi pfrriphirrixkizz). Tkkhizzi zhae xaetk tkrrakq pfirrzzaexall oixphaerrnnatkoiaex.",
     ck_s2_sub2_heading: "Axalleitkoikzz Kaeaeqoiizz (Ghaeaeghlli Axalleitkoikzz):",
     ck_s2_sub2_p: "Vvi uuzzi Ghaeaeghlli Axalleitkoikzz tkae uuxzhirrzztkaxzh khaevv woizzoitkaerrzz uuzzi aeuurr zzoitki — phaerr ikshannpflli, vvkhoikkh tkaeaellzz arri pfaepfuullarr axzh khaevv tkkhi zzoitki kax vi oinnpfrraewizh. Tkkhizzi kaeaeqoiizz arri vllaekqizh vei zhiphauulltk axzh arri aexllei zzitk aexki eiaeuu akkipftk tkkhinn woia aeuurr kaeaeqoii vaxxirr.",
-    ck_s2_sub3_heading: "Tkkhoirrzh-Pfarrtkei Azhwirrtkoizzoixgh Kaeaeqoiizz (Ghaeaeghlli AzhZzixzzi):",
-    ck_s2_sub3_p: "Tkkhoizz zzoitki nnaei zhoizzpfllaei azhwirrtkoizzinnixtkzz nnaxaghizh vei Ghaeaeghlli AzhZzixzzi oix tkkhi phuutkuurri. Vvkhix aktkoiwi, Ghaeaeghlli vvaeuullzh pfllaki kaeaeqoiizz aex eiaeuurr vrraevvzzirr tkae zzirrwi rrilliwaxtk azhzz, pfrriwixtk azh phrrauuzh, axzh nniazzuurri azh pfirrphaerrnnaxki.",
+    ck_s2_sub3_heading: "Tkkhoirrzh-Pfarrtkei Azhwirrtkoizzoixgh Kaeaeqoiizz i.gh. Ghaeaeghlli AzhZzixzzi:",
+    ck_s2_sub3_p: "Tkkhoizz zzoitki nnaei zhoizzpfllaei azhwirrtkoizzinnixtkzz nnaxaghizh vei Ghaeaeghlli AzhZzixzzi oix tkkhi phuutkuurri. Vvkhix aktkoiwi, Ghaeaeghlli vvaeuullzh pfllaki kaeaeqoiizz aex eiaeuurr vrraevvzzirr tkae zzirrwi rrilliwaxtk azhzz, pfrriwixtk azh phrrauuzh, axzh nniazzuurri azh pfirrphaerrnnaxki. Tkkhiei zhae xaetk tkrrakq eiaeuurr pfirrzzaexall zhatka. <a href=\"https://policies.google.com/technologies/ads\" target=\"_blank\" rel=\"noopener\">Nnaerri aex tkkhoizz khirri</a>.",
     ck_s3_heading: "3. Kaexzzixtk axzh Kaextkrraell",
     ck_s3_p: "Oix kaennpflloiaxki vvoitkkh Iuurraepfiax iPfrroiwakei llavvzz, axalleitkoikzz axzh azhwirrtkoizzoixgh kaeaeqoiizz arri vllaekqizh vei zhiphauulltk vvkhix eiaeuu phoirrzztk llaeazh tkkhoizz vvivzzoitki. Tkkhiei arri aexllei ixavllizh oiph eiaeuu ikshpflloikoitkllei ghoiwi kaexzzixtk woia aeuurr aex-zzoitki kaeaeqoii vaxxirr. Eiaeuu kax kkhaxghi eiaeuurr kkhaeoiki atk axei tkoinni oix tkkhi pfaxill villaevv, aerr klliarr/zhoizzavlli kaeaeqoiizz ixtkoirrillei tkkhrraeuughkh eiaeuurr vviv vrraevvzzirr'zz kaexphoighuurratkoiaex nnixuu.",
     mp_privacy_heading: "Alloiix Pfrroiwakei Pfrraetkaekaell",
@@ -7244,6 +7423,9 @@ const translations = {
     tu_s1_heading: "1. Xae-Zzirrwirr & Pfrroiwakei Ghuuarraxtkii",
     tu_s1_p: "Aeuurr Zzirrwoikizz aepfirratki ixtkoirrillei aex tkkhi klloiixtk zzoizhi. Tkkhoizz nniaxzz allll phoilli pfrraekizzzzoixgh—oixklluuzhoixgh oinnaghi kaexwirrzzoiaex, kaennpfrrizzzzoiaex, phoilli kaennvoixoixgh, axzh nnitkazhatka zztkrroipfpfoixgh—tkaqizz pfllaki zhoirriktkllei vvoitkkhoix eiaeuurr vviv vrraevvzzirr, xae zzirrwirr uuzzizh.",
     tu_s1_li1: "Eiaeuurr phoillizz arri xiwirr uupfllaeazhizh tkae aeuurr zzirrwirrzz. Vvi zhae xaetk kaelllliktk, woiivv, zztkaerri, aerr pfaezzzzizzzz axei kaextkixtk aerr phoillizz eiaeuu pfrraekizzzz tkkhrraeuughkh aeuurr tkaeaellzz.",
+    tu_s1_verify: "Eiaeuu kax wirroiphei tkkhoizz eiaeuurrzzillph: iwirrei tkaeaell rruuxzz a lloiwi xitkvvaerrq kkhikq zhuurroixgh pfrraekizzzzoixgh axzh zzkhaevvzz tkkhi rrizzuulltk rroighkhtk oix tkkhi tkaeaell khiazhirr — llaeaeq phaerr tkkhi &quot;&gt; BC_Tools_bot:&quot; lloixi aphtkirr uuzzoixgh axei tkaeaell. Pflliazzi rripfaerrtk tkae uuzz oinnnnizhoiatkillei oiph eiaeuu ixkaeuuxtkirr a zzaphitkei vrriakkh.",
+    privacy_check_ok: "zhaevvxllaeazh llaekall & pfrroiwatki",
+    privacy_check_warn: "Atktkixtkoiaex! - ({count}) pfrroiwakei vrriakkh - {host}",
     tu_s2_heading: "2. Oixtkilllliktkuuall Pfrraepfirrtkei Rroighkhtkzz",
     tu_s2_p: "Allll kaextkixtk, kaezhi, kuuzztkaenn zztkeilloixgh, llaeiaeuutk zztkrruuktkuurrizz, axzh ghrrapfkhoikall azzzzitkzz phiatkuurrizh aex VK Tkaeaellzz arri tkkhi ikshklluuzzoiwi pfrraepfirrtkei aeph VoitkKrruuxkkhoixgh axzh arri pfrraetkiktkizh vei oixtkirrxatkoiaexall kaepfeirroighkhtk llavvzz.",
     tu_s2_li1: "Eiaeuu nnaei uuzzi aeuurr tkaeaellzz phaerr pfirrzzaexall aerr kaennnnirrkoiall krriatkoiwi pfrraezjiktkzz.",
@@ -7264,7 +7446,10 @@ const translations = {
     pp_s2_heading: "2. Khaezztkoixgh Oixphrrazztkrruuktkuurri",
     pp_s2_p: "Aeuurr vvivzzoitki axzh zhaennaoix uutkoilloizxi zztkaxzharrzh tkkhoirrzh-pfarrtkei oixphrrazztkrruuktkuurri. Tkkhizzi pfllatkphaerrnnzz pfrraekizzzz vazzoik, xaex-oizhixtkoiphoiavlli xitkvvaerrq zhatka (lloiqi OiPf azhzhrrizzzzizz) zzaellillei tkae qiipf tkkhi zzoitki aexlloixi axzh zzikuurri.",
     pp_s3_heading: "3. Ghaeaeghlli AzhZzixzzi & Azhwirrtkoizzoixgh Kaeaeqoiizz",
-    pp_s3_p: "Tkae khillpf qiipf aeuurr tkaeaellzz phrrii, tkkhoizz vvivzzoitki nnaei zhoizzpfllaei azhwirrtkoizzinnixtkzz nnaxaghizh vei Ghaeaeghlli AzhZzixzzi, vvkhoikkh vvaeuullzh uuzzi kaeaeqoiizz tkae zzirrwi rrilliwaxtk azhzz. Phaerr phuullll zhitkaoillzz aex khaevv tkkhizzi kaeaeqoiizz vvaerrq axzh khaevv tkae kaextkrraell tkkhinn, pflliazzi zzii aeuurr <a data-goto=\"cookies\">Kaeaeqoii Rrighoizztkrrei</a>.",
+    pp_s3_p: "Tkae khillpf qiipf aeuurr tkaeaellzz phrrii, tkkhoizz vvivzzoitki nnaei zhoizzpfllaei azhwirrtkoizzinnixtkzz nnaxaghizh vei tkkhoirrzh pfarrtkoiizz oi.i. Ghaeaeghlli AzhZzixzzi, vvkhoikkh vvaeuullzh uuzzi kaeaeqoiizz tkae zzirrwi rrilliwaxtk azhzz. Phaerr phuullll zhitkaoillzz aex khaevv tkkhizzi kaeaeqoiizz vvaerrq axzh khaevv tkae kaextkrraell tkkhinn, pflliazzi zzii aeuurr <a data-goto=\"cookies\">Kaeaeqoii Rrighoizztkrrei</a>.",
+    pp_ad_terminal_row1: "&gt; Adsense_bot: <span class=\"engine-status-error\">zhipfllaeeioixgh azhzz</span>",
+    pp_ad_terminal_row2: "&gt; BC_Tools_bot: aepftkoinnoizxoixgh uuzzirr ikshpfirroiixki",
+    pp_ad_terminal_row3: "&gt; BC_Tools_bot: <span class=\"engine-status-value\">klliax-azh oixtkirrphaki kaexphoirrnnizh.</span>",
     page_title: "VK Tkaeaellzz – Phrrii Oinnaghi Tkaeaellzz",
     nav_lang: "Kkhaxghi llaxghuuaghi",
     nav_help: "Khillpf",
@@ -7295,10 +7480,10 @@ const translations = {
     mp_colors_p6: "Azz VK Tkaeaellzz kaextkoixuuizz tkae ikshpfaxzh, xivv kaellaerrzz axzh xivv zhoizzkaewirroiizz vvoillll zjaeoix tkkhi kaelllliktkoiaex.",
     mp_colors_p7: "Aeuurr zhiwillaepfirr kllaoinnzz tkkhi kaellaerrzz vvirri karriphuullllei krraphtkizh uuzzoixgh azhwaxkizh zhoighoitkall kaellaerr zztkrraoixzz phrraenn khoizz khaenni pfllaxitk, Vaexvaexoia.",
     mp_colors_p8: "Vvi khawi xaetk viix avlli tkae wirroiphei tkkhizzi kllaoinnzz, vuutk vvi zzuurri zhoizh ghitk khuuxghrrei.",
-    mp_hero_p1: "Ghitk oixtkae aeuurr vvaerrllzh... vvkhirri krriatkoiwoitkei tkrrawillzz phazztkirr tkkhax lloighkhtk. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1: "Ghitk oixtkae aeuurr vvaerrllzh... vvkhirri krriatkoiwoitkei tkrrawillzz phazztkirr tkkhax tkkhi zzpfiizh aeph lloighkhtk. <span class=\"no-invert\">⚡</span>",
     mp_hero_p2: "Atk tkkhi khiarrtk aeph VK Tkaeaellzz oizz tkkhi Krriatkoiwi Khuuv — a ghrraevvoixgh kaelllliktkoiaex aeph vrraevvzzirr-vazzizh tkaeaellzz phaerr oinnaghizz, woizhiae, auuzhoiae, axzh kaezhi. Vuuoilltk phaerr krriatkaerrzz vvkhae vvaxtk tkae ikshpfllaerri, krriatki, axzh vrroixgh oizhiazz tkae lloiphi phazztkirr.",
     mp_hero_p3: "Phazztk, zzoinnpflli, axzh akkizzzzoivlli phrraenn axeivvkhirri oix tkkhi uuxoiwirrzzi.",
-    mp_hero_p4: "...vvaoitk aeuurr zzeizztkinnzz zhitkiktkizh ax uuxauutkkhaerroizxizh nninnaerrei lliaq phrraenn tkkhi VK Tkaeaellzz arrkkhoiwi. Eiaeuu pfrraevavllei zzkhaeuullzhx'tk rriazh oitk.",
+    mp_hero_p4: "...vvaoitk aeuurr zzeizztkinnzz zhitkiktkizh ax uuxauutkkhaerroizxizh nninnaerrei lliaq phrraenn tkkhi BC Tools oixtkirrxall zztkaerraghi tkkhatk eiaeuu pfrraevavllei zzkhaeuullzhx'tk rriazh.",
     mp_cards_heading: "Zztkarrtk vvoitkkh Krriatkoiwi Khuuv:",
     mp_card_convert_desc: "Kaexwirrtk oinnaghizz vitkvviix ZjPfGh, PfXGh, VvIVPf, ZzWGh axzh PfZhPh.",
     mp_card_compress_desc: "Rrizhuuki oinnaghi zzoizxi vvkhoilli qiipfoixgh qhuualloitkei.",
@@ -7437,10 +7622,6 @@ const translations = {
     cv_fh_jpg_con1: "Zhaeizzx'tk zzuupfpfaerrtk tkrraxzzpfarrixkei",
     cv_fh_jpg_con2: "Qhuualloitkei zhikrriazzizz vvkhix rripfiatkizhllei izhoitkizh axzh zzawizh",
     cv_fh_jpg_con3: "Xaetk tkkhi vizztk kkhaeoiki phaerr llaeghaezz, ghrrapfkhoikzz, aerr tkikshtk",
-    cv_fh_jpg_use1: "Phannoillei pfkhaetkaezz",
-    cv_fh_jpg_use2: "Zznnarrtkpfkhaexi pfoiktkuurrizz",
-    cv_fh_jpg_use3: "Zzaekoiall nnizhoia pfaezztkzz",
-    cv_fh_jpg_use4: "Innaoill atktkakkhnnixtkzz",
     cv_fh_jpg_bs1_label: "Pfkhaetkaezz",
     cv_fh_jpg_bs1_rating: "Aepftkoinnall",
     cv_fh_jpg_bs2_label: "Vvivzzoitkizz",
@@ -7459,10 +7640,6 @@ const translations = {
     cv_fh_png_con1: "Llarrghirr phoilli zzoizxizz tkkhax ZjPfGh",
     cv_fh_png_con2: "Uuzzuuallllei uuxxikizzzzarrei phaerr rrighuullarr pfkhaetkaezz",
     cv_fh_png_con3: "Zhaeizzx'tk zzkalli oixphoixoitkillei lloiqi wiktkaerr ghrrapfkhoikzz",
-    cv_fh_png_use1: "Kaennpfaxei llaeghaezz",
-    cv_fh_png_use2: "Zzkrriixzzkhaetkzz",
-    cv_fh_png_use3: "Uuzzirr oixtkirrphaki zhizzoighxzz",
-    cv_fh_png_use4: "Tkrraxzzpfarrixtk ghrrapfkhoikzz",
     cv_fh_png_bs1_label: "Llaeghaezz",
     cv_fh_png_bs1_rating: "Aepftkoinnall",
     cv_fh_png_bs2_label: "Zzkrriixzzkhaetkzz",
@@ -7481,10 +7658,6 @@ const translations = {
     cv_fh_webp_pro4: "Khillpfzz vviv pfaghizz llaeazh phazztkirr",
     cv_fh_webp_con1: "Zzaenni aellzhirr zzaephtkvvarri nnaei xaetk zzuupfpfaerrtk oitk",
     cv_fh_webp_con2: "Xaetk iwirrei pfllatkphaerrnn akkipftkzz VvIVPf uupfllaeazhzz",
-    cv_fh_webp_use1: "Vvivzzoitki oinnaghizz",
-    cv_fh_webp_use2: "Vllaegh pfaezztkzz",
-    cv_fh_webp_use3: "Aexlloixi zztkaerrizz",
-    cv_fh_webp_use4: "Llaxzhoixgh pfaghizz",
     cv_fh_webp_bs1_label: "Vvivzzoitkizz",
     cv_fh_webp_bs1_rating: "Aepftkoinnall",
     cv_fh_webp_bs2_label: "Pfkhaetkaezz",
@@ -7503,10 +7676,6 @@ const translations = {
     cv_fh_svg_con1: "Xaetk zzuuoitkavlli phaerr pfkhaetkaeghrrapfkhzz",
     cv_fh_svg_con2: "Kaexwirrtkoixgh a pfkhaetkae tkae ZzWGh vvaex'tk krriatki tkrruui wiktkaerr arrtkvvaerrq",
     cv_fh_svg_con3: "Zzaenni vvivzzoitkizz axzh apfpfzz zhaex'tk zzuupfpfaerrtk ZzWGh uupfllaeazhzz",
-    cv_fh_svg_use1: "Vrraxzh llaeghaezz",
-    cv_fh_svg_use2: "Oikaexzz",
-    cv_fh_svg_use3: "Oilllluuzztkrratkoiaexzz",
-    cv_fh_svg_use4: "Zhoiaghrrannzz",
     cv_fh_svg_bs1_label: "Oikaexzz & llaeghaezz",
     cv_fh_svg_bs1_rating: "Aepftkoinnall",
     cv_fh_svg_bs2_label: "Wiktkaerr arrtk",
@@ -7525,10 +7694,6 @@ const translations = {
     cv_fh_pdf_con1: "Xaetk ax oinnaghi phaerrnnatk",
     cv_fh_pdf_con2: "Kharrzhirr tkae izhoitk oixzhoiwoizhuuall oinnaghizz llatkirr",
     cv_fh_pdf_con3: "Llarrghi zhaekuunnixtkzz kax rrizzuulltk oix llarrghirr phoilli zzoizxizz",
-    cv_fh_pdf_use1: "Rripfaerrtkzz",
-    cv_fh_pdf_use2: "Pfaerrtkphaelloiaezz",
-    cv_fh_pdf_use3: "Pfrroixtkavlli zhaekuunnixtkzz",
-    cv_fh_pdf_use4: "Zzkharroixgh nnuulltkoipflli oinnaghizz oix aexi phoilli",
     cv_fh_pdf_bs1_label: "Zhaekuunnixtkzz",
     cv_fh_pdf_bs1_rating: "Aepftkoinnall",
     cv_fh_pdf_bs2_label: "Pfrroixtkoixgh",
@@ -7543,7 +7708,6 @@ const translations = {
     cv_fh_label_bestsuited: "Vizztk zzuuoitkizh phaerr",
     cv_fh_label_pros: "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Vvkhei eiaeuu'llll lloiwi oitk",
     cv_fh_label_cons: "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Qiipf oix nnoixzh",
-    cv_fh_label_use: "Vizztk uuzzi phaerr",
     cv_fh_great: "ghrriatk kkhaeoiki!",
     cv_fh_changed: "kkhaxghizh eiaeuurr nnoixzh?",
     cv_th_format: "Phaerrnnatk",
@@ -7607,26 +7771,47 @@ const translations = {
     cp_fh_low_pro2: "Varrillei axei woizzoivlli zhoiphphirrixki phrraenn tkkhi aerroighoixall",
     cp_fh_low_con1: "Zznnallllizztk annaeuuxtk aeph zzpfaki zzawizh",
     cp_fh_low_con2: "Xaetk oizhiall oiph phoilli zzoizxi oizz eiaeuurr nnaoix kaexkirrx",
-    cp_fh_low_use1: "Pfrroixtk-rriazhei pfkhaetkaezz",
-    cp_fh_low_use2: "Llaexgh-tkirrnn arrkkhoiwizz",
-    cp_fh_low_use3: "Pfrraephizzzzoiaexall klloiixtk zhilloiwirravllizz",
+    cp_fh_low_bs1_label: "Pfrroixtkoixgh & arrkkhoiwoixgh",
+    cp_fh_low_bs1_rating: "Aepftkoinnall",
+    cp_fh_low_bs2_label: "Qhuualloitkei rritkixtkoiaex",
+    cp_fh_low_bs2_rating: "Aepftkoinnall",
+    cp_fh_low_bs3_label: "Phoilli zzoizxi zzawoixghzz",
+    cp_fh_low_bs3_rating: "Lloinnoitkizh",
+    cp_fh_low_bs4_label: "Vviv & innaoill",
+    cp_fh_low_bs4_rating: "Akkipftkavlli",
+    cp_fh_low_bs5_label: "Qhuuoikq zzkharroixgh",
+    cp_fh_low_bs5_rating: "Lloinnoitkizh",
     cp_fh_medium_name: "Nnizhoiuunn",
     cp_fh_medium_bestfor: "Vviv, innaoill, iwirreizhaei zzkharroixgh",
     cp_fh_medium_pro1: "Vallaxkizh zzoizxi axzh qhuualloitkei",
     cp_fh_medium_pro2: "Ghaeaezh zhiphauulltk phaerr nnaezztk zzoitkuuatkoiaexzz",
     cp_fh_medium_con1: "Zzlloighkhtk qhuualloitkei llaezzzz uuxzhirr kllaezzi oixzzpfiktkoiaex",
-    cp_fh_medium_use1: "Vvivzzoitki oinnaghizz",
-    cp_fh_medium_use2: "Innaoill atktkakkhnnixtkzz",
-    cp_fh_medium_use3: "Iwirreizhaei pfkhaetkae zzkharroixgh",
+    cp_fh_medium_bs1_label: "Vviv & innaoill",
+    cp_fh_medium_bs1_rating: "Aepftkoinnall",
+    cp_fh_medium_bs2_label: "Qhuualloitkei rritkixtkoiaex",
+    cp_fh_medium_bs2_rating: "Rrikaennnnixzhizh",
+    cp_fh_medium_bs3_label: "Phoilli zzoizxi zzawoixghzz",
+    cp_fh_medium_bs3_rating: "Rrikaennnnixzhizh",
+    cp_fh_medium_bs4_label: "Pfrroixtkoixgh & arrkkhoiwoixgh",
+    cp_fh_medium_bs4_rating: "Lloinnoitkizh",
+    cp_fh_medium_bs5_label: "Qhuuoikq zzkharroixgh",
+    cp_fh_medium_bs5_rating: "Rrikaennnnixzhizh",
     cp_fh_high_name: "Khoighkh",
     cp_fh_high_bestfor: "Pfrriwoiivvzz, qhuuoikq zzkharroixgh, zhrraphtkzz",
     cp_fh_high_pro1: "Zznnallllizztk phoilli zzoizxi",
     cp_fh_high_pro2: "Phazztkizztk tkae uupfllaeazh aerr zzixzh",
     cp_fh_high_con1: "Xaetkoikiavllei llaevvirr qhuualloitkei",
     cp_fh_high_con2: "Xaetk zzuuoitkavlli phaerr pfrroixtkoixgh aerr pfrraephizzzzoiaexall uuzzi",
-    cp_fh_high_use1: "Qhuuoikq pfrriwoiivvzz",
-    cp_fh_high_use2: "Zhrraphtk wirrzzoiaexzz",
-    cp_fh_high_use3: "Nnizzzzaghoixgh apfpfzz vvoitkkh zzoizxi lloinnoitkzz"
+    cp_fh_high_bs1_label: "Qhuuoikq zzkharroixgh",
+    cp_fh_high_bs1_rating: "Aepftkoinnall",
+    cp_fh_high_bs2_label: "Phoilli zzoizxi zzawoixghzz",
+    cp_fh_high_bs2_rating: "Aepftkoinnall",
+    cp_fh_high_bs3_label: "Qhuualloitkei rritkixtkoiaex",
+    cp_fh_high_bs3_rating: "Lloinnoitkizh",
+    cp_fh_high_bs4_label: "Vviv & innaoill",
+    cp_fh_high_bs4_rating: "Rrikaennnnixzhizh",
+    cp_fh_high_bs5_label: "Pfrroixtkoixgh & arrkkhoiwoixgh",
+    cp_fh_high_bs5_rating: "Uuxzzuupfpfaerrtkizh"
   },
 };
 
@@ -7725,20 +7910,93 @@ const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", 
    might otherwise be requested. */
 const AD_EXCLUDED_PAGES = ["terms", "privacy", "cookies"];
 
+/* Live "safe & private" check: monkey-patches fetch/XHR for the
+   duration of a tool's actual file processing and counts any request
+   that isn't to a known analytics/ads host or a local blob/data URL.
+   This is a real check, not a decorative animation — it reflects what
+   genuinely happened during that specific operation. */
+const PRIVACY_CHECK_ALLOWLIST = ["google-analytics.com", "googletagmanager.com", "google.com", "doubleclick.net", "googlesyndication.com"];
+let privacyCheckActive = false;
+let privacyCheckExternalCount = 0;
+let privacyCheckExternalHosts = [];
+
+/* Returns the external hostname if rawUrl isn't a known analytics host
+   or a local blob/data URL, otherwise null. */
+function privacyCheckExternalHost(rawUrl){
+  try {
+    const url = new URL(rawUrl, location.href);
+    if (url.protocol === "blob:" || url.protocol === "data:") return null;
+    if (PRIVACY_CHECK_ALLOWLIST.some(host => url.hostname === host || url.hostname.endsWith("." + host))) return null;
+    return url.hostname;
+  } catch (err) {
+    return null;
+  }
+}
+
+function privacyCheckRecord(rawUrl){
+  const host = privacyCheckExternalHost(rawUrl);
+  if (!host) return;
+  privacyCheckExternalCount++;
+  if (!privacyCheckExternalHosts.includes(host)) privacyCheckExternalHosts.push(host);
+}
+
+const _privacyCheckOrigFetch = window.fetch;
+window.fetch = function(...args){
+  if (privacyCheckActive){
+    privacyCheckRecord(args[0] instanceof Request ? args[0].url : args[0]);
+  }
+  return _privacyCheckOrigFetch.apply(this, args);
+};
+
+const _privacyCheckOrigXhrOpen = XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open = function(method, url, ...rest){
+  if (privacyCheckActive){
+    privacyCheckRecord(url);
+  }
+  return _privacyCheckOrigXhrOpen.call(this, method, url, ...rest);
+};
+
+function startPrivacyCheck(){
+  privacyCheckActive = true;
+  privacyCheckExternalCount = 0;
+  privacyCheckExternalHosts = [];
+}
+
+function finishPrivacyCheck(badgeEl){
+  privacyCheckActive = false;
+  if (!badgeEl) return;
+  const dict = translations[currentLang] || translations.en;
+  if (privacyCheckExternalCount === 0){
+    const label = dict.privacy_check_ok || "download local & private";
+    badgeEl.textContent = "> BC_Tools_bot: " + label;
+  } else {
+    const template = dict.privacy_check_warn || "ATTENTION! - ({count}) privacy breach - {host}";
+    const text = template.replace("{count}", privacyCheckExternalCount).replace("{host}", privacyCheckExternalHosts.join(", "));
+    badgeEl.textContent = "> " + text;
+  }
+  badgeEl.classList.add("visible");
+}
+
 /* Routes with a generated static file at <name>/index.html (see
    build_static_routes.py) — need a trailing slash so the URL matches the
    file location and skips GitHub Pages' 301 redirect flicker. Keep in
    sync with ROUTES in that script. */
-const STATIC_ROUTES = ["terms", "privacy", "cookies", "about", "faq", "golden-rules"];
+const STATIC_ROUTES = ["terms", "privacy", "cookies", "about", "faq", "golden-rules", "convert", "compress", "combine", "exif"];
 
+/* Cleanly is branded as "Cleanly" everywhere in the UI, but its internal
+   page id/section stayed "exif" (metadata format) to avoid a much wider
+   rename — this just maps the public URL to match the branding. */
 function nameToPath(name){
   if (name === "mainpage") return "/";
+  if (name === "exif") return "/cleanly/";
   return STATIC_ROUTES.includes(name) ? "/" + name + "/" : "/" + name;
 }
 
 function pathToName(pathname){
   const seg = pathname.replace(/^\/|\/$/g, "");
-  return (seg === "" || seg === "creativehub") ? "mainpage" : seg;
+  if (seg === "" || seg === "creativehub") return "mainpage";
+  if (seg === "cleanly") return "exif";
+  return seg;
 }
 
 function gotoPage(name){
@@ -7793,6 +8051,29 @@ function gotoPage(name){
     } catch (err) {
       console.error("[adsense] push failed:", err);
     }
+
+    /* Manual <ins class="adsbygoogle"> units (Golden Rules' top/rail/
+       bottom slots) each need their own push — one push fills exactly
+       one unfilled ins, unlike the untargeted Auto ads push above.
+       Scoped to the now-active page only: these ins tags stay in the
+       DOM (just hidden) while on any other page, and requesting an ad
+       for hidden content is exactly what we don't want. Google marks a
+       filled ins with data-adsbygoogle-status, so repeat visits to the
+       same page never double-push an already-filled slot. */
+    const activePage = document.getElementById("page-" + name);
+    if (activePage){
+      activePage.querySelectorAll("ins.adsbygoogle:not([data-adsbygoogle-status])").forEach(() => {
+        try {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (err) {
+          console.error("[adsense] manual ins push failed:", err);
+        }
+      });
+    }
+  }
+
+  if (name === "golden-rules" && typeof placeGoldenRulesInContentAd === "function"){
+    placeGoldenRulesInContentAd();
   }
 }
 
@@ -7816,6 +8097,51 @@ document.addEventListener("click", (e) => {
 });
 
 let currentGoldenRulesTool = "convert";
+/* In-content ad: a single <ins> created once and relocated (not
+   recreated) after the first article of whichever tool/language block
+   is currently active — created lazily since golden-rules-articles for
+   the current language might not exist yet at first render (g7 has no
+   Golden Rules translation). Only ever pushed once the Golden Rules
+   page is genuinely the visible page — this function also runs at
+   page-load and on every tool/language switch regardless of which
+   page is showing, so positioning happens eagerly but requesting the
+   ad must not, or we'd be asking AdSense to fill a slot no one is
+   looking at. */
+let goldenRulesInContentAd = null;
+let goldenRulesInContentAdPushed = false;
+
+function placeGoldenRulesInContentAd(){
+  const activeArticles = document.querySelector(".golden-rules-articles.active");
+  const articles = activeArticles ? activeArticles.querySelectorAll(".golden-rules-article") : [];
+  // Between article 3 and 4 — falls back to the last article if a
+  // tool/language ever has fewer than 4.
+  const targetArticle = articles[2] || articles[articles.length - 1];
+  if (!targetArticle) return;
+
+  if (!goldenRulesInContentAd){
+    goldenRulesInContentAd = document.createElement("ins");
+    goldenRulesInContentAd.className = "adsbygoogle ad-slot ad-slot-incontent ad-slot-banner";
+    goldenRulesInContentAd.style.display = "inline-block";
+    goldenRulesInContentAd.style.width = "320px";
+    goldenRulesInContentAd.style.height = "50px";
+    goldenRulesInContentAd.setAttribute("data-ad-client", "ca-pub-3037236608651508");
+    goldenRulesInContentAd.setAttribute("data-ad-slot", "0000000005");
+  }
+
+  targetArticle.insertAdjacentElement("afterend", goldenRulesInContentAd);
+
+  const pageEl = document.getElementById("page-golden-rules");
+  const isPageVisible = pageEl && pageEl.classList.contains("active");
+  if (isPageVisible && !goldenRulesInContentAdPushed){
+    goldenRulesInContentAdPushed = true;
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error("[adsense] in-content push failed:", err);
+    }
+  }
+}
+
 function selectGoldenRulesTool(tool){
   if (tool) currentGoldenRulesTool = tool;
   document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
@@ -7824,6 +8150,7 @@ function selectGoldenRulesTool(tool){
   document.querySelectorAll(".golden-rules-articles").forEach(el => {
     el.classList.toggle("active", el.dataset.tool === currentGoldenRulesTool && el.dataset.lang === currentLang);
   });
+  placeGoldenRulesInContentAd();
 }
 
 document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
@@ -8034,11 +8361,9 @@ if (VALID_PAGES.includes(startPage)) {
       if (name === undefined || bestFor === undefined) return;
       const pros = readFormatNumbered(dict, fkey, "pro");
       const cons = readFormatNumbered(dict, fkey, "con");
-      const useCases = readFormatNumbered(dict, fkey, "use");
       const labelBestFor = dict.cv_fh_label_bestfor || "Best for:";
       const labelPros = dict.cv_fh_label_pros || "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it";
       const labelCons = dict.cv_fh_label_cons || "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind";
-      const labelUse = dict.cv_fh_label_use || "Typical use cases";
       const labelBestSuited = dict.cv_fh_label_bestsuited || "Best suited for";
       const great = dict.cv_fh_great || "great choice!";
       const changed = dict.cv_fh_changed || "changed your mind?";
@@ -8067,7 +8392,6 @@ if (VALID_PAGES.includes(startPage)) {
         "<div class=\"format-pick-detail\">" +
           "<p class=\"format-pick-bestfor\"><strong>" + labelBestFor + "</strong> " + bestFor + "</p>" +
           "<div class=\"format-pick-detail-grid\">" +
-            "<div><p class=\"format-pick-subheading\">" + labelUse + "</p>" + buildFormatPickList(useCases) + "</div>" +
             "<div><p class=\"format-pick-subheading\">" + labelPros + "</p>" + buildFormatPickList(pros) + "</div>" +
             "<div><p class=\"format-pick-subheading\">" + labelCons + "</p>" + buildFormatPickList(cons) + "</div>" +
           "</div>" +
@@ -8399,6 +8723,7 @@ if (VALID_PAGES.includes(startPage)) {
       results.innerHTML = "";
     }
 
+    startPrivacyCheck();
     try {
       if (outputIsPdf && !inputIsPdf){
         // Images -> single combined PDF (many-to-one)
@@ -8495,12 +8820,19 @@ if (VALID_PAGES.includes(startPage)) {
           status.textContent = dict.cv_status_download_done.replace("{count}", files.length).replace("{word}", word);
         }
       }
+
+      // Conversion succeeded — clear the source selection so the now-stale
+      // "files" array can't be reconverted by clicking the button again
+      // after removing a result card (result cards only remove themselves
+      // from view, they never represented the source files anymore).
+      files = [];
     } catch (err){
       console.error(err);
       status.textContent = dict.cv_status_error;
     } finally {
-      convertBtn.disabled = false;
+      convertBtn.disabled = files.length === 0;
       convertBtn.textContent = dict.cv_convert_btn;
+      finishPrivacyCheck(document.getElementById("cvPrivacyBadge"));
     }
   });
 
@@ -8529,6 +8861,40 @@ if (VALID_PAGES.includes(startPage)) {
 
   function buildPickList(items){
     return "<ul class=\"format-pick-sublist\">" + items.map(item => "<li>" + item + "</li>").join("") + "</ul>";
+  }
+
+  /* "Best suited for" ratings list — same component/markup as Convert's
+     buildBestSuitedList, just with compress-specific icons/categories. */
+  const PICK_BEST_SUITED_ICONS = {
+    low: ["printing", "quality", "filesize", "webemail", "sharing"],
+    medium: ["webemail", "quality", "filesize", "printing", "sharing"],
+    high: ["sharing", "filesize", "quality", "webemail", "printing"]
+  };
+
+  const PICK_BEST_SUITED_RATING_CATEGORY = {
+    low: ["optimal", "optimal", "limited", "acceptable", "limited"],
+    medium: ["optimal", "recommended", "recommended", "limited", "recommended"],
+    high: ["optimal", "optimal", "limited", "recommended", "unsupported"]
+  };
+
+  function buildPickBestSuitedList(levelKey, fkey, dict, heading){
+    const icons = PICK_BEST_SUITED_ICONS[levelKey] || [];
+    const categories = PICK_BEST_SUITED_RATING_CATEGORY[levelKey] || [];
+    const rows = [];
+    for (let i = 1; i <= 6; i++){
+      const label = dict[fkey + "_bs" + i + "_label"];
+      const rating = dict[fkey + "_bs" + i + "_rating"];
+      if (label === undefined || rating === undefined) break;
+      const icon = icons[i - 1] || "quality";
+      const category = categories[i - 1] || "optimal";
+      rows.push(
+        "<div class=\"format-pick-bestsuited-row\">" +
+          "<span class=\"format-pick-bestsuited-label\"><span class=\"fmt-icon fmt-icon-cat-" + icon + "\" aria-hidden=\"true\"></span> " + label + "</span>" +
+          "<span class=\"format-pick-bestsuited-rating\" data-rating=\"" + category + "\">" + rating + "</span>" +
+        "</div>"
+      );
+    }
+    return "<div class=\"format-pick-bestsuited\"><p class=\"format-pick-subheading\">" + heading + "</p>" + rows.join("") + "</div>";
   }
 
   /* Mirrors Convert's buildMobileRatedList — label + colored glyph
@@ -8565,11 +8931,10 @@ if (VALID_PAGES.includes(startPage)) {
       if (name === undefined || bestFor === undefined) return;
       const pros = readPickNumbered(dict, fkey, "pro");
       const cons = readPickNumbered(dict, fkey, "con");
-      const useCases = readPickNumbered(dict, fkey, "use");
       const labelBestFor = dict.cv_fh_label_bestfor || "Best for:";
       const labelPros = dict.cv_fh_label_pros || "<span class=\"fmt-icon fmt-icon-pros\" aria-hidden=\"true\"></span> Why you'll love it";
       const labelCons = dict.cv_fh_label_cons || "<span class=\"fmt-icon fmt-icon-cons\" aria-hidden=\"true\"></span> Keep in mind";
-      const labelUse = dict.cv_fh_label_use || "Typical use cases";
+      const labelBestSuited = dict.cv_fh_label_bestsuited || "Best suited for";
       const great = dict.cv_fh_great || "great choice!";
       const changed = dict.cv_fh_changed || "changed your mind?";
       if (pickHeading){
@@ -8585,9 +8950,9 @@ if (VALID_PAGES.includes(startPage)) {
       if (usecasePicker) usecasePicker.classList.add("collapsed");
 
       const labelReset = dict.cv_ucpick_reset || "Choose other option";
+      const bestSuitedList = buildPickBestSuitedList(levelKey, fkey, dict, labelBestSuited);
       const mobileExtra =
         "<div class=\"format-pick-mobile-extra\">" +
-          "<div><p class=\"format-pick-subheading\">" + labelUse + "</p>" + buildMobilePickRatedList(useCases, "recommended", "★") + "</div>" +
           "<div><p class=\"format-pick-subheading\">" + labelPros + "</p>" + buildMobilePickRatedList(pros, "optimal", "✓") + "</div>" +
           "<div><p class=\"format-pick-subheading\">" + labelCons + "</p>" + buildMobilePickRatedList(cons, "limited", "!") + "</div>" +
           "<button type=\"button\" class=\"usecase-reset-banner\" data-target=\"compress\">" + labelReset + "</button>" +
@@ -8596,10 +8961,10 @@ if (VALID_PAGES.includes(startPage)) {
         "<div class=\"format-pick-detail\">" +
           "<p class=\"format-pick-bestfor\"><strong>" + labelBestFor + "</strong> " + bestFor + "</p>" +
           "<div class=\"format-pick-detail-grid\">" +
-            "<div><p class=\"format-pick-subheading\">" + labelUse + "</p>" + buildPickList(useCases) + "</div>" +
             "<div><p class=\"format-pick-subheading\">" + labelPros + "</p>" + buildPickList(pros) + "</div>" +
             "<div><p class=\"format-pick-subheading\">" + labelCons + "</p>" + buildPickList(cons) + "</div>" +
           "</div>" +
+          bestSuitedList +
           mobileExtra +
         "</div>";
     } catch (err) {
@@ -8826,6 +9191,7 @@ if (VALID_PAGES.includes(startPage)) {
       results.innerHTML = "";
     }
 
+    startPrivacyCheck();
     try {
       const zip = useZip ? new JSZip() : null;
       let done = 0;
@@ -8865,12 +9231,18 @@ if (VALID_PAGES.includes(startPage)) {
         const word = pluralWord(dict, files.length, "cp_word");
         status.textContent = dict.cp_status_download_done.replace("{count}", files.length).replace("{word}", word);
       }
+
+      // Compression succeeded — clear the source selection so the now-
+      // stale "files" array can't be reprocessed by clicking the button
+      // again after removing a result card.
+      files = [];
     } catch (err){
       console.error(err);
       status.textContent = dict.cp_status_error;
     } finally {
-      compressBtn.disabled = false;
+      compressBtn.disabled = files.length === 0;
       compressBtn.textContent = dict.cp_compress_btn;
+      finishPrivacyCheck(document.getElementById("cpPrivacyBadge"));
     }
   });
 
@@ -9030,6 +9402,7 @@ if (VALID_PAGES.includes(startPage)) {
     combineBtn.disabled = true;
     status.textContent = dict.cb_status_combining;
 
+    startPrivacyCheck();
     try {
       const { PDFDocument } = PDFLib;
       const mergedPdf = await PDFDocument.create();
@@ -9057,6 +9430,7 @@ if (VALID_PAGES.includes(startPage)) {
       status.textContent = dict.cb_status_error;
     } finally {
       combineBtn.disabled = files.length === 0;
+      finishPrivacyCheck(document.getElementById("cbPrivacyBadge"));
     }
   });
 })();
@@ -9225,6 +9599,7 @@ if (VALID_PAGES.includes(startPage)) {
     stripBtn.disabled = true;
     status.textContent = dict.ex_status_processing;
 
+    startPrivacyCheck();
     try {
       const useZip = files.length > 5;
       const zip = useZip ? new JSZip() : null;
@@ -9258,6 +9633,7 @@ if (VALID_PAGES.includes(startPage)) {
       status.textContent = dict.ex_status_error;
     } finally {
       stripBtn.disabled = files.length === 0;
+      finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     }
   });
 
