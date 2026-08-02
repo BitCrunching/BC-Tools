@@ -12,11 +12,32 @@ in ROUTES below. Each entry generates <slug>/index.html.
 
 import os
 import re
+import sys
 
 SOURCE = "index.html"
 SITE_URL = "https://bitcrunching.com"
 
 ROUTES = {
+    "convert": {
+        "page_id": "page-convert",
+        "title": "Convert Images – JPG, PNG, WEBP, SVG, PDF – BC Tools",
+        "description": "Convert images between JPG, PNG, WEBP, SVG and PDF for free, right in your browser. Nothing is ever uploaded to a server.",
+    },
+    "compress": {
+        "page_id": "page-compress",
+        "title": "Compress Images – BC Tools",
+        "description": "Reduce image file size while keeping quality, for free, right in your browser. Nothing is ever uploaded to a server.",
+    },
+    "combine": {
+        "page_id": "page-combine",
+        "title": "Combine Images into a PDF – BC Tools",
+        "description": "Merge multiple images or PDFs into a single document in any order you like, for free, right in your browser.",
+    },
+    "cleanly": {
+        "page_id": "page-exif",
+        "title": "Cleanly – Remove Photo Metadata – BC Tools",
+        "description": "Strip hidden metadata like GPS location or camera model from your photos before sharing them, for free, right in your browser.",
+    },
     "terms": {
         "page_id": "page-terms",
         "title": "Terms of Use – BC Tools",
@@ -132,6 +153,21 @@ def build_sitemap(slugs):
 
 
 def main():
+    from check_translations import load_translations
+
+    langs = load_translations(SOURCE)
+    reference = langs.get("en", set())
+    incomplete = [
+        lang for lang, keys in langs.items()
+        if lang != "en" and (reference - keys or keys - reference)
+    ]
+    if incomplete:
+        print("ERROR: translations are incomplete — run check_translations.py for details.")
+        print("Refusing to build static routes with a broken translation set.")
+        for lang in incomplete:
+            print(f"  - {lang}: mismatched key set")
+        sys.exit(1)
+
     with open(SOURCE, encoding="utf-8") as f:
         source_html = f.read()
 
