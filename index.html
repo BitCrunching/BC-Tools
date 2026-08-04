@@ -2223,6 +2223,7 @@ footer a{
 
 /* ===== SEO CONTENT COMPONENTS COMPRESS ===== */
 .content-section-compress{
+  position:relative;
   max-width:900px;
   margin:0 auto;
   padding:60px 24px;
@@ -2369,9 +2370,69 @@ footer a{
 
 /* ===== SEO CONTENT COMPONENTS CONVERT ===== */
 .content-section-convert{
+  position:relative;
   max-width:900px;
   margin:0 auto;
   padding:60px 24px;
+}
+
+.content-section-article-wrap{
+  position:relative;
+  padding-top:8px;
+}
+
+.content-section-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:visible;
+  pointer-events:none;
+}
+
+.content-section-article-wrap > *:not(.content-section-bg),
+.content-section-format-wrap > *:not(.content-section-bg){
+  position:relative;
+  z-index:1;
+}
+
+.content-section-format-wrap{
+  position:relative;
+}
+
+.content-section-format-wrap .cs-shape-2{
+  top:auto;
+  bottom:-60px;
+  right:2%;
+  width:190px;
+  height:220px;
+}
+
+.cs-shape{
+  position:absolute;
+  display:block;
+  border-radius:24px;
+  opacity:.22;
+  filter:blur(1px);
+  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+}
+
+.cs-shape-1{ top:-40px; left:-60px; width:245px; height:286px; animation-name:mp-colors-drift-x; animation-duration:30s; }
+.cs-shape-2{ top:20%; right:-70px; width:245px; height:286px; animation-delay:-5s; }
+.cs-shape-3{ bottom:-40px; left:30%; width:200px; height:230px; animation-name:mp-colors-drift-up; animation-delay:0s; }
+
+.content-section-convert[data-tool="convert"] .cs-shape{ background:#d670ff; }
+.content-section-compress[data-tool="compress"] .cs-shape{ background:#68e1ff; }
+.content-section-convert[data-tool="combine"] .cs-shape{ background:#ec6f63; }
+.content-section-convert[data-tool="exif"] .cs-shape{ background:#4ade80; }
+
+.content-section-convert[data-tool="convert"] .cs-shape-3,
+.content-section-compress[data-tool="compress"] .cs-shape-3{ bottom:40px; }
+
+@media (max-width:768px){
+  .cs-shape{ opacity:.16; }
+  .cs-shape-1{ width:208px; height:243px; left:-40px; }
+  .cs-shape-2{ width:208px; height:243px; right:-40px; }
+  .cs-shape-3{ width:170px; height:196px; }
 }
 
 .content-section-convert h2{
@@ -2828,7 +2889,54 @@ footer a{
 }
 
 
-/* FAQ accordion */
+/* FAQ articles */
+.faq-group-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.hero + .faq-group-wrap{
+  margin-top:0;
+}
+
+.faq-group-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:visible;
+  pointer-events:none;
+}
+
+.faq-group-content{
+  position:relative;
+  z-index:1;
+}
+
+.faq-shape{
+  position:absolute;
+  display:block;
+  border-radius:24px;
+  background:var(--shape-color);
+  opacity:.35;
+  filter:blur(1px);
+  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+}
+
+.faq-cv-1{ --shape-color:#d670ff; width:240px; height:276px; top:-20px; left:28%; animation-name:mp-colors-drift-x; animation-duration:28s; }
+
+.faq-cp-1{ --shape-color:#68e1ff; width:240px; height:276px; bottom:-20px; right:28%; animation-name:mp-colors-drift-up; }
+
+.faq-cb-1{ --shape-color:#ec6f63; width:235px; height:270px; top:-20px; right:28%; animation-name:mp-colors-drift-x; animation-duration:29s; }
+
+.faq-ex-1{ --shape-color:#4ade80; width:235px; height:270px; bottom:-20px; left:28%; animation-name:mp-colors-drift-up; }
+
+@media (max-width:768px){
+  .faq-shape{
+    opacity:.2;
+  }
+  .faq-cv-1, .faq-cp-1, .faq-cb-1, .faq-ex-1{ width:170px; height:196px; }
+}
+
 .faq-group-heading{
   max-width:772px;
   margin:48px auto 16px;
@@ -2839,7 +2947,7 @@ footer a{
   border-top:1px solid rgba(255,255,255,.08);
 }
 
-.hero + .faq-group-heading{
+.hero + .faq-group-wrap .faq-group-heading{
   margin-top:0;
   padding-top:0;
   border-top:none;
@@ -2850,63 +2958,26 @@ footer a{
   margin:0 auto 8px;
   padding:0 24px;
   display:grid;
-  gap:10px;
+  gap:28px;
 }
 
 .faq-item-mainpage{
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,.08);
-  background:#1d243686;
-  padding:4px 20px;
+  padding:0;
 }
 
-.faq-item-mainpage summary{
-  padding:16px 0;
+.faq-item-mainpage .faq-q{
   font-weight:700;
   color:#fff;
-  cursor:pointer;
-  list-style:none;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
+  margin:0 0 8px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.5;
 }
 
-.faq-list-mainpage.convert .faq-item-mainpage{
-  background:#d670ff21;
-}
-
-.faq-list-mainpage.compress .faq-item-mainpage{
-  background:#68e1ff21;
-}
-
-.faq-list-mainpage.combine .faq-item-mainpage{
-  background:#ec6f6321;
-}
-
-.faq-list-mainpage.cleanly .faq-item-mainpage{
-  background:#4ade8021;
-}
-
-.faq-item-mainpage summary::-webkit-details-marker{
-  display:none;
-}
-
-.faq-item-mainpage summary::after{
-  content:"+";
-  font-size:20px;
-  flex-shrink:0;
-  transition:transform .2s;
-}
-
-.faq-item-mainpage[open] summary::after{
-  transform:rotate(45deg);
-}
-
-.faq-item-mainpage p{
+.faq-item-mainpage .faq-a{
   color:var(--text);
-  margin:0 0 18px;
-  font-size:15px;
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
 }
 
 /* mainpage "why us" grid */
@@ -3221,6 +3292,7 @@ footer a{
 
 .golden-rules-articles{
   display:none;
+  position:relative;
   max-width:820px;
   margin:0 auto 80px;
   padding:0 24px;
@@ -3237,6 +3309,11 @@ footer a{
   margin-bottom:16px;
   padding:6px 24px;
 }
+
+.golden-rules-articles[data-tool="convert"] .golden-rules-article{ background:#d670ff21; }
+.golden-rules-articles[data-tool="compress"] .golden-rules-article{ background:#68e1ff21; }
+.golden-rules-articles[data-tool="combine"] .golden-rules-article{ background:#ec6f6321; }
+.golden-rules-articles[data-tool="exif"] .golden-rules-article{ background:#4ade8021; }
 
 .golden-rules-article summary{
   padding:18px 0;
@@ -3567,92 +3644,124 @@ footer a{
       <p class="lead page-alias" data-i18n="page_alias_faq">Also known on Earth as the FAQ page.</p>
     </div>
 
-    <h2 class="faq-group-heading" data-i18n="mp_faq_group_general">General</h2>
-    <div class="faq-list-mainpage">
-      <details class="faq-item-mainpage">
-        <summary data-i18n="mp_faq2_q">Do you store my files on a server?</summary>
-        <p data-i18n="mp_faq2_a">No. Every tool runs entirely in your browser. Your files are processed locally on your device and are never uploaded anywhere.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="mp_faq5_q">Does BC Tools work on mobile?</summary>
-        <p data-i18n="mp_faq5_a">Yes, every tool works in mobile and desktop browsers, with nothing to install.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="mp_faq6_q">What is Sector 7G?</summary>
-        <p data-i18n="mp_faq6_a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
-      </details>
+    <div class="faq-group-wrap">
+      <div class="faq-group-content">
+        <h2 class="faq-group-heading" data-i18n="mp_faq_group_general">General</h2>
+        <div class="faq-list-mainpage">
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="mp_faq2_q">Do you store my files on a server?</p>
+            <p class="faq-a" data-i18n="mp_faq2_a">No. Every tool runs entirely in your browser. Your files are processed locally on your device and are never uploaded anywhere.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="mp_faq5_q">Does BC Tools work on mobile?</p>
+            <p class="faq-a" data-i18n="mp_faq5_a">Yes, every tool works in mobile and desktop browsers, with nothing to install.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="mp_faq6_q">What is Sector 7G?</p>
+            <p class="faq-a" data-i18n="mp_faq6_a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="ad-slot ad-slot-banner">
       <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
     </div>
 
-    <h2 class="faq-group-heading">Convert</h2>
-    <div class="faq-list-mainpage convert">
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cv_faq1_q">Will I lose image quality when converting?</summary>
-        <p data-i18n="cv_faq1_a">Converting to JPG or WEBP applies mild lossy compression. Converting to PNG is lossless.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cv_faq2_q">Can I convert multiple images at once?</summary>
-        <p data-i18n="cv_faq2_a">Yes, up to 5 images download individually; more than 5 are converted and downloaded together in one ZIP file.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cv_faq3_q">Is WEBP better than JPG?</summary>
-        <p data-i18n="cv_faq3_a">WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.</p>
-      </details>
+    <div class="faq-group-wrap">
+      <div class="faq-group-bg" aria-hidden="true">
+        <span class="faq-shape faq-cv-1"></span>
+      </div>
+      <div class="faq-group-content">
+        <h2 class="faq-group-heading">Convert</h2>
+        <div class="faq-list-mainpage convert">
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cv_faq1_q">Will I lose image quality when converting?</p>
+            <p class="faq-a" data-i18n="cv_faq1_a">Converting to JPG or WEBP applies mild lossy compression. Converting to PNG is lossless.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cv_faq2_q">Can I convert multiple images at once?</p>
+            <p class="faq-a" data-i18n="cv_faq2_a">Yes, up to 5 images download individually; more than 5 are converted and downloaded together in one ZIP file.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cv_faq3_q">Is WEBP better than JPG?</p>
+            <p class="faq-a" data-i18n="cv_faq3_a">WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <h2 class="faq-group-heading">Compress</h2>
-    <div class="faq-list-mainpage compress">
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cp_faq1_q">How much will the image shrink?</summary>
-        <p data-i18n="cp_faq1_a">It depends on the image and chosen level, but it's usually a 30–80% reduction in the original file size.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cp_faq2_q">Will the image lose quality?</summary>
-        <p data-i18n="cp_faq2_a">Slightly, depending on the level chosen. Low level has almost no visible loss; high level gives bigger savings at the cost of quality.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cp_faq3_q">Do you support PNG files too?</summary>
-        <p data-i18n="cp_faq3_a">Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.</p>
-      </details>
+    <div class="faq-group-wrap">
+      <div class="faq-group-bg" aria-hidden="true">
+        <span class="faq-shape faq-cp-1"></span>
+      </div>
+      <div class="faq-group-content">
+        <h2 class="faq-group-heading">Compress</h2>
+        <div class="faq-list-mainpage compress">
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cp_faq1_q">How much will the image shrink?</p>
+            <p class="faq-a" data-i18n="cp_faq1_a">It depends on the image and chosen level, but it's usually a 30–80% reduction in the original file size.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cp_faq2_q">Will the image lose quality?</p>
+            <p class="faq-a" data-i18n="cp_faq2_a">Slightly, depending on the level chosen. Low level has almost no visible loss; high level gives bigger savings at the cost of quality.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cp_faq3_q">Do you support PNG files too?</p>
+            <p class="faq-a" data-i18n="cp_faq3_a">Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="ad-slot ad-slot-banner">
       <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
     </div>
 
-    <h2 class="faq-group-heading">Combine</h2>
-    <div class="faq-list-mainpage combine">
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cb_faq1_q">Does the order of the files matter?</summary>
-        <p data-i18n="cb_faq1_a">Yes. Pages are combined in exactly the order shown in the list, so drag the files into the order you want before combining.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cb_faq2_q">Is there a limit to how many PDFs I can combine?</summary>
-        <p data-i18n="cb_faq2_a">There's no hard limit, though very large files may take a little longer since everything is processed in your browser.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="cb_faq3_q">Do you keep my files?</summary>
-        <p data-i18n="cb_faq3_a">No. All processing happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your files are never uploaded to a server.</p>
-      </details>
+    <div class="faq-group-wrap">
+      <div class="faq-group-bg" aria-hidden="true">
+        <span class="faq-shape faq-cb-1"></span>
+      </div>
+      <div class="faq-group-content">
+        <h2 class="faq-group-heading">Combine</h2>
+        <div class="faq-list-mainpage combine">
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cb_faq1_q">Does the order of the files matter?</p>
+            <p class="faq-a" data-i18n="cb_faq1_a">Yes. Pages are combined in exactly the order shown in the list, so drag the files into the order you want before combining.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cb_faq2_q">Is there a limit to how many PDFs I can combine?</p>
+            <p class="faq-a" data-i18n="cb_faq2_a">There's no hard limit, though very large files may take a little longer since everything is processed in your browser.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cb_faq3_q">Do you keep my files?</p>
+            <p class="faq-a" data-i18n="cb_faq3_a">No. All processing happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your files are never uploaded to a server.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <h2 class="faq-group-heading">Cleanly</h2>
-    <div class="faq-list-mainpage cleanly">
-      <details class="faq-item-mainpage">
-        <summary data-i18n="ex_faq1_q">What metadata does this tool find?</summary>
-        <p data-i18n="ex_faq1_a">GPS location, camera make and model, the date and time the photo was taken, and any editing software recorded in the file — if present.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="ex_faq2_q">Does stripping metadata reduce image quality?</summary>
-        <p data-i18n="ex_faq2_a">No. The image itself is re-encoded at the same resolution and near-original quality — only the hidden metadata is removed.</p>
-      </details>
-      <details class="faq-item-mainpage">
-        <summary data-i18n="ex_faq3_q">Do you keep my photos or the metadata you find?</summary>
-        <p data-i18n="ex_faq3_a">No. Everything happens locally in your browser using the File API and JavaScript libraries (exif-js) — your photos and their metadata are never uploaded to a server.</p>
-      </details>
+    <div class="faq-group-wrap">
+      <div class="faq-group-bg" aria-hidden="true">
+        <span class="faq-shape faq-ex-1"></span>
+      </div>
+      <div class="faq-group-content">
+        <h2 class="faq-group-heading">Cleanly</h2>
+        <div class="faq-list-mainpage cleanly">
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="ex_faq1_q">What metadata does this tool find?</p>
+            <p class="faq-a" data-i18n="ex_faq1_a">GPS location, camera make and model, the date and time the photo was taken, and any editing software recorded in the file — if present.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="ex_faq2_q">Does stripping metadata reduce image quality?</p>
+            <p class="faq-a" data-i18n="ex_faq2_a">No. The image itself is re-encoded at the same resolution and near-original quality — only the hidden metadata is removed.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="ex_faq3_q">Do you keep my photos or the metadata you find?</p>
+            <p class="faq-a" data-i18n="ex_faq3_a">No. Everything happens locally in your browser using the File API and JavaScript libraries (exif-js) — your photos and their metadata are never uploaded to a server.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </section>
@@ -3712,13 +3821,18 @@ footer a{
     </div>
   </div>
 
-  <div class="content-section-convert">
+  <div class="content-section-convert" data-tool="convert">
     <div class="ad-slot ad-slot-banner">
       <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
     </div>
 
-    <h3 id="cvFormatHelperHeading" data-i18n="cv_pick_heading">Not sure which format to use?</h3>
-    <div id="cvFormatHelperText" data-i18n="cv_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p><ul class="format-pick-sublist"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p><ul class="format-pick-sublist"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p><ul class="format-pick-sublist"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-svg" aria-hidden="true"></span> SVG</p><ul class="format-pick-sublist"><li>Best for vector graphics and icons.</li><li>Stays perfectly sharp at any size.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p><ul class="format-pick-sublist"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div></div>
+    <div class="content-section-format-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-2"></span>
+      </div>
+      <h3 id="cvFormatHelperHeading" data-i18n="cv_pick_heading">Not sure which format to use?</h3>
+      <div id="cvFormatHelperText" data-i18n="cv_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p><ul class="format-pick-sublist"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p><ul class="format-pick-sublist"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p><ul class="format-pick-sublist"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-svg" aria-hidden="true"></span> SVG</p><ul class="format-pick-sublist"><li>Best for vector graphics and icons.</li><li>Stays perfectly sharp at any size.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p><ul class="format-pick-sublist"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div></div>
+    </div>
 
     <div class="usecase-picker" id="cvUsecasePicker">
       <p class="format-pick-subheading" data-i18n="cv_ucpick_heading">What are you converting?</p>
@@ -3731,9 +3845,15 @@ footer a{
       </div>
     </div>
 
-    <h3 data-i18n="cv_article1_heading">New to converting images?</h3>
-    <p data-i18n="cv_article1_p">Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
-    <p data-i18n="cv_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert">just one click away.</a></p>
+    <div class="content-section-article-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-1"></span>
+        <span class="cs-shape cs-shape-3"></span>
+      </div>
+      <h3 data-i18n="cv_article1_heading">New to converting images?</h3>
+      <p data-i18n="cv_article1_p">Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
+      <p data-i18n="cv_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert">just one click away.</a></p>
+    </div>
 
     <div class="ad-slot">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000015" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -3793,13 +3913,18 @@ footer a{
     </div>
   </div>
 
-  <div class="content-section-compress">
+  <div class="content-section-compress" data-tool="compress">
     <div class="ad-slot ad-slot-banner">
       <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
     </div>
 
-    <h3 id="cpPickHeading" data-i18n="cp_pick_heading">Not sure which level to use?</h3>
-    <div id="cpPickText" data-i18n="cp_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Low</p><ul class="format-pick-sublist"><li>Best possible quality, barely visible change.</li><li>Printing, archiving, professional work.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Medium</p><ul class="format-pick-sublist"><li>Balanced size and quality.</li><li>Web, email, everyday sharing.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> High</p><ul class="format-pick-sublist"><li>Smallest file size, more visible loss.</li><li>Previews, quick sharing, drafts.</li></ul></div></div></div>
+    <div class="content-section-format-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-2"></span>
+      </div>
+      <h3 id="cpPickHeading" data-i18n="cp_pick_heading">Not sure which level to use?</h3>
+      <div id="cpPickText" data-i18n="cp_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Low</p><ul class="format-pick-sublist"><li>Best possible quality, barely visible change.</li><li>Printing, archiving, professional work.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Medium</p><ul class="format-pick-sublist"><li>Balanced size and quality.</li><li>Web, email, everyday sharing.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> High</p><ul class="format-pick-sublist"><li>Smallest file size, more visible loss.</li><li>Previews, quick sharing, drafts.</li></ul></div></div></div>
+    </div>
 
     <div class="usecase-picker" id="cpUsecasePicker">
       <p class="format-pick-subheading" data-i18n="cp_ucpick_heading">What project are you working on?</p>
@@ -3810,9 +3935,15 @@ footer a{
       </div>
     </div>
 
-    <h3 data-i18n="cp_article1_heading">New to compressing images?</h3>
-    <p data-i18n="cp_article1_p">Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.</p>
-    <p data-i18n="cp_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress">just one click away.</a></p>
+    <div class="content-section-article-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-1"></span>
+        <span class="cs-shape cs-shape-3"></span>
+      </div>
+      <h3 data-i18n="cp_article1_heading">New to compressing images?</h3>
+      <p data-i18n="cp_article1_p">Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.</p>
+      <p data-i18n="cp_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress">just one click away.</a></p>
+    </div>
 
     <div class="ad-slot">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -3856,10 +3987,17 @@ footer a{
     </div>
   </div>
 
-  <div class="content-section-convert">
-    <h3 data-i18n="cb_article1_heading">New to combining images?</h3>
-    <p data-i18n="cb_article1_p">Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.</p>
-    <p data-i18n="cb_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine">just one click away.</a></p>
+  <div class="content-section-convert" data-tool="combine">
+    <div class="content-section-article-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-1"></span>
+        <span class="cs-shape cs-shape-2"></span>
+        <span class="cs-shape cs-shape-3"></span>
+      </div>
+      <h3 data-i18n="cb_article1_heading">New to combining images?</h3>
+      <p data-i18n="cb_article1_p">Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.</p>
+      <p data-i18n="cb_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine">just one click away.</a></p>
+    </div>
 
     <div class="ad-slot">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000017" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -3905,10 +4043,17 @@ footer a{
     </div>
   </div>
 
-  <div class="content-section-convert">
-    <h3 data-i18n="ex_article1_heading">New to cleaning images?</h3>
-    <p data-i18n="ex_article1_p">Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p data-i18n="ex_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif">just one click away.</a></p>
+  <div class="content-section-convert" data-tool="exif">
+    <div class="content-section-article-wrap">
+      <div class="content-section-bg" aria-hidden="true">
+        <span class="cs-shape cs-shape-1"></span>
+        <span class="cs-shape cs-shape-2"></span>
+        <span class="cs-shape cs-shape-3"></span>
+      </div>
+      <h3 data-i18n="ex_article1_heading">New to cleaning images?</h3>
+      <p data-i18n="ex_article1_p">Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
+      <p data-i18n="ex_article1_p2">Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif">just one click away.</a></p>
+    </div>
 
     <div class="ad-slot">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -3956,13 +4101,20 @@ footer a{
 
       <h2 data-i18n="tu_s5_heading">5. Disclaimer of Warranties ("As-Is")</h2>
       <p data-i18n="tu_s5_p">BC Tools provides all utilities on an "as-is" and "as-available" basis. We make no warranties, expressed or implied, that the file processing will be completely error-free, compatible with every single file type and/or device, or that the service will be entirely uninterrupted. If you find any issues, please help us improve by reporting them.</p>
-      <p data-i18n="tu_s5_p2">All terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.</p>
+
+      <div class="engine-status-card">
+        <div class="engine-status-body">
+          <div class="engine-status-row" data-i18n="tu_s5_dev_banner">&gt; dev_comentary: Our devoted developer makes regular updates and posts them to the GitHub repository and Discord #Announcements.</div>
+        </div>
+      </div>
 
       <h2 data-i18n="tu_s6_heading">6. Limitation of Liability</h2>
       <p data-i18n="tu_s6_p">To the maximum extent permitted by law, BitCrunching and its creator shall not be held liable for any damages—including, without limitation, data loss, business interruption, or system crashes—resulting from your use, or inability to use, our tools.</p>
 
       <h2 data-i18n="tu_s7_heading">7. Governing Law</h2>
       <p data-i18n="tu_s7_p">These Terms of Use are governed by and construed in accordance with the laws of the Netherlands. Any legal disputes arising under these terms shall be settled exclusively in the competent courts of the Netherlands.</p>
+
+      <p data-i18n="tu_s5_p2">Additionally, all terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.</p>
     </article>
   </main>
 </section>
@@ -6033,8 +6185,8 @@ const translations = {
     cookie_banner_accept_all: "Přijmout vše",
     cookie_banner_save: "Potvrdit volby",
     ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    cookie_banner_text_docked: "Vyberte, které kategorie povolit",
-    cookie_banner_text_mobile: "Vyberte, které kategorie povolit",
+    cookie_banner_text_docked: "Vyberte, které cookies povolit",
+    cookie_banner_text_mobile: "Vyberte, které cookies povolit",
     cookie_status_allowed: "...povoleno",
     cookie_status_disabled: "...zakázáno",
     cookie_banner_disable_all: "Zakázat vše",
@@ -6058,7 +6210,7 @@ const translations = {
     page_alias_cookies: "Na Zemi také známá jako stránka Zásady používání cookies.",
     mp_footer_cookies: "Registr cookies",
     mp_footer_cookies_title: "Zásady používání cookies",
-    ck_updated: "Naposledy aktualizováno: červenec 2026",
+    ck_updated: "Naposledy aktualizováno: srpen 2026",
     ck_s1_heading: "1. Co jsou cookies?",
     ck_s1_p: "Cookies jsou malé textové soubory ukládané do vašeho zařízení prostřednictvím prohlížeče, které slouží k uložení stavu nastavení nebo pomáhají službám třetích stran sledovat interakce na webu.",
     ck_s2_heading: "2. Jak cookies používáme",
@@ -6074,7 +6226,7 @@ const translations = {
     page_alias_privacy: "Na Zemi také známá jako stránka Zásady ochrany osobních údajů.",
     mp_footer_privacy: "Mimozemský protokol soukromí",
     mp_footer_privacy_title: "Zásady ochrany osobních údajů",
-    tu_updated: "Naposledy aktualizováno: červenec 2026",
+    tu_updated: "Naposledy aktualizováno: srpen 2026",
     tu_intro: "Vítejte v BC Tools, službě provozované společností BitCrunching („my“, „náš“ nebo „nás“). Přístupem k naší webové stránce a používáním našich nástrojů fungujících v prohlížeči (souhrnně „Služby“) souhlasíte s tím, že budete vázáni těmito Podmínkami použití. Pokud s těmito podmínkami nesouhlasíte, naše Služby prosím nepoužívejte.",
     tu_s1_heading: "1. Záruka zpracování bez serveru a soukromí",
     tu_s1_p: "Naše Služby fungují zcela na straně klienta. To znamená, že veškeré zpracování souborů – včetně konverze obrázků, komprese, slučování souborů a odstraňování metadat – probíhá přímo ve vašem webovém prohlížeči, bez použití serveru.",
@@ -6090,12 +6242,12 @@ const translations = {
     tu_s4_p: "Souhlasíte s tím, že naše Služby budete používat pouze k zákonným účelům. Je vám přísně zakázáno používat automatizované roboty, skripty nebo scrapery k přetěžování vizuálního prostředí nebo se pokoušet vložit škodlivý kód do prováděcího prostředí webu.",
     tu_s5_heading: "5. Vyloučení záruk („tak, jak je“)",
     tu_s5_p: "BC Tools poskytuje veškeré nástroje na principu „tak, jak jsou“ a „dle dostupnosti“. Neposkytujeme žádné výslovné ani implicitní záruky, že zpracování souborů bude zcela bezchybné, kompatibilní s každým jednotlivým typem souboru a/nebo zařízením, nebo že služba bude zcela nepřerušovaná. Pokud narazíte na jakýkoliv problém, pomozte nám prosím se zlepšováním tím, že nám ho nahlásíte.",
-    tu_s5_p2: "Všechny terminálové bannery zobrazené na webu slouží výhradně k pobavení. Nelze z nich vyvozovat žádné věcné, právní ani technické závěry.",
+    tu_s5_p2: "Kromě toho platí, že všechny terminálové bannery zobrazené na webu slouží výhradně k pobavení. Nelze z nich vyvozovat žádné věcné, právní ani technické závěry.",
     tu_s6_heading: "6. Omezení odpovědnosti",
     tu_s6_p: "V maximálním rozsahu povoleném zákonem nenese společnost BitCrunching ani její tvůrce odpovědnost za žádné škody – včetně, bez omezení, ztráty dat, přerušení podnikání nebo pádů systému – vyplývající z používání nebo nemožnosti používat naše nástroje. Veškeré soubory zpracováváte na vlastní uvážení a riziko.",
     tu_s7_heading: "7. Rozhodné právo",
     tu_s7_p: "Tyto Podmínky použití se řídí a vykládají v souladu s právními předpisy Nizozemska. Veškeré právní spory vzniklé na základě těchto podmínek budou řešeny výhradně u příslušných soudů Nizozemska.",
-    pp_updated: "Naposledy aktualizováno: červenec 2026",
+    pp_updated: "Naposledy aktualizováno: srpen 2026",
     pp_s1_heading: "1. Zpracování na straně klienta",
     pp_s1_p: "BC Tools funguje zcela ve vašem webovém prohlížeči. Vaše nahrané obrázky a soubory jsou zpracovávány lokálně na vašem zařízení. Vaše soubory nikdy nenahráváme, neprohlížíme, neprodáváme ani neukládáme na žádném vzdáleném serveru.",
     pp_s1_joke: "&gt; Naši mezigalaktičtí obchodní partneři projevili zájem. S lítostí jim oznamujeme, že nemáme co nabídnout.",
@@ -6475,8 +6627,8 @@ const translations = {
     footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Join our discord</a>",
     footer_contact_address: "Contactweg 129<br>1014BJ Amsterdam<br>Netherlands",
     cookie_banner_text: "We use cookies. Choose which categories to allow below — see our <a data-goto=\"cookies\">Cookie Registry</a> for details.",
-    cookie_banner_text_docked: "Choose which categories to allow",
-    cookie_banner_text_mobile: "Choose which categories to allow",
+    cookie_banner_text_docked: "Choose which cookies to allow",
+    cookie_banner_text_mobile: "Choose which cookies to allow",
     cookie_cat_necessary: "&gt; Necessary (always on)",
     cookie_cat_analytics: "&gt; Analytics (Google Analytics)",
     cookie_cat_advertising: "&gt; Advertising (Google AdSense)",
@@ -6506,7 +6658,7 @@ const translations = {
     page_alias_cookies: "Also known on Earth as the Cookie Policy page.",
     mp_footer_cookies: "Cookie Registry",
     mp_footer_cookies_title: "Cookie Policy",
-    ck_updated: "Last Updated: July 2026",
+    ck_updated: "Last Updated: August 2026",
     ck_s1_heading: "1. What Are Cookies?",
     ck_s1_p: "Cookies are tiny text files stored on your device by your browser to save configuration states or help third-party services track web interactions.",
     ck_s2_heading: "2. How We Use Cookies",
@@ -6522,7 +6674,7 @@ const translations = {
     page_alias_privacy: "Also known on Earth as the Privacy Policy page.",
     mp_footer_privacy: "Alien Privacy Protocol",
     mp_footer_privacy_title: "Privacy Policy",
-    tu_updated: "Last Updated: July 2026",
+    tu_updated: "Last Updated: August 2026",
     tu_intro: "Welcome to BC Tools, a service operated by BitCrunching (\"we,\" \"our,\" or \"us\"). By accessing or using our website and browser-based utilities (collectively, the \"Services\"), you agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use our Services.",
     tu_s1_heading: "1. No-Server & Privacy Guarantee",
     tu_s1_p: "Our Services operate entirely on the client side. This means all file processing—including image conversion, compression, file combining, and metadata stripping—takes place directly within your web browser, no server used.",
@@ -6538,12 +6690,13 @@ const translations = {
     tu_s4_p: "You agree to use our Services only for lawful purposes. You are strictly prohibited from using automated bots, scripts, or scrapers to overwhelm the visual environment, or attempting to inject malicious code into the website's execution framework.",
     tu_s5_heading: "5. Disclaimer of Warranties (\"As-Is\")",
     tu_s5_p: "BC Tools provides all utilities on an \"as-is\" and \"as-available\" basis. We make no warranties, expressed or implied, that the file processing will be completely error-free, compatible with every single file type and/or device, or that the service will be entirely uninterrupted. If you find any issues, please help us improve by reporting them.",
-    tu_s5_p2: "All terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.",
+    tu_s5_dev_banner: "&gt; dev_comentary: Our devoted developer makes regular updates and posts them to the GitHub repository and Discord #Announcements.",
+    tu_s5_p2: "Additionally, all terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.",
     tu_s6_heading: "6. Limitation of Liability",
     tu_s6_p: "To the maximum extent permitted by law, BitCrunching and its creator shall not be held liable for any damages—including, without limitation, data loss, business interruption, or system crashes—resulting from your use, or inability to use, our tools. You process all files at your own discretion and risk.",
     tu_s7_heading: "7. Governing Law",
     tu_s7_p: "These Terms of Use are governed by and construed in accordance with the laws of the Netherlands. Any legal disputes arising under these terms shall be settled exclusively in the competent courts of the Netherlands.",
-    pp_updated: "Last Updated: July 2026",
+    pp_updated: "Last Updated: August 2026",
     pp_s1_heading: "1. Client-Side Processing",
     pp_s1_p: "BC Tools operates entirely within your web browser. Your uploaded images and files are processed locally on your device. We never upload, view, sell, or store your files on any remote server.",
     pp_s1_joke: "&gt; Our intergalactic business partners have expressed interest. We regret to inform them that we have nothing to share.",
@@ -6929,8 +7082,8 @@ const translations = {
     cookie_banner_accept_all: "Zaakceptuj wszystkie",
     cookie_banner_save: "Potwierdź wybór",
     ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    cookie_banner_text_docked: "Wybierz, które kategorie zezwolić",
-    cookie_banner_text_mobile: "Wybierz, które kategorie zezwolić",
+    cookie_banner_text_docked: "Wybierz, które pliki cookie zezwolić",
+    cookie_banner_text_mobile: "Wybierz, które pliki cookie zezwolić",
     cookie_status_allowed: "...dozwolone",
     cookie_status_disabled: "...wyłączone",
     cookie_banner_disable_all: "Wyłącz wszystkie",
@@ -6954,7 +7107,7 @@ const translations = {
     page_alias_cookies: "Na Ziemi znana również jako strona Polityka plików cookie.",
     mp_footer_cookies: "Rejestr plików cookie",
     mp_footer_cookies_title: "Polityka plików cookie",
-    ck_updated: "Ostatnia aktualizacja: lipiec 2026",
+    ck_updated: "Ostatnia aktualizacja: sierpień 2026",
     ck_s1_heading: "1. Czym są pliki cookie?",
     ck_s1_p: "Pliki cookie to małe pliki tekstowe zapisywane na Twoim urządzeniu przez przeglądarkę, które zapisują stan konfiguracji lub pomagają usługom stron trzecich śledzić interakcje w sieci.",
     ck_s2_heading: "2. Jak wykorzystujemy pliki cookie",
@@ -6970,7 +7123,7 @@ const translations = {
     page_alias_privacy: "Na Ziemi znana również jako strona Polityka prywatności.",
     mp_footer_privacy: "Kosmiczny protokół prywatności",
     mp_footer_privacy_title: "Polityka prywatności",
-    tu_updated: "Ostatnia aktualizacja: lipiec 2026",
+    tu_updated: "Ostatnia aktualizacja: sierpień 2026",
     tu_intro: "Witamy w BC Tools, usłudze prowadzonej przez BitCrunching („my”, „nasz” lub „nas”). Uzyskując dostęp do naszej strony internetowej i korzystając z naszych narzędzi działających w przeglądarce (łącznie zwanych „Usługami”), zgadzasz się na przestrzeganie niniejszych Warunków użytkowania. Jeśli nie zgadzasz się z tymi warunkami, prosimy nie korzystać z naszych Usług.",
     tu_s1_heading: "1. Gwarancja przetwarzania bez serwera i prywatności",
     tu_s1_p: "Nasze Usługi działają całkowicie po stronie klienta. Oznacza to, że całe przetwarzanie plików — w tym konwersja obrazów, kompresja, łączenie plików i usuwanie metadanych — odbywa się bezpośrednio w Twojej przeglądarce internetowej, bez użycia serwera.",
@@ -6986,12 +7139,12 @@ const translations = {
     tu_s4_p: "Zgadzasz się korzystać z naszych Usług wyłącznie w zgodnych z prawem celach. Surowo zabrania się używania automatycznych botów, skryptów lub scraperów w celu przeciążenia środowiska wizualnego lub prób wstrzykiwania złośliwego kodu do środowiska wykonawczego strony.",
     tu_s5_heading: "5. Wyłączenie gwarancji („tak jak jest”)",
     tu_s5_p: "BC Tools udostępnia wszystkie narzędzia na zasadzie „tak jak jest” i „w miarę dostępności”. Nie udzielamy żadnych gwarancji, wyraźnych ani dorozumianych, że przetwarzanie plików będzie całkowicie bezbłędne, kompatybilne z każdym pojedynczym typem pliku i/lub urządzeniem, lub że usługa będzie całkowicie nieprzerwana. Jeśli napotkasz jakiekolwiek problemy, pomóż nam je ulepszyć, zgłaszając je.",
-    tu_s5_p2: "Wszystkie bannery w stylu terminala wyświetlane na stronie mają charakter wyłącznie rozrywkowy. Nie można wyciągać z nich żadnych wniosków faktycznych, prawnych ani technicznych.",
+    tu_s5_p2: "Dodatkowo wszystkie bannery w stylu terminala wyświetlane na stronie mają charakter wyłącznie rozrywkowy. Nie można wyciągać z nich żadnych wniosków faktycznych, prawnych ani technicznych.",
     tu_s6_heading: "6. Ograniczenie odpowiedzialności",
     tu_s6_p: "W maksymalnym zakresie dozwolonym przez prawo BitCrunching i jego twórca nie ponoszą odpowiedzialności za jakiekolwiek szkody — w tym, bez ograniczeń, utratę danych, przerwy w działalności lub awarie systemu — wynikające z korzystania lub niemożności korzystania z naszych narzędzi. Wszystkie pliki przetwarzasz według własnego uznania i na własne ryzyko.",
     tu_s7_heading: "7. Prawo właściwe",
     tu_s7_p: "Niniejsze Warunki użytkowania podlegają prawu Holandii i są zgodnie z nim interpretowane. Wszelkie spory prawne wynikające z niniejszych warunków będą rozstrzygane wyłącznie przez właściwe sądy Holandii.",
-    pp_updated: "Ostatnia aktualizacja: lipiec 2026",
+    pp_updated: "Ostatnia aktualizacja: sierpień 2026",
     pp_s1_heading: "1. Przetwarzanie po stronie klienta",
     pp_s1_p: "BC Tools działa całkowicie w Twojej przeglądarce internetowej. Przesłane obrazy i pliki są przetwarzane lokalnie na Twoim urządzeniu. Nigdy nie przesyłamy, nie przeglądamy, nie sprzedajemy ani nie przechowujemy Twoich plików na żadnym zdalnym serwerze.",
     pp_s1_joke: "&gt; Nasi międzygalaktyczni partnerzy biznesowi wyrazili zainteresowanie. Z przykrością informujemy ich, że nie mamy niczego do udostępnienia.",
@@ -7371,8 +7524,8 @@ const translations = {
     footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Zjaeoix aeuurr zhoizzkaerrzh</a>",
     footer_contact_address: "Contactweg 129<br>1014BJ Amsterdam<br>Netherlands",
     cookie_banner_text: "Vvi uuzzi kaeaeqoiizz. Kkhaeaezzi vvkhoikkh katkighaerroiizz tkae allllaevv villaevv — zzii aeuurr <a data-goto=\"cookies\">Kaeaeqoii Rrighoizztkrrei</a> phaerr zhitkaoillzz.",
-    cookie_banner_text_docked: "Kkhaeaezzi vvkhoikkh katkighaerroiizz tkae allllaevv",
-    cookie_banner_text_mobile: "Kkhaeaezzi vvkhoikkh katkighaerroiizz tkae allllaevv",
+    cookie_banner_text_docked: "Kkhaeaezzi vvkhoikkh kaeaeqoiizz tkae allllaevv",
+    cookie_banner_text_mobile: "Kkhaeaezzi vvkhoikkh kaeaeqoiizz tkae allllaevv",
     cookie_cat_necessary: "&gt; Xikizzzzarrei (allvvaeizz aex)",
     cookie_cat_analytics: "&gt; Axalleitkoikzz (Ghaeaeghlli Axalleitkoikzz)",
     cookie_cat_advertising: "&gt; Azhwirrtkoizzoixgh (Ghaeaeghlli AzhZzixzzi)",
@@ -7402,7 +7555,7 @@ const translations = {
     page_alias_cookies: "Allzzae qxaevvx aex Iarrtkkh azz tkkhi Kaeaeqoii Pfaelloikei pfaghi.",
     mp_footer_cookies: "Kaeaeqoii Rrighoizztkrrei",
     mp_footer_cookies_title: "Kaeaeqoii Pfaelloikei",
-    ck_updated: "Llazztk Uupfzhatkizh: Zjuullei 2026",
+    ck_updated: "Llazztk Uupfzhatkizh: Auughuuzztk 2026",
     ck_s1_heading: "1. Vvkhatk Arri Kaeaeqoiizz?",
     ck_s1_p: "Kaeaeqoiizz arri tkoixei tkikshtk phoillizz zztkaerrizh aex eiaeuurr zhiwoiki vei eiaeuurr vrraevvzzirr tkae zzawi kaexphoighuurratkoiaex zztkatkizz aerr khillpf tkkhoirrzh-pfarrtkei zzirrwoikizz tkrrakq vviv oixtkirraktkoiaexzz.",
     ck_s2_heading: "2. Khaevv Vvi Uuzzi Kaeaeqoiizz",
@@ -7418,7 +7571,7 @@ const translations = {
     page_alias_privacy: "Allzzae qxaevvx aex Iarrtkkh azz tkkhi Pfrroiwakei Pfaelloikei pfaghi.",
     mp_footer_privacy: "Alloiix Pfrroiwakei Pfrraetkaekaell",
     mp_footer_privacy_title: "Pfrroiwakei Pfaelloikei",
-    tu_updated: "Llazztk Uupfzhatkizh: Zjuullei 2026",
+    tu_updated: "Llazztk Uupfzhatkizh: Auughuuzztk 2026",
     tu_intro: "Vvillkaenni tkae VK Tkaeaellzz, a zzirrwoiki aepfirratkizh vei VoitkKrruuxkkhoixgh (\"vvi,\" \"aeuurr,\" aerr \"uuzz\"). Vei akkizzzzoixgh aerr uuzzoixgh aeuurr vvivzzoitki axzh vrraevvzzirr-vazzizh uutkoilloitkoiizz (kaelllliktkoiwillei, tkkhi \"Zzirrwoikizz\"), eiaeuu aghrrii tkae vi vaeuuxzh vei tkkhizzi Tkirrnnzz aeph Uuzzi. Oiph eiaeuu zhae xaetk aghrrii tkae tkkhizzi tkirrnnzz, pflliazzi zhae xaetk uuzzi aeuurr Zzirrwoikizz.",
     tu_s1_heading: "1. Xae-Zzirrwirr & Pfrroiwakei Ghuuarraxtkii",
     tu_s1_p: "Aeuurr Zzirrwoikizz aepfirratki ixtkoirrillei aex tkkhi klloiixtk zzoizhi. Tkkhoizz nniaxzz allll phoilli pfrraekizzzzoixgh—oixklluuzhoixgh oinnaghi kaexwirrzzoiaex, kaennpfrrizzzzoiaex, phoilli kaennvoixoixgh, axzh nnitkazhatka zztkrroipfpfoixgh—tkaqizz pfllaki zhoirriktkllei vvoitkkhoix eiaeuurr vviv vrraevvzzirr, xae zzirrwirr uuzzizh.",
@@ -7434,12 +7587,12 @@ const translations = {
     tu_s4_p: "Eiaeuu aghrrii tkae uuzzi aeuurr Zzirrwoikizz aexllei phaerr llavvphuull pfuurrpfaezzizz. Eiaeuu arri zztkrroiktkllei pfrraekhoivoitkizh phrraenn uuzzoixgh auutkaennatkizh vaetkzz, zzkrroipftkzz, aerr zzkrrapfirrzz tkae aewirrvvkhillnn tkkhi woizzuuall ixwoirraexnnixtk, aerr atktkinnpftkoixgh tkae oixzjiktk nnalloikoiaeuuzz kaezhi oixtkae tkkhi vvivzzoitki'zz ikshikuutkoiaex phrrannivvaerrq.",
     tu_s5_heading: "5. Zhoizzkllaoinnirr aeph Vvarrrraxtkoiizz (\"Azz-Oizz\")",
     tu_s5_p: "VK Tkaeaellzz pfrraewoizhizz allll uutkoilloitkoiizz aex ax \"azz-oizz\" axzh \"azz-awaoillavlli\" vazzoizz. Vvi nnaqi xae vvarrrraxtkoiizz, ikshpfrrizzzzizh aerr oinnpflloiizh, tkkhatk tkkhi phoilli pfrraekizzzzoixgh vvoillll vi kaennpfllitkillei irrrraerr-phrrii, kaennpfatkoivlli vvoitkkh iwirrei zzoixghlli phoilli tkeipfi axzh/aerr zhiwoiki, aerr tkkhatk tkkhi zzirrwoiki vvoillll vi ixtkoirrillei uuxoixtkirrrruupftkizh. Oiph eiaeuu phoixzh axei oizzzzuuizz, pflliazzi khillpf uuzz oinnpfrraewi vei rripfaerrtkoixgh tkkhinn.",
-    tu_s5_p2: "Allll tkirrnnoixall-zztkeilli vaxxirrzz zhoizzpfllaeiizh akrraezzzz tkkhi zzoitki arri phaerr ixtkirrtkaoixnnixtk pfuurrpfaezzizz aexllei. Xae phaktkuuall, llighall, aerr tkikkhxoikall kaexklluuzzoiaexzz nnaei vi zhirroiwizh phrraenn tkkhinn.",
+    tu_s5_p2: "Azhzhoitkoiaexallllei, allll tkirrnnoixall-zztkeilli vaxxirrzz zhoizzpfllaeiizh akrraezzzz tkkhi zzoitki arri phaerr ixtkirrtkaoixnnixtk pfuurrpfaezzizz aexllei. Xae phaktkuuall, llighall, aerr tkikkhxoikall kaexklluuzzoiaexzz nnaei vi zhirroiwizh phrraenn tkkhinn.",
     tu_s6_heading: "6. Lloinnoitkatkoiaex aeph Lloiavoilloitkei",
     tu_s6_p: "Tkae tkkhi nnakshoinnuunn ikshtkixtk pfirrnnoitktkizh vei llavv, VoitkKrruuxkkhoixgh axzh oitkzz krriatkaerr zzkhallll xaetk vi khillzh lloiavlli phaerr axei zhannaghizz—oixklluuzhoixgh, vvoitkkhaeuutk lloinnoitkatkoiaex, zhatka llaezzzz, vuuzzoixizzzz oixtkirrrruupftkoiaex, aerr zzeizztkinn krrazzkhizz—rrizzuulltkoixgh phrraenn eiaeuurr uuzzi, aerr oixavoilloitkei tkae uuzzi, aeuurr tkaeaellzz. Eiaeuu pfrraekizzzz allll phoillizz atk eiaeuurr aevvx zhoizzkrritkoiaex axzh rroizzq.",
     tu_s7_heading: "7. Ghaewirrxoixgh Llavv",
     tu_s7_p: "Tkkhizzi Tkirrnnzz aeph Uuzzi arri ghaewirrxizh vei axzh kaexzztkrruuizh oix akkaerrzhaxki vvoitkkh tkkhi llavvzz aeph tkkhi Xitkkhirrllaxzhzz. Axei llighall zhoizzpfuutkizz arroizzoixgh uuxzhirr tkkhizzi tkirrnnzz zzkhallll vi zzitktkllizh ikshklluuzzoiwillei oix tkkhi kaennpfitkixtk kaeuurrtkzz aeph tkkhi Xitkkhirrllaxzhzz.",
-    pp_updated: "Llazztk Uupfzhatkizh: Zjuullei 2026",
+    pp_updated: "Llazztk Uupfzhatkizh: Auughuuzztk 2026",
     pp_s1_heading: "1. Klloiixtk-Zzoizhi Pfrraekizzzzoixgh",
     pp_s1_p: "VK Tkaeaellzz aepfirratkizz ixtkoirrillei vvoitkkhoix eiaeuurr vviv vrraevvzzirr. Eiaeuurr uupfllaeazhizh oinnaghizz axzh phoillizz arri pfrraekizzzzizh llaekallllei aex eiaeuurr zhiwoiki. Vvi xiwirr uupfllaeazh, woiivv, zzillll, aerr zztkaerri eiaeuurr phoillizz aex axei rrinnaetki zzirrwirr.",
     pp_s1_joke: "&gt; Aeuurr oixtkirrghallaktkoik vuuzzoixizzzz pfarrtkxirrzz khawi ikshpfrrizzzzizh oixtkirrizztk. Vvi rrighrritk tkae oixphaerrnn tkkhinn tkkhatk vvi khawi xaetkkhoixgh tkae zzkharri.",
@@ -9695,19 +9848,6 @@ if (VALID_PAGES.includes(startPage)) {
     });
   }
 })();
-
-/* ===== FAQ ACCORDION: only one open at a time, per section ===== */
-document.querySelectorAll("[class*='faq-list']").forEach(list => {
-  list.querySelectorAll("[class*='faq-item']").forEach(item => {
-    item.addEventListener("toggle", () => {
-      if (item.open){
-        list.querySelectorAll("[class*='faq-item']").forEach(other => {
-          if (other !== item) other.open = false;
-        });
-      }
-    });
-  });
-});
 
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){
