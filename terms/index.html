@@ -77,6 +77,17 @@
 .icon-compress{background-image:var(--icon-compress);background-size:contain;background-repeat:no-repeat;background-position:center;}
 .icon-combine{background-image:var(--icon-combine);background-size:contain;background-repeat:no-repeat;background-position:center;}
 .icon-cleanly{background-image:var(--icon-cleanly);background-size:contain;background-repeat:no-repeat;background-position:center;}
+/* Generic "no icon yet" placeholder — used until a real .icon-X slot
+   (background-image via --icon-X, like the others above) is ready. */
+.gfx-placeholder{
+  font-size:10px;
+  font-weight:700;
+  text-align:center;
+  line-height:1.1;
+  opacity:.6;
+  white-space:normal;
+  word-break:break-all;
+}
 
 *{box-sizing:border-box;}
 html{
@@ -90,21 +101,17 @@ html[data-theme="light"] #app-shell{
   filter:invert(1) hue-rotate(180deg);
 }
 
-/* Re-inverts brand-colored elements (cards, tool tabs, accents) so hue
-   and brightness stay identical in both themes. */
-html[data-theme="light"] #page-mainpage .card.convert::before,
-html[data-theme="light"] #page-mainpage .card.compress::before,
-html[data-theme="light"] #page-mainpage .card.combine::before,
-html[data-theme="light"] #page-mainpage .card.exif::before,
-html[data-theme="light"] #page-convert .tool-app::before,
-html[data-theme="light"] #page-compress .tool-app::before,
-html[data-theme="light"] #page-combine .tool-app::before,
-html[data-theme="light"] #page-exif .tool-app::before,
-html[data-theme="light"] #page-convert .tool-drop.active,
-html[data-theme="light"] #page-compress .tool-drop.active,
+/* Re-inverts brand-colored elements (logos, thumbnails, decorative
+   shapes) so hue and brightness stay identical in both themes. The 5
+   tool accent colors are handled separately below with hand-picked
+   light-mode tints instead of relying on invert-cancel math — a plain
+   double-invert leaves saturated brand hues (especially yellow) looking
+   washed out or muddy on a light background. */
 html[data-theme="light"] .result img,
 html[data-theme="light"] .combine-file-thumb img,
 html[data-theme="light"] .exif-file-thumb img,
+html[data-theme="light"] .context-canvas-wrap,
+html[data-theme="light"] .context-color-dot,
 html[data-theme="light"] .site-logo,
 html[data-theme="light"] .engine-status-card,
 html[data-theme="light"] .mp-colors-bg-shape,
@@ -113,6 +120,33 @@ html[data-theme="light"] .fmt-icon,
 html[data-theme="light"] .no-invert{
   filter:invert(1) hue-rotate(180deg);
 }
+
+/* Tool accents are locked to the exact same hex in both themes. The
+   double-invert-cancel technique (filter:invert(1)hue-rotate(180deg)
+   applied a second time, directly on the element) is required here —
+   filter:none does NOT exempt an element from an ancestor's filter, it
+   only skips adding a second one, so the element would still get
+   inverted once by the shell and land on the wrong color (verified:
+   this broke cyan/green even though it happened to look plausible for
+   purple/salmon by coincidence). Applying the same filter twice is a
+   true mathematical identity regardless of hue. */
+html[data-theme="light"] #page-mainpage .card.convert::before,
+html[data-theme="light"] #page-convert .tool-app::before{
+  filter:invert(1) hue-rotate(180deg);
+  background:linear-gradient(155deg, #c364fa);
+}
+html[data-theme="light"] #page-convert .tool-drop.active{
+  filter:invert(1) hue-rotate(180deg);
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+
+html[data-theme="light"] #page-mainpage .card.combine::before,
+html[data-theme="light"] #page-combine .tool-app::before{
+  filter:invert(1) hue-rotate(180deg);
+  background:linear-gradient(155deg, #ed7064);
+}
+
 body{
   margin:0;
   font-family:system-ui, sans-serif;
@@ -129,8 +163,15 @@ html[data-theme="light"] body{
 /* #app-shell keeps the dark-mode text color; the invert filter corrects
    it at paint time. Elements inheriting color instead of var(--text)
    would otherwise get inverted twice and disappear. */
+/* Sticky footer: on short pages (e.g. Context with no PDF loaded yet),
+   the active page grows to fill any leftover viewport height so the
+   footer sits flush at the bottom instead of leaving a gap of plain
+   page background beneath it. */
 #app-shell{
   color:#ffffff;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
 }
 
 /* ===== COOKIE CONSENT BANNER ===== */
@@ -610,6 +651,7 @@ span.gfx-md, span.gfx-lg{
 }
 .page.active{
   display:block;
+  flex:1 0 auto;
 }
 
 /* ===== MAINPAGE / ABOUT ===== */
@@ -1104,19 +1146,34 @@ html[data-theme="light"] .engine-status-glitch{
 }
 
 #page-mainpage .card.convert::before{
-  background:linear-gradient(155deg, #b45ce7);
+  background:linear-gradient(155deg, #c364fa);
 }
 
+/* No background — Compress's blue can't survive the light-mode invert
+   filter's math (same out-of-gamut clamping issue as Context's yellow).
+   Its color comes from #cprCardBackdrop instead, a real element outside
+   #app-shell. See syncColorBackdrops() near the end of the page. */
 #page-mainpage .card.compress::before{
-  background:linear-gradient(155deg, #60c8e7);
+  background:none;
 }
 
 #page-mainpage .card.combine::before{
-  background:linear-gradient(155deg, #ec6f63);
+  background:linear-gradient(155deg, #ed7064);
 }
 
+/* Same story as Compress above — see #clnCardBackdrop. */
 #page-mainpage .card.exif::before{
-  background:linear-gradient(155deg, #4ade80);
+  background:none;
+}
+
+/* No background here — Context's yellow can't survive the light-mode
+   invert filter's math (proven: needs an out-of-gamut negative blue
+   channel mid-pipeline). Its color comes from #ctxCardBackdrop instead,
+   a real element rendered OUTSIDE #app-shell so the invert filter never
+   touches it, positioned via JS to sit exactly behind this transparent
+   cutout. See syncContextBackdrops() near the end of the page. */
+#page-mainpage .card.context::before{
+  background:none;
 }
 
 #page-mainpage .card-title-row{
@@ -1300,6 +1357,23 @@ footer a{
 }
 
 /* ===== SHARED TOOL STYLES (convert + compress) ===== */
+/* Tool color backdrops: real elements OUTSIDE #app-shell (see body
+   markup), so the light-mode invert filter never touches them — the
+   only way to show these exact colors, since they don't survive that
+   filter's round-trip math (proven, per color, before adding it here).
+   JS keeps each positioned behind its transparent .card.<tool> /
+   .tool-app cutout. Hidden by default; shown only when on screen. */
+.color-backdrop{
+  position:absolute;
+  z-index:0;
+  pointer-events:none;
+  display:none;
+}
+
+#ctxCardBackdrop, #ctxToolBackdrop{ background:#ffd155; }
+#cprCardBackdrop, #cprToolBackdrop{ background:#51c4e6; }
+#clnCardBackdrop, #clnToolBackdrop{ background:#4bde80; }
+
 .tool-wrap{
   display:flex;
   align-items:center;
@@ -1324,20 +1398,26 @@ footer a{
 
 /* Convert: solid fill, no glass/blur */
 #page-convert .tool-app::before{
-  background:linear-gradient(155deg,#b968e7);
+  background:linear-gradient(155deg,#c364fa);
 }
 
-/* Compress: solid fill, no glass/blur */
+/* No background — see #cprToolBackdrop (same story as Context above). */
 #page-compress .tool-app::before{
-  background:linear-gradient(155deg,#6acae7);
+  background:none;
 }
 
 #page-combine .tool-app::before{
-  background:linear-gradient(155deg,#f0776b);
+  background:linear-gradient(155deg,#ed7064);
 }
 
+/* No background — see #clnToolBackdrop. */
 #page-exif .tool-app::before{
-  background:linear-gradient(155deg,#5be08a);
+  background:none;
+}
+
+/* Same story as .card.context::before above — see #ctxToolBackdrop. */
+#page-context .tool-app::before{
+  background:none;
 }
 
 /* Glow disabled — tabs use solid fills instead */
@@ -1466,8 +1546,8 @@ footer a{
 
 .tool-help-target-badge{
   position:absolute;
-  top:8px;
-  left:8px;
+  top:-12px;
+  left:-12px;
   width:30px;
   height:30px;
   border-radius:50%;
@@ -1978,6 +2058,404 @@ footer a{
   display:flex;
   justify-content:flex-end;
   margin-top:24px;
+}
+
+/* ===== CONTEXT TOOL (click-to-place text on a PDF) ===== */
+.context-editor{
+  margin-top:20px;
+}
+
+/* File name dropdown — same trigger/popup pattern as the color picker,
+   so it works the same way with touch as with a mouse (no native
+   dropdown quirks, no reliance on hover). */
+.context-filename-dropdown{
+  position:relative;
+}
+
+.context-filename-popup{
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  z-index:5;
+  width:max(260px, calc(100vw - 32px));
+  max-width:300px;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background:#1d2436;
+}
+
+.context-filename-popup[hidden]{
+  display:none;
+}
+
+.context-filename-input-wrap{
+  position:relative;
+}
+
+.context-filename-input{
+  width:100%;
+  height:40px;
+  padding:0 34px 0 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:14px;
+  box-sizing:border-box;
+}
+
+.context-filename-input::placeholder{
+  color:#fff;
+  opacity:.55;
+}
+
+.context-filename-clear{
+  position:absolute;
+  top:50%;
+  right:6px;
+  transform:translateY(-50%);
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font-size:15px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.context-filename-clear:hover{
+  background:rgba(255,255,255,.24);
+}
+
+.context-download-btn{
+  position:relative;
+  height:40px;
+  padding:0 18px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  font-size:14px;
+  font-weight:700;
+}
+
+.context-download-btn:hover{
+  background:rgba(0,0,0,.35);
+}
+
+.context-remove-btn{
+  height:40px;
+  padding:0 18px;
+  border-radius:12px;
+  border:1px solid #b91c3c;
+  background:#e11d48;
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.context-remove-btn:hover{
+  background:#b91c3c;
+}
+
+/* Marks the start of the text-editing group (Add text, size, color,
+   B/I/U) — pushes it (and everything after it) to the right, leaving a
+   visible gap after the document actions (Remove, page nav, Download,
+   Rename file). */
+.context-toolbar-gap{
+  margin-left:auto;
+}
+
+/* Saturated red doesn't survive a blind invert (shows as pale pink) —
+   same double-invert-cancel fix used for the tool accent colors. */
+html[data-theme="light"] .context-remove-btn{
+  filter:invert(1) hue-rotate(180deg);
+  border-color:#b91c3c;
+  background:#e11d48;
+}
+
+html[data-theme="light"] .context-remove-btn:hover{
+  filter:invert(1) hue-rotate(180deg);
+  background:#b91c3c;
+}
+
+.context-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.context-tool-btn{
+  position:relative;
+  height:40px;
+  padding:0 18px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.context-tool-btn:hover{
+  background:rgba(0,0,0,.35);
+}
+
+.context-font-size{
+  height:40px;
+  padding:0 10px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+}
+
+/* Custom color picker — replaces a native <select>, which rendered its
+   own selected value inconsistently with its open dropdown list (the
+   black swatch showed up white in the closed trigger on some
+   platforms, even though every option in the open list was correct).
+   Fully custom markup sidesteps that entirely and gives a consistent,
+   more modern look besides. */
+.context-color-dropdown{
+  position:relative;
+}
+
+.context-color-trigger{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.context-color-trigger:hover{
+  background:rgba(0,0,0,.35);
+}
+
+#ctFilenameTrigger{
+  max-width:150px;
+}
+
+#ctFilenameTriggerLabel{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.context-color-chevron{
+  font-size:11px;
+  opacity:.75;
+  margin-left:2px;
+}
+
+.context-style-buttons{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.context-style-btn{
+  width:34px;
+  height:40px;
+  padding:0;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  font-size:15px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.context-style-btn:hover{
+  background:rgba(0,0,0,.35);
+}
+
+.context-style-btn[aria-pressed="true"]{
+  background:rgba(0,0,0,.5);
+  border-color:#fff;
+}
+
+.context-color-dot{
+  display:inline-block;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.4);
+  flex-shrink:0;
+}
+
+.context-color-menu{
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  right:0;
+  z-index:5;
+  padding:6px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background:#1d2436;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.context-color-menu[hidden]{
+  display:none;
+}
+
+.context-color-option{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:36px;
+  padding:0 10px;
+  border:none;
+  border-radius:9px;
+  background:transparent;
+  color:#fff;
+  font-size:14px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.context-color-option:hover{
+  background:rgba(255,255,255,.1);
+}
+
+.context-color-option.active{
+  background:rgba(255,255,255,.14);
+  font-weight:700;
+}
+
+.context-page-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+}
+
+.context-page-btn{
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+  color:#fff;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.context-page-btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+
+/* Same background as .site-nav — gives the PDF preview its own visible
+   panel now that the toolbar sits above it and the yellow .tool-app
+   background no longer extends down to it (previously the white PDF
+   page had nothing behind it and vanished in light mode). */
+.context-preview-panel{
+  background:#1d2436;
+  border-radius:20px;
+  padding:24px;
+}
+
+.context-canvas-wrap{
+  position:relative;
+  margin:0 auto;
+  max-width:100%;
+  width:max-content;
+  border-radius:8px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.context-canvas-wrap canvas{
+  display:block;
+  max-width:100%;
+  height:auto;
+}
+
+.context-overlay{
+  position:absolute;
+  inset:0;
+}
+
+.context-text-box{
+  position:absolute;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  white-space:nowrap;
+}
+
+.context-text-box.selected .context-text-inner{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
+}
+
+.context-text-drag-handle{
+  flex-shrink:0;
+  width:14px;
+  text-align:center;
+  font-size:11px;
+  color:rgba(0,0,0,.45);
+  cursor:move;
+  user-select:none;
+}
+
+.context-text-inner{
+  display:inline-block;
+  min-width:20px;
+  padding:2px 4px;
+  outline:1px dashed rgba(0,0,0,.35);
+  cursor:text;
+  font-family:Helvetica, Arial, sans-serif;
+  line-height:1.2;
+}
+
+.context-text-inner:focus{
+  outline:1px solid rgba(37,99,235,.7);
+}
+
+.context-text-remove{
+  flex-shrink:0;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  border:none;
+  background:rgba(225,29,72,.9);
+  color:#fff;
+  font-size:11px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 /* Compression level buttons — compress tab only */
@@ -3396,6 +3874,12 @@ footer a{
     <button type="button" id="cookieBannerSave" data-i18n="cookie_banner_save">Confirm choices</button>
   </div>
 </div>
+<div class="color-backdrop" id="ctxCardBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="ctxToolBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="cprCardBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="cprToolBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="clnCardBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="clnToolBackdrop" aria-hidden="true"></div>
 <div id="app-shell">
 
 <div class="site-nav">
@@ -3538,6 +4022,15 @@ footer a{
         <p data-i18n="mp_card_exif_desc">Remove hidden metadata like GPS location or camera model from your photos before sharing them.</p>
         <button type="button" class="card-cta" data-goto="exif" data-i18n="mp_card_cta">Open →</button>
         <button type="button" class="card-read-more go-to-golden-rules" data-tool="exif">Read more</button>
+      </div>
+
+      <div class="card context">
+        <div class="card-title-row">
+          <span class="gfx-placeholder gfx-lg card-icon" role="img" aria-label="Context icon">(icon-convert.txt)</span>
+          <h2>Context</h2>
+        </div>
+        <p>Add your own text directly onto a PDF — captions, notes, signatures — then download it.</p>
+        <button type="button" class="card-cta" data-goto="context">Open →</button>
       </div>
     </div>
 
@@ -4060,6 +4553,127 @@ footer a{
     </div>
   </div>
 
+</section>
+
+<!-- ===================== CONTEXT ===================== -->
+<section class="page" id="page-context">
+  <div id="ctTop" class="tool-wrap">
+    <div class="tool-app">
+      <div class="tool-header">
+        <div class="tool-logo">
+          <span class="gfx-placeholder gfx-md" role="img" aria-label="Context icon">(icon-convert.txt)</span>
+          Context
+        </div>
+      </div>
+
+      <div class="tool-drop" id="ctDrop">Click or drag and drop a PDF file</div>
+      <input type="file" id="ctInput" accept="application/pdf,.pdf" hidden>
+
+      <div class="context-editor" id="ctEditor" hidden>
+        <div class="context-toolbar">
+          <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Shortcut: T">Add text</button>
+
+          <div class="context-style-buttons">
+            <button type="button" class="context-style-btn" id="ctUnderlineBtn" aria-pressed="false" aria-label="Underline" title="Underline"><u>U</u></button>
+            <button type="button" class="context-style-btn" id="ctItalicBtn" aria-pressed="false" aria-label="Italic" title="Italic"><i>I</i></button>
+            <button type="button" class="context-style-btn" id="ctBoldBtn" aria-pressed="false" aria-label="Bold" title="Bold"><b>B</b></button>
+          </div>
+
+          <div class="context-color-dropdown" id="ctColorDropdown">
+            <button type="button" class="context-color-trigger" id="ctColorTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="context-color-dot" id="ctColorTriggerDot" style="background:#000000"></span>
+              <span id="ctColorTriggerLabel">Black</span>
+              <span class="context-color-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="context-color-menu" id="ctColorMenu" role="listbox" aria-label="Text color" hidden>
+              <button type="button" class="context-color-option active" data-color="#000000" data-label="Black" role="option" aria-selected="true">
+                <span class="context-color-dot" style="background:#000000"></span> Black
+              </button>
+              <button type="button" class="context-color-option" data-color="#ffffff" data-label="White" role="option" aria-selected="false">
+                <span class="context-color-dot" style="background:#ffffff"></span> White
+              </button>
+              <button type="button" class="context-color-option" data-color="#e11d48" data-label="Red" role="option" aria-selected="false">
+                <span class="context-color-dot" style="background:#e11d48"></span> Red
+              </button>
+              <button type="button" class="context-color-option" data-color="#2563eb" data-label="Blue" role="option" aria-selected="false">
+                <span class="context-color-dot" style="background:#2563eb"></span> Blue
+              </button>
+              <button type="button" class="context-color-option" data-color="#eab308" data-label="Yellow" role="option" aria-selected="false">
+                <span class="context-color-dot" style="background:#eab308"></span> Yellow
+              </button>
+            </div>
+          </div>
+
+          <select class="context-font-size" id="ctFontSize" aria-label="Font size">
+            <option value="8">8px</option>
+            <option value="10">10px</option>
+            <option value="12">12px</option>
+            <option value="14">14px</option>
+            <option value="16" selected>16px</option>
+            <option value="18">18px</option>
+            <option value="20">20px</option>
+            <option value="24">24px</option>
+            <option value="28">28px</option>
+            <option value="32">32px</option>
+            <option value="36">36px</option>
+            <option value="40">40px</option>
+            <option value="48">48px</option>
+            <option value="56">56px</option>
+            <option value="64">64px</option>
+            <option value="72">72px</option>
+            <option value="96">96px</option>
+          </select>
+
+          <div class="context-filename-dropdown context-toolbar-gap" id="ctFilenameDropdown">
+            <button type="button" class="context-color-trigger" id="ctFilenameTrigger" aria-haspopup="true" aria-expanded="false">
+              <span id="ctFilenameTriggerLabel">Rename file</span>
+              <span class="context-color-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="context-filename-popup" id="ctFilenamePopup" hidden>
+              <div class="context-filename-input-wrap">
+                <input type="text" class="context-filename-input" id="ctFilenameInput" placeholder="File name" aria-label="File name">
+                <button type="button" class="context-filename-clear" id="ctFilenameClear" aria-label="Clear file name">×</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="tool-primary-btn context-download-btn" id="ctDownloadBtn" disabled>Download PDF</button>
+
+          <div class="context-page-nav" id="ctPageNav" hidden>
+            <button type="button" class="context-page-btn" id="ctPrevPage" aria-label="Previous page">‹</button>
+            <span class="context-page-label" id="ctPageLabel">1 / 1</span>
+            <button type="button" class="context-page-btn" id="ctNextPage" aria-label="Next page">›</button>
+          </div>
+
+          <button type="button" class="context-remove-btn" id="ctRemoveBtn">Remove</button>
+        </div>
+
+        <div class="context-preview-panel">
+          <div class="context-canvas-wrap" id="ctCanvasWrap">
+            <canvas id="ctCanvas"></canvas>
+            <div class="context-overlay" id="ctOverlay"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-status" id="ctStatus"></div>
+
+      <div class="tool-help-overlay" id="ctHelpOverlay">
+        <div class="tool-help-bubble" data-target="ctDrop">
+          <div class="tool-help-bubble-inner"><span class="step-num">1</span><p>Drop a PDF here, or click to choose one from your computer.</p></div>
+        </div>
+        <div class="tool-help-bubble" data-target="ctAddTextBtn" data-unlock-when-visible="ctEditor">
+          <div class="tool-help-bubble-inner"><span class="step-num">2</span><div><p>Add desired text — click "Add text" to drop a box onto the page, then click it to type. Drag the ⠿ handle to move it.</p><span class="tool-help-lock-note">Unlocks after step 1</span></div></div>
+        </div>
+        <div class="tool-help-bubble" data-target="ctColorDropdown" data-unlock-when-visible="ctEditor">
+          <div class="tool-help-bubble-inner"><span class="step-num">3</span><div><p>Edit desired style — with a text box selected, adjust its size, color, bold, italic, or underline here.</p><span class="tool-help-lock-note">Unlocks after step 1</span></div></div>
+        </div>
+        <div class="tool-help-bubble" data-target="ctDownloadBtn" data-unlock-when-visible="ctEditor">
+          <div class="tool-help-bubble-inner"><span class="step-num">4</span><div><p>Click and your edited PDF will download automatically.</p><span class="tool-help-lock-note">Unlocks after step 1</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ===================== TERMS ===================== -->
@@ -8057,7 +8671,7 @@ function pluralWord(dict, count, baseKey){
 })();
 
 /* ===== TAB SWITCHING ===== */
-const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif"];
+const VALID_PAGES = ["mainpage", "about", "faq", "terms", "privacy", "cookies", "golden-rules", "convert", "compress", "combine", "exif", "context"];
 
 /* Legal/policy pages never show ads — keep in sync with anywhere ads
    might otherwise be requested. */
@@ -8134,7 +8748,7 @@ function finishPrivacyCheck(badgeEl){
    build_static_routes.py) — need a trailing slash so the URL matches the
    file location and skips GitHub Pages' 301 redirect flicker. Keep in
    sync with ROUTES in that script. */
-const STATIC_ROUTES = ["terms", "privacy", "cookies", "about", "faq", "golden-rules", "convert", "compress", "combine", "exif"];
+const STATIC_ROUTES = ["terms", "privacy", "cookies", "about", "faq", "golden-rules", "convert", "compress", "combine", "exif", "context"];
 
 /* Cleanly is branded as "Cleanly" everywhere in the UI, but its internal
    page id/section stayed "exif" (metadata format) to avoid a much wider
@@ -8152,9 +8766,74 @@ function pathToName(pathname){
   return seg;
 }
 
+/* ===== TOOL COLOR BACKDROPS =====
+   Some tool accent colors (Context yellow, Compress blue, Cleanly
+   green) can't survive the light-mode invert filter's round-trip math
+   intact (proven per-color: an intermediate step needs a negative,
+   unrepresentable channel, so the browser clamps it and the true color
+   is unrecoverable). For those, color lives on real elements OUTSIDE
+   #app-shell (see markup near the top of <body>) — the filter simply
+   never touches them, regardless of hue. This keeps each one positioned
+   behind its transparent .card.<tool> / .tool-app cutout.
+   Declared here (before gotoPage, not after it) because gotoPage calls
+   syncColorBackdrops() and runs during initial page load — a const
+   declared further down the script wouldn't be initialized yet at that
+   point and would throw a temporal-dead-zone ReferenceError. */
+const COLOR_BACKDROP_CONFIGS = [
+  { cardId: "ctxCardBackdrop", toolId: "ctxToolBackdrop", cardSelector: "#page-mainpage .card.context", toolPage: "context" },
+  { cardId: "cprCardBackdrop", toolId: "cprToolBackdrop", cardSelector: "#page-mainpage .card.compress", toolPage: "compress" },
+  { cardId: "clnCardBackdrop", toolId: "clnToolBackdrop", cardSelector: "#page-mainpage .card.exif", toolPage: "exif" },
+];
+
+function syncColorBackdrops(){
+  const mainpageActive = document.getElementById("page-mainpage").classList.contains("active");
+
+  COLOR_BACKDROP_CONFIGS.forEach(cfg => {
+    const cardBackdrop = document.getElementById(cfg.cardId);
+    const toolBackdrop = document.getElementById(cfg.toolId);
+    if (!cardBackdrop || !toolBackdrop) return;
+
+    const card = mainpageActive ? document.querySelector(cfg.cardSelector) : null;
+    if (card){
+      const r = card.getBoundingClientRect();
+      cardBackdrop.style.display = "block";
+      cardBackdrop.style.left = (r.left + window.scrollX) + "px";
+      cardBackdrop.style.top = (r.top + window.scrollY) + "px";
+      cardBackdrop.style.width = r.width + "px";
+      cardBackdrop.style.height = r.height + "px";
+      cardBackdrop.style.borderRadius = "28px";
+    } else {
+      cardBackdrop.style.display = "none";
+    }
+
+    const toolPageEl = document.getElementById("page-" + cfg.toolPage);
+    const toolActive = toolPageEl && toolPageEl.classList.contains("active");
+    const toolApp = toolActive ? toolPageEl.querySelector(".tool-app") : null;
+    if (toolApp){
+      const r = toolApp.getBoundingClientRect();
+      toolBackdrop.style.display = "block";
+      toolBackdrop.style.left = (r.left + window.scrollX) + "px";
+      toolBackdrop.style.top = (r.top + window.scrollY) + "px";
+      toolBackdrop.style.width = r.width + "px";
+      toolBackdrop.style.height = r.height + "px";
+      toolBackdrop.style.borderRadius = "36px";
+    } else {
+      toolBackdrop.style.display = "none";
+    }
+  });
+}
+
+window.addEventListener("load", syncColorBackdrops);
+window.addEventListener("resize", syncColorBackdrops);
+document.addEventListener("bc:langchange", syncColorBackdrops);
+
 function gotoPage(name){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + name).classList.add("active");
+
+  if (typeof window.syncColorBackdrops === "function"){
+    window.syncColorBackdrops();
+  }
 
   const navCloseBtn = document.getElementById("navCloseBtn");
   if (navCloseBtn){
@@ -8163,7 +8842,7 @@ function gotoPage(name){
 
   const navHelpBtn = document.getElementById("navHelpBtn");
   if (navHelpBtn){
-    navHelpBtn.classList.toggle("visible", name === "convert" || name === "compress" || name === "combine" || name === "exif");
+    navHelpBtn.classList.toggle("visible", name === "convert" || name === "compress" || name === "combine" || name === "exif" || name === "context");
     navHelpBtn.dataset.page = name;
     navHelpBtn.classList.remove("active");
   }
@@ -8618,7 +9297,7 @@ if (VALID_PAGES.includes(startPage)) {
 
     try {
       if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc){
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
       }
       const bytes = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
@@ -9421,7 +10100,7 @@ if (VALID_PAGES.includes(startPage)) {
   if (!drop || !input || !fileList || !combineBtn) return;
 
   if (window.pdfjsLib){
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
   }
 
   let files = [];
@@ -9795,6 +10474,524 @@ if (VALID_PAGES.includes(startPage)) {
   });
 })();
 
+/* ===== CONTEXT TOOL (click-to-place text on a PDF, then embed it) =====
+   Text boxes are stored in PDF point space (not screen px) so the
+   canvas can be re-rendered at a different scale (page change, resize)
+   without needing to convert existing boxes' positions. */
+(function(){
+  const drop = document.getElementById("ctDrop");
+  const input = document.getElementById("ctInput");
+  const editor = document.getElementById("ctEditor");
+  const canvas = document.getElementById("ctCanvas");
+  const overlay = document.getElementById("ctOverlay");
+  const addTextBtn = document.getElementById("ctAddTextBtn");
+  const fontSizeSelect = document.getElementById("ctFontSize");
+  const colorDropdown = document.getElementById("ctColorDropdown");
+  const colorTrigger = document.getElementById("ctColorTrigger");
+  const colorTriggerDot = document.getElementById("ctColorTriggerDot");
+  const colorTriggerLabel = document.getElementById("ctColorTriggerLabel");
+  const colorMenu = document.getElementById("ctColorMenu");
+  const boldBtn = document.getElementById("ctBoldBtn");
+  const italicBtn = document.getElementById("ctItalicBtn");
+  const underlineBtn = document.getElementById("ctUnderlineBtn");
+  const pageNav = document.getElementById("ctPageNav");
+  const prevPageBtn = document.getElementById("ctPrevPage");
+  const nextPageBtn = document.getElementById("ctNextPage");
+  const pageLabel = document.getElementById("ctPageLabel");
+  const downloadBtn = document.getElementById("ctDownloadBtn");
+  const removePdfBtn = document.getElementById("ctRemoveBtn");
+  const filenameInput = document.getElementById("ctFilenameInput");
+  const filenameDropdown = document.getElementById("ctFilenameDropdown");
+  const filenameTrigger = document.getElementById("ctFilenameTrigger");
+  const filenameTriggerLabel = document.getElementById("ctFilenameTriggerLabel");
+  const filenamePopup = document.getElementById("ctFilenamePopup");
+  const filenameClear = document.getElementById("ctFilenameClear");
+  const status = document.getElementById("ctStatus");
+  if (!drop || !input || !editor || !canvas || !overlay || !downloadBtn) return;
+
+  if (window.pdfjsLib){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
+  }
+
+  let currentFile = null;
+  let pdfjsDoc = null;
+  let pageCount = 1;
+  let currentPage = 1;
+  let scale = 1;
+  let activeColor = "#000000";
+  let activeBold = false;
+  let activeItalic = false;
+  let activeUnderline = false;
+  /* { page, xPt, yPt, widthPt (approx), sizePt, color, text, bold,
+     italic, underline } — yPt is measured from the BOTTOM of the page
+     (pdf-lib convention). */
+  let textBoxes = [];
+  let boxIdSeq = 0;
+  let selectedBoxId = null;
+
+  function isPdfFile(f){
+    return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+  }
+
+  async function loadFile(file){
+    if (!isPdfFile(file)){
+      status.textContent = "Context only works with PDF files — \"" + file.name + "\" isn't one.";
+      return;
+    }
+    if (!window.pdfjsLib){
+      status.textContent = "PDF engine failed to load.";
+      return;
+    }
+    status.textContent = "Loading PDF...";
+    currentFile = file;
+    textBoxes = [];
+    let bytes, doc;
+    try {
+      bytes = await file.arrayBuffer();
+      doc = await pdfjsLib.getDocument({ data: bytes }).promise;
+    } catch (err){
+      console.error(err);
+      status.textContent = "Couldn't read that PDF — it may be corrupted or password-protected.";
+      return;
+    }
+    pdfjsDoc = doc;
+    pageCount = pdfjsDoc.numPages;
+    currentPage = 1;
+    editor.hidden = false;
+    pageNav.hidden = pageCount <= 1;
+    downloadBtn.disabled = false;
+    filenameInput.value = file.name.replace(/\.pdf$/i, "") + "-context";
+    updateFilenameTriggerLabel();
+    status.textContent = "";
+    await renderPage();
+  }
+
+  async function renderPage(){
+    const page = await pdfjsDoc.getPage(currentPage);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const wrapMaxWidth = Math.min(760, canvas.closest(".tool-app").clientWidth - 72);
+    scale = Math.min(wrapMaxWidth / baseViewport.width, 1.4);
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    overlay.style.width = viewport.width + "px";
+    overlay.style.height = viewport.height + "px";
+
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+
+    pageLabel.textContent = currentPage + " / " + pageCount;
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= pageCount;
+
+    renderTextBoxes();
+
+    /* The .tool-app box just grew a lot taller (the PDF canvas is now
+       visible) — resync the yellow backdrop immediately so it wraps the
+       whole thing right away, instead of staying sized to the pre-PDF
+       (toolbar-only) height until some unrelated event happens to
+       trigger a resync later. */
+    if (typeof window.syncColorBackdrops === "function"){
+      window.syncColorBackdrops();
+    }
+  }
+
+  function renderTextBoxes(){
+    overlay.innerHTML = "";
+    textBoxes
+      .filter(b => b.page === currentPage)
+      .forEach(box => overlay.appendChild(buildBoxEl(box)));
+  }
+
+  function findBoxById(id){
+    return textBoxes.find(b => b.id === id);
+  }
+
+  /* Selecting a box syncs the toolbar's size/color controls to show
+     that box's own values, so changing them edits the box directly
+     instead of just setting the default for the next new box. */
+  function selectBox(id){
+    selectedBoxId = id;
+    const box = findBoxById(id);
+    if (box){
+      fontSizeSelect.value = String(box.sizePt);
+      activeColor = box.color;
+      const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
+      colorTriggerDot.style.background = box.color;
+      colorTriggerLabel.textContent = opt ? opt.dataset.label : box.color;
+      colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+        o.classList.toggle("active", o === opt);
+        o.setAttribute("aria-selected", String(o === opt));
+      });
+      activeBold = !!box.bold;
+      activeItalic = !!box.italic;
+      activeUnderline = !!box.underline;
+      boldBtn.setAttribute("aria-pressed", String(activeBold));
+      italicBtn.setAttribute("aria-pressed", String(activeItalic));
+      underlineBtn.setAttribute("aria-pressed", String(activeUnderline));
+    }
+    overlay.querySelectorAll(".context-text-box").forEach(elx => {
+      elx.classList.toggle("selected", elx.dataset.boxId === String(id));
+    });
+  }
+
+  function deselectBox(){
+    selectedBoxId = null;
+    overlay.querySelectorAll(".context-text-box.selected").forEach(elx => elx.classList.remove("selected"));
+  }
+
+  function buildBoxEl(box){
+    const el = document.createElement("div");
+    el.className = "context-text-box";
+    el.dataset.boxId = box.id;
+    el.style.left = (box.xPt * scale) + "px";
+    el.style.top = (box.topPt * scale) + "px";
+
+    const handle = document.createElement("span");
+    handle.className = "context-text-drag-handle";
+    handle.textContent = "⠿";
+    el.appendChild(handle);
+
+    const inner = document.createElement("span");
+    inner.className = "context-text-inner";
+    inner.contentEditable = "true";
+    inner.spellcheck = false;
+    inner.style.fontSize = (box.sizePt * scale) + "px";
+    inner.style.color = box.color;
+    inner.style.fontWeight = box.bold ? "bold" : "normal";
+    inner.style.fontStyle = box.italic ? "italic" : "normal";
+    inner.style.textDecoration = box.underline ? "underline" : "none";
+    inner.textContent = box.text;
+    inner.addEventListener("input", () => {
+      box.text = inner.textContent;
+    });
+    inner.addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){
+        e.preventDefault();
+        inner.blur();
+      }
+    });
+    inner.addEventListener("focus", () => selectBox(box.id));
+    el.appendChild(inner);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "context-text-remove";
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      textBoxes = textBoxes.filter(b => b.id !== box.id);
+      if (selectedBoxId === box.id) selectedBoxId = null;
+      renderTextBoxes();
+    });
+    el.appendChild(removeBtn);
+
+    let dragging = false;
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = box.xPt * scale;
+      startTop = box.topPt * scale;
+      document.addEventListener("mousemove", onDrag);
+      document.addEventListener("mouseup", onDragEnd);
+    });
+    function onDrag(e){
+      if (!dragging) return;
+      const newLeft = startLeft + (e.clientX - startX);
+      const newTop = startTop + (e.clientY - startY);
+      box.xPt = Math.max(0, newLeft / scale);
+      box.topPt = Math.max(0, newTop / scale);
+      el.style.left = (box.xPt * scale) + "px";
+      el.style.top = (box.topPt * scale) + "px";
+    }
+    function onDragEnd(){
+      dragging = false;
+      document.removeEventListener("mousemove", onDrag);
+      document.removeEventListener("mouseup", onDragEnd);
+    }
+
+    return el;
+  }
+
+  function addTextBox(){
+    const sizePt = parseInt(fontSizeSelect.value, 10) || 16;
+    const box = {
+      id: ++boxIdSeq,
+      page: currentPage,
+      xPt: (overlay.clientWidth / scale / 2) - 40,
+      topPt: (overlay.clientHeight / scale / 2) - (sizePt / 2),
+      sizePt,
+      color: activeColor,
+      bold: activeBold,
+      italic: activeItalic,
+      underline: activeUnderline,
+      text: "Text"
+    };
+    textBoxes.push(box);
+    renderTextBoxes();
+    const el = overlay.lastChild;
+    const inner = el && el.querySelector(".context-text-inner");
+    if (inner){
+      inner.focus();
+      const range = document.createRange();
+      range.selectNodeContents(inner);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
+
+  drop.addEventListener("click", () => input.click());
+  input.addEventListener("change", (e) => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+    input.value = "";
+  });
+  drop.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    drop.classList.add("active");
+  });
+  drop.addEventListener("dragleave", () => drop.classList.remove("active"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("active");
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+
+  addTextBtn.addEventListener("click", addTextBox);
+
+  removePdfBtn.addEventListener("click", () => {
+    currentFile = null;
+    pdfjsDoc = null;
+    textBoxes = [];
+    selectedBoxId = null;
+    editor.hidden = true;
+    downloadBtn.disabled = true;
+    filenameInput.value = "";
+    updateFilenameTriggerLabel();
+    status.textContent = "";
+    if (typeof window.syncColorBackdrops === "function"){
+      window.syncColorBackdrops();
+    }
+  });
+
+  /* Keyboard shortcut: "T" adds a text box (desktop only — no on-screen
+     keyboard to conflict with). Ignored while typing anywhere editable,
+     with a modifier held, or off the Context page. */
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "t" && e.key !== "T") return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (editor.hidden) return;
+    if (!document.getElementById("page-context").classList.contains("active")) return;
+
+    const target = e.target;
+    const isEditable = target.isContentEditable
+      || target.tagName === "INPUT"
+      || target.tagName === "SELECT"
+      || target.tagName === "TEXTAREA";
+    if (isEditable) return;
+
+    e.preventDefault();
+    addTextBox();
+  });
+
+  colorTrigger.addEventListener("click", () => {
+    const willOpen = colorMenu.hidden;
+    colorMenu.hidden = !willOpen;
+    colorTrigger.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  colorMenu.addEventListener("click", (e) => {
+    const opt = e.target.closest(".context-color-option");
+    if (!opt) return;
+    activeColor = opt.dataset.color;
+    colorTriggerDot.style.background = activeColor;
+    colorTriggerLabel.textContent = opt.dataset.label;
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      o.classList.toggle("active", o === opt);
+      o.setAttribute("aria-selected", String(o === opt));
+    });
+    colorMenu.hidden = true;
+    colorTrigger.setAttribute("aria-expanded", "false");
+
+    if (selectedBoxId){
+      const box = findBoxById(selectedBoxId);
+      if (box && box.page === currentPage){
+        box.color = activeColor;
+        const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
+        const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
+        if (innerEl) innerEl.style.color = activeColor;
+      }
+    }
+  });
+
+  fontSizeSelect.addEventListener("change", () => {
+    if (!selectedBoxId) return;
+    const box = findBoxById(selectedBoxId);
+    if (!box || box.page !== currentPage) return;
+    box.sizePt = parseInt(fontSizeSelect.value, 10) || box.sizePt;
+    const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
+    const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
+    if (innerEl) innerEl.style.fontSize = (box.sizePt * scale) + "px";
+  });
+
+  function toggleStyleProp(btn, propName, cssProp, onValue, offValue){
+    btn.addEventListener("click", () => {
+      const nowActive = btn.getAttribute("aria-pressed") !== "true";
+      btn.setAttribute("aria-pressed", String(nowActive));
+
+      if (selectedBoxId){
+        const box = findBoxById(selectedBoxId);
+        if (box && box.page === currentPage){
+          box[propName] = nowActive;
+          const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
+          const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
+          if (innerEl) innerEl.style[cssProp] = nowActive ? onValue : offValue;
+        }
+      }
+
+      if (propName === "bold") activeBold = nowActive;
+      if (propName === "italic") activeItalic = nowActive;
+      if (propName === "underline") activeUnderline = nowActive;
+    });
+  }
+
+  toggleStyleProp(boldBtn, "bold", "fontWeight", "bold", "normal");
+  toggleStyleProp(italicBtn, "italic", "fontStyle", "italic", "normal");
+  toggleStyleProp(underlineBtn, "underline", "textDecoration", "underline", "none");
+
+  document.addEventListener("click", (e) => {
+    if (!colorDropdown.contains(e.target)){
+      colorMenu.hidden = true;
+      colorTrigger.setAttribute("aria-expanded", "false");
+    }
+    if (!filenameDropdown.contains(e.target)){
+      filenamePopup.hidden = true;
+      filenameTrigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  /* Trigger always reads "Rename file" — the actual current name shows
+     inside the popup itself once opened, not on the button. */
+  function updateFilenameTriggerLabel(){
+    filenameTriggerLabel.textContent = "Rename file";
+  }
+
+  filenameTrigger.addEventListener("click", () => {
+    const willOpen = filenamePopup.hidden;
+    filenamePopup.hidden = !willOpen;
+    filenameTrigger.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen){
+      filenameInput.focus();
+      filenameInput.select();
+    }
+  });
+
+  filenameInput.addEventListener("input", updateFilenameTriggerLabel);
+
+  filenameClear.addEventListener("click", () => {
+    filenameInput.value = "";
+    updateFilenameTriggerLabel();
+    filenameInput.focus();
+  });
+
+  filenameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){
+      filenamePopup.hidden = true;
+      filenameTrigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  prevPageBtn.addEventListener("click", () => {
+    if (currentPage > 1){
+      currentPage--;
+      selectedBoxId = null;
+      renderPage();
+    }
+  });
+  nextPageBtn.addEventListener("click", () => {
+    if (currentPage < pageCount){
+      currentPage++;
+      selectedBoxId = null;
+      renderPage();
+    }
+  });
+
+  downloadBtn.addEventListener("click", async () => {
+    if (!currentFile) return;
+    downloadBtn.disabled = true;
+    status.textContent = "Preparing your PDF...";
+
+    try {
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+      const bytes = await currentFile.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(bytes);
+
+      /* Bold/italic aren't a style flag on Helvetica — pdf-lib's base 14
+         fonts include separate bold/oblique/bold-oblique variants, so
+         pick the matching embedded font per box instead. */
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const fontBoldItalic = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      const pages = pdfDoc.getPages();
+
+      textBoxes.forEach(box => {
+        const page = pages[box.page - 1];
+        if (!page || !box.text) return;
+        const pageHeight = page.getHeight();
+        const r = parseInt(box.color.slice(1, 3), 16) / 255;
+        const g = parseInt(box.color.slice(3, 5), 16) / 255;
+        const b = parseInt(box.color.slice(5, 7), 16) / 255;
+        const color = rgb(r, g, b);
+        const font = box.bold && box.italic ? fontBoldItalic
+          : box.bold ? fontBold
+          : box.italic ? fontItalic
+          : fontRegular;
+        const x = box.xPt + 18;
+        const y = pageHeight - box.topPt - box.sizePt;
+
+        page.drawText(box.text, { x, y, size: box.sizePt, font, color });
+
+        if (box.underline){
+          const textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
+          page.drawLine({
+            start: { x, y: y - box.sizePt * 0.1 },
+            end: { x: x + textWidth, y: y - box.sizePt * 0.1 },
+            thickness: Math.max(1, box.sizePt * 0.05),
+            color
+          });
+        }
+      });
+
+      const outBytes = await pdfDoc.save();
+      const blob = new Blob([outBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const chosenName = filenameInput.value.trim() || currentFile.name.replace(/\.pdf$/i, "") + "-context";
+      a.download = chosenName.replace(/\.pdf$/i, "") + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      status.textContent = "Done. Downloaded your edited PDF.";
+    } catch (err){
+      console.error(err);
+      status.textContent = "Something went wrong — please try again.";
+    } finally {
+      downloadBtn.disabled = false;
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (pdfjsDoc) renderPage();
+  });
+})();
+
 /* ===== NAV SHARE BUTTON (works on Convert + Compress) ===== */
 (function(){
   const shareBtn = document.getElementById("navShareBtn");
@@ -9887,6 +11084,16 @@ if (VALID_PAGES.includes(startPage)) {
       const unlocked = !!(target && target.children.length > 0);
       bubble.classList.toggle("locked", !unlocked);
     });
+
+    // Same idea as data-requires-content, but for steps that unlock once
+    // some OTHER element stops being hidden (e.g. Context's editor only
+    // appears after a PDF loads — its toolbar buttons themselves never
+    // gain/lose children, so the content-count check above doesn't fit).
+    overlay.querySelectorAll(".tool-help-bubble[data-unlock-when-visible]").forEach(bubble => {
+      const gate = document.getElementById(bubble.dataset.unlockWhenVisible);
+      const unlocked = !!(gate && !gate.hidden);
+      bubble.classList.toggle("locked", !unlocked);
+    });
   }
 
   function positionHelpBubbles(overlay){
@@ -9947,7 +11154,7 @@ if (VALID_PAGES.includes(startPage)) {
       watchers.forEach(w => w.observer.disconnect());
       hideTargetBadges(overlay);
       showTargetBadges(overlay);
-      watchers.forEach(w => w.observer.observe(w.target, { childList: true }));
+      watchers.forEach(w => w.observer.observe(w.target, w.options));
     }
 
     function open(){
@@ -9970,11 +11177,26 @@ if (VALID_PAGES.includes(startPage)) {
     overlay.querySelectorAll(".tool-help-bubble[data-requires-content]").forEach(bubble => {
       const target = document.getElementById(bubble.dataset.target);
       if (!target) return;
+      const options = { childList: true };
       const observer = new MutationObserver(() => {
         if (overlay.classList.contains("open")) refresh();
       });
-      observer.observe(target, { childList: true });
-      watchers.push({ observer, target });
+      observer.observe(target, options);
+      watchers.push({ observer, target, options });
+    });
+
+    // Same live-update behavior for data-unlock-when-visible steps —
+    // watches the gate element's "hidden" attribute instead of its
+    // children (e.g. loading/removing a PDF while help is open).
+    overlay.querySelectorAll(".tool-help-bubble[data-unlock-when-visible]").forEach(bubble => {
+      const gate = document.getElementById(bubble.dataset.unlockWhenVisible);
+      if (!gate) return;
+      const options = { attributes: true, attributeFilter: ["hidden"] };
+      const observer = new MutationObserver(() => {
+        if (overlay.classList.contains("open")) refresh();
+      });
+      observer.observe(gate, options);
+      watchers.push({ observer, target: gate, options });
     });
 
     return { open, close, isOpen: () => overlay.classList.contains("open") };
@@ -9984,7 +11206,8 @@ if (VALID_PAGES.includes(startPage)) {
     convert: setupHelpOverlay("cv"),
     compress: setupHelpOverlay("cp"),
     combine: setupHelpOverlay("cb"),
-    exif: setupHelpOverlay("ex")
+    exif: setupHelpOverlay("ex"),
+    context: setupHelpOverlay("ct")
   };
 
   const navHelpBtn = document.getElementById("navHelpBtn");
