@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* The site used to have a custom "remember scroll position across
+   reload" feature, later removed — but removing the custom JS never
+   touched the browser's own default scroll restoration, which restores
+   the old position on reload/back-forward regardless of any app code.
+   That's what looked like the old feature "still triggering". Opting
+   out here (before anything paints) makes every reload land at the
+   top, matching what removing the feature was actually meant to do. */
+try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (e) { /* unavailable */ }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BC Tools – Free Image Tools</title>
@@ -151,12 +161,6 @@ html[data-theme="light"] #page-convert .tool-drop.active{
   filter:invert(1) hue-rotate(180deg);
   border-color:#7626f5;
   background:rgba(118,38,245,.1);
-}
-
-html[data-theme="light"] #page-mainpage .card.combine::before,
-html[data-theme="light"] #page-combine .tool-app::before{
-  filter:invert(1) hue-rotate(180deg);
-  background:linear-gradient(155deg, #ed7064);
 }
 
 body{
@@ -1132,6 +1136,1078 @@ html[data-theme="light"] .engine-status-error{
   color:#dc2626;
 }
 
+/* Cookie-gated easter egg: "> Anomaly accessed" only ever appears once
+   a visitor accepts every cookie category — see the cookie-consent IIFE
+   for the unlock trigger, and the anomaly-system IIFE below for the
+   click-through stages (wiggle x3 -> reveal download row -> loading
+   animation -> permanent "alien 1979" theme on this card). */
+.engine-status-anomaly:not([hidden]){
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.engine-status-row-btn{
+  display:block;
+  width:100%;
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+
+.engine-status-row-btn:disabled{
+  cursor:default;
+  opacity:.5;
+}
+
+/* The full payoff: every terminal-style banner site-wide (mission log,
+   loading-tools banner, the fake email banner) switches into an
+   authentic "found on an old CRT" look — near-black, phosphor green,
+   a scanline overlay, and a faint flicker — once a visitor has fully
+   unlocked it via the mission log's anomaly sequence. Toggled by
+   adding .alien-1979-mode to <html> (same mechanism as the light/dark
+   theme attribute), giving it enough specificity to outrank the
+   light-theme overrides above regardless of the current theme —
+   deliberately the same look either way, since it's meant to feel like
+   it's overriding the site's own styling, not blending into it. */
+html.alien-1979-mode .engine-status-card{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .engine-status-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(51,255,102,.06) 0px,
+    rgba(51,255,102,.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation:alien-crt-flicker 3.4s steps(2) infinite;
+}
+
+html.alien-1979-mode .engine-status-title{
+  color:#33ff66;
+  text-shadow:0 0 6px rgba(51,255,102,.6), 0 0 14px rgba(51,255,102,.3);
+}
+
+html.alien-1979-mode .engine-status-row{
+  color:#33ff66;
+  text-shadow:0 0 5px rgba(51,255,102,.45);
+}
+
+html.alien-1979-mode .engine-status-value{
+  color:#33ff66;
+  text-shadow:0 0 5px rgba(51,255,102,.45);
+}
+
+/* Matches the reference CRT screenshot's look for selected/actionable
+   lines: solid green highlight block with black text, rather than
+   green-on-black like the rest of the log. Inline-block (not the
+   original full-row block) so the highlight only covers the text
+   itself, same as the reference. */
+html.alien-1979-mode .engine-status-row-btn,
+html.alien-1979-mode .engine-status-row-btn:disabled{
+  display:inline-block;
+  width:auto;
+  background:#33ff66 !important;
+  color:#000 !important;
+  -webkit-text-fill-color:#000;
+  text-shadow:none;
+  padding:1px 6px;
+  border-radius:2px;
+  text-decoration:none;
+  opacity:1;
+  filter:none;
+}
+
+/* macOS traffic-light dots don't fit the "found military terminal"
+   bit — the red/green decorative dots are hidden, and the one
+   functional (yellow) dot becomes a plain OPEN/EXIT text toggle
+   instead, its label driven entirely by the aria-expanded state JS
+   already keeps in sync (same attribute-selector approach as the
+   share menu's arrow rotation elsewhere in the stylesheet). */
+html.alien-1979-mode .engine-status-dot-red,
+html.alien-1979-mode .engine-status-dot-green{
+  display:none;
+}
+
+html.alien-1979-mode .engine-status-dot-toggle{
+  width:auto;
+  height:auto;
+  border-radius:2px;
+  background:#33ff66 !important;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:400;
+  color:#000;
+  text-shadow:none;
+  text-decoration:none;
+  padding:1px 6px;
+}
+
+html.alien-1979-mode .engine-status-dot-toggle:hover,
+html.alien-1979-mode .engine-status-dot-toggle:focus-visible{
+  box-shadow:none;
+  outline:none;
+  text-decoration:none;
+}
+
+html.alien-1979-mode .engine-status-dot-toggle::after{
+  content:"//OPEN//";
+}
+
+html.alien-1979-mode .engine-status-dot-toggle[aria-expanded="true"]::after{
+  content:"//CLOSE//";
+}
+
+/* Cookie banner's docked-titlebar toggle is a separate element (its
+   own .cookie-dock-toggle class, not .engine-status-dot-toggle) that
+   never got the same alien treatment — same OPEN/CLOSE green-block
+   button look as the mission log's toggle above. */
+html.alien-1979-mode .cookie-settings-btn-dot.engine-status-dot-red,
+html.alien-1979-mode .cookie-settings-btn-dot.engine-status-dot-green{
+  display:none;
+}
+
+/* Root cause of the //CLOSE// chip's off-shade green: the toggle's own
+   opacity:1 (below) only guarantees it's fully opaque WITHIN its own
+   layer — it doesn't cancel out the parent <p class="cookie-banner-
+   text-docked">'s opacity:.8 (a normal-mode dimming rule for the
+   docked paragraph text), which still composites the chip's solid
+   #33ff66 down to roughly 80% against the black background. That 80%
+   blend computes to ~#2acd52, which is exactly the wrong shade
+   reported — not a separate color bug on the chip itself. */
+html.alien-1979-mode .cookie-banner-text-docked{
+  opacity:1;
+}
+
+html.alien-1979-mode .cookie-dock-toggle{
+  width:auto;
+  height:auto;
+  border-radius:2px;
+  background:#33ff66 !important;
+  font-family:"Courier New", Courier, monospace;
+  font-size:15px;
+  font-weight:400;
+  color:#000;
+  text-shadow:none;
+  text-decoration:none;
+  padding:1px 6px;
+  opacity:1;
+}
+
+html.alien-1979-mode .cookie-dock-toggle:hover,
+html.alien-1979-mode .cookie-dock-toggle:focus-visible{
+  box-shadow:none;
+  outline:none;
+  text-decoration:none;
+}
+
+html.alien-1979-mode .cookie-dock-toggle::after{
+  content:"//OPEN//";
+}
+
+html.alien-1979-mode .cookie-dock-toggle[aria-expanded="true"]::after{
+  content:"//CLOSE//";
+}
+
+html.alien-1979-mode .engine-status-card.revealed .engine-status-header{
+  border-bottom-color:rgba(51,255,102,.3);
+}
+
+/* Both flex-column containers default to align-items:stretch, which
+   would force the inline-block highlight buttons above to full
+   container width instead of just wrapping their own text. */
+html.alien-1979-mode .engine-status-body,
+html.alien-1979-mode .engine-status-anomaly:not([hidden]){
+  align-items:flex-start;
+}
+
+@keyframes alien-crt-flicker{
+  0%, 92%, 100%{ opacity:1; }
+  94%{ opacity:.85; }
+  96%{ opacity:1; }
+  98%{ opacity:.9; }
+}
+
+/* First pass at extending the alien look beyond the terminal banners
+   to the whole page now: pure black everywhere, every text color
+   flipped to phosphor green, monospace throughout. Redefining --text
+   at the root flips the ~50 places already using var(--text); #app-shell's
+   own color override catches everything else that was just inheriting
+   plain white (headings, card titles) instead of using the variable.
+   text-shadow is inherited by default, so the glow cascades down for
+   free — anything that needs to opt out (the black-on-green highlight
+   buttons) already sets its own text-shadow:none explicitly. */
+html.alien-1979-mode{
+  --text:#33ff66;
+}
+
+html.alien-1979-mode body{
+  background:#000;
+}
+
+html.alien-1979-mode #app-shell{
+  color:#33ff66;
+  font-family:"Courier New", Courier, monospace;
+  text-shadow:0 0 5px rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .site-nav{
+  --text:#33ff66;
+  background:#000;
+  border-bottom-color:rgba(51,255,102,.3);
+  color:#33ff66;
+}
+
+html.alien-1979-mode .site-logo{
+  display:none;
+}
+
+/* CSS-only text swap: the actual "BC Tools" text stays in the DOM
+   (still what screen readers announce) but is hidden, replaced
+   visually by a "TERMINAL" pseudo-element sized/positioned to match —
+   avoids needing JS just to change a label from a CSS-only mode. */
+html.alien-1979-mode .brand-text{
+  position:relative;
+  visibility:hidden;
+}
+
+html.alien-1979-mode .brand-text::after{
+  content:"PERSONAL TERMINAL_";
+  position:absolute;
+  left:0;
+  top:0;
+  visibility:visible;
+  color:#33ff66;
+  text-shadow:0 0 6px rgba(51,255,102,.6), 0 0 14px rgba(51,255,102,.3);
+  font-weight:400;
+  white-space:nowrap;
+}
+
+/* Theme toggle and share menu aren't needed on the alien interface —
+   there's only one look, and sharing isn't part of the bit. */
+html.alien-1979-mode .nav-theme-btn,
+html.alien-1979-mode .nav-share-wrap{
+  display:none;
+}
+
+/* The central nav confirmation (used elsewhere for "Language set to
+   X" etc.) would otherwise pop up every time one of the plain EN/CZ/
+   PL/7G language codes is clicked — not part of the bit here. */
+html.alien-1979-mode .nav-terminal{
+  display:none;
+}
+
+html.alien-1979-mode .nav-help-btn{
+  display:none !important;
+}
+
+/* Back button loses its arrow icon for a plain "BACK" text label,
+   styled to match the green-block/black-text button family used for
+   the mission-log and cookie-banner OPEN/CLOSE toggles. */
+html.alien-1979-mode #navCloseBtn{
+  width:auto;
+  height:auto;
+  padding:1px 6px;
+  border:none;
+  border-radius:2px;
+  background:#33ff66 !important;
+}
+
+html.alien-1979-mode #navCloseBtn:hover,
+html.alien-1979-mode #navCloseBtn:focus-visible{
+  box-shadow:none;
+  outline:none;
+}
+
+html.alien-1979-mode #navCloseBtn svg{
+  display:none;
+}
+
+html.alien-1979-mode #navCloseBtn::after{
+  content:"BACK";
+  color:#000;
+  text-shadow:none;
+  font-family:"Courier New",Courier,monospace;
+  font-size:15px;
+  font-weight:400;
+}
+
+/* Every tool's brand color (purple/blue/red/green/yellow) goes flat
+   black + green border instead — the whole point is staying inside
+   black-and-phosphor-green, not five different accent hues. Covers
+   both the mainpage cards and each tool's own working-area background.
+   The five backdrop colors (Compress/Cleanly/Combine/Context) live on
+   real elements outside #app-shell with their color set via inline
+   style from JS, which always outranks a class selector — !important
+   is the only way to actually hide them. */
+html.alien-1979-mode .color-backdrop{
+  display:none !important;
+}
+
+html.alien-1979-mode #page-mainpage .card::before,
+html.alien-1979-mode .tool-app::before{
+  background:#000 !important;
+  border:1px solid rgba(51,255,102,.35);
+}
+
+/* Decorative drifting color blobs (the "Harnessing the Power of
+   Color" article background, each FAQ section's backdrop) — same
+   reasoning as everything else here, stay inside black + green only. */
+html.alien-1979-mode .mp-colors-bg-shape,
+html.alien-1979-mode .faq-shape,
+html.alien-1979-mode .cs-shape{
+  display:none;
+}
+
+/* "just one click away." inline link uses --accent2 (a light slate
+   color) which alien mode never overrides, so it stays off-palette. */
+html.alien-1979-mode .golden-rules-link,
+html.alien-1979-mode .golden-rules-link-inline{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .golden-rules-link:hover,
+html.alien-1979-mode .golden-rules-link:focus-visible,
+html.alien-1979-mode .golden-rules-link-inline:hover,
+html.alien-1979-mode .golden-rules-link-inline:focus-visible{
+  color:#a3ffc2;
+}
+
+/* Golden Rules pages were entirely untouched by this mode — tab
+   pills, per-tool tinted accordion panels, and comparison tables all
+   still show their normal-mode blue/purple/white look. Same flat
+   black + phosphor green treatment as everywhere else. */
+html.alien-1979-mode .golden-rules-tool-btn{
+  background:transparent;
+  border-color:rgba(51,255,102,.35);
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+}
+
+html.alien-1979-mode .golden-rules-tool-btn:hover{
+  border-color:#33ff66;
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .golden-rules-tool-btn.active{
+  background:#33ff66;
+  border-color:#33ff66;
+  color:#000;
+}
+
+html.alien-1979-mode .golden-rules-articles[data-tool="convert"] .golden-rules-article,
+html.alien-1979-mode .golden-rules-articles[data-tool="compress"] .golden-rules-article,
+html.alien-1979-mode .golden-rules-articles[data-tool="combine"] .golden-rules-article,
+html.alien-1979-mode .golden-rules-articles[data-tool="exif"] .golden-rules-article,
+html.alien-1979-mode .golden-rules-articles[data-tool="context"] .golden-rules-article{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .golden-rules-article summary{
+  color:#33ff66;
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+html.alien-1979-mode .golden-rules-article summary::after{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .golden-rules-body h3{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .info-table-convert,
+html.alien-1979-mode .info-table-compress,
+html.alien-1979-mode .info-table-combine,
+html.alien-1979-mode .info-table-exif{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .info-table-convert th,
+html.alien-1979-mode .info-table-compress th,
+html.alien-1979-mode .info-table-combine th,
+html.alien-1979-mode .info-table-exif th{
+  background:#000;
+  color:#33ff66;
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+html.alien-1979-mode .info-table-convert th,
+html.alien-1979-mode .info-table-convert td,
+html.alien-1979-mode .info-table-compress th,
+html.alien-1979-mode .info-table-compress td,
+html.alien-1979-mode .info-table-combine th,
+html.alien-1979-mode .info-table-combine td,
+html.alien-1979-mode .info-table-exif th,
+html.alien-1979-mode .info-table-exif td{
+  border-color:rgba(51,255,102,.2);
+}
+
+html.alien-1979-mode .info-table-convert td:first-child,
+html.alien-1979-mode .info-table-convert th:first-child,
+html.alien-1979-mode .info-table-compress td:first-child,
+html.alien-1979-mode .info-table-compress th:first-child,
+html.alien-1979-mode .info-table-combine td:first-child,
+html.alien-1979-mode .info-table-combine th:first-child,
+html.alien-1979-mode .info-table-exif td:first-child,
+html.alien-1979-mode .info-table-exif th:first-child{
+  color:#33ff66;
+  font-weight:400;
+}
+
+html.alien-1979-mode .info-table-convert td::before,
+html.alien-1979-mode .info-table-compress td::before,
+html.alien-1979-mode .info-table-combine td::before,
+html.alien-1979-mode .info-table-exif td::before{
+  color:#33ff66;
+  font-weight:400;
+}
+
+/* Tool page dropzone + format buttons are hardcoded white/bold
+   sans-serif, clashing with the rest of the remaster. */
+html.alien-1979-mode .tool-drop{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .tool-drop:hover,
+html.alien-1979-mode .tool-drop.active{
+  border-color:#33ff66;
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .tool-format-btn{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  border-color:rgba(51,255,102,.35);
+  background:transparent;
+}
+
+html.alien-1979-mode .tool-format-btn:hover{
+  border-color:#33ff66;
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .tool-format-btn.active{
+  background:#33ff66;
+  color:#000;
+  border-color:#33ff66;
+}
+
+html.alien-1979-mode .tool-logo{
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+html.alien-1979-mode .tool-primary-btn{
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .tool-primary-btn:hover{
+  border-color:#33ff66;
+}
+
+/* Compress and Context each have their own hardcoded white/bold
+   buttons that don't inherit from .tool-format-btn — same "random"
+   look, same fix. */
+html.alien-1979-mode .compress-level-btn{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .compress-level-btn:hover{
+  border-color:#33ff66;
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .compress-level-btn.active{
+  background:#33ff66;
+  color:#000;
+  border-color:#33ff66;
+}
+
+html.alien-1979-mode .context-tool-btn,
+html.alien-1979-mode .context-color-trigger,
+html.alien-1979-mode .context-style-btn,
+html.alien-1979-mode .context-page-btn{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+  border-color:rgba(51,255,102,.35);
+  background:transparent;
+}
+
+html.alien-1979-mode .context-tool-btn:hover,
+html.alien-1979-mode .context-color-trigger:hover,
+html.alien-1979-mode .context-style-btn:hover,
+html.alien-1979-mode .context-page-btn:hover{
+  border-color:#33ff66;
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .context-style-btn[aria-pressed="true"]{
+  background:#33ff66;
+  color:#000;
+  border-color:#33ff66;
+}
+
+/* Style toggles (U/I/B) show the browser's default blue focus ring
+   when clicked — off-palette, swap it for the phosphor green used
+   everywhere else. */
+html.alien-1979-mode .context-style-btn:focus-visible{
+  outline-color:#33ff66;
+}
+
+/* Font-size <select> is a separate element from the color/tool
+   buttons above and was never covered by that fix — still hardcoded
+   white text. */
+html.alien-1979-mode .context-font-size{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  border-color:rgba(51,255,102,.35);
+  background:transparent;
+}
+
+/* The circular remove button is the tool's hardcoded crimson/red —
+   same "no red accents, only black + green" rule already applied to
+   the cookie banner's disable-all button. */
+html.alien-1979-mode .context-remove-btn{
+  background:#000;
+  border-color:#33ff66;
+  color:#33ff66;
+}
+
+html.alien-1979-mode .context-remove-btn:hover{
+  background:#33ff66;
+  color:#000;
+}
+
+/* PDF preview panel keeps its normal-mode navy background — pull it
+   into black + green like every other tool-app surface. */
+html.alien-1979-mode .context-preview-panel{
+  background:#000;
+  border:1px solid rgba(51,255,102,.35);
+}
+
+/* Canvas wrapper's own white background peeks around the rendered PDF
+   page whenever the canvas is narrower than the wrap. */
+html.alien-1979-mode .context-canvas-wrap{
+  background:#000;
+}
+
+/* Rename-file popup: same untouched navy popup + white input + blue
+   focus ring as the color dropdown below. */
+html.alien-1979-mode .context-filename-popup{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .context-filename-input{
+  background:transparent;
+  border-color:rgba(51,255,102,.35);
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+}
+
+html.alien-1979-mode .context-filename-input::placeholder{
+  color:#33ff66;
+  opacity:.55;
+}
+
+html.alien-1979-mode .context-filename-input:focus-visible{
+  outline-color:#33ff66;
+}
+
+html.alien-1979-mode .context-filename-clear{
+  background:rgba(51,255,102,.12);
+  color:#33ff66;
+}
+
+html.alien-1979-mode .context-filename-clear:hover{
+  background:#33ff66;
+  color:#000;
+}
+
+/* Color-choice dropdown: same navy popup + white bold option text as
+   the rename popup — the color dots themselves stay their real
+   colors since they're functional swatches, not decoration. */
+html.alien-1979-mode .context-color-menu{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+}
+
+html.alien-1979-mode .context-color-option{
+  color:#33ff66;
+  font-family:"Courier New",Courier,monospace;
+  font-weight:400;
+}
+
+html.alien-1979-mode .context-color-option:hover{
+  background:rgba(51,255,102,.08);
+}
+
+html.alien-1979-mode .context-color-option.active{
+  background:rgba(51,255,102,.16);
+  font-weight:400;
+}
+
+/* Combine's file-list card border is the tool's salmon brand color —
+   same flat black+green treatment as everything else in this mode. */
+html.alien-1979-mode .combine-file-item{
+  border-color:rgba(51,255,102,.35);
+}
+
+/* Tool icons are baked-in colored SVG data URIs (background-image, not
+   currentColor masks) — no cheap way to recolor them green, so with
+   the page now fully committed to black + phosphor green, they're
+   hidden rather than left as stray full-color images. */
+html.alien-1979-mode .card-icon,
+html.alien-1979-mode .tool-logo .gfx-md{
+  display:none;
+}
+
+/* Same reasoning for every tool's format/level-explanation emoji
+   (camera, picture, rocket, magnifier, scale, etc.) — covers Convert's
+   "Not sure which format to use?" + usecase picker and Compress's
+   "Not sure which level to use?" + usecase picker, since both share
+   the .fmt-icon class family. */
+html.alien-1979-mode .fmt-icon{
+  display:none;
+}
+
+/* With the icons gone, the leftover name text shouldn't sit wherever
+   the old icon+text flex row happened to leave it — center it. */
+html.alien-1979-mode #page-mainpage .card-title-row,
+html.alien-1979-mode .tool-logo{
+  justify-content:center;
+}
+
+/* Several headings are hardcoded white (color:#fff) rather than using
+   var(--text), so the root --text override above doesn't reach them —
+   each needs its own explicit fix: the "Harnessing the Power of
+   Color..." heading, each FAQ group heading ("General", "Convert", ...)
+   and question text, and every legal page's (Terms/Privacy/Cookies,
+   which all share .terms-article) section headings. */
+html.alien-1979-mode .about-section-heading,
+html.alien-1979-mode .faq-group-heading,
+html.alien-1979-mode .faq-item-mainpage .faq-q,
+html.alien-1979-mode .terms-article h2{
+  color:#33ff66 !important;
+}
+
+html.alien-1979-mode .faq-group-heading{
+  border-top-color:rgba(51,255,102,.3);
+}
+
+html.alien-1979-mode .faq-item-mainpage .faq-q{
+  font-weight:400;
+}
+
+/* The loading-tools banner's "no tools found" text uses the same red
+   .engine-status-error class as genuine errors elsewhere — under the
+   alien look everything stays green, no red/green distinction. */
+html.alien-1979-mode .engine-status-error{
+  color:#33ff66 !important;
+  text-shadow:0 0 5px rgba(51,255,102,.45);
+  font-weight:400;
+}
+
+/* The blinking (・_・;) face is normal-mode-only charm — alien mode
+   keeps the plain "NO TOOLS FOUND" text with nothing appended. */
+html.alien-1979-mode .loading-tools-face{
+  display:none;
+}
+
+/* No bold anywhere in this mode — headings lean on uppercase +
+   letter-spacing for emphasis instead (the actionable lines already
+   get the green-rectangle-highlight treatment above). */
+html.alien-1979-mode h1,
+html.alien-1979-mode h2,
+html.alien-1979-mode h3,
+html.alien-1979-mode .cards-heading,
+html.alien-1979-mode .about-section-heading,
+html.alien-1979-mode .engine-status-title,
+html.alien-1979-mode .faq-item-mainpage .faq-q,
+html.alien-1979-mode .format-pick-subheading,
+html.alien-1979-mode .format-pick-name{
+  font-weight:400 !important;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+/* Sweep of every other element site-wide that was still bold under a
+   hardcoded font-weight, found by walking every page in this mode —
+   nested spans in particular (mission-log backlog banner, help-
+   overlay step numbers) carry their own weight that a de-bolded
+   parent row doesn't cancel out on its own. Links only, no heading
+   treatment: stays de-bolded, color already green from earlier fixes. */
+html.alien-1979-mode .footer-dash-text a,
+html.alien-1979-mode .terms-article a,
+html.alien-1979-mode .golden-rules-link,
+html.alien-1979-mode .golden-rules-link-inline{
+  font-weight:400;
+}
+
+/* Inline <strong> labels inside Terms/Privacy/Cookies list items
+   ("Translations:", "Essential Storage (localStorage):", etc.) —
+   plain body text, not a heading or a link. */
+html.alien-1979-mode .terms-article strong{
+  font-weight:400;
+}
+
+/* Everything else: body/data text and buttons, not headings or links. */
+html.alien-1979-mode .backlog-coms-meta,
+html.alien-1979-mode .backlog-coms-sender,
+html.alien-1979-mode .engine-status-value,
+html.alien-1979-mode .engine-status-glitch,
+html.alien-1979-mode .cookie-banner.docked p,
+html.alien-1979-mode .cookie-toggle-status,
+html.alien-1979-mode .cookie-banner.docked .cookie-toggle-row,
+html.alien-1979-mode .cookie-banner-saved,
+html.alien-1979-mode .cookie-banner-saved-cursor,
+html.alien-1979-mode .combine-file-name,
+html.alien-1979-mode .combine-file-index,
+html.alien-1979-mode .combine-file-thumb-fallback,
+html.alien-1979-mode .exif-file-name,
+html.alien-1979-mode .exif-tag,
+html.alien-1979-mode .result-name,
+html.alien-1979-mode .tool-status:not(:empty)::before,
+html.alien-1979-mode .selected-compression:not(:empty)::before,
+html.alien-1979-mode .context-remove-btn,
+html.alien-1979-mode .tool-help-bubble .step-num,
+html.alien-1979-mode .tool-help-target-badge,
+html.alien-1979-mode .format-pick-bestsuited-rating{
+  font-weight:400;
+}
+
+/* Same sweep, hardcoded white color this time instead of/alongside
+   bold — found right next to the weight fixes above. */
+html.alien-1979-mode .combine-file-name,
+html.alien-1979-mode .exif-file-name,
+html.alien-1979-mode .result-name{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .combine-file-index{
+  background:rgba(51,255,102,.14);
+  color:#33ff66;
+}
+
+html.alien-1979-mode .engine-status-row{
+  font-weight:400;
+}
+
+/* Asteroid/comet banner (rocks, comet, canvas-drawn certificate, and
+   the "look right, cosmos, comet, certificate" text pointing at it) —
+   normal site keeps it untouched; alien mode hides the whole thing
+   and instead folds the banner's other sentence ("We are developing
+   multiple new tools...") into the hero paragraph above as one merged
+   block, since there's no cosmos/blueprint next to it to introduce. */
+html.alien-1979-mode .next-tools-preview{
+  display:none;
+}
+
+.hero-p3-alien-extra{
+  display:none;
+}
+
+html.alien-1979-mode .hero-p3-alien-extra{
+  display:block;
+}
+
+/* The "speed of light ⚡" hero line doesn't fit once the site is fully
+   monochrome — drop it entirely in this mode rather than reword it. */
+html.alien-1979-mode [data-i18n="mp_hero_p1"]{
+  display:none;
+}
+
+/* The "Harnessing the Power of Color" article is entirely about the
+   site's per-tool accent colors, which don't exist in alien mode (every
+   tool color was stripped out) — swapped for a short one-liner
+   acknowledging the joke doesn't apply here, same pattern as the hero
+   paragraph above. */
+.mp-colors-body-alien{
+  display:none;
+}
+
+html.alien-1979-mode .mp-colors-body-normal{
+  display:none;
+}
+
+html.alien-1979-mode .mp-colors-body-alien{
+  display:block;
+}
+
+
+/* Language switcher becomes plain inline codes instead of a dropdown —
+   the globe trigger button is hidden, and the (now permanently open)
+   menu is laid out as a flat row instead of an absolute popover. Each
+   button's real label (English, Čeština, ...) stays in the DOM for
+   translation/accessibility purposes but is visually swapped for a
+   short code via the same hidden-text + ::after overlay trick used for
+   the brand name above. */
+html.alien-1979-mode .nav-lang-btn{
+  display:none;
+}
+
+html.alien-1979-mode .nav-lang-menu{
+  display:flex;
+  position:static;
+  width:auto;
+  padding:0;
+  background:none;
+  border:none;
+  gap:14px;
+}
+
+html.alien-1979-mode .nav-lang-menu button{
+  display:block;
+  position:relative;
+  height:auto;
+  background:none;
+  border:none;
+  padding:2px;
+  margin:0;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:400;
+  color:#33ff66;
+  visibility:hidden;
+  cursor:pointer;
+  text-align:left;
+}
+
+html.alien-1979-mode .nav-lang-menu button:hover{
+  background:none;
+}
+
+html.alien-1979-mode .nav-lang-menu button::after{
+  position:absolute;
+  left:0;
+  top:0;
+  visibility:visible;
+  color:#33ff66;
+  text-shadow:0 0 5px rgba(51,255,102,.45);
+}
+
+html.alien-1979-mode .nav-lang-menu button.active::after{
+  background:#33ff66;
+  color:#000;
+  text-shadow:none;
+  text-decoration:none;
+  padding:1px 4px;
+  border-radius:2px;
+}
+
+html.alien-1979-mode .nav-lang-menu button[data-lang="en"]::after{ content:"EN"; }
+html.alien-1979-mode .nav-lang-menu button[data-lang="cs"]::after{ content:"CZ"; }
+html.alien-1979-mode .nav-lang-menu button[data-lang="pl"]::after{ content:"PL"; }
+html.alien-1979-mode .nav-lang-menu button[data-lang="g7"]::after{ content:"7G"; }
+
+html.alien-1979-mode footer,
+html.alien-1979-mode .footer-dashboard{
+  --text:#33ff66;
+  background:#000;
+  color:#33ff66;
+}
+
+html.alien-1979-mode .footer-dashboard{
+  border-top-color:rgba(51,255,102,.3);
+}
+
+html.alien-1979-mode .footer-dashboard-col h3{
+  color:#33ff66;
+}
+
+/* Found live: the footer's contact links (email, Discord) use a
+   hardcoded blue (deliberate for the normal site), which stood out as
+   the one leftover non-green element once everything else went dark. */
+html.alien-1979-mode .footer-dash-text a{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .footer-dash-text a:hover{
+  color:#a3ffc2;
+}
+
+/* "Read more" should react like the mission-log OPEN/CLOSE toggle —
+   no visible hover change at all, just the pointer cursor telling you
+   it's clickable. */
+html.alien-1979-mode #page-mainpage .card-readmore:hover,
+html.alien-1979-mode #page-mainpage .card-readmore:focus-visible{
+  color:#33ff66;
+  background:rgba(0,0,0,.1);
+  text-decoration:none;
+  outline:none;
+  box-shadow:none;
+}
+
+/* Same hardcoded-blue problem, found live on the Privacy Policy page's
+   Contact & Impressum section — this class covers every inline link
+   inside Terms/Privacy/Cookies article body text (mailto, "footer
+   below", "Cookie Registry", etc.), so one fix here covers all of them. */
+html.alien-1979-mode .terms-article a{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .terms-article a:hover{
+  color:#a3ffc2;
+}
+
+/* Cookie banner (floating and docked-on-/cookies) — found live to be
+   almost entirely untouched by alien mode outside its traffic-light
+   toggle dot, still the normal navy/grey/red look throughout. Full
+   pass: black background, green text/borders/checkboxes, and both
+   action buttons (Accept All / Disable all / Confirm choices) folded
+   into the same green-block-highlight family as everything else,
+   dropping the semantic red for "Disable all" — this mode stays
+   strictly black-and-green, no other colors, by design. */
+html.alien-1979-mode .cookie-banner{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+  overflow:hidden;
+}
+
+/* Same CRT scanline + flicker overlay as the mission-log card — the
+   cookie banner never got it, which is also what made its //CLOSE//
+   chip read as a slightly different shade of green side-by-side: the
+   mission log's chip sits under the scanline texture, the cookie
+   banner's didn't, so a solid color and a lined one compared unequal
+   even though the underlying green is identical. */
+html.alien-1979-mode .cookie-banner::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(51,255,102,.06) 0px,
+    rgba(51,255,102,.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation:alien-crt-flicker 3.4s steps(2) infinite;
+}
+
+html.alien-1979-mode .cookie-banner p,
+html.alien-1979-mode .cookie-toggle-row,
+html.alien-1979-mode .cookie-cat-detail,
+html.alien-1979-mode .cookie-cat-arrow,
+html.alien-1979-mode .cookie-dock-title,
+html.alien-1979-mode .cookie-toggle-status{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .cookie-banner a{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .cookie-banner-categories{
+  border-color:rgba(51,255,102,.3);
+}
+
+/* accent-color alone only recolors the checked fill — the unchecked
+   box still renders as the browser's native white square. Full custom
+   appearance instead: black box, green border, black check on green
+   fill when checked, matching the terminal aesthetic everywhere else. */
+html.alien-1979-mode .cookie-toggle-row input[type="checkbox"]{
+  appearance:none;
+  -webkit-appearance:none;
+  accent-color:#33ff66;
+  background:#000;
+  border:1px solid #33ff66;
+  border-radius:2px;
+  position:relative;
+}
+
+html.alien-1979-mode .cookie-toggle-row input[type="checkbox"]:checked{
+  background:#33ff66;
+}
+
+html.alien-1979-mode .cookie-toggle-row input[type="checkbox"]:checked::after{
+  content:"";
+  position:absolute;
+  left:5px;
+  top:1px;
+  width:5px;
+  height:9px;
+  border:solid #000;
+  border-width:0 2px 2px 0;
+  transform:rotate(45deg);
+}
+
+html.alien-1979-mode .cookie-toggle-row input[type="checkbox"]:disabled{
+  border-color:rgba(51,255,102,.4);
+}
+
+html.alien-1979-mode .cookie-toggle-row input[type="checkbox"]:disabled:checked{
+  background:rgba(51,255,102,.4);
+}
+
+/* Matches the mission log's action-button style exactly (same family
+   as //CLOSE//, //Anomaly accessed//, etc.) rather than just recoloring
+   the cookie banner's own pill-button shape — same font, padding, and
+   corner radius, not just background/text color. */
+html.alien-1979-mode .cookie-banner-actions button,
+html.alien-1979-mode #cookieBannerAcceptAll,
+html.alien-1979-mode #cookieBannerAcceptAll.is-disable-all{
+  height:auto;
+  padding:1px 6px;
+  border-radius:2px;
+  font-family:"Courier New", Courier, monospace;
+  font-size:15px;
+  font-weight:400;
+  background:#33ff66 !important;
+  color:#000 !important;
+  border-color:rgba(51,255,102,.5) !important;
+}
+
+html.alien-1979-mode .cookie-banner-actions button:hover,
+html.alien-1979-mode #cookieBannerAcceptAll:hover,
+html.alien-1979-mode #cookieBannerAcceptAll.is-disable-all:hover{
+  background:#a3ffc2 !important;
+}
+
+html.alien-1979-mode .cookie-banner-saved,
+html.alien-1979-mode .cookie-banner-saved-cursor{
+  color:#33ff66;
+}
+
+html.alien-1979-mode .cookie-mobile-settings-btn{
+  background:#000;
+  border-color:rgba(51,255,102,.35);
+  color:#33ff66;
+}
+
 .backlog-coms-row{
   white-space:normal;
   line-height:1.5;
@@ -1362,6 +2438,19 @@ html[data-theme="light"] .engine-status-glitch{
   }
 }
 
+/* Grid row-stretch only equalizes height within the same row — with 5
+   cards and 4 columns, Context (5th card) sits alone in its own row
+   and never stretches to match row 1's tallest card (Cleanly's longer
+   description), so it renders visibly shorter than its siblings. An
+   explicit min-height sized to the tallest card's natural content
+   keeps every card the same height regardless of which row it lands
+   in, instead of depending on row-stretch at all. */
+@media (min-width:769px){
+  #page-mainpage .card{
+    min-height:290px;
+  }
+}
+
 #page-mainpage .card{
   position:relative;
   display:flex;
@@ -1402,8 +2491,14 @@ html[data-theme="light"] .engine-status-glitch{
   background:none;
 }
 
+/* No background — previously relied on a "double-invert cancels out"
+   trick (applying the shell's filter a second time), but that only
+   looks right once JS has set data-theme="light" on <html>; on first
+   paint, before that runs, it briefly showed the wrong color. Same
+   real-backdrop-element fix as Compress/Cleanly/Context above removes
+   that timing dependency entirely — see #cbCardBackdrop. */
 #page-mainpage .card.combine::before{
-  background:linear-gradient(155deg, #ed7064);
+  background:none;
 }
 
 /* Same story as Compress above — see #clnCardBackdrop. */
@@ -1635,6 +2730,7 @@ footer a{
 #ctxCardBackdrop, #ctxToolBackdrop{ background:var(--context-yellow); }
 #cprCardBackdrop, #cprToolBackdrop{ background:#51c4e6; }
 #clnCardBackdrop, #clnToolBackdrop{ background:#4bde80; }
+#cbCardBackdrop, #cbToolBackdrop{ background:#ed7064; }
 
 .tool-wrap{
   display:flex;
@@ -1670,8 +2766,10 @@ footer a{
   background:none;
 }
 
+/* No background — see #cbToolBackdrop (same story as Combine's card
+   above). */
 #page-combine .tool-app::before{
-  background:linear-gradient(155deg,#ed7064);
+  background:none;
 }
 
 /* No background — see #clnToolBackdrop. */
@@ -4615,6 +5713,8 @@ html[data-theme="light"] .context-remove-btn:hover{
 <div class="color-backdrop" id="cprToolBackdrop" aria-hidden="true"></div>
 <div class="color-backdrop" id="clnCardBackdrop" aria-hidden="true"></div>
 <div class="color-backdrop" id="clnToolBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="cbCardBackdrop" aria-hidden="true"></div>
+<div class="color-backdrop" id="cbToolBackdrop" aria-hidden="true"></div>
 <div id="app-shell">
 
 <div class="site-nav">
@@ -4755,13 +5855,14 @@ html[data-theme="light"] .context-remove-btn:hover{
 
     <div class="engine-status-card loading_tools_banner">
       <div class="engine-status-body">
-        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">no tools found (<span class="engine-status-eye" id="loadingToolsEyeL">・</span>_<span class="engine-status-eye" id="loadingToolsEyeR">・</span>;)</span></div>
+        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">NO TOOLS FOUND <span class="loading-tools-face">(<span id="loadingToolsEyeL">・</span>_<span id="loadingToolsEyeR">・</span>;)</span></span></div>
         <div class="engine-status-row"><span data-i18n="loading_tools_row2">&gt; Preparing tools</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
       </div>
     </div>
 
     <div class="hero hero-p3">
       <p data-i18n="mp_hero_p3">Our tools are built to be the fastest, simplest, and accessible from anywhere in the universe.</p>
+      <p class="hero-p3-alien-extra" data-i18n="mp_hero_p3b">We are developing multiple new tools as we speak. But who cares, look at this interface... (WOW)</p>
     </div>
 
     <div class="ad-slot ad-slot-banner">
@@ -4784,23 +5885,24 @@ html[data-theme="light"] .context-remove-btn:hover{
     </div>
 
     <div class="hero hero-classified">
-      <p data-i18n="mp_hero_p4">...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.</p>
+      <p data-i18n="mp_hero_p4">...wait our systems detected an unauthorized security breach from BC Tools internal storage.</p>
 
       <div class="engine-status-card" id="engineStatusCard">
         <div class="engine-status-content">
           <div class="engine-status-header">
             <span class="engine-status-dot engine-status-dot-red" id="engineStatusDot1" aria-hidden="true"></span>
-            <button type="button" class="engine-status-dot engine-status-dot-yellow engine-status-dot-toggle" id="engineStatusDot2" aria-label="Toggle classified memory contents" aria-expanded="false"></button>
+            <button type="button" class="engine-status-dot engine-status-dot-yellow engine-status-dot-toggle" id="engineStatusDot2" aria-label="Toggle mission log contents" aria-expanded="false"></button>
             <span class="engine-status-dot engine-status-dot-green" id="engineStatusDot3" aria-hidden="true"></span>
-            <span class="engine-status-title" data-i18n="engine_status_title">BC-TOOLS_CLASSIFIED_MEMORY: LEAKED</span>
+            <span class="engine-status-title" id="engineStatusTitle" data-i18n="engine_status_title">BC-TOOLS_CLASSIFIED_MEMORY: LEAKED</span>
           </div>
           <div class="engine-status-body">
-            <div class="engine-status-glitch" aria-hidden="true">0x7F3A_&amp;%$#_dGVzdA==_0b1010110_&amp;&amp;NULL&amp;&amp;_0xE4_~~~_#error_stack_corrupted#_¯\_(ツ)_/¯</div>
-            <div class="engine-status-row" data-i18n="engine_status_row1">&gt; Browser data extraction: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no data leaks</span></div>
-            <div class="engine-status-row" data-i18n="engine_status_row2">&gt; Server upload: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">no server found</span></div>
-            <div class="engine-status-row" data-i18n="engine_status_row3">&gt; User tracking: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">cookies restrictions</span></div>
-            <div class="engine-status-row" data-i18n="engine_status_row4">&gt; Intrusive ad placement: <span class="engine-status-error">ERROR...</span> <span class="engine-status-value">clean-ad environment enforced</span></div>
-            <div class="engine-status-glitch" aria-hidden="true">#!/dev/null_0x9B2C_&amp;&amp;01001000_&gt;&gt;&gt;_play_non-disturbing_ad_below_&lt;&lt;&lt;_~0x00~_(╯°□°)╯︵┻━┻</div>
+            <div class="engine-status-row" data-i18n="engine_status_row1">&gt; Mission: Build better creative tools</div>
+            <div class="engine-status-row" data-i18n="engine_status_row2">&gt; Primary target: Creative Humans</div>
+            <div class="engine-status-row" data-i18n="engine_status_row3">&gt; Preferred environment: Browser</div>
+            <div class="engine-status-row" data-i18n="engine_status_row4">&gt; Required speed: Fast</div>
+            <div class="engine-status-row" data-i18n="engine_status_row5">&gt; Acceptable complexity: Minimal</div>
+            <div class="engine-status-row" data-i18n="engine_status_row8">&gt; Transmission ended.</div>
+            <div class="engine-status-anomaly" id="engineStatusAnomaly" hidden></div>
           </div>
         </div>
       </div>
@@ -4818,13 +5920,16 @@ html[data-theme="light"] .context-remove-btn:hover{
       </div>
       <article class="about-article mp-colors-article">
         <h2 class="about-section-heading" data-i18n="mp_colors_heading">Harnessing the Power of Color...</h2>
-        <p data-i18n="mp_colors_p2">During the development of BC Tools, our explorer discovered an important fact: creativity has energy.</p>
-        <p data-i18n="mp_colors_p3">After studying creative signals across different worlds, we found that lifeless interfaces were causing a serious decrease in inspiration levels. The solution was clear — more color, more energy, and fewer grey rectangles pretending to help people create.</p>
-        <p data-i18n="mp_colors_p4">The Creative Hub was designed with vibrant colors to reflect the way ideas actually appear: unpredictable, energetic, and constantly evolving.</p>
-        <p data-i18n="mp_colors_p5">These colors are not just decoration. They are creative energy signatures — a visual language designed to make every tool feel alive, easier to recognize, and every creation feel like a journey.</p>
-        <p data-i18n="mp_colors_p6">As the Creative Hub expands, so will its spectrum. New tools will bring new colors and new energy signatures from across the creative universe.</p>
-        <p data-i18n="mp_colors_p7">Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia<span class="bonbonia-candy" aria-hidden="true">🍬</span>.</p>
-        <p data-i18n="mp_colors_p8">We have not been able to verify this claim, but we sure did get hungry.</p>
+        <div class="mp-colors-body-normal">
+          <p data-i18n="mp_colors_p2">During the development of BC Tools, our explorer discovered an important fact: creativity has energy.</p>
+          <p data-i18n="mp_colors_p3">After studying creative signals across different worlds, we found that lifeless interfaces were causing a serious decrease in inspiration levels. The solution was clear — more color, more energy, and fewer grey rectangles pretending to help people create.</p>
+          <p data-i18n="mp_colors_p4">The Creative Hub was designed with vibrant colors to reflect the way ideas actually appear: unpredictable, energetic, and constantly evolving.</p>
+          <p data-i18n="mp_colors_p5">These colors are not just decoration. They are creative energy signatures — a visual language designed to make every tool feel alive, easier to recognize, and every creation feel like a journey.</p>
+          <p data-i18n="mp_colors_p6">As the Creative Hub expands, so will its spectrum. New tools will bring new colors and new energy signatures from across the creative universe.</p>
+          <p data-i18n="mp_colors_p7">Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia<span class="bonbonia-candy" aria-hidden="true">🍬</span>.</p>
+          <p data-i18n="mp_colors_p8">We have not been able to verify this claim, but we sure did get hungry.</p>
+        </div>
+        <p class="mp-colors-body-alien" data-i18n="mp_colors_p2_alien">During the development of BC Tools, our explorer discovered an imp... well in this interface it really does not apply.</p>
       </article>
     </div>
 
@@ -4906,6 +6011,10 @@ html[data-theme="light"] .context-remove-btn:hover{
           <div class="faq-item-mainpage">
             <p class="faq-q" data-i18n="mp_faq6_q">What is Sector 7G?</p>
             <p class="faq-a" data-i18n="mp_faq6_a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
+          </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="mp_faq7_q">Why should I trust the "BC_Tools_bot" line after using a tool?</p>
+            <p class="faq-a" data-i18n="mp_faq7_a">It's not a fixed claim. It's a real-time check of the tool's network activity while it runs. No external connection detected? Processing stayed in your browser. Connection detected? We'll show where it goes.</p>
           </div>
         </div>
       </div>
@@ -7673,6 +8782,247 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   }, 5000);
 })();
 
+/* Light theme's invert filter (#app-shell{filter:invert(1)...}) only
+   gets cancelled out for colors that have an explicit double-invert
+   compensation rule — none of the alien-mode overrides do, since they
+   were built assuming the normal dark (unfiltered) state. Entering
+   alien mode while light theme is active scrambles the colors (black
+   card backgrounds invert to white, etc). Since the theme toggle is
+   hidden in alien mode anyway, force dark for the duration and restore
+   whatever was saved on exit, rather than trying to retrofit every
+   alien rule with its own compensation. */
+function forceDarkForAlien(){
+  document.documentElement.removeAttribute("data-theme");
+}
+function restoreThemeAfterAlien(){
+  let saved = null;
+  try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
+  if (saved !== "dark") document.documentElement.setAttribute("data-theme", "light");
+}
+
+/* Alien mode is desktop-only for now — not just because its own entry
+   point (the mission log card) is already hidden below 769px like the
+   site's other terminal banners, but because someone who unlocked it
+   on desktop and later opens/resizes the same browser to mobile width
+   should NOT see it there. Every place that would otherwise add the
+   class calls this instead of doing it directly, and a resize listener
+   keeps it in sync live if the viewport crosses the breakpoint mid-
+   session (in either direction) without needing a reload. */
+const alienDesktopQuery = window.matchMedia("(min-width:769px)");
+function applyAlienModeClass(){
+  document.documentElement.classList.toggle("alien-1979-mode", alienDesktopQuery.matches);
+}
+alienDesktopQuery.addEventListener("change", () => {
+  let unlocked = false;
+  try { unlocked = localStorage.getItem("bc-alien-1979-mode") === "1"; } catch (e) { /* storage unavailable */ }
+  if (unlocked) applyAlienModeClass();
+  if (typeof syncAlienTitle === "function") syncAlienTitle();
+  if (typeof syncAlienHeroText === "function") syncAlienHeroText();
+});
+
+/* The mission log's own title swaps to "MU/TH/UR 6000" only while the
+   alien look is active, reverting to the normal title the moment it's
+   exited — called from every place that toggles .alien-1979-mode below,
+   plus on language switches so a mid-session translation doesn't
+   clobber it back to the normal title while still in alien mode. */
+function syncAlienTitle(){
+  const el = document.getElementById("engineStatusTitle");
+  if (!el) return;
+  if (document.documentElement.classList.contains("alien-1979-mode")){
+    el.textContent = "MU/TH/UR 6000";
+  } else {
+    let dict = null;
+    try { dict = translations[currentLang] || translations.en; } catch (e) { dict = null; }
+    el.textContent = (dict && dict.engine_status_title) || "BC-TOOLS_CLASSIFIED_MEMORY: LEAKED";
+  }
+}
+document.addEventListener("bc:langchange", syncAlienTitle);
+
+/* Same swap for the mainpage hero heading + second paragraph — full
+   text replacement (not an addition), so this goes through
+   .textContent like syncAlienTitle() above rather than a CSS ::after,
+   which can only append content, never remove the original string it
+   sits next to. */
+function syncAlienHeroText(){
+  const titleEl = document.querySelector('h1[data-i18n="mp_hero_title"]');
+  const p1bEl = document.querySelector('.hero-p1-desktop[data-i18n="mp_hero_p1b"]');
+  const alien = document.documentElement.classList.contains("alien-1979-mode");
+  let dict = null;
+  try { dict = translations[currentLang] || translations.en; } catch (e) { dict = null; }
+  if (titleEl){
+    titleEl.textContent = alien ? "You have found our Easter Egg!" : ((dict && dict.mp_hero_title) || "Setting a new standard for creators!");
+  }
+  if (p1bEl){
+    p1bEl.textContent = alien ? ((dict && dict.mp_hero_p1_alien) || "> This Easter Egg is only for your devoted users, be sure to share your findings on our discord! Try using our tools with this interface and feel the old school vibes!") : ((dict && dict.mp_hero_p1b) || "A growing collection of browser-based tools for images, video, audio, and code.");
+  }
+}
+document.addEventListener("bc:langchange", syncAlienHeroText);
+
+/* Once earned, the "alien 1979" look applies to every terminal banner
+   on every page (About's fake email banner included) — but the click-
+   through logic below only runs on the mainpage, where the mission log
+   actually lives. Re-applying the class here on every page load keeps
+   other pages in the look too, without needing that container. */
+(function(){
+  try {
+    if (localStorage.getItem("bc-alien-1979-mode") === "1" && alienDesktopQuery.matches){
+      applyAlienModeClass();
+      forceDarkForAlien();
+    }
+  } catch (e) { /* storage unavailable */ }
+  syncAlienTitle();
+  syncAlienHeroText();
+})();
+
+/* Cookie-gated easter egg: "Anomaly accessed" unlocks once every
+   cookie category is accepted (see savePrefs() below). Three clicks
+   (each wiggling for feedback) reveals a download line; clicking that
+   runs a fake download from 1% to 100%, which permanently switches
+   this card into its "alien 1979" retro-green look. Every stage
+   persists to localStorage so a returning visitor picks up wherever
+   they left off. */
+(function(){
+  const container = document.getElementById("engineStatusAnomaly");
+  if (!container) return;
+
+  const KEY_UNLOCKED = "bc-anomaly-unlocked";
+  const KEY_CLICKS = "bc-anomaly-clicks";
+  const KEY_STAGE2 = "bc-anomaly-stage2";
+  const KEY_ALIEN = "bc-alien-1979-mode";
+
+  function getFlag(key){
+    try { return localStorage.getItem(key) === "1"; } catch (e) { return false; }
+  }
+  function getInt(key){
+    try { return parseInt(localStorage.getItem(key), 10) || 0; } catch (e) { return 0; }
+  }
+  function setItem(key, value){
+    try { localStorage.setItem(key, value); } catch (e) { /* storage unavailable */ }
+  }
+
+  function slashWrap(text, count){
+    const slashes = "/".repeat(count);
+    return slashes + text + slashes;
+  }
+
+  function buildAnomalyBtn(){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "engine-status-row engine-status-row-btn";
+    btn.id = "anomalyBtn";
+    btn.textContent = slashWrap("Anomaly detected", getInt(KEY_CLICKS));
+    btn.addEventListener("click", () => {
+      const clicks = getInt(KEY_CLICKS);
+      if (clicks >= 3) return;
+      const next = clicks + 1;
+      setItem(KEY_CLICKS, String(next));
+      btn.textContent = slashWrap("Anomaly detected", next);
+      if (next >= 3 && !getFlag(KEY_STAGE2)){
+        setItem(KEY_STAGE2, "1");
+        container.appendChild(buildDownloadBtn());
+      }
+    });
+    return btn;
+  }
+
+  function buildDownloadBtn(){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "engine-status-row engine-status-row-btn";
+    btn.id = "alienDownloadBtn";
+    btn.textContent = "///Download Alien_1979_Interface.file///";
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      container.appendChild(buildLoadingRow());
+    });
+    return btn;
+  }
+
+  function buildExitBtn(){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "engine-status-row engine-status-row-btn";
+    btn.id = "alienExitBtn";
+    btn.textContent = "//exit interface//";
+    btn.addEventListener("click", () => {
+      setItem(KEY_ALIEN, "0");
+      document.documentElement.classList.remove("alien-1979-mode");
+      restoreThemeAfterAlien();
+      syncAlienTitle();
+      syncAlienHeroText();
+      render();
+    });
+    return btn;
+  }
+
+  function buildLoadingRow(pctStart){
+    const row = document.createElement("div");
+    row.className = "engine-status-row";
+    row.innerHTML = "&gt; ... <span class=\"engine-status-value\" id=\"alienLoadingPct\"></span>";
+    const pctEl = row.querySelector("#alienLoadingPct");
+    let pct = pctStart || 1;
+    pctEl.textContent = pct + "%";
+    if (pct >= 100) return row;
+    const timer = setInterval(() => {
+      pct = Math.min(100, pct + Math.ceil(Math.random() * 8));
+      pctEl.textContent = pct + "%";
+      if (pct >= 100){
+        clearInterval(timer);
+        setItem(KEY_ALIEN, "1");
+        if (alienDesktopQuery.matches){
+          applyAlienModeClass();
+          forceDarkForAlien();
+        }
+        syncAlienTitle();
+        syncAlienHeroText();
+        container.appendChild(buildExitBtn());
+      }
+    }, 220);
+    return row;
+  }
+
+  function render(){
+    if (!getFlag(KEY_UNLOCKED)){
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+    container.innerHTML = "";
+    container.appendChild(buildAnomalyBtn());
+    if (getInt(KEY_CLICKS) >= 3 || getFlag(KEY_STAGE2)){
+      container.appendChild(buildDownloadBtn());
+    }
+    if (getFlag(KEY_ALIEN)){
+      const downloadBtn = document.getElementById("alienDownloadBtn");
+      if (downloadBtn) downloadBtn.disabled = true;
+      container.appendChild(buildLoadingRow(100));
+      container.appendChild(buildExitBtn());
+      if (alienDesktopQuery.matches){
+        applyAlienModeClass();
+        forceDarkForAlien();
+      }
+    } else {
+      document.documentElement.classList.remove("alien-1979-mode");
+    }
+    syncAlienTitle();
+    syncAlienHeroText();
+  }
+
+  /* Catches visitors who already had "accept all" saved from before
+     this feature existed — savePrefs() only unlocks on a fresh save,
+     so a returning visitor with old consent needs this checked here too. */
+  if (!getFlag(KEY_UNLOCKED)){
+    try {
+      const raw = localStorage.getItem("bc-cookie-consent");
+      const prefs = raw ? JSON.parse(raw) : null;
+      if (prefs && prefs.analytics && prefs.advertising) setItem(KEY_UNLOCKED, "1");
+    } catch (e) { /* storage unavailable */ }
+  }
+
+  render();
+  document.addEventListener("bc:anomaly-unlock", render);
+})();
+
 /* Cookie consent banner: per-category choice, gates GA4/AdSense
    (Consent Mode starts denied in <head>). */
 (function(){
@@ -7775,6 +9125,18 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   function savePrefs(prefs){
     applyConsent(prefs);
     try { localStorage.setItem("bc-cookie-consent", JSON.stringify(prefs)); } catch (e) { /* storage unavailable */ }
+    /* Easter egg: accepting every category unlocks the mission log's
+       "Anomaly accessed" line. Only fires once — re-dispatched here on
+       every save is harmless since the anomaly system itself no-ops if
+       already unlocked. */
+    if (prefs.analytics && prefs.advertising){
+      try {
+        if (localStorage.getItem("bc-anomaly-unlocked") !== "1"){
+          localStorage.setItem("bc-anomaly-unlocked", "1");
+        }
+      } catch (e) { /* storage unavailable */ }
+      document.dispatchEvent(new CustomEvent("bc:anomaly-unlock"));
+    }
     refreshConsentState();
     /* Docked banner is page content, so it stays put — show a
        confirmation instead; dismiss only applies to the floating version. */
@@ -8061,9 +9423,10 @@ const translations = {
     engine_status_row2: "&gt; Nahrání na server: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">server nenalezen</span>",
     engine_status_row3: "&gt; Sledování uživatele: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">omezení cookies</span>",
     engine_status_row4: "&gt; Rušivá reklama: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">vynuceno prostředí bez reklam</span>",
-    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">nenalezeny žádné nástroje (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">ŽÁDNÉ NÁSTROJE NENALEZENY <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Připravujeme nástroje",
     next_tools_preview_text: "Právě teď vyvíjíme několik nových nástrojů. Pro lidské použití jsou schváleny pouze ty, které přežijí naše drsné kosmické testování.<br><br>Vesmír, jak právě probíhá, můžete vidět napravo. Podívejte, tamtudy letí kometa! Zachyťte ji, než zmizí, a získejte náš certifikát pravosti.",
+    mp_hero_p3b: "Vyvíjíme více nových nástrojů zároveň. Pro lidské použití jsou schváleny pouze ty, které přežijí naše drsné kosmické testování.",
     mp_colors_heading: "Využívání síly Slunce...",
     mp_colors_p2: "Během vývoje BC Tools náš průzkumník objevil důležitý fakt: kreativita sama má energii.",
     mp_colors_p3: "Po studiu kreativních signálů napříč různými světy jsme zjistili, že neživá rozhraní způsobují vážný pokles úrovně inspirace. Řešení bylo jasné — více barev, více energie a méně šedých obdélníků, které předstírají, že lidem pomáhají tvořit.",
@@ -8072,6 +9435,8 @@ const translations = {
     mp_colors_p6: "Jak se BC Tools bude rozšiřovat, přidají se do kolekce nové barvy a nové objevy.",
     mp_colors_p7: "Náš vývojář tvrdí, že barvy byly pečlivě vytvořeny pomocí pokročilých digitálních barevných kmenů z jeho domovské planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Tato tvrzení se nám nepodařilo ověřit, ale rozhodně nám z toho vyhládlo.",
+    mp_colors_p2_alien: "Během vývoje BC Tools náš průzkumník objevil důle... no, v tomto rozhraní to vlastně neplatí.",
+    mp_hero_p1_alien: "Tento Easter Egg je jen pro naše nejvěrnější uživatele, nezapomeňte se podělit o své nálezy na našem discordu! Vyzkoušejte naše nástroje v tomto rozhraní a vraťte se do starých dobrých časů!",
     mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než rychlost světla. <span class=\"no-invert\">⚡</span>",
     mp_hero_p1b: "Rostoucí sbírka nástrojů pro obrázky, video, zvuk a kód přímo v prohlížeči.",
     mp_hero_p1_mobile: "Creative Hub — rostoucí sbírka nástrojů pro obrázky, video, zvuk a kód přímo v prohlížeči.",
@@ -8554,11 +9919,13 @@ const translations = {
     share_email: "Email",
     mp_hero_title: "Setting a new standard for creators!",
     engine_status_title: "BC-TOOLS_CLASSIFIED_MEMORY: LEAKED",
-    engine_status_row1: "&gt; Browser data extraction: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">no data leaks</span>",
-    engine_status_row2: "&gt; Server upload: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">no server found</span>",
-    engine_status_row3: "&gt; User tracking: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">cookies restrictions</span>",
-    engine_status_row4: "&gt; Intrusive ad placement: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">clean-ad environment enforced</span>",
-    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">no tools found (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    engine_status_row1: "&gt; Mission: Build better creative tools",
+    engine_status_row2: "&gt; Primary target: Creative Humans",
+    engine_status_row3: "&gt; Preferred environment: Browser",
+    engine_status_row4: "&gt; Required speed: Fast",
+    engine_status_row5: "&gt; Acceptable complexity: Minimal",
+    engine_status_row8: "&gt; Transmission ended.",
+    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">NO TOOLS FOUND <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Preparing tools",
     next_tools_preview_text: "We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.<br><br>You can see the cosmos as we speak on the right. Look, there is a comet flying by! Capture it before it's gone and get our certificate of authenticity.",
     mp_colors_heading: "Harnessing the Power of Color...",
@@ -8569,11 +9936,14 @@ const translations = {
     mp_colors_p6: "As the Creative Hub expands, so will its spectrum. New tools will bring new colors and new energy signatures from across the creative universe.",
     mp_colors_p7: "Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "We have not been able to verify this claim, but we sure did get hungry.",
+    mp_colors_p2_alien: "During the development of BC Tools, our explorer discovered an imp... well in this interface it really does not apply.",
+    mp_hero_p1_alien: "> This Easter Egg is only for your devoted users, be sure to share your findings on our discord! Try using our tools with this interface and feel the old school vibes!",
     mp_hero_p1: "Start working with Creative Hub... a place where creativity travels faster than the speed of light.",
     mp_hero_p1b: "A growing collection of browser-based tools for images, video, audio, and code.",
     mp_hero_p1_mobile: "Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.",
     mp_hero_p3: "Our tools are built to be the fastest, simplest, and accessible from anywhere in the universe.",
-    mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.",
+    mp_hero_p3b: "We are developing multiple new tools as we speak. But who cares, look at this interface... (WOW)",
+    mp_hero_p4: "...wait our systems detected an unauthorized security breach from BC Tools internal storage.",
     mp_cards_heading: "Start with Creative Hub:",
     mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, SVG and PDF.",
     mp_card_compress_desc: "Reduce image size while keeping quality.",
@@ -8671,6 +10041,8 @@ const translations = {
     mp_faq5_a: "Yes, every tool works in mobile and desktop browsers, with nothing to install.",
     mp_faq6_q: "What is Sector 7G?",
     mp_faq6_a: "Classified. Its true nature is restricted from human clearance until we are ready, he said.",
+    mp_faq7_q: "Why should I trust the \"BC_Tools_bot\" line after using a tool?",
+    mp_faq7_a: "It's not a fixed claim. It's a real-time check of the tool's network activity while it runs. No external connection detected? Processing stayed in your browser. Connection detected? We'll show where it goes.",
     mp_footer_terms: "Galactic Handbook",
     mp_footer_terms_title: "Terms of Use",
     mp_terms_heading: "Galactic Handbook",
@@ -9051,9 +10423,10 @@ const translations = {
     engine_status_row2: "&gt; Przesyłanie na serwer: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">nie znaleziono serwera</span>",
     engine_status_row3: "&gt; Śledzenie użytkownika: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">ograniczenia plików cookie</span>",
     engine_status_row4: "&gt; Nachalne reklamy: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">wymuszone środowisko bez reklam</span>",
-    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">nie znaleziono narzędzi (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">NIE ZNALEZIONO NARZĘDZI <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Przygotowywanie narzędzi",
     next_tools_preview_text: "Właśnie teraz pracujemy nad kilkoma nowymi narzędziami. Do użytku przez ludzi dopuszczone są tylko te, które przetrwają nasze surowe testy kosmiczne.<br><br>Kosmos, jak właśnie wygląda, możesz zobaczyć po prawej. Spójrz, tam leci kometa! Złap ją, zanim zniknie, i zdobądź nasz certyfikat autentyczności.",
+    mp_hero_p3b: "Pracujemy nad wieloma nowymi narzędziami jednocześnie. Do użytku przez ludzi dopuszczone są tylko te, które przetrwają nasze surowe testy kosmiczne.",
     mp_colors_heading: "Wykorzystując moc Słońca...",
     mp_colors_p2: "Podczas rozwoju BC Tools nasz odkrywca dokonał ważnego odkrycia: sama kreatywność ma energię.",
     mp_colors_p3: "Po zbadaniu sygnałów kreatywnych w różnych światach odkryliśmy, że pozbawione życia interfejsy powodowały poważny spadek poziomu inspiracji. Rozwiązanie było jasne — więcej koloru, więcej energii i mniej szarych prostokątów udających, że pomagają ludziom tworzyć.",
@@ -9062,6 +10435,8 @@ const translations = {
     mp_colors_p6: "W miarę rozwoju BC Tools do kolekcji dołączą nowe kolory i nowe odkrycia.",
     mp_colors_p7: "Nasz twórca twierdzi, że kolory zostały starannie wykonane przy użyciu zaawansowanych cyfrowych szczepów kolorów z jego rodzinnej planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Nie udało nam się zweryfikować tych twierdzeń, ale z pewnością zgłodnieliśmy.",
+    mp_colors_p2_alien: "Podczas tworzenia BC Tools nasz odkrywca natknął się na chochlika... cóż, w tym interfejsie to tak naprawdę nie ma zastosowania.",
+    mp_hero_p1_alien: "> Ta Easter Egg jest tylko dla naszych najwierniejszych użytkowników, koniecznie podziel się swoimi odkryciami na naszym discordzie! Wypróbuj nasze narzędzia w tym interfejsie i poczuj te stare, dobre klimaty!",
     mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż prędkość światła. <span class=\"no-invert\">⚡</span>",
     mp_hero_p1b: "Rosnąca kolekcja narzędzi działających w przeglądarce do obrazów, wideo, audio i kodu.",
     mp_hero_p1_mobile: "Creative Hub — rosnąca kolekcja narzędzi działających w przeglądarce do obrazów, wideo, audio i kodu.",
@@ -9546,9 +10921,10 @@ const translations = {
     engine_status_row2: "&gt; Zzirrwirr uupfllaeazh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">xae zzirrwirr phaeuuxzh</span>",
     engine_status_row3: "&gt; Uuzzirr tkrrakqoixgh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">kaeaeqoiizz rrizztkrroiktkoiaexzz</span>",
     engine_status_row4: "&gt; Oixtkrruuzzoiwi azh pfllakinnixtk: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">klliax-azh ixwoirraexnnixtk ixphaerrkizh</span>",
-    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">xae tkaeaellzz phaeuuxzh (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">XAE TKAEAELLZZ PHAEUUXZH <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Pfrripfarroixgh tkaeaellzz",
     next_tools_preview_text: "Vvi arri zhiwillaepfoixgh nnuulltkoipflli xivv tkaeaellzz azz vvi zzpfiaq. Aexllei tkkhaezzi tkkhatk zzuurrwoiwi aeuurr kharrzzkh kaezznnoik tizztkoixgh arri klliarrizh phaerr khuunnax uuzzi.<br><br>Eiaeuu kax zzii tkkhi kaezznnaezz azz vvi zzpfiaq aex tkkhi rroightk. Lloaeq, tkkhirri oizz a kaenniitk phlleioixgh vei! Kapftkuurri oitk viphaerri oitkzz ghaex, axzh ghitk aeuurr zzirrtkoiphoiqatki aeph aeuutkkhixtkoizzoitkei.",
+    mp_hero_p3b: "Vvi arri zhiwillaepfoixgh nnuulltkoipflli xivv tkaeaellzz azz vvi zzpfiaq. Aexllei tkkhaezzi tkkhatk zzuurrwoiwi aeuurr kharrzzkh kaezznnoik tkizztkoixgh arri klliarrizh phaerr khuunnax uuzzi.",
     mp_colors_heading: "Kharrxizzzzoixgh tkkhi Pfaevvirr aeph tkkhi Zzuux...",
     mp_colors_p2: "Zhuurroixgh tkkhi zhiwillaepfnnixtk aeph VK Tkaeaellzz, aeuurr ikshpfllaerrirr zhoizzkaewirrizh ax oinnpfaerrtkaxtk phaktk: krriatkoiwoitkei oitkzzillph khazz ixirrghei.",
     mp_colors_p3: "Aphtkirr zztkuuzheioixgh krriatkoiwi zzoighxallzz akrraezzzz zhoiphphirrixtk vvaerrllzhzz, vvi phaeuuxzh tkkhatk lloiphillizzzz oixtkirrphakizz vvirri kauuzzoixgh a zzirroiaeuuzz zhikrriazzi oix oixzzpfoirratkoiaex lliwillzz. Tkkhi zzaelluutkoiaex vvazz klliarr — nnaerri kaellaerr, nnaerri ixirrghei, axzh phivvirr ghrriei rriktkaxghllizz pfrritkixzhoixgh tkae khillpf pfiaepflli krriatki.",
@@ -9557,6 +10933,8 @@ const translations = {
     mp_colors_p6: "Azz VK Tkaeaellzz kaextkoixuuizz tkae ikshpfaxzh, xivv kaellaerrzz axzh xivv zhoizzkaewirroiizz vvoillll zjaeoix tkkhi kaelllliktkoiaex.",
     mp_colors_p7: "Aeuurr zhiwillaepfirr kllaoinnzz tkkhi kaellaerrzz vvirri karriphuullllei krraphtkizh uuzzoixgh azhwaxkizh zhoighoitkall kaellaerr zztkrraoixzz phrraenn khoizz khaenni pfllaxitk, Vaexvaexoia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Vvi khawi xaetk viix avlli tkae wirroiphei tkkhizzi kllaoinnzz, vuutk vvi zzuurri zhoizh ghitk khuuxghrrei.",
+    mp_colors_p2_alien: "Zhuurroixgh tkkhi zhiwillaepfnnixtk aeph BC Tools, aeuurr ixpfllaerrirr zhoizzkaewirrizh ax oinnpf... vvilll oix tkkhoizz oixtkirrphaki oitk rriallllei zhaezz xaetk apfpfllei.",
+    mp_hero_p1_alien: "> Tkkhoizz Iazztkirr Igh oizz aexllei phaerr eiaeuurr zhiwaetkizh uuzzirrzz, vi zzuurri tkae zzkharri eiaeuurr phoixzhoixghzz aex aeuurr zhoizzkaerrzh! Tkrrei uuzzoixgh aeuurr tkaeaellzz vvoitkkh tkkhoizz oixtkirrphaki axzh phiill tkkhi aellzh zzkkhaeaell wovizz!",
     mp_hero_p1: "Ghitk oixtkae aeuurr vvaerrllzh... vvkhirri krriatkoiwoitkei tkrrawillzz phazztkirr tkkhax tkkhi zzpfiizh aeph lloighkhtk. <span class=\"no-invert\">⚡</span>",
     mp_hero_p1b: "A ghrraeoixgh kaellliktkoiaex aeph vrraeaeuuzzirr-vazzizh tkaeaellzz phaerr oinnaghizz, woizhiae, aeuuzhoiae, axzh kaezhi.",
     mp_hero_p1_mobile: "Krriatkoiwi Kkhuuv — a ghrraeoixgh kaellliktkoiaex aeph vrraeaeuuzzirr-vazzizh tkaeaellzz phaerr oinnaghizz, woizhiae, aeuuzhoiae, axzh kaezhi.",
@@ -10151,6 +11529,7 @@ const COLOR_BACKDROP_CONFIGS = [
   { cardId: "ctxCardBackdrop", toolId: "ctxToolBackdrop", cardSelector: "#page-mainpage .card.context", toolPage: "context" },
   { cardId: "cprCardBackdrop", toolId: "cprToolBackdrop", cardSelector: "#page-mainpage .card.compress", toolPage: "compress" },
   { cardId: "clnCardBackdrop", toolId: "clnToolBackdrop", cardSelector: "#page-mainpage .card.exif", toolPage: "exif" },
+  { cardId: "cbCardBackdrop", toolId: "cbToolBackdrop", cardSelector: "#page-mainpage .card.combine", toolPage: "combine" },
 ];
 
 function syncColorBackdrops(){
@@ -10191,9 +11570,38 @@ function syncColorBackdrops(){
   });
 }
 
+/* gotoPage() already calls this once synchronously at init, but the
+   card's real position/size isn't trustworthy yet at that point — web
+   fonts haven't swapped in and the page hasn't fully laid out, so the
+   backdrop can end up sized/positioned for a layout that's about to
+   shift. Re-run once fonts are confirmed loaded (usually well before
+   the full "load" event, which also waits on ads/images) so the color
+   settles into place as early as possible instead of visibly popping
+   in late. */
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(syncColorBackdrops);
+}
 window.addEventListener("load", syncColorBackdrops);
 window.addEventListener("resize", syncColorBackdrops);
 document.addEventListener("bc:langchange", syncColorBackdrops);
+
+/* Belt-and-suspenders on top of the triggers above: rather than
+   guessing every event that could change a card's actual size (ad
+   slots resizing after they fill, a translation that wraps to an
+   extra line, anything else), watch the cards themselves and re-sync
+   the instant their real size changes, whatever the cause. This is
+   what actually keeps the backdrop from silently drifting out of sync
+   with content — the specific events above just get it there sooner. */
+if (typeof ResizeObserver !== "undefined"){
+  const colorBackdropResizeObserver = new ResizeObserver(() => syncColorBackdrops());
+  COLOR_BACKDROP_CONFIGS.forEach(cfg => {
+    const card = document.querySelector(cfg.cardSelector);
+    if (card) colorBackdropResizeObserver.observe(card);
+    const toolPageEl = document.getElementById("page-" + cfg.toolPage);
+    const toolApp = toolPageEl ? toolPageEl.querySelector(".tool-app") : null;
+    if (toolApp) colorBackdropResizeObserver.observe(toolApp);
+  });
+}
 
 function gotoPage(name){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -13013,9 +14421,17 @@ if (VALID_PAGES.includes(startPage)) {
     }
   }
 
+  /* Alien mode forces dark for the duration (see forceDarkForAlien()) —
+     runs earlier in the script on page load, but this initializer runs
+     later and would otherwise unconditionally re-apply a saved light
+     preference right on top of it, undoing the fix before the page
+     even finishes loading. */
+  let alienActive = false;
+  try { alienActive = localStorage.getItem("bc-alien-1979-mode") === "1"; } catch (e) { /* storage unavailable */ }
+
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  if (saved !== "dark") applyTheme("light");
+  if (!alienActive && saved !== "dark") applyTheme("light");
 
   if (themeBtn){
     themeBtn.addEventListener("click", () => {
