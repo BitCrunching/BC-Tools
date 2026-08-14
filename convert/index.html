@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* The site used to have a custom "remember scroll position across
+   reload" feature, later removed — but removing the custom JS never
+   touched the browser's own default scroll restoration, which restores
+   the old position on reload/back-forward regardless of any app code.
+   That's what looked like the old feature "still triggering". Opting
+   out here (before anything paints) makes every reload land at the
+   top, matching what removing the feature was actually meant to do. */
+try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (e) { /* unavailable */ }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Convert – Free Image & PDF Converter – BC Tools</title>
@@ -1830,6 +1840,12 @@ html.alien-1979-mode .engine-status-error{
   font-weight:400;
 }
 
+/* The blinking (・_・;) face is normal-mode-only charm — alien mode
+   keeps the plain "NO TOOLS FOUND" text with nothing appended. */
+html.alien-1979-mode .loading-tools-face{
+  display:none;
+}
+
 /* No bold anywhere in this mode — headings lean on uppercase +
    letter-spacing for emphasis instead (the actionable lines already
    get the green-rectangle-highlight treatment above). */
@@ -1925,6 +1941,12 @@ html.alien-1979-mode .next-tools-preview{
 
 html.alien-1979-mode .hero-p3-alien-extra{
   display:block;
+}
+
+/* The "speed of light ⚡" hero line doesn't fit once the site is fully
+   monochrome — drop it entirely in this mode rather than reword it. */
+html.alien-1979-mode [data-i18n="mp_hero_p1"]{
+  display:none;
 }
 
 /* The "Harnessing the Power of Color" article is entirely about the
@@ -5833,7 +5855,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
     <div class="engine-status-card loading_tools_banner">
       <div class="engine-status-body">
-        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">NO TOOLS FOUND</span></div>
+        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">NO TOOLS FOUND <span class="loading-tools-face">(<span id="loadingToolsEyeL">・</span>_<span id="loadingToolsEyeR">・</span>;)</span></span></div>
         <div class="engine-status-row"><span data-i18n="loading_tools_row2">&gt; Preparing tools</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
       </div>
     </div>
@@ -8831,7 +8853,7 @@ function syncAlienHeroText(){
     titleEl.textContent = alien ? "You have found our Easter Egg!" : ((dict && dict.mp_hero_title) || "Setting a new standard for creators!");
   }
   if (p1bEl){
-    p1bEl.textContent = alien ? "This Easter Egg is only for your devoted users, be sure to share your findings on our discord! Try using our tools with this interface and feel the old school vibes!" : ((dict && dict.mp_hero_p1b) || "A growing collection of browser-based tools for images, video, audio, and code.");
+    p1bEl.textContent = alien ? ((dict && dict.mp_hero_p1_alien) || "> This Easter Egg is only for your devoted users, be sure to share your findings on our discord! Try using our tools with this interface and feel the old school vibes!") : ((dict && dict.mp_hero_p1b) || "A growing collection of browser-based tools for images, video, audio, and code.");
   }
 }
 document.addEventListener("bc:langchange", syncAlienHeroText);
@@ -8888,13 +8910,13 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
     btn.type = "button";
     btn.className = "engine-status-row engine-status-row-btn";
     btn.id = "anomalyBtn";
-    btn.textContent = slashWrap("Anomaly accessed", getInt(KEY_CLICKS));
+    btn.textContent = slashWrap("Anomaly detected", getInt(KEY_CLICKS));
     btn.addEventListener("click", () => {
       const clicks = getInt(KEY_CLICKS);
       if (clicks >= 3) return;
       const next = clicks + 1;
       setItem(KEY_CLICKS, String(next));
-      btn.textContent = slashWrap("Anomaly accessed", next);
+      btn.textContent = slashWrap("Anomaly detected", next);
       if (next >= 3 && !getFlag(KEY_STAGE2)){
         setItem(KEY_STAGE2, "1");
         container.appendChild(buildDownloadBtn());
@@ -9396,7 +9418,7 @@ const translations = {
     engine_status_row2: "&gt; Nahrání na server: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">server nenalezen</span>",
     engine_status_row3: "&gt; Sledování uživatele: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">omezení cookies</span>",
     engine_status_row4: "&gt; Rušivá reklama: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">vynuceno prostředí bez reklam</span>",
-    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">ŽÁDNÉ NÁSTROJE NENALEZENY</span>",
+    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">ŽÁDNÉ NÁSTROJE NENALEZENY <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Připravujeme nástroje",
     mp_hero_p3b: "Vyvíjíme více nových nástrojů zároveň. Pro lidské použití jsou schváleny pouze ty, které přežijí naše drsné kosmické testování.",
     mp_colors_heading: "Využívání síly Slunce...",
@@ -9407,6 +9429,8 @@ const translations = {
     mp_colors_p6: "Jak se BC Tools bude rozšiřovat, přidají se do kolekce nové barvy a nové objevy.",
     mp_colors_p7: "Náš vývojář tvrdí, že barvy byly pečlivě vytvořeny pomocí pokročilých digitálních barevných kmenů z jeho domovské planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Tato tvrzení se nám nepodařilo ověřit, ale rozhodně nám z toho vyhládlo.",
+    mp_colors_p2_alien: "Během vývoje BC Tools náš průzkumník objevil důle... no, v tomto rozhraní to vlastně neplatí.",
+    mp_hero_p1_alien: "Tento Easter Egg je jen pro naše nejvěrnější uživatele, nezapomeňte se podělit o své nálezy na našem discordu! Vyzkoušejte naše nástroje v tomto rozhraní a vraťte se do starých dobrých časů!",
     mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než rychlost světla. <span class=\"no-invert\">⚡</span>",
     mp_hero_p3: "Rychlé, jednoduché a dostupné odkudkoli ve vesmíru.",
     mp_hero_p4: "...počkat, naše systémy zaznamenaly neoprávněný únik paměti z interního úložiště BC Tools, který byste si asi neměli číst.",
@@ -9881,7 +9905,7 @@ const translations = {
     engine_status_row4: "&gt; Required speed: Fast",
     engine_status_row5: "&gt; Acceptable complexity: Minimal",
     engine_status_row8: "&gt; Transmission ended.",
-    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">NO TOOLS FOUND</span>",
+    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">NO TOOLS FOUND <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Preparing tools",
     next_tools_preview_text: "We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.<br><br>You can see the cosmos as we speak on the right. Look, there is a comet flying by! Capture it before it's gone and get our certificate of authenticity.",
     mp_colors_heading: "Harnessing the Power of Color...",
@@ -9893,6 +9917,7 @@ const translations = {
     mp_colors_p7: "Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "We have not been able to verify this claim, but we sure did get hungry.",
     mp_colors_p2_alien: "During the development of BC Tools, our explorer discovered an imp... well in this interface it really does not apply.",
+    mp_hero_p1_alien: "> This Easter Egg is only for your devoted users, be sure to share your findings on our discord! Try using our tools with this interface and feel the old school vibes!",
     mp_hero_p1: "Start working with Creative Hub... a place where creativity travels faster than the speed of light.",
     mp_hero_p1b: "A growing collection of browser-based tools for images, video, audio, and code.",
     mp_hero_p1_mobile: "Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.",
@@ -10373,7 +10398,7 @@ const translations = {
     engine_status_row2: "&gt; Przesyłanie na serwer: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">nie znaleziono serwera</span>",
     engine_status_row3: "&gt; Śledzenie użytkownika: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">ograniczenia plików cookie</span>",
     engine_status_row4: "&gt; Nachalne reklamy: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">wymuszone środowisko bez reklam</span>",
-    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">NIE ZNALEZIONO NARZĘDZI</span>",
+    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">NIE ZNALEZIONO NARZĘDZI <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Przygotowywanie narzędzi",
     mp_hero_p3b: "Pracujemy nad wieloma nowymi narzędziami jednocześnie. Do użytku przez ludzi dopuszczone są tylko te, które przetrwają nasze surowe testy kosmiczne.",
     mp_colors_heading: "Wykorzystując moc Słońca...",
@@ -10384,6 +10409,8 @@ const translations = {
     mp_colors_p6: "W miarę rozwoju BC Tools do kolekcji dołączą nowe kolory i nowe odkrycia.",
     mp_colors_p7: "Nasz twórca twierdzi, że kolory zostały starannie wykonane przy użyciu zaawansowanych cyfrowych szczepów kolorów z jego rodzinnej planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Nie udało nam się zweryfikować tych twierdzeń, ale z pewnością zgłodnieliśmy.",
+    mp_colors_p2_alien: "Podczas tworzenia BC Tools nasz odkrywca natknął się na chochlika... cóż, w tym interfejsie to tak naprawdę nie ma zastosowania.",
+    mp_hero_p1_alien: "> Ta Easter Egg jest tylko dla naszych najwierniejszych użytkowników, koniecznie podziel się swoimi odkryciami na naszym discordzie! Wypróbuj nasze narzędzia w tym interfejsie i poczuj te stare, dobre klimaty!",
     mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż prędkość światła. <span class=\"no-invert\">⚡</span>",
     mp_hero_p3: "Szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
     mp_hero_p4: "...czekaj, nasze systemy wykryły nieautoryzowany wyciek pamięci z wewnętrznego magazynu BC Tools, którego prawdopodobnie nie powinieneś czytać.",
@@ -10849,7 +10876,7 @@ const translations = {
     engine_status_row2: "&gt; Zzirrwirr uupfllaeazh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">xae zzirrwirr phaeuuxzh</span>",
     engine_status_row3: "&gt; Uuzzirr tkrrakqoixgh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">kaeaeqoiizz rrizztkrroiktkoiaexzz</span>",
     engine_status_row4: "&gt; Oixtkrruuzzoiwi azh pfllakinnixtk: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">klliax-azh ixwoirraexnnixtk ixphaerrkizh</span>",
-    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">XAE TKAEAELLZZ PHAEUUXZH</span>",
+    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">XAE TKAEAELLZZ PHAEUUXZH <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Pfrripfarroixgh tkaeaellzz",
     mp_hero_p3b: "Vvi arri zhiwillaepfoixgh nnuulltkoipflli xivv tkaeaellzz azz vvi zzpfiaq. Aexllei tkkhaezzi tkkhatk zzuurrwoiwi aeuurr kharrzzkh kaezznnoik tkizztkoixgh arri klliarrizh phaerr khuunnax uuzzi.",
     mp_colors_heading: "Kharrxizzzzoixgh tkkhi Pfaevvirr aeph tkkhi Zzuux...",
@@ -10860,6 +10887,8 @@ const translations = {
     mp_colors_p6: "Azz VK Tkaeaellzz kaextkoixuuizz tkae ikshpfaxzh, xivv kaellaerrzz axzh xivv zhoizzkaewirroiizz vvoillll zjaeoix tkkhi kaelllliktkoiaex.",
     mp_colors_p7: "Aeuurr zhiwillaepfirr kllaoinnzz tkkhi kaellaerrzz vvirri karriphuullllei krraphtkizh uuzzoixgh azhwaxkizh zhoighoitkall kaellaerr zztkrraoixzz phrraenn khoizz khaenni pfllaxitk, Vaexvaexoia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Vvi khawi xaetk viix avlli tkae wirroiphei tkkhizzi kllaoinnzz, vuutk vvi zzuurri zhoizh ghitk khuuxghrrei.",
+    mp_colors_p2_alien: "Zhuurroixgh tkkhi zhiwillaepfnnixtk aeph BC Tools, aeuurr ixpfllaerrirr zhoizzkaewirrizh ax oinnpf... vvilll oix tkkhoizz oixtkirrphaki oitk rriallllei zhaezz xaetk apfpfllei.",
+    mp_hero_p1_alien: "> Tkkhoizz Iazztkirr Igh oizz aexllei phaerr eiaeuurr zhiwaetkizh uuzzirrzz, vi zzuurri tkae zzkharri eiaeuurr phoixzhoixghzz aex aeuurr zhoizzkaerrzh! Tkrrei uuzzoixgh aeuurr tkaeaellzz vvoitkkh tkkhoizz oixtkirrphaki axzh phiill tkkhi aellzh zzkkhaeaell wovizz!",
     mp_hero_p1: "Ghitk oixtkae aeuurr vvaerrllzh... vvkhirri krriatkoiwoitkei tkrrawillzz phazztkirr tkkhax tkkhi zzpfiizh aeph lloighkhtk. <span class=\"no-invert\">⚡</span>",
     mp_hero_p3: "Phazztk, zzoinnpflli, axzh akkizzzzoivlli phrraenn axeivvkhirri oix tkkhi uuxoiwirrzzi.",
     mp_hero_p4: "...vvaoitk aeuurr zzeizztkinnzz zhitkiktkizh ax uuxauutkkhaerroizxizh nninnaerrei lliaq phrraenn tkkhi BC Tools oixtkirrxall zztkaerraghi tkkhatk eiaeuu pfrraevavllei zzkhaeuullzhx'tk rriazh.",
