@@ -1132,6 +1132,54 @@ html[data-theme="light"] .engine-status-value{
   font-weight:700;
 }
 
+/* Small inline action button for the mission log's "Launch protocol"
+   easter egg — plain old-school terminal-link look (no pill/border,
+   just the //slash-wrapped// text itself signaling it's clickable,
+   matching the site's other //text// terminal buttons) rather than a
+   boxed button. Normal mode only: hidden in alien mode and on mobile
+   just below. */
+.engine-status-inline-btn{
+  display:inline;
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  color:#e5e7eb;
+  font-family:inherit;
+  font-size:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+html[data-theme="light"] .engine-status-inline-btn{
+  color:#1d2436;
+}
+
+.engine-status-inline-btn:hover{
+  text-decoration:underline;
+}
+
+.engine-status-inline-btn:disabled{
+  cursor:default;
+  opacity:.5;
+  text-decoration:none;
+}
+
+/* Launch protocol feature (button, fueling bar, launch button) is a
+   normal-mode-only easter egg — never shows in alien mode (the
+   asteroid banner it launches a rocket into is hidden there anyway)
+   or on mobile (matches every other terminal-banner interaction being
+   desktop-only). */
+html.alien-1979-mode .launch-protocol-feature{
+  display:none;
+}
+
+@media (max-width:768px){
+  .launch-protocol-feature{
+    display:none;
+  }
+}
+
 html[data-theme="light"] .engine-status-error{
   color:#dc2626;
 }
@@ -2371,6 +2419,126 @@ html[data-theme="light"] .engine-status-glitch{
 @keyframes tool-card-star-twinkle{
   0%, 100%{ opacity:.15; }
   50%{ opacity:.75; }
+}
+
+/* Launch protocol easter egg's rocket — Starship + Super Heavy: one
+   tall steel stack, not a multi-body cluster, with a thin interstage
+   seam marking where the two halves separate. Flies straight up out
+   of the asteroid banner's starfield box and fades near the top,
+   removed from the DOM once the animation ends. */
+.tool-card-rocket{
+  position:absolute;
+  left:50%;
+  bottom:-50px;
+  width:17px;
+  height:46px;
+  transform:translateX(-50%) rotate(-2deg);
+  animation:tool-card-rocket-launch 3.2s ease-in forwards;
+  pointer-events:none;
+  z-index:3;
+  background:linear-gradient(to bottom, #d5d8de 0 58%, #9aa0ab 58% 61%, #d5d8de 61% 100%);
+  border-radius:8px 8px 1px 1px / 16px 16px 1px 1px;
+}
+
+.tool-card-rocket::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:50%;
+  width:8px;
+  height:18px;
+  background:linear-gradient(to bottom, rgba(255,150,60,.9), rgba(255,150,60,0));
+  transform:translateX(-50%);
+}
+
+@keyframes tool-card-rocket-launch{
+  0%{ bottom:-50px; left:50%; opacity:1; }
+  75%{ opacity:1; }
+  100%{ bottom:280px; left:45.6%; opacity:0; }
+}
+
+/* Super Heavy booster passing back through the frame a few moments
+   after launch — it doesn't stop or settle here, just flies through
+   and fades out near the bottom edge; the actual catch/landing is
+   left to the imagination. */
+.tool-card-booster-pass{
+  position:absolute;
+  left:50%;
+  top:-36px;
+  width:16px;
+  height:32px;
+  background:#c7cad1;
+  border-radius:4px;
+  transform:translateX(-50%) rotate(-15deg);
+  animation:tool-card-booster-pass-anim 2.8s ease-in forwards;
+  pointer-events:none;
+  z-index:3;
+}
+
+/* Small steady engine flame the whole way down, cranking up into a
+   much bigger throttle burn right before it exits the frame — reads
+   as a controlled descent, not just a rectangle sliding past. */
+.tool-card-booster-pass::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:50%;
+  width:7px;
+  height:9px;
+  background:linear-gradient(to bottom, rgba(255,150,60,.85), rgba(255,150,60,0));
+  transform:translateX(-50%);
+  animation:tool-card-booster-throttle 2.8s ease-in forwards;
+}
+
+@keyframes tool-card-booster-pass-anim{
+  0%{ top:-36px; left:50%; opacity:1; }
+  85%{ opacity:1; }
+  100%{ top:280px; left:17.4%; opacity:0; }
+}
+
+@keyframes tool-card-booster-throttle{
+  0%{ width:7px; height:9px; opacity:.6; }
+  70%{ width:7px; height:10px; opacity:.6; }
+  90%{ width:11px; height:24px; opacity:1; }
+  100%{ width:11px; height:24px; opacity:.9; }
+}
+
+/* Starship itself passing through much later (triggered separately
+   from the Terms page, only after launch) — same idea: it glides
+   across the frame at an angle and fades out rather than visibly
+   touching down. */
+.tool-card-starship-pass{
+  position:absolute;
+  left:-22px;
+  top:-28px;
+  width:15px;
+  height:36px;
+  background:#c7cad1;
+  border-radius:5px;
+  transform:rotate(25deg);
+  animation:tool-card-starship-pass-anim 3.8s ease-in forwards;
+  pointer-events:none;
+  z-index:3;
+}
+
+/* Same steady-then-cranked-up engine flame as the booster's landing
+   pass, at the ship's base. */
+.tool-card-starship-pass::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:50%;
+  width:7px;
+  height:9px;
+  background:linear-gradient(to bottom, rgba(255,150,60,.85), rgba(255,150,60,0));
+  transform:translateX(-50%);
+  animation:tool-card-booster-throttle 3.8s ease-in forwards;
+}
+
+@keyframes tool-card-starship-pass-anim{
+  0%{ top:-28px; left:-22px; transform:rotate(25deg); opacity:1; }
+  80%{ opacity:1; }
+  100%{ top:280px; left:120%; transform:rotate(10deg); opacity:0; }
 }
 
 .tool-card-star:nth-child(1){ top:14px;  left:32px;  animation-delay:0s; }
@@ -5900,7 +6068,8 @@ html[data-theme="light"] .context-remove-btn:hover{
             <div class="engine-status-row" data-i18n="engine_status_row2">&gt; Primary target: Creative Humans</div>
             <div class="engine-status-row" data-i18n="engine_status_row3">&gt; Preferred environment: Browser</div>
             <div class="engine-status-row" data-i18n="engine_status_row4">&gt; Required speed: Fast</div>
-            <div class="engine-status-row" data-i18n="engine_status_row5">&gt; Acceptable complexity: Minimal</div>
+            <div class="engine-status-row" data-i18n="engine_status_row5">&gt; Acceptable complexity: Minimal (fun banners excluded)</div>
+            <div class="engine-status-row launch-protocol-feature" id="launchProtocolRow">&gt; Launch protocol: <button type="button" class="engine-status-inline-btn" id="launchStartBtn">//Start loading//</button></div>
             <div class="engine-status-row" data-i18n="engine_status_row8">&gt; Transmission ended.</div>
             <div class="engine-status-anomaly" id="engineStatusAnomaly" hidden></div>
           </div>
@@ -6631,6 +6800,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <p data-i18n="tu_s5_p2">Additionally, all terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.</p>
       <p data-i18n="tu_s5_p3">By clicking and downloading our PNG asteroid certificate, our Terms of Use and Privacy Policy apply.</p>
+      <div class="engine-status-row launch-protocol-feature" id="orbiterLandingRow" hidden>&gt; <button type="button" class="engine-status-inline-btn" id="orbiterLandingBtn">//Prepare for landing//</button></div>
 
       <div class="engine-status-card">
         <div class="engine-status-body">
@@ -9023,6 +9193,199 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
   document.addEventListener("bc:anomaly-unlock", render);
 })();
 
+/* Mission log's "Launch protocol" easter egg — desktop normal-mode
+   only (hidden in alien mode and on mobile via .launch-protocol-
+   feature's CSS). //Start loading// -> ~15s fueling bar -> //LAUNCH//
+   -> Starship + Super Heavy stack flies up out of the asteroid
+   banner's starfield box. Landing happens separately from the Terms
+   page (see the orbiter-landing IIFE below); it auto-refuels, so a
+   returning visitor who already landed gets a ready //LAUNCH// again
+   without redoing the fueling wait. State persists in localStorage so
+   a reload mid-fueling resumes instead of resetting. */
+(function(){
+  const startBtn = document.getElementById("launchStartBtn");
+  const protocolRow = document.getElementById("launchProtocolRow");
+  if (!startBtn || !protocolRow) return;
+
+  const BAR_SEGMENTS = 20;
+  const FUEL_DURATION_MS = 15000;
+  const KEY_START = "bc-launch-start-time";
+  const KEY_FIRED = "bc-launch-fired";
+  const KEY_READY = "bc-launch-ready";
+
+  function getStartTime(){
+    try {
+      const raw = localStorage.getItem(KEY_START);
+      return raw ? parseInt(raw, 10) : null;
+    } catch (e) { return null; }
+  }
+  function setStartTime(ts){
+    try { localStorage.setItem(KEY_START, String(ts)); } catch (e) { /* storage unavailable */ }
+  }
+  function isFired(){
+    try { return localStorage.getItem(KEY_FIRED) === "1"; } catch (e) { return false; }
+  }
+  function setFired(){
+    try {
+      localStorage.setItem(KEY_FIRED, "1");
+      localStorage.removeItem(KEY_READY);
+    } catch (e) { /* storage unavailable */ }
+  }
+  function isReady(){
+    try { return localStorage.getItem(KEY_READY) === "1"; } catch (e) { return false; }
+  }
+
+  function buildBar(pct){
+    const filled = Math.round((pct / 100) * BAR_SEGMENTS);
+    return "█".repeat(filled) + "░".repeat(BAR_SEGMENTS - filled);
+  }
+
+  function buildFuelRow(pct){
+    const row = document.createElement("div");
+    row.className = "engine-status-row launch-protocol-feature";
+    row.innerHTML = "&gt; <span id=\"fuelingBar\">" + buildBar(pct) + "</span> FUELING STATUS";
+    return row;
+  }
+
+  function buildLaunchBtn(alreadyFired){
+    const row = document.createElement("div");
+    row.className = "engine-status-row launch-protocol-feature";
+    row.innerHTML = "&gt; ";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "engine-status-inline-btn";
+    btn.id = "launchFireBtn";
+    btn.textContent = "//LAUNCH//";
+    if (alreadyFired){
+      btn.disabled = true;
+    } else {
+      btn.addEventListener("click", () => {
+        btn.disabled = true;
+        setFired();
+        setTimeout(fireRocket, 2000);
+      });
+    }
+    row.appendChild(btn);
+    return row;
+  }
+
+  function passBoosterThrough(){
+    const slot = document.getElementById("nextToolSvgSlot");
+    if (!slot) return;
+    const booster = document.createElement("div");
+    booster.className = "tool-card-booster-pass";
+    slot.appendChild(booster);
+    booster.addEventListener("animationend", () => booster.remove());
+  }
+
+  function fireRocket(){
+    const slot = document.getElementById("nextToolSvgSlot");
+    if (!slot) return;
+    const rocket = document.createElement("div");
+    rocket.className = "tool-card-rocket";
+    slot.appendChild(rocket);
+    rocket.addEventListener("animationend", () => {
+      rocket.remove();
+      // Super Heavy separates and passes back through the frame a
+      // few moments after liftoff — it doesn't visibly land here,
+      // just flies through and fades, same as the Starship does
+      // later from the Terms page button.
+      setTimeout(passBoosterThrough, 1500);
+    });
+  }
+
+  function startFueling(startTime){
+    startBtn.disabled = true;
+    const fuelRow = buildFuelRow(Math.min(100, ((Date.now() - startTime) / FUEL_DURATION_MS) * 100));
+    protocolRow.insertAdjacentElement("afterend", fuelRow);
+    const barEl = fuelRow.querySelector("#fuelingBar");
+
+    const timer = setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - startTime) / FUEL_DURATION_MS) * 100);
+      barEl.textContent = buildBar(pct);
+      if (pct >= 100){
+        clearInterval(timer);
+        fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(false));
+      }
+    }, 300);
+  }
+
+  if (isFired()){
+    // Still in orbit — bar's full, launch is spent until it lands.
+    startBtn.disabled = true;
+    const fuelRow = buildFuelRow(100);
+    protocolRow.insertAdjacentElement("afterend", fuelRow);
+    fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(true));
+  } else if (isReady()){
+    // Landed and auto-refueled (see the Terms page orbiter-landing
+    // IIFE below) — skip the fueling wait entirely, go straight to a
+    // ready //LAUNCH//.
+    startBtn.disabled = true;
+    const fuelRow = buildFuelRow(100);
+    protocolRow.insertAdjacentElement("afterend", fuelRow);
+    fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(false));
+  } else {
+    const savedStart = getStartTime();
+    if (savedStart !== null) {
+      startFueling(savedStart);
+    } else {
+      startBtn.addEventListener("click", () => {
+        const startTime = Date.now();
+        setStartTime(startTime);
+        startFueling(startTime);
+      });
+    }
+  }
+})();
+
+/* Orbiter's own landing — separate from the boosters (which return
+   near launch, automatically) and from the Terms page, not the
+   mainpage. Only shown while the rocket is actually "in orbit" (i.e.
+   the visitor has launched and hasn't landed yet — same bc-launch-
+   fired flag the mainpage uses). Landing deorbits, lands, and auto-
+   refuels in one step: it doesn't reset all the way back to //Start
+   loading//, it leaves the mainpage with a ready //LAUNCH// waiting
+   (see isReady() in the launch protocol IIFE above). */
+(function(){
+  const row = document.getElementById("orbiterLandingRow");
+  const btn = document.getElementById("orbiterLandingBtn");
+  if (!row || !btn) return;
+
+  const KEY_FIRED = "bc-launch-fired";
+  const KEY_START = "bc-launch-start-time";
+  const KEY_READY = "bc-launch-ready";
+
+  function isFired(){
+    try { return localStorage.getItem(KEY_FIRED) === "1"; } catch (e) { return false; }
+  }
+
+  if (!isFired()) return;
+  row.hidden = false;
+
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    setTimeout(() => {
+      const slot = document.getElementById("nextToolSvgSlot");
+      if (slot){
+        const starship = document.createElement("div");
+        starship.className = "tool-card-starship-pass";
+        slot.appendChild(starship);
+      }
+      // Give the landing animation its full ~3.8s to play out on
+      // whichever page happens to be showing it before the reload
+      // that closes the cycle wipes it.
+      setTimeout(() => {
+        try {
+          localStorage.removeItem(KEY_START);
+          localStorage.removeItem(KEY_FIRED);
+          localStorage.setItem(KEY_READY, "1");
+        } catch (e) { /* storage unavailable */ }
+        location.reload();
+      }, 3800);
+    }, 7000);
+  });
+})();
+
 /* Cookie consent banner: per-category choice, gates GA4/AdSense
    (Consent Mode starts denied in <head>). */
 (function(){
@@ -9923,7 +10286,7 @@ const translations = {
     engine_status_row2: "&gt; Primary target: Creative Humans",
     engine_status_row3: "&gt; Preferred environment: Browser",
     engine_status_row4: "&gt; Required speed: Fast",
-    engine_status_row5: "&gt; Acceptable complexity: Minimal",
+    engine_status_row5: "&gt; Acceptable complexity: Minimal (fun banners excluded)",
     engine_status_row8: "&gt; Transmission ended.",
     loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">NO TOOLS FOUND <span class=\"loading-tools-face\">(<span id=\"loadingToolsEyeL\">・</span>_<span id=\"loadingToolsEyeR\">・</span>;)</span></span>",
     loading_tools_row2: "&gt; Preparing tools",
