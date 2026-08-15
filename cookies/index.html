@@ -2429,9 +2429,9 @@ html[data-theme="light"] .engine-status-glitch{
 .tool-card-rocket{
   position:absolute;
   left:50%;
-  bottom:-50px;
-  width:17px;
-  height:46px;
+  bottom:-185px;
+  width:14px;
+  height:175px;
   transform:translateX(-50%) rotate(-2deg);
   animation:tool-card-rocket-launch 3.2s ease-in forwards;
   pointer-events:none;
@@ -2452,7 +2452,7 @@ html[data-theme="light"] .engine-status-glitch{
 }
 
 @keyframes tool-card-rocket-launch{
-  0%{ bottom:-50px; left:50%; opacity:1; }
+  0%{ bottom:-185px; left:50%; opacity:1; }
   75%{ opacity:1; }
   100%{ bottom:280px; left:45.6%; opacity:0; }
 }
@@ -2464,9 +2464,9 @@ html[data-theme="light"] .engine-status-glitch{
 .tool-card-booster-pass{
   position:absolute;
   left:50%;
-  top:-36px;
-  width:16px;
-  height:32px;
+  top:-82px;
+  width:10px;
+  height:72px;
   background:#c7cad1;
   border-radius:4px;
   transform:translateX(-50%) rotate(-15deg);
@@ -2491,7 +2491,7 @@ html[data-theme="light"] .engine-status-glitch{
 }
 
 @keyframes tool-card-booster-pass-anim{
-  0%{ top:-36px; left:50%; opacity:1; }
+  0%{ top:-82px; left:50%; opacity:1; }
   85%{ opacity:1; }
   100%{ top:280px; left:17.4%; opacity:0; }
 }
@@ -2510,11 +2510,11 @@ html[data-theme="light"] .engine-status-glitch{
 .tool-card-starship-pass{
   position:absolute;
   left:-22px;
-  top:-28px;
-  width:15px;
-  height:36px;
-  background:#c7cad1;
-  border-radius:5px;
+  top:-57px;
+  width:10px;
+  height:47px;
+  background:#d5d8de;
+  border-radius:8px 8px 1px 1px / 16px 16px 1px 1px;
   transform:rotate(25deg);
   animation:tool-card-starship-pass-anim 3.8s ease-in forwards;
   pointer-events:none;
@@ -2536,7 +2536,7 @@ html[data-theme="light"] .engine-status-glitch{
 }
 
 @keyframes tool-card-starship-pass-anim{
-  0%{ top:-28px; left:-22px; transform:rotate(25deg); opacity:1; }
+  0%{ top:-57px; left:-22px; transform:rotate(25deg); opacity:1; }
   80%{ opacity:1; }
   100%{ top:280px; left:120%; transform:rotate(10deg); opacity:0; }
 }
@@ -6800,7 +6800,6 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <p data-i18n="tu_s5_p2">Additionally, all terminal-style banners displayed across the site are for entertainment purposes only. No factual, legal, or technical conclusions may be derived from them.</p>
       <p data-i18n="tu_s5_p3">By clicking and downloading our PNG asteroid certificate, our Terms of Use and Privacy Policy apply.</p>
-      <div class="engine-status-row launch-protocol-feature" id="orbiterLandingRow" hidden>&gt; <button type="button" class="engine-status-inline-btn" id="orbiterLandingBtn">//Prepare for landing//</button></div>
 
       <div class="engine-status-card">
         <div class="engine-status-body">
@@ -9197,11 +9196,12 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
    only (hidden in alien mode and on mobile via .launch-protocol-
    feature's CSS). //Start loading// -> ~15s fueling bar -> //LAUNCH//
    -> Starship + Super Heavy stack flies up out of the asteroid
-   banner's starfield box. Landing happens separately from the Terms
-   page (see the orbiter-landing IIFE below); it auto-refuels, so a
-   returning visitor who already landed gets a ready //LAUNCH// again
-   without redoing the fueling wait. State persists in localStorage so
-   a reload mid-fueling resumes instead of resetting. */
+   banner's starfield box, and //Prepare for landing// appears right
+   there in the same card. Landing (7s after clicking it) auto-
+   refuels and closes the loop back to a ready //LAUNCH// — all inline
+   in this one card, no separate page and no reload needed for any of
+   it. State persists in localStorage so a reload mid-fueling (or
+   mid-orbit) resumes instead of resetting. */
 (function(){
   const startBtn = document.getElementById("launchStartBtn");
   const protocolRow = document.getElementById("launchProtocolRow");
@@ -9231,8 +9231,24 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
       localStorage.removeItem(KEY_READY);
     } catch (e) { /* storage unavailable */ }
   }
+  function setLanded(){
+    try {
+      localStorage.removeItem(KEY_START);
+      localStorage.removeItem(KEY_FIRED);
+      localStorage.setItem(KEY_READY, "1");
+    } catch (e) { /* storage unavailable */ }
+  }
   function isReady(){
     try { return localStorage.getItem(KEY_READY) === "1"; } catch (e) { return false; }
+  }
+
+  function clearDynamicRows(){
+    let sibling = protocolRow.nextElementSibling;
+    while (sibling && sibling.classList.contains("launch-protocol-feature")){
+      const next = sibling.nextElementSibling;
+      sibling.remove();
+      sibling = next;
+    }
   }
 
   function buildBar(pct){
@@ -9247,7 +9263,7 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
     return row;
   }
 
-  function buildLaunchBtn(alreadyFired){
+  function buildLaunchBtn(){
     const row = document.createElement("div");
     row.className = "engine-status-row launch-protocol-feature";
     row.innerHTML = "&gt; ";
@@ -9256,15 +9272,50 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
     btn.className = "engine-status-inline-btn";
     btn.id = "launchFireBtn";
     btn.textContent = "//LAUNCH//";
-    if (alreadyFired){
+    btn.addEventListener("click", () => {
       btn.disabled = true;
-    } else {
-      btn.addEventListener("click", () => {
-        btn.disabled = true;
-        setFired();
-        setTimeout(fireRocket, 2000);
-      });
-    }
+      setFired();
+      setTimeout(fireRocket, 2000);
+      // Already "in orbit" the moment it's fired — no need to wait
+      // for the ascent animation before offering the landing control.
+      row.insertAdjacentElement("afterend", buildPrepareLandingBtn());
+    });
+    row.appendChild(btn);
+    return row;
+  }
+
+  function buildPrepareLandingBtn(){
+    const row = document.createElement("div");
+    row.className = "engine-status-row launch-protocol-feature";
+    row.innerHTML = "&gt; ";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "engine-status-inline-btn";
+    btn.id = "prepareLandingBtn";
+    btn.textContent = "//Prepare for landing//";
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      setTimeout(() => {
+        const slot = document.getElementById("nextToolSvgSlot");
+        if (slot){
+          const starship = document.createElement("div");
+          starship.className = "tool-card-starship-pass";
+          slot.appendChild(starship);
+          starship.addEventListener("animationend", () => starship.remove());
+        }
+        // Deorbit, land, auto-refuel — clear every dynamic row this
+        // IIFE has added so far (fuel bar, spent LAUNCH, this landing
+        // row) and rebuild a fresh ready //LAUNCH//, live, no reload.
+        setTimeout(() => {
+          setLanded();
+          clearDynamicRows();
+          startBtn.disabled = true;
+          const newFuelRow = buildFuelRow(100);
+          protocolRow.insertAdjacentElement("afterend", newFuelRow);
+          newFuelRow.insertAdjacentElement("afterend", buildLaunchBtn());
+        }, 3800);
+      }, 7000);
+    });
     row.appendChild(btn);
     return row;
   }
@@ -9289,7 +9340,7 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
       // Super Heavy separates and passes back through the frame a
       // few moments after liftoff — it doesn't visibly land here,
       // just flies through and fades, same as the Starship does
-      // later from the Terms page button.
+      // later when //Prepare for landing// is used.
       setTimeout(passBoosterThrough, 1500);
     });
   }
@@ -9305,25 +9356,24 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
       barEl.textContent = buildBar(pct);
       if (pct >= 100){
         clearInterval(timer);
-        fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(false));
+        fuelRow.insertAdjacentElement("afterend", buildLaunchBtn());
       }
     }, 300);
   }
 
   if (isFired()){
-    // Still in orbit — bar's full, launch is spent until it lands.
+    // Still in orbit — bar's full, landing control is waiting.
     startBtn.disabled = true;
     const fuelRow = buildFuelRow(100);
     protocolRow.insertAdjacentElement("afterend", fuelRow);
-    fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(true));
+    fuelRow.insertAdjacentElement("afterend", buildPrepareLandingBtn());
   } else if (isReady()){
-    // Landed and auto-refueled (see the Terms page orbiter-landing
-    // IIFE below) — skip the fueling wait entirely, go straight to a
-    // ready //LAUNCH//.
+    // Landed and auto-refueled — skip the fueling wait entirely, go
+    // straight to a ready //LAUNCH//.
     startBtn.disabled = true;
     const fuelRow = buildFuelRow(100);
     protocolRow.insertAdjacentElement("afterend", fuelRow);
-    fuelRow.insertAdjacentElement("afterend", buildLaunchBtn(false));
+    fuelRow.insertAdjacentElement("afterend", buildLaunchBtn());
   } else {
     const savedStart = getStartTime();
     if (savedStart !== null) {
@@ -9336,54 +9386,6 @@ document.addEventListener("bc:langchange", syncAlienHeroText);
       });
     }
   }
-})();
-
-/* Orbiter's own landing — separate from the boosters (which return
-   near launch, automatically) and from the Terms page, not the
-   mainpage. Only shown while the rocket is actually "in orbit" (i.e.
-   the visitor has launched and hasn't landed yet — same bc-launch-
-   fired flag the mainpage uses). Landing deorbits, lands, and auto-
-   refuels in one step: it doesn't reset all the way back to //Start
-   loading//, it leaves the mainpage with a ready //LAUNCH// waiting
-   (see isReady() in the launch protocol IIFE above). */
-(function(){
-  const row = document.getElementById("orbiterLandingRow");
-  const btn = document.getElementById("orbiterLandingBtn");
-  if (!row || !btn) return;
-
-  const KEY_FIRED = "bc-launch-fired";
-  const KEY_START = "bc-launch-start-time";
-  const KEY_READY = "bc-launch-ready";
-
-  function isFired(){
-    try { return localStorage.getItem(KEY_FIRED) === "1"; } catch (e) { return false; }
-  }
-
-  if (!isFired()) return;
-  row.hidden = false;
-
-  btn.addEventListener("click", () => {
-    btn.disabled = true;
-    setTimeout(() => {
-      const slot = document.getElementById("nextToolSvgSlot");
-      if (slot){
-        const starship = document.createElement("div");
-        starship.className = "tool-card-starship-pass";
-        slot.appendChild(starship);
-      }
-      // Give the landing animation its full ~3.8s to play out on
-      // whichever page happens to be showing it before the reload
-      // that closes the cycle wipes it.
-      setTimeout(() => {
-        try {
-          localStorage.removeItem(KEY_START);
-          localStorage.removeItem(KEY_FIRED);
-          localStorage.setItem(KEY_READY, "1");
-        } catch (e) { /* storage unavailable */ }
-        location.reload();
-      }, 3800);
-    }, 7000);
-  });
 })();
 
 /* Cookie consent banner: per-category choice, gates GA4/AdSense
