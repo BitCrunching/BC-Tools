@@ -1949,7 +1949,7 @@ footer a{
   margin-top:24px;
   padding:56px 24px;
   border-radius:28px;
-  border:2px dashed var(--border);
+  border:2px dashed #ffffff;
   text-align:center;
   cursor:pointer;
   transition:.25s;
@@ -1968,6 +1968,14 @@ footer a{
   background:rgba(255,255,255,.06);
 }
 
+.context-continue-btn{
+  display:block;
+  width:100%;
+  margin-top:14px;
+  box-sizing:border-box;
+}
+.context-continue-btn[hidden]{ display:none; }
+
 #page-convert .tool-drop.active{
   border-color:#7626f5;
   background:rgba(118,38,245,.1);
@@ -1977,6 +1985,7 @@ footer a{
   border-color:#30c4ff;
   background:rgba(48,196,255,.1);
 }
+
 
 .tool-controls{
   display:grid;
@@ -2724,10 +2733,6 @@ html[data-theme="light"] .context-remove-btn:hover{
   :is(#page-context, .context-fullscreen-overlay) .context-text-box.selected .context-text-resize-handle{
     display:flex;
   }
-  :is(#page-context, .context-fullscreen-overlay) .context-text-drag-handle{
-    width:26px;
-    font-size:20px;
-  }
   :is(#page-context, .context-fullscreen-overlay) .context-page-btn{
     width:27px;
     height:27px;
@@ -2976,9 +2981,13 @@ html[data-theme="light"] .context-remove-btn:hover{
 /* Mobile: every pixel of padding here and on the card itself is a
    pixel not spent showing the actual PDF page — on a narrow phone the
    36px card padding + 24px panel padding compounded (visible on both
-   sides) to make an A4 page look like a small poster in a big frame. */
+   sides) to make an A4 page look like a small poster in a big frame.
+   Scoped to :has(#ctEditor:not([hidden])) so this only kicks in once a
+   PDF is actually loaded and the canvas is showing — before that,
+   #ctDrop should keep the same default .tool-app padding every other
+   tool's drop zone uses, so it renders at the same size/position. */
 @media (max-width:768px){
-  #page-context .tool-app{
+  #page-context .tool-app:has(#ctEditor:not([hidden])){
     /* Left/right/bottom stay tight (that's the space the canvas eats
        into) — only top grows, so the logo/header drop down closer to
        where Convert/Compress sit without shrinking the canvas. */
@@ -2986,7 +2995,7 @@ html[data-theme="light"] .context-remove-btn:hover{
   }
   /* Same idea sideways — nudges the logo/title in from the edge without
      touching .tool-app's own padding (which would shrink the canvas). */
-  #page-context .tool-header{
+  #page-context .tool-app:has(#ctEditor:not([hidden])) .tool-header{
     padding-left:28px;
   }
   #page-context .context-preview-panel{
@@ -2999,8 +3008,6 @@ html[data-theme="light"] .context-remove-btn:hover{
   margin:0 auto;
   max-width:100%;
   width:max-content;
-  border-radius:8px;
-  overflow:hidden;
   background:#fff;
 }
 
@@ -3008,6 +3015,15 @@ html[data-theme="light"] .context-remove-btn:hover{
   display:block;
   max-width:100%;
   height:auto;
+  /* Rounds the canvas's own painted corners directly (a plain CSS
+     replaced-element behavior, no overflow:hidden needed) — moved here
+     from the wrap so overflow:hidden on the wrap no longer clips the
+     box handles in .context-overlay (a sibling of this canvas), which
+     used to disappear whenever a box was dragged close enough to any
+     edge of the page for its drag/resize handle to poke past it. They
+     now stay visible against the dark preview-panel background behind
+     everything instead of getting cut off. */
+  border-radius:8px;
 }
 
 .context-overlay{
@@ -3021,6 +3037,7 @@ html[data-theme="light"] .context-remove-btn:hover{
   align-items:center;
   gap:2px;
   white-space:nowrap;
+  -webkit-touch-callout:none;
 }
 
 .context-text-box.selected .context-text-inner{
@@ -3038,6 +3055,11 @@ html[data-theme="light"] .context-remove-btn:hover{
   cursor:move;
   user-select:none;
   touch-action:none;
+  /* iOS Safari's long-press "Copy / Look Up" callout is governed by
+     this property specifically, separate from user-select — without
+     it, a slightly-too-long press-and-drag on the handle pops up that
+     system menu instead of moving the box. */
+  -webkit-touch-callout:none;
 }
 
 .context-text-resize-handle{
@@ -3054,6 +3076,8 @@ html[data-theme="light"] .context-remove-btn:hover{
   border:2px solid #fff;
   cursor:nwse-resize;
   touch-action:none;
+  user-select:none;
+  -webkit-touch-callout:none;
 }
 
 .context-text-resize-handle svg{
@@ -3092,6 +3116,241 @@ html[data-theme="light"] .context-remove-btn:hover{
   display:flex;
   align-items:center;
   justify-content:center;
+}
+
+/* A signature placed on the page — same drag/resize/remove pattern as
+   .context-text-box, just an <img> instead of editable text. */
+.context-signature-box{
+  position:absolute;
+  cursor:default;
+  -webkit-touch-callout:none;
+}
+.context-signature-box img{
+  display:block;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  user-select:none;
+}
+.context-signature-box .context-text-drag-handle{
+  position:absolute;
+  top:50%;
+  left:-22px;
+  transform:translateY(-50%);
+}
+/* Shared drag-handle look for both text and signature boxes — same
+   flat-circle shape as .context-text-resize-handle/.context-text-remove
+   (18px, solid color, white border), just yellow instead of blue/red. */
+.context-drag-dot{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--context-yellow);
+  border:2px solid #fff;
+  box-sizing:border-box;
+}
+.context-signature-box .context-text-resize-handle{
+  /* Unlike text (which has a desktop font-size dropdown as its resize
+     control, with the drag handle as the mobile-only stand-in), a
+     signature has no other way to resize — so its handle needs to show
+     on every viewport, not just mobile. */
+  display:flex;
+  right:-9px;
+  bottom:-9px;
+}
+
+/* ===== Signature capture modal ===== */
+.context-signature-overlay{
+  position:fixed;
+  inset:0;
+  /* Higher than .context-fullscreen-overlay's z-index:2000 — on
+     mobile the Signature button lives inside that fullscreen editor,
+     so this modal has to render above it, not behind it, or it opens
+     invisibly and every tap on it does nothing visible. */
+  z-index:2100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(10,12,20,.72);
+}
+.context-signature-overlay[hidden]{ display:none; }
+
+.context-signature-modal{
+  width:100%;
+  max-width:480px;
+  max-height:90vh;
+  overflow-y:auto;
+  background:#1d2436;
+  border-radius:24px;
+  padding:24px;
+  box-sizing:border-box;
+  color:#ffffff;
+}
+
+.context-signature-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:20px;
+  font-weight:800;
+  margin-bottom:16px;
+}
+
+.context-signature-close{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,.1);
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+}
+
+.context-signature-hint{
+  font-size:14px;
+  opacity:.75;
+  margin:0 0 14px;
+}
+
+.context-signature-action-btn{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border-radius:16px;
+  border:none;
+  background:var(--accent);
+  color:#000;
+  font-weight:800;
+  font-size:15px;
+  cursor:pointer;
+}
+.context-signature-action-btn--ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.22);
+  color:#fff;
+}
+
+.context-signature-saved-preview{
+  display:block;
+  width:100%;
+  max-height:160px;
+  object-fit:contain;
+  background:#ffffff;
+  border-radius:14px;
+  padding:10px;
+  box-sizing:border-box;
+}
+
+.context-signature-crop-wrap{
+  position:relative;
+  /* No height cap — a portrait phone photo at width:100%/height:auto
+     can render taller than a fixed box, and capping it with
+     overflow:hidden used to just silently clip the bottom off
+     (frequently right where the signature was) instead of showing the
+     full frame. Letting it grow and rely on the modal's own
+     overflow-y:auto to scroll keeps the whole photo visible and keeps
+     the width-ratio crop math below simple (no object-fit letterbox
+     offset to account for). */
+  overflow:hidden;
+  border-radius:14px;
+  background:#000;
+}
+.context-signature-crop-wrap img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.context-signature-crop-box{
+  position:absolute;
+  border:2px dashed #ffffff;
+  box-shadow:0 0 0 2000px rgba(0,0,0,.5);
+  touch-action:none;
+}
+.context-signature-crop-handle{
+  position:absolute;
+  width:20px;
+  height:20px;
+  margin:-10px;
+  border-radius:50%;
+  background:#ffffff;
+  touch-action:none;
+}
+.context-signature-crop-handle[data-h="nw"]{ top:0; left:0; }
+.context-signature-crop-handle[data-h="ne"]{ top:0; right:0; margin-right:-10px; margin-left:auto; left:auto; }
+.context-signature-crop-handle[data-h="sw"]{ bottom:0; left:0; margin-bottom:-10px; margin-top:auto; top:auto; }
+.context-signature-crop-handle[data-h="se"]{ bottom:0; right:0; margin-bottom:-10px; margin-right:-10px; top:auto; left:auto; }
+
+.context-signature-draw-canvas{
+  display:block;
+  width:100%;
+  height:220px;
+  border-radius:14px;
+  background:#ffffff;
+  touch-action:none;
+}
+
+.context-signature-camera-wrap{
+  position:relative;
+  border-radius:14px;
+  overflow:hidden;
+  background:#000;
+}
+.context-signature-camera-wrap video{
+  display:block;
+  width:100%;
+  height:220px;
+  object-fit:cover;
+}
+.context-signature-camera-guides{
+  position:absolute;
+  top:10px;
+  left:10px;
+  right:10px;
+  display:flex;
+  gap:8px;
+}
+.context-signature-camera-badge{
+  padding:5px 10px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:700;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+}
+.context-signature-camera-badge.ok{ background:rgba(34,197,94,.75); }
+.context-signature-camera-badge.warn{ background:rgba(225,29,72,.75); }
+
+.context-signature-clean-preview{
+  border-radius:14px;
+  background:
+    linear-gradient(45deg, #333 25%, transparent 25%),
+    linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%),
+    linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0;
+  background-color:#555;
+  overflow:hidden;
+}
+.context-signature-clean-preview canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  touch-action:none;
+}
+
+.context-signature-threshold-label{
+  display:block;
+  font-size:13px;
+  margin-top:14px;
+}
+.context-signature-threshold-label input{
+  display:block;
+  width:100%;
+  margin-top:6px;
 }
 
 /* Compression level buttons — compress tab only */
@@ -3225,6 +3484,11 @@ html[data-theme="light"] .context-remove-btn:hover{
 }
 
 .result.result-pdf img{
+  object-fit:contain;
+  background:rgba(0,0,0,.18);
+}
+
+.result.result-svg img{
   object-fit:contain;
   background:rgba(0,0,0,.18);
 }
@@ -3571,7 +3835,11 @@ html[data-theme="light"] .context-remove-btn:hover{
 .content-section-compress[data-tool="compress"] .cs-shape{ background:#68e1ff; }
 .content-section-convert[data-tool="combine"] .cs-shape{ background:#ec6f63; }
 .content-section-convert[data-tool="exif"] .cs-shape{ background:#4ade80; }
-.content-section-convert[data-tool="context"] .cs-shape{ background:var(--context-yellow); }
+/* Higher opacity than the other tools' shapes — yellow at the shared
+   .22 opacity blends with the dark page background into a muddy brown
+   rather than reading as yellow, unlike the other (more saturated at
+   low opacity) tool accent colors. */
+.content-section-convert[data-tool="context"] .cs-shape{ background:var(--context-yellow); opacity:.75; }
 
 .content-section-convert[data-tool="convert"] .cs-shape-3,
 .content-section-compress[data-tool="compress"] .cs-shape-3{ bottom:40px; }
@@ -3686,6 +3954,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 .fmt-icon-png::before{ content:"🖼️"; }
 .fmt-icon-webp::before{ content:"🚀"; }
 .fmt-icon-svg::before{ content:"📐"; }
+.fmt-icon-heic::before{ content:"📱"; }
 .fmt-icon-pdf::before{ content:"📄"; }
 .fmt-icon-pros::before{ content:"👍"; }
 .fmt-icon-cons::before{ content:"⚠️"; }
@@ -4703,7 +4972,7 @@ html[data-theme="light"] .context-remove-btn:hover{
             <span class="gfx-lg card-icon icon-convert" role="img" aria-label="Convert icon"></span>
             <h2>Convert</h2>
           </div>
-          <p data-i18n="mp_card_convert_desc">Convert images between JPG, PNG, WEBP, SVG and PDF.</p>
+          <p data-i18n="mp_card_convert_desc">Convert images between JPG, PNG, WEBP, HEIC and PDF.</p>
         </button>
         <button type="button" class="card-readmore go-to-golden-rules" data-tool="convert" data-i18n="mp_card_readmore">Read more</button>
       </div>
@@ -4934,6 +5203,10 @@ html[data-theme="light"] .context-remove-btn:hover{
             <p class="faq-q" data-i18n="cv_faq3_q">Is WEBP better than JPG?</p>
             <p class="faq-a" data-i18n="cv_faq3_a">WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.</p>
           </div>
+          <div class="faq-item-mainpage">
+            <p class="faq-q" data-i18n="cv_faq4_q">Can I convert HEIC photos from my iPhone?</p>
+            <p class="faq-a" data-i18n="cv_faq4_a">Yes. Drop in a .HEIC or .HEIF photo and pick JPG, PNG, or WEBP — Convert decodes it entirely in your browser, no app or upload needed.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -5049,21 +5322,19 @@ html[data-theme="light"] .context-remove-btn:hover{
       </div>
 
       <div class="tool-drop" id="cvDrop" data-i18n="cv_drop_text">Click or drag and drop images or a PDF</div>
-      <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf" multiple hidden>
+      <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
 
       <div class="tool-controls">
         <div class="tool-format-buttons" id="cvFormatPicker">
           <button type="button" class="tool-format-btn" data-value="image/jpeg">JPG</button>
           <button type="button" class="tool-format-btn" data-value="image/png">PNG</button>
           <button type="button" class="tool-format-btn" data-value="image/webp">WEBP</button>
-          <button type="button" class="tool-format-btn" data-value="image/svg+xml">SVG</button>
           <button type="button" class="tool-format-btn" data-value="application/pdf">PDF</button>
           <select class="tool-format-select" id="cvFormatSelect">
             <option value="" selected disabled hidden data-i18n="cv_format_placeholder">Choose a format</option>
             <option value="image/jpeg">JPG</option>
             <option value="image/png">PNG</option>
             <option value="image/webp">WEBP</option>
-            <option value="image/svg+xml">SVG</option>
             <option value="application/pdf">PDF</option>
           </select>
         </div>
@@ -5101,14 +5372,14 @@ html[data-theme="light"] .context-remove-btn:hover{
         <span class="cs-shape cs-shape-2"></span>
       </div>
       <h3 id="cvFormatHelperHeading" data-i18n="cv_pick_heading">Not sure which format to use?</h3>
-      <div id="cvFormatHelperText" data-i18n="cv_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p><ul class="format-pick-sublist"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p><ul class="format-pick-sublist"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p><ul class="format-pick-sublist"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-svg" aria-hidden="true"></span> SVG</p><ul class="format-pick-sublist"><li>Best for vector graphics and icons.</li><li>Stays perfectly sharp at any size.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p><ul class="format-pick-sublist"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div></div>
+      <div id="cvFormatHelperText" data-i18n="cv_pick_default_p"><div class="format-pick-groups"><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p><ul class="format-pick-sublist"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p><ul class="format-pick-sublist"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p><ul class="format-pick-sublist"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-heic" aria-hidden="true"></span> HEIC</p><ul class="format-pick-sublist"><li>iPhone's default photo format — accepted as input.</li><li>Convert it to JPG, PNG, or WEBP for wider compatibility.</li></ul></div><div class="format-pick-group"><p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p><ul class="format-pick-sublist"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div></div>
     </div>
 
     <div class="usecase-picker" id="cvUsecasePicker">
       <p class="format-pick-subheading" data-i18n="cv_ucpick_heading">What are you converting?</p>
       <div class="usecase-buttons">
         <button type="button" class="usecase-btn" data-format="image/jpeg"><span class="fmt-icon fmt-icon-cat-photos" aria-hidden="true"></span> <span data-i18n="cv_ucpick_photo">A photo</span></button>
-        <button type="button" class="usecase-btn" data-format="image/svg+xml"><span class="fmt-icon fmt-icon-cat-logos" aria-hidden="true"></span> <span data-i18n="cv_ucpick_logo">A logo</span></button>
+        <button type="button" class="usecase-btn" data-format="image/png"><span class="fmt-icon fmt-icon-cat-logos" aria-hidden="true"></span> <span data-i18n="cv_ucpick_logo">A logo</span></button>
         <button type="button" class="usecase-btn" data-format="image/png"><span class="fmt-icon fmt-icon-cat-transparency" aria-hidden="true"></span> <span data-i18n="cv_ucpick_transparent">A transparent image</span></button>
         <button type="button" class="usecase-btn" data-format="image/webp"><span class="fmt-icon fmt-icon-cat-websites" aria-hidden="true"></span> <span data-i18n="cv_ucpick_website">A website image</span></button>
         <button type="button" class="usecase-btn" data-format="application/pdf"><span class="fmt-icon fmt-icon-cat-documents" aria-hidden="true"></span> <span data-i18n="cv_ucpick_multi">Multiple images</span></button>
@@ -5146,7 +5417,7 @@ html[data-theme="light"] .context-remove-btn:hover{
       <div class="tool-drop" id="cpDrop" data-i18n="cp_drop_text">Click or drag and drop images</div>
       <input type="file" id="cpInput" accept="image/*" multiple hidden>
 
-      <div class="tool-controls">
+      <div class="tool-controls" id="cpToolControls">
         <div class="compress-level-buttons" id="cpLevelButtons">
           <button type="button" class="compress-level-btn" data-quality="0.9" data-label="Nízká" data-level-key="low">
             <span data-i18n="cp_level_low">Low</span><span data-i18n="cp_level_low_sub" class="level-sub">Best quality</span>
@@ -5288,8 +5559,8 @@ html[data-theme="light"] .context-remove-btn:hover{
         <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
       </div>
 
-      <div class="tool-drop" id="exDrop" data-i18n="ex_drop_text">Click or drag and drop JPEG or PNG images</div>
-      <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple hidden>
+      <div class="tool-drop" id="exDrop" data-i18n="ex_drop_text">Click or drag and drop JPEG, PNG, or SVG images</div>
+      <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
 
       <div class="exif-file-list" id="exFileList"></div>
 
@@ -5345,10 +5616,13 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <div class="tool-drop" id="ctDrop" data-i18n="ctx_drop_text">Click or drag and drop a PDF file</div>
       <input type="file" id="ctInput" accept="application/pdf,.pdf" hidden>
+      <button type="button" class="tool-primary-btn context-continue-btn" id="ctContinueBtn" hidden>Continue where you left off</button>
 
       <div class="context-editor" id="ctEditor" hidden>
         <div class="context-toolbar">
           <button type="button" class="context-tool-btn" id="ctAddTextBtn" data-i18n-label="ctx_addtext_title"><span class="ct-desktop-only" data-i18n="ctx_addtext_desktop">Add text</span><span class="ct-mobile-only" data-i18n="ctx_addtext_mobile">New</span></button>
+
+          <button type="button" class="context-color-trigger" id="ctSignatureBtn" data-i18n-label="ctx_signature_title"><span class="ct-desktop-only" data-i18n="ctx_signature_desktop">Signature</span><span class="ct-mobile-only" data-i18n="ctx_signature_mobile">S</span></button>
 
           <div class="context-style-buttons">
             <button type="button" class="context-style-btn" id="ctUnderlineBtn" aria-pressed="false" data-i18n-label="ctx_underline_title"><u>U</u></button>
@@ -5458,6 +5732,77 @@ html[data-theme="light"] .context-remove-btn:hover{
           <div class="tool-help-bubble-inner"><span class="step-num">4</span><div><p>Click and your edited PDF will download automatically.</p><span class="tool-help-lock-note">Unlocks after step 1</span></div></div>
         </div>
       </div>
+
+      <div class="context-signature-overlay no-invert" id="ctSigOverlay" hidden>
+        <div class="context-signature-modal">
+          <div class="context-signature-header">
+            <span>Signature</span>
+            <button type="button" class="context-signature-close" id="ctSigClose" aria-label="Close">&times;</button>
+          </div>
+
+          <div class="context-signature-step" id="ctSigStepChoose">
+            <div id="ctSigSavedWrap" hidden>
+              <img class="context-signature-saved-preview" id="ctSigSavedPreview" alt="Your saved signature">
+              <button type="button" class="context-signature-action-btn" id="ctSigPlaceSaved">Place on page</button>
+              <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigReplace">Replace signature</button>
+            </div>
+            <div id="ctSigChoiceWrap">
+              <p class="context-signature-hint">Take a photo of your signature on paper, upload one, or draw it below.</p>
+              <button type="button" class="context-signature-action-btn" id="ctSigCameraBtn">Take a photo</button>
+              <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigUploadBtn">Upload a photo</button>
+              <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigDrawBtn">Draw instead</button>
+              <input type="file" id="ctSigFileInput" accept="image/*" hidden>
+            </div>
+          </div>
+
+          <div class="context-signature-step" id="ctSigStepCamera" hidden>
+            <p class="context-signature-hint">Fill the frame with your signature on paper.</p>
+            <div class="context-signature-camera-wrap">
+              <video id="ctSigVideo" autoplay playsinline muted></video>
+              <div class="context-signature-camera-guides" id="ctSigCameraGuides">
+                <span class="context-signature-camera-badge" id="ctSigBadgeLight">Lighting</span>
+                <span class="context-signature-camera-badge" id="ctSigBadgeBlur">Sharpness</span>
+              </div>
+            </div>
+            <p class="context-signature-hint" id="ctSigCameraError" hidden></p>
+            <button type="button" class="context-signature-action-btn" id="ctSigCameraCapture">Capture</button>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigCameraCancel">Cancel</button>
+          </div>
+
+          <div class="context-signature-step" id="ctSigStepCrop" hidden>
+            <p class="context-signature-hint">Drag the corners so the box just covers the signature.</p>
+            <div class="context-signature-crop-wrap" id="ctSigCropWrap">
+              <img id="ctSigCropImg" alt="">
+              <div class="context-signature-crop-box" id="ctSigCropBox">
+                <span class="context-signature-crop-handle" data-h="nw"></span>
+                <span class="context-signature-crop-handle" data-h="ne"></span>
+                <span class="context-signature-crop-handle" data-h="sw"></span>
+                <span class="context-signature-crop-handle" data-h="se"></span>
+              </div>
+            </div>
+            <button type="button" class="context-signature-action-btn" id="ctSigCropNext">Next</button>
+          </div>
+
+          <div class="context-signature-step" id="ctSigStepDraw" hidden>
+            <p class="context-signature-hint">Draw your signature below.</p>
+            <canvas class="context-signature-draw-canvas" id="ctSigDrawCanvas" width="600" height="220"></canvas>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigDrawClear">Clear</button>
+            <button type="button" class="context-signature-action-btn" id="ctSigDrawNext">Next</button>
+          </div>
+
+          <div class="context-signature-step" id="ctSigStepClean" hidden>
+            <p class="context-signature-hint">Fine-tune, then drag over any leftover marks to erase them.</p>
+            <div class="context-signature-clean-preview">
+              <canvas id="ctSigCleanCanvas"></canvas>
+            </div>
+            <label class="context-signature-threshold-label">Sensitivity
+              <input type="range" id="ctSigThreshold" min="0" max="100" value="55">
+            </label>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigEraseReset">Undo erasing</button>
+            <button type="button" class="context-signature-action-btn" id="ctSigSave">Use this signature</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -5552,6 +5897,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <h2 data-i18n="pp_s1_heading">1. Client-Side Processing</h2>
       <p data-i18n="pp_s1_p">BC Tools operates entirely within your web browser. Your uploaded images and files are processed locally on your device. We never upload, view, sell, or store your files on any remote server.</p>
+      <p data-i18n="pp_s1_p2">Our Cleanly tool detects and removes common hidden metadata — EXIF tags like GPS location and camera model in photos, and embedded metadata, editor-authoring attributes, and comments in SVG files. This detection is a best-effort scan for well-known patterns, not an exhaustive guarantee that a file contains zero hidden data of any kind. For anything highly sensitive, we recommend an additional manual check of the file before sharing it.</p>
       <div class="engine-status-card">
         <div class="engine-status-body">
           <div class="engine-status-row" data-i18n="pp_s1_joke">&gt; Our intergalactic business partners have expressed interest in your data but they were let down by the fact, that we have none.</div>
@@ -5629,7 +5975,7 @@ html[data-theme="light"] .context-remove-btn:hover{
     <div class="golden-rules-articles active" data-tool="convert" data-lang="en">
 
       <details class="golden-rules-article">
-        <summary>1. The Complete Guide to Image Formats: JPG vs PNG vs WEBP vs SVG</summary>
+        <summary>1. The Complete Guide to Image Formats: JPG vs PNG vs WEBP</summary>
         <div class="golden-rules-body">
           <p>Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
 
@@ -5645,12 +5991,12 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>WEBP is Google's newer format, and it's genuinely the best of both worlds in most cases: it supports both lossy and lossless compression (so it can act like JPG or like PNG depending on what you need), it supports transparency, and it typically produces smaller files than either JPG or PNG at equivalent quality — often 25-35% smaller than JPG for photos, and significantly smaller than PNG for graphics.</p>
           <p>The one real limitation is compatibility with older software — some older image editors, some email clients, and some older devices don't handle WEBP well. For a modern website, this is rarely a practical concern anymore, but if you're sending a file to someone whose software you don't control, it's worth a thought.</p>
 
-          <h3>SVG: not really a "photo" format at all</h3>
-          <p>SVG is fundamentally different from the other three — it's a vector format, meaning it describes shapes mathematically rather than storing a grid of pixels. This makes it ideal for logos, icons, and illustrations, since it can scale to any size with zero quality loss and typically results in tiny file sizes for simple graphics.</p>
-          <p>What SVG is not good for is photographs. Our Convert tool's SVG output wraps your raster image inside a vector container (since a genuine photo can't be meaningfully converted into pure vector shapes), which is useful for universal embedding on the web but won't give you the "infinite scaling" benefit real vector artwork has. Use SVG conversion when you specifically need a file that behaves well as an embedded web asset, not as a way to shrink photographs.</p>
+          <h3>HEIC: the iPhone format you'll want to convert away from</h3>
+          <p>HEIC (and its close relative HEIF) is Apple's default photo format since iOS 11 — it compresses better than JPG at the same quality, which is why iPhones use it automatically. The catch is compatibility: most non-Apple software, older editing tools, and plenty of websites and upload forms still can't open a HEIC file directly.</p>
+          <p>Convert accepts HEIC/HEIF as an input and decodes it entirely in your browser, so you can drop in a photo straight off an iPhone and get back a JPG, PNG, or WEBP that opens anywhere. There's no HEIC output option, since the whole point of converting is to leave that compatibility gap behind.</p>
 
           <h3>The quick decision rule</h3>
-          <p>Photos with no transparency need → JPG or WEBP. Anything needing transparency or sharp edges (logos, screenshots, graphics) → PNG or WEBP. Need the smallest possible file with modern browser support → WEBP. Need guaranteed universal embedding and don't mind a larger file → SVG or PNG.</p>
+          <p>Photos with no transparency need → JPG or WEBP. Anything needing transparency or sharp edges (logos, screenshots, graphics) → PNG or WEBP. Need the smallest possible file with modern browser support → WEBP.</p>
         </div>
       </details>
 
@@ -5747,9 +6093,6 @@ html[data-theme="light"] .context-remove-btn:hover{
           <h3>Choosing PNG for large photographs by default</h3>
           <p>PNG's lossless compression is fantastic for graphics but a poor fit for photographs, where it produces files far larger than necessary for a quality difference most viewers won't perceive. If you're converting a batch of vacation photos "just to be safe," JPG or WEBP will serve you much better — save PNG specifically for images with transparency, text, or sharp graphic edges.</p>
 
-          <h3>Ignoring the SVG wrapping behavior</h3>
-          <p>If you convert a photograph to SVG expecting the "infinite scalability" benefit real vector art has, you'll be disappointed — a photo wrapped in an SVG container is still fundamentally a raster image underneath, just embedded differently. SVG conversion here is about compatibility and embedding behavior, not about turning a photo into true vector artwork.</p>
-
           <h3>Not checking output before sending it somewhere important</h3>
           <p>For anything going to a client, an employer, or an official submission, it's worth opening the converted file once before sending it — confirming page order in a multi-page PDF, checking that transparency actually came through correctly, or verifying the file isn't unexpectedly huge. It takes a few seconds and avoids the much more time-consuming problem of a bounced submission or an embarrassing resend.</p>
         </div>
@@ -5759,7 +6102,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
     <div class="golden-rules-articles" data-tool="convert" data-lang="cs">
       <details class="golden-rules-article">
-        <summary>1. Kompletní průvodce formáty obrázků: JPG vs PNG vs WEBP vs SVG</summary>
+        <summary>1. Kompletní průvodce formáty obrázků: JPG vs PNG vs WEBP</summary>
         <div class="golden-rules-body">
           <p>Každý obrazový formát byl navržen k řešení jiného problému a výběr toho správného má větší vliv na velikost souboru a kvalitu než téměř jakékoli jiné rozhodnutí při přípravě obrázků. Zde je to, co se skutečně děje pod kapotou u každého z nich a kdy na tom opravdu záleží.</p>
           <h3>JPG (JPEG): formát pro fotografie</h3>
@@ -5771,11 +6114,11 @@ html[data-theme="light"] .context-remove-btn:hover{
           <h3>WEBP: moderní univerzál</h3>
           <p>WEBP je novější formát od Googlu a ve většině případů skutečně kombinuje výhody obou světů: podporuje ztrátovou i bezztrátovou kompresi, podporuje průhlednost a obvykle produkuje menší soubory než JPG i PNG při srovnatelné kvalitě — často o 25-35 % menší než JPG u fotografií.</p>
           <p>Jediné skutečné omezení je kompatibilita se starším softwarem — některé starší editory obrázků nebo zařízení si s WEBP dobře neporadí. Pro moderní web to dnes prakticky není praktický problém.</p>
-          <h3>SVG: vlastně vůbec ne "fotografický" formát</h3>
-          <p>SVG je od ostatních tří zásadně odlišný — je to vektorový formát, který popisuje tvary matematicky místo ukládání mřížky pixelů. To ho předurčuje pro loga, ikony a ilustrace, protože se dá zvětšit na jakoukoliv velikost beze ztráty kvality.</p>
-          <p>Co SVG neumí dobře, jsou fotografie. Výstup SVG v našem nástroji Convert zabalí váš rastrový obrázek do vektorového kontejneru (protože skutečnou fotku nelze smysluplně převést na čisté vektorové tvary), což je užitečné pro univerzální vkládání na web, ale nedává výhodu "nekonečného zvětšování", kterou má skutečné vektorové umění.</p>
+          <h3>HEIC: formát z iPhonu, který budete chtít převést pryč</h3>
+          <p>HEIC (a jeho blízký příbuzný HEIF) je výchozí formát fotek Applu od iOS 11 — komprimuje lépe než JPG při stejné kvalitě, proto ho iPhony používají automaticky. Háček je v kompatibilitě: většina softwaru mimo Apple, starší editační nástroje i spousta webů a nahrávacích formulářů stále neumí HEIC otevřít přímo.</p>
+          <p>Convert přijímá HEIC/HEIF jako vstup a dekóduje ho celé přímo ve vašem prohlížeči, takže můžete přetáhnout fotku rovnou z iPhonu a dostanete zpět JPG, PNG nebo WEBP, který se otevře kdekoliv. Výstup do HEIC nenabízíme — smyslem převodu je právě tuto mezeru v kompatibilitě opustit.</p>
           <h3>Rychlé pravidlo pro rozhodování</h3>
-          <p>Fotky bez potřeby průhlednosti → JPG nebo WEBP. Cokoliv potřebuje průhlednost nebo ostré hrany (loga, screenshoty, grafika) → PNG nebo WEBP. Potřebujete nejmenší možný soubor s podporou moderních prohlížečů → WEBP. Potřebujete zaručeně univerzální vkládání a nevadí vám větší soubor → SVG nebo PNG.</p>
+          <p>Fotky bez potřeby průhlednosti → JPG nebo WEBP. Cokoliv potřebuje průhlednost nebo ostré hrany (loga, screenshoty, grafika) → PNG nebo WEBP. Potřebujete nejmenší možný soubor s podporou moderních prohlížečů → WEBP.</p>
         </div>
       </details>
 
@@ -5854,8 +6197,6 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>Převod malého, nízko rozlišeného obrázku na jiný formát nepřidá detail ani nezvýší jeho skutečné rozlišení — JPG 400×300 pixelů převedený na PNG je stále obrázek 400×300 pixelů, jen v jiném kontejneru.</p>
           <h3>Volba PNG pro velké fotografie ve výchozím nastavení</h3>
           <p>Bezztrátová komprese PNG je skvělá pro grafiku, ale špatně se hodí pro fotografie, kde produkuje mnohem větší soubory, než je nutné, za rozdíl v kvalitě, který většina diváků nepostřehne.</p>
-          <h3>Ignorování chování obalení SVG</h3>
-          <p>Pokud převedete fotografii do SVG s očekáváním výhody "nekonečné škálovatelnosti", kterou má skutečné vektorové umění, budete zklamáni — fotka zabalená v SVG kontejneru je stále v podstatě rastrový obrázek.</p>
           <h3>Nekontrolování výstupu před odesláním někam důležitým</h3>
           <p>U čehokoliv, co jde klientovi, zaměstnavateli nebo na oficiální podání, se vyplatí otevřít převedený soubor jednou před odesláním — potvrdit pořadí stránek ve vícestránkovém PDF, zkontrolovat, že průhlednost skutečně prošla správně, nebo ověřit, že soubor není neočekávaně obrovský.</p>
         </div>
@@ -5865,7 +6206,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
     <div class="golden-rules-articles" data-tool="convert" data-lang="pl">
       <details class="golden-rules-article">
-        <summary>1. Kompletny przewodnik po formatach obrazów: JPG vs PNG vs WEBP vs SVG</summary>
+        <summary>1. Kompletny przewodnik po formatach obrazów: JPG vs PNG vs WEBP</summary>
         <div class="golden-rules-body">
           <p>Każdy format obrazu został zaprojektowany do rozwiązania innego problemu, a wybór właściwego ma większy wpływ na rozmiar pliku i jakość niż niemal każda inna decyzja przy przygotowywaniu obrazów. Oto co naprawdę dzieje się pod maską każdego z nich i kiedy to naprawdę ma znaczenie.</p>
           <h3>JPG (JPEG): format do zdjęć</h3>
@@ -5877,11 +6218,11 @@ html[data-theme="light"] .context-remove-btn:hover{
           <h3>WEBP: nowoczesny wszechstronny format</h3>
           <p>WEBP to nowszy format od Google i w większości przypadków łączy zalety obu światów: obsługuje kompresję stratną i bezstratną, obsługuje przezroczystość i zazwyczaj daje mniejsze pliki niż JPG lub PNG przy porównywalnej jakości — często o 25-35% mniejsze niż JPG dla zdjęć.</p>
           <p>Jedynym prawdziwym ograniczeniem jest kompatybilność ze starszym oprogramowaniem — niektóre starsze edytory obrazów czy urządzenia nie radzą sobie dobrze z WEBP. Dla nowoczesnej strony internetowej rzadko jest to już praktyczny problem.</p>
-          <h3>SVG: to w ogóle nie jest format "zdjęciowy"</h3>
-          <p>SVG zasadniczo różni się od pozostałych trzech — jest to format wektorowy, opisujący kształty matematycznie zamiast przechowywać siatkę pikseli. Czyni to go idealnym do logo, ikon i ilustracji, ponieważ może skalować się do dowolnego rozmiaru bez utraty jakości.</p>
-          <p>Czego SVG nie robi dobrze, to zdjęcia. Wyjście SVG w naszym narzędziu Convert opakowuje obraz rastrowy w kontener wektorowy (ponieważ prawdziwego zdjęcia nie da się sensownie przekonwertować na czyste kształty wektorowe), co jest przydatne do uniwersalnego osadzania w sieci, ale nie daje korzyści "nieskończonego skalowania", jaką ma prawdziwa grafika wektorowa.</p>
+          <h3>HEIC: format z iPhone'a, od którego zechcesz odejść</h3>
+          <p>HEIC (i jego bliski krewny HEIF) to domyślny format zdjęć Apple od iOS 11 — kompresuje lepiej niż JPG przy tej samej jakości, dlatego iPhone'y używają go automatycznie. Haczyk tkwi w kompatybilności: większość oprogramowania spoza Apple, starsze narzędzia do edycji oraz wiele stron i formularzy przesyłania wciąż nie potrafi otworzyć pliku HEIC bezpośrednio.</p>
+          <p>Convert przyjmuje HEIC/HEIF jako wejście i dekoduje go w całości w Twojej przeglądarce, więc możesz przeciągnąć zdjęcie prosto z iPhone'a i otrzymać z powrotem JPG, PNG lub WEBP, który otworzysz wszędzie. Nie ma opcji zapisu w HEIC — sensem konwersji jest właśnie pozostawienie tej luki w kompatybilności za sobą.</p>
           <h3>Szybka zasada decyzyjna</h3>
-          <p>Zdjęcia bez potrzeby przezroczystości → JPG lub WEBP. Wszystko wymagające przezroczystości lub ostrych krawędzi (logo, zrzuty ekranu, grafika) → PNG lub WEBP. Potrzebujesz najmniejszego możliwego pliku ze wsparciem nowoczesnych przeglądarek → WEBP. Potrzebujesz gwarantowanego uniwersalnego osadzania i nie przeszkadza ci większy plik → SVG lub PNG.</p>
+          <p>Zdjęcia bez potrzeby przezroczystości → JPG lub WEBP. Wszystko wymagające przezroczystości lub ostrych krawędzi (logo, zrzuty ekranu, grafika) → PNG lub WEBP. Potrzebujesz najmniejszego możliwego pliku ze wsparciem nowoczesnych przeglądarek → WEBP.</p>
         </div>
       </details>
 
@@ -5960,8 +6301,6 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>Konwersja małego obrazu o niskiej rozdzielczości na inny format nie dodaje szczegółów ani nie zwiększa jego rzeczywistej rozdzielczości — JPG 400×300 pikseli przekonwertowany na PNG to nadal obraz 400×300 pikseli, tylko w innym kontenerze.</p>
           <h3>Wybieranie PNG dla dużych zdjęć domyślnie</h3>
           <p>Bezstratna kompresja PNG jest fantastyczna dla grafik, ale słabo pasuje do zdjęć, gdzie tworzy pliki znacznie większe niż to konieczne dla różnicy jakości, której większość widzów nie dostrzeże.</p>
-          <h3>Ignorowanie zachowania opakowania SVG</h3>
-          <p>Jeśli przekonwertujesz zdjęcie do SVG, oczekując korzyści "nieskończonej skalowalności", jaką ma prawdziwa grafika wektorowa, będziesz rozczarowany — zdjęcie opakowane w kontener SVG to nadal zasadniczo obraz rastrowy pod spodem.</p>
           <h3>Brak sprawdzenia wyniku przed wysłaniem gdzieś ważnego</h3>
           <p>Dla wszystkiego, co trafia do klienta, pracodawcy lub oficjalnego zgłoszenia, warto raz otworzyć przekonwertowany plik przed wysłaniem — potwierdzić kolejność stron w wielostronicowym PDF, sprawdzić, czy przezroczystość faktycznie zadziałała poprawnie, lub zweryfikować, że plik nie jest nieoczekiwanie ogromny.</p>
         </div>
@@ -6706,6 +7045,25 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>Waiting to strip metadata only for photos that "feel sensitive" means relying on your own judgment call every single time, which is exactly the kind of habit that eventually misses one. Building metadata stripping into your default routine for anything leaving a trusted circle removes the judgment call entirely — it's applied consistently instead of selectively.</p>
         </div>
       </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly for SVGs: Stripping Editor Metadata, Not EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Everything above is about EXIF data embedded in photos — GPS, camera model, timestamps. SVG files don't have EXIF at all, since they're not photos; they're XML text describing shapes. But design tools embed their own kind of hidden metadata into an SVG, and Cleanly detects and strips that too when you drop one in.</p>
+
+          <h3>What design tools embed in an SVG</h3>
+          <p>Illustrator, Inkscape, Sketch, and Figma all write more into the file than the shapes you drew: an embedded <code>&lt;metadata&gt;</code>/RDF block (sometimes including authorship and licensing info via Dublin Core tags), editor-specific namespaced attributes (Inkscape's <code>sodipodi:</code> tags are the most common), and plain XML comments left by the export process. None of it is visible when the SVG renders, but all of it ships with the file to anyone you send it to.</p>
+
+          <h3>Why this matters for sharing</h3>
+          <p>The same reasoning that applies to a photo's GPS tag applies here: metadata you didn't consciously add is still metadata that goes out the door with the file. An icon or logo exported for a client, a marketplace listing, or a public repo can carry along software version info or authorship attribution you never meant to publish. Stripping it before sharing is the same "costs nothing, prevents a surprise" habit as stripping EXIF from a photo.</p>
+
+          <h3>What Cleanly shows you before stripping</h3>
+          <p>Just like it lists the GPS, camera, and date tags found in a photo, Cleanly scans a dropped SVG and shows exactly what it found — embedded metadata, editor authoring data, or comments — so you can see what's actually in the file before removing it, rather than stripping blind.</p>
+
+          <h3>Lossless, not lossy</h3>
+          <p>Unlike photo compression, this isn't a quality tradeoff. The cleanup only removes cruft the browser never rendered in the first place — the shapes, colors, and structure your design tool created are left completely untouched, so the cleaned file looks pixel-identical and can still be opened and edited in a vector editor afterward.</p>
+        </div>
+      </details>
     </div>
 
     <div class="golden-rules-articles" data-tool="exif" data-lang="cs">
@@ -6801,6 +7159,21 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>Čekání na odstranění metadat jen u fotek, které "působí citlivě", znamená spoléhat se na vlastní úsudek pokaždé znovu, což je přesně ten druh zvyku, který nakonec jednu vynechá.</p>
         </div>
       </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly pro SVG: odstranění metadat editoru, ne EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Vše výše se týká dat EXIF vložených ve fotkách — GPS, model fotoaparátu, časová razítka. SVG soubory žádné EXIF nemají, protože to nejsou fotky; je to text XML popisující tvary. Návrhářské nástroje ale do SVG vkládají svůj vlastní druh skrytých metadat a Cleanly je při vložení souboru rozpozná a odstraní.</p>
+          <h3>Co návrhářské nástroje do SVG vkládají</h3>
+          <p>Illustrator, Inkscape, Sketch i Figma zapisují do souboru mnohem víc než jen tvary, které jste nakreslili: vložený blok <code>&lt;metadata&gt;</code>/RDF (někdy včetně informací o autorství a licenci pomocí tagů Dublin Core), atributy s vlastním jmenným prostorem editoru (nejčastěji Inkscape's <code>sodipodi:</code> tagy) a obyčejné komentáře XML zanechané při exportu. Nic z toho není při vykreslení vidět, ale vše to putuje se souborem ke každému, komu ho pošlete.</p>
+          <h3>Proč na tom záleží při sdílení</h3>
+          <p>Stejná logika, která platí pro GPS tag ve fotce, platí i tady: metadata, která jste vědomě nepřidali, jsou stále metadata, která odcházejí se souborem. Ikona nebo logo exportované pro klienta, inzerát na tržišti nebo veřejný repozitář může nést informace o verzi softwaru nebo autorství, které jste nikdy nechtěli zveřejnit.</p>
+          <h3>Co vám Cleanly ukáže před odstraněním</h3>
+          <p>Stejně jako u fotky zobrazí nalezené tagy GPS, fotoaparátu a data, Cleanly prohledá vložené SVG a ukáže přesně, co našlo — vložená metadata, autorská data editoru nebo komentáře — abyste viděli, co v souboru skutečně je, než se to odstraní.</p>
+          <h3>Bezztrátové, nikoli ztrátové</h3>
+          <p>Na rozdíl od komprese fotek zde nejde o kompromis v kvalitě. Čištění odstraňuje jen balast, který prohlížeč nikdy nevykresloval — tvary, barvy a struktura vytvořené vaším návrhářským nástrojem zůstávají zcela nedotčené, takže vyčištěný soubor vypadá pixel po pixelu stejně a lze ho poté stále otevřít a upravovat ve vektorovém editoru.</p>
+        </div>
+      </details>
     </div>
 
     <div class="golden-rules-articles" data-tool="exif" data-lang="pl">
@@ -6894,6 +7267,21 @@ html[data-theme="light"] .context-remove-btn:hover{
           <p>Usuwanie metadanych chroni tylko zdjęcia, które usuniesz przed udostępnieniem — nie naprawia retroaktywnie zdjęć już gdzieś opublikowanych z nienaruszonymi metadanymi.</p>
           <h3>Traktowanie tego jako sporadycznego zadania wszystko-albo-nic</h3>
           <p>Czekanie z usuwaniem metadanych tylko na zdjęcia, które "wydają się wrażliwe", oznacza poleganie na własnej ocenie za każdym razem, co jest dokładnie tym rodzajem nawyku, który w końcu coś przeoczy.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly dla SVG: usuwanie metadanych edytora, nie EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Wszystko powyższe dotyczy danych EXIF osadzonych w zdjęciach — GPS, model aparatu, znaczniki czasu. Pliki SVG w ogóle nie mają EXIF, ponieważ nie są zdjęciami — to tekst XML opisujący kształty. Narzędzia projektowe osadzają jednak w SVG własny rodzaj ukrytych metadanych, a Cleanly wykrywa je i usuwa, gdy taki plik przeciągniesz.</p>
+          <h3>Co narzędzia projektowe osadzają w SVG</h3>
+          <p>Illustrator, Inkscape, Sketch i Figma zapisują w pliku znacznie więcej niż tylko narysowane kształty: osadzony blok <code>&lt;metadata&gt;</code>/RDF (czasem zawierający informacje o autorstwie i licencji poprzez tagi Dublin Core), atrybuty z niestandardową przestrzenią nazw edytora (najczęściej tagi <code>sodipodi:</code> z Inkscape) oraz zwykłe komentarze XML pozostawione przez proces eksportu. Nic z tego nie jest widoczne podczas renderowania, ale wszystko to trafia razem z plikiem do każdego, komu go wyślesz.</p>
+          <h3>Dlaczego ma to znaczenie przy udostępnianiu</h3>
+          <p>Ta sama logika, która dotyczy tagu GPS w zdjęciu, dotyczy i tutaj: metadane, których świadomie nie dodałeś, nadal są metadanymi, które wychodzą razem z plikiem. Ikona lub logo wyeksportowane dla klienta, ogłoszenie na platformie sprzedażowej lub publiczne repozytorium mogą nieść informacje o wersji oprogramowania lub autorstwie, których nigdy nie zamierzałeś publikować.</p>
+          <h3>Co Cleanly pokazuje przed usunięciem</h3>
+          <p>Tak samo jak wyświetla znalezione tagi GPS, aparatu i daty w zdjęciu, Cleanly skanuje przeciągnięty plik SVG i pokazuje dokładnie, co znalazł — osadzone metadane, dane autorskie edytora lub komentarze — abyś zobaczył, co faktycznie jest w pliku, zanim zostanie to usunięte.</p>
+          <h3>Bezstratne, nie stratne</h3>
+          <p>W przeciwieństwie do kompresji zdjęć nie jest to kompromis jakościowy. Czyszczenie usuwa tylko balast, którego przeglądarka nigdy nie renderowała — kształty, kolory i struktura stworzone przez Twoje narzędzie projektowe pozostają całkowicie nietknięte, więc wyczyszczony plik wygląda piksel w piksel identycznie i nadal można go otworzyć oraz edytować w edytorze wektorowym.</p>
         </div>
       </details>
     </div>
@@ -8022,6 +8410,7 @@ const translations = {
     pp_updated: "Naposledy aktualizováno: srpen 2026",
     pp_s1_heading: "1. Zpracování na straně klienta",
     pp_s1_p: "BC Tools funguje zcela ve vašem webovém prohlížeči. Vaše nahrané obrázky a soubory jsou zpracovávány lokálně na vašem zařízení. Vaše soubory nikdy nenahráváme, neprohlížíme, neprodáváme ani neukládáme na žádném vzdáleném serveru.",
+    pp_s1_p2: "Náš nástroj Cleanly detekuje a odstraňuje běžná skrytá metadata — EXIF tagy jako GPS polohu nebo model fotoaparátu ve fotkách a vložená metadata, autorské atributy editoru a komentáře v SVG souborech. Tato detekce je vyhledávání dobře známých vzorů v nejlepší možné míře, nikoli vyčerpaná záruka, že soubor neobsahuje žádná skrytá data. U čehokoliv citlivého doporučujeme před sdílením ještě ruční kontrolu souboru.",
     pp_s1_joke: "&gt; Naši mezigalaktičtí obchodní partneři projevili zájem. S lítostí jim oznamujeme, že nemáme co nabídnout.",
     pp_s2_heading: "2. Hostingová infrastruktura",
     pp_s2_p: "Naše webová stránka a doména využívají standardní infrastrukturu třetích stran. Tyto platformy zpracovávají základní, neidentifikovatelná síťová data (například IP adresy) výhradně za účelem zajištění bezpečného provozu webu.",
@@ -8071,14 +8460,14 @@ const translations = {
     mp_hero_p3: "Rychlé, jednoduché a dostupné odkudkoli ve vesmíru.",
     mp_hero_p4: "...počkat, naše systémy zaznamenaly neoprávněný únik paměti z interního úložiště BC Tools, který byste si asi neměli číst.",
     mp_cards_heading: "Začněte s Creative Hubem:",
-    mp_card_convert_desc: "Převádějte obrázky mezi formáty JPG, PNG, WEBP, SVG i PDF.",
+    mp_card_convert_desc: "Převádějte obrázky mezi formáty JPG, PNG, WEBP, HEIC i PDF.",
     mp_card_compress_desc: "Komprimujte obrázky na libovolnou velikost bez viditelné ztráty kvality.",
     mp_card_combine_desc: "Kombinujte více PDF souborů do jednoho v libovolném pořadí.",
-    mp_card_exif_desc: "Odstraňte ze svých fotek skrytá metadata jako GPS polohu nebo model fotoaparátu před jejich sdílením.",
+    mp_card_exif_desc: "Odstraňte ze svých fotek skrytá metadata jako GPS polohu nebo model fotoaparátu — a vyčistěte SVG od balastu z editoru — než je budete sdílet.",
     mp_card_context_desc: "Přidejte vlastní text přímo do PDF — popisky, poznámky, podpisy — a stáhněte si ho.",
-    ex_drop_text: "Klikněte nebo přetáhněte JPEG či PNG obrázky",
+    ex_drop_text: "Klikněte nebo přetáhněte JPEG, PNG či SVG obrázky",
     ex_strip_btn: "Odstranit metadata a stáhnout",
-    ex_help1: "Sem přetáhněte JPEG nebo PNG obrázky, nebo klikněte a vyberte je z počítače.",
+    ex_help1: "Sem přetáhněte JPEG, PNG nebo SVG obrázky, nebo klikněte a vyberte je z počítače.",
     ex_help2: "Podívejte se, jaká metadata byla v každé fotce nalezena – poloha, fotoaparát, datum – ještě před jejich odstraněním.",
     ex_help3: "Klikněte a čisté kopie vašich fotek se automaticky stáhnou.",
     ex_faq1_q: "Jaká metadata tento nástroj najde?",
@@ -8218,7 +8607,7 @@ const translations = {
     cv_table_heading: "Porovnání formátů JPG, PNG, WEBP i SVG",
     cv_table_lead: "Každý formát se hodí na něco jiného. Tady je rychlý přehled, který vám pomůže vybrat ten správný.",
     cv_pick_heading: "Nevíte, jaký formát použít?",
-    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro běžné fotografie.</li><li>Malé soubory, skvělá kompatibilita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro loga, snímky obrazovky a průhlednost.</li><li>Bezztrátová kvalita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro weby.</li><li>Menší soubory s podporou průhlednosti.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> SVG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro vektorovou grafiku a ikony.</li><li>Zůstává dokonale ostré v jakékoli velikosti.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro sdílení více obrázků jako jednoho dokumentu.</li><li>Můžete je také sloučit pomocí našeho nástroje Combine.</li></ul></div></div>",
+    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro běžné fotografie.</li><li>Malé soubory, skvělá kompatibilita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro loga, snímky obrazovky a průhlednost.</li><li>Bezztrátová kvalita.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro weby.</li><li>Menší soubory s podporou průhlednosti.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-heic\" aria-hidden=\"true\"></span> HEIC</p><ul class=\"format-pick-sublist\"><li>Výchozí formát fotek iPhonu — přijímáme jako vstup.</li><li>Převeďte ho na JPG, PNG nebo WEBP pro širší kompatibilitu.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Nejlepší pro sdílení více obrázků jako jednoho dokumentu.</li><li>Můžete je také sloučit pomocí našeho nástroje Combine.</li></ul></div></div>",
     cv_article1_heading: "Začínáte s konverzí obrázků?",
     cv_article1_p: "Každý formát obrázku byl navržen k řešení jiného problému a výběr toho správného má větší vliv na velikost souboru a kvalitu než téměř jakékoli jiné rozhodnutí, které při přípravě obrázků uděláte. Tady je to, co se skutečně děje pod pokličkou u každého z nich, a kdy na tom opravdu záleží.",
     cv_article1_p2: "Chcete vědět víc? Přečtěte si vše — je to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">jen jedno kliknutí daleko.</a>",
@@ -8347,6 +8736,8 @@ const translations = {
     cv_faq2_a: "Ano, až 5 obrázků lze stáhnout samostatně, více jak 5 obrázků se pak převede a stáhne v jednom ZIP souboru.",
     cv_faq3_q: "Je WEBP lepší než JPG?",
     cv_faq3_a: "WEBP obvykle dosahuje menší velikosti souboru při srovnatelné kvalitě, ale JPG má širší podporu ve starších aplikacích.",
+    cv_faq4_q: "Můžu převést HEIC fotky z iPhonu?",
+    cv_faq4_a: "Ano. Přetáhněte fotku .HEIC nebo .HEIF a vyberte JPG, PNG nebo WEBP — Convert ji celou dekóduje přímo ve vašem prohlížeči, bez aplikace nebo nahrávání.",
     cp_drop_text: "Klikněte nebo přetáhněte obrázky",
     cp_level_low: "Nízká",
     cp_level_low_sub: "Nejlepší kvalita",
@@ -8505,6 +8896,7 @@ const translations = {
     pp_updated: "Last Updated: August 2026",
     pp_s1_heading: "1. Client-Side Processing",
     pp_s1_p: "BC Tools operates entirely within your web browser. Your uploaded images and files are processed locally on your device. We never upload, view, sell, or store your files on any remote server.",
+    pp_s1_p2: "Our Cleanly tool detects and removes common hidden metadata — EXIF tags like GPS location and camera model in photos, and embedded metadata, editor-authoring attributes, and comments in SVG files. This detection is a best-effort scan for well-known patterns, not an exhaustive guarantee that a file contains zero hidden data of any kind. For anything highly sensitive, we recommend an additional manual check of the file before sharing it.",
     pp_s1_joke: "&gt; Our intergalactic business partners have expressed interest in your data but they were let down by the fact, that we have none.",
     pp_s2_heading: "2. Hosting Infrastructure",
     pp_s2_p: "Our website and domain utilize standard third-party infrastructure. These platforms process basic, non-identifiable network data (like IP addresses) solely to keep the site online and secure.",
@@ -8556,14 +8948,14 @@ const translations = {
     mp_hero_p3: "Our tools are built to be the fastest, simplest, and accessible from anywhere in the universe.",
     mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.",
     mp_cards_heading: "Start with Creative Hub:",
-    mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, SVG and PDF.",
+    mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, HEIC and PDF.",
     mp_card_compress_desc: "Reduce image size while keeping quality.",
     mp_card_combine_desc: "Merge multiple PDF files into a single document in any order you like.",
-    mp_card_exif_desc: "Remove hidden metadata like GPS location or camera model from your photos before sharing them.",
+    mp_card_exif_desc: "Remove hidden metadata like GPS location or camera model from your photos — and clean editor bloat out of SVGs — before sharing them.",
     mp_card_context_desc: "Add your own text directly onto a PDF — captions, notes, signatures — then download it.",
-    ex_drop_text: "Click or drag and drop JPEG or PNG images",
+    ex_drop_text: "Click or drag and drop JPEG, PNG, or SVG images",
     ex_strip_btn: "Strip metadata and download",
-    ex_help1: "Drop your JPEG or PNG images here, or click to choose them from your computer.",
+    ex_help1: "Drop your JPEG, PNG, or SVG images here, or click to choose them from your computer.",
     ex_help2: "See exactly what metadata was found in each photo — location, camera, date — before anything is removed.",
     ex_help3: "Click and clean copies of your photos will download automatically.",
     ex_faq1_q: "What metadata does this tool find?",
@@ -8698,7 +9090,7 @@ const translations = {
     cv_drop_text: "Click or drag and drop images or a PDF",
     cv_format_placeholder: "Choose a format",
     cv_pick_heading: "Not sure which format to use?",
-    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> SVG</p><ul class=\"format-pick-sublist\"><li>Best for vector graphics and icons.</li><li>Stays perfectly sharp at any size.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div>",
+    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Best for everyday photos.</li><li>Small files, great compatibility.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Best for logos, screenshots, and transparency.</li><li>Lossless quality.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Best for websites.</li><li>Smaller files with transparency support.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-heic\" aria-hidden=\"true\"></span> HEIC</p><ul class=\"format-pick-sublist\"><li>iPhone's default photo format — accepted as input.</li><li>Convert it to JPG, PNG, or WEBP for wider compatibility.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Best for sharing multiple images as one document.</li><li>You can also merge them with our Combine tool.</li></ul></div></div>",
     cv_ucpick_heading: "What are you converting?",
     cv_ucpick_photo: "A photo",
     cv_ucpick_logo: "A logo",
@@ -8842,6 +9234,8 @@ const translations = {
     cv_faq2_a: "Yes, up to 5 images download individually; more than 5 are converted and downloaded together in one ZIP file.",
     cv_faq3_q: "Is WEBP better than JPG?",
     cv_faq3_a: "WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.",
+    cv_faq4_q: "Can I convert HEIC photos from my iPhone?",
+    cv_faq4_a: "Yes. Drop in a .HEIC or .HEIF photo and pick JPG, PNG, or WEBP — Convert decodes it entirely in your browser, no app or upload needed.",
     cp_drop_text: "Click or drag and drop images",
     cp_level_low: "Low",
     cp_level_low_sub: "Best quality",
@@ -8993,6 +9387,7 @@ const translations = {
     pp_updated: "Ostatnia aktualizacja: sierpień 2026",
     pp_s1_heading: "1. Przetwarzanie po stronie klienta",
     pp_s1_p: "BC Tools działa całkowicie w Twojej przeglądarce internetowej. Przesłane obrazy i pliki są przetwarzane lokalnie na Twoim urządzeniu. Nigdy nie przesyłamy, nie przeglądamy, nie sprzedajemy ani nie przechowujemy Twoich plików na żadnym zdalnym serwerze.",
+    pp_s1_p2: "Nasze narzędzie Cleanly wykrywa i usuwa typowe ukryte metadane — tagi EXIF, takie jak lokalizacja GPS czy model aparatu w zdjęciach, oraz osadzone metadane, atrybuty autorskie edytora i komentarze w plikach SVG. Ta detekcja to najlepsze możliwe skanowanie dobrze znanych wzorców, a nie wyczerpująca gwarancja, że plik nie zawiera żadnych ukrytych danych. W przypadku czegokolwiek wrażliwego zalecamy dodatkową ręczną kontrolę pliku przed udostępnieniem.",
     pp_s1_joke: "&gt; Nasi międzygalaktyczni partnerzy biznesowi wyrazili zainteresowanie. Z przykrością informujemy ich, że nie mamy niczego do udostępnienia.",
     pp_s2_heading: "2. Infrastruktura hostingowa",
     pp_s2_p: "Nasza strona internetowa i domena korzystają ze standardowej infrastruktury stron trzecich. Platformy te przetwarzają podstawowe, niemożliwe do zidentyfikowania dane sieciowe (takie jak adresy IP) wyłącznie w celu utrzymania bezpiecznego działania strony.",
@@ -9042,14 +9437,14 @@ const translations = {
     mp_hero_p3: "Szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
     mp_hero_p4: "...czekaj, nasze systemy wykryły nieautoryzowany wyciek pamięci z wewnętrznego magazynu BC Tools, którego prawdopodobnie nie powinieneś czytać.",
     mp_cards_heading: "Zacznij od Creative Hub:",
-    mp_card_convert_desc: "Konwertuj obrazy między formatami JPG, PNG, WEBP, SVG i PDF.",
+    mp_card_convert_desc: "Konwertuj obrazy między formatami JPG, PNG, WEBP, HEIC i PDF.",
     mp_card_compress_desc: "Zmniejsz rozmiar obrazu przy zachowaniu jakości.",
     mp_card_combine_desc: "Połącz wiele plików PDF w jeden dokument w dowolnej kolejności.",
-    mp_card_exif_desc: "Usuń ukryte metadane, takie jak lokalizacja GPS czy model aparatu, zanim udostępnisz swoje zdjęcia.",
+    mp_card_exif_desc: "Usuń ukryte metadane, takie jak lokalizacja GPS czy model aparatu, ze zdjęć — i wyczyść pliki SVG z balastu edytora — zanim je udostępnisz.",
     mp_card_context_desc: "Dodaj własny tekst bezpośrednio do PDF-u — podpisy, notatki, sygnatury — a potem go pobierz.",
-    ex_drop_text: "Kliknij lub przeciągnij i upuść obrazy JPEG lub PNG",
+    ex_drop_text: "Kliknij lub przeciągnij i upuść obrazy JPEG, PNG lub SVG",
     ex_strip_btn: "Usuń metadane i pobierz",
-    ex_help1: "Przeciągnij tutaj obrazy JPEG lub PNG albo kliknij, aby wybrać je z komputera.",
+    ex_help1: "Przeciągnij tutaj obrazy JPEG, PNG lub SVG albo kliknij, aby wybrać je z komputera.",
     ex_help2: "Zobacz dokładnie, jakie metadane zostały znalezione w każdym zdjęciu — lokalizację, aparat, datę — zanim cokolwiek zostanie usunięte.",
     ex_help3: "Kliknij, a czyste kopie Twoich zdjęć zostaną automatycznie pobrane.",
     ex_faq1_q: "Jakie metadane znajduje to narzędzie?",
@@ -9189,7 +9584,7 @@ const translations = {
     cv_table_heading: "Porównanie JPG, PNG, WEBP i SVG",
     cv_table_lead: "Każdy format nadaje się do czegoś innego. Oto krótkie zestawienie, które pomoże Ci wybrać właściwy.",
     cv_pick_heading: "Nie wiesz, jakiego formatu użyć?",
-    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do codziennych zdjęć.</li><li>Małe pliki, świetna kompatybilność.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do logo, zrzutów ekranu i przezroczystości.</li><li>Bezstratna jakość.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Najlepszy do stron internetowych.</li><li>Mniejsze pliki z obsługą przezroczystości.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-svg\" aria-hidden=\"true\"></span> SVG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do grafiki wektorowej i ikon.</li><li>Pozostaje idealnie ostry w każdym rozmiarze.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Najlepszy do udostępniania wielu obrazów jako jednego dokumentu.</li><li>Możesz je również połączyć za pomocą naszego narzędzia Combine.</li></ul></div></div>",
+    cv_pick_default_p: "<div class=\"format-pick-groups\"><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-jpg\" aria-hidden=\"true\"></span> JPG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do codziennych zdjęć.</li><li>Małe pliki, świetna kompatybilność.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-png\" aria-hidden=\"true\"></span> PNG</p><ul class=\"format-pick-sublist\"><li>Najlepszy do logo, zrzutów ekranu i przezroczystości.</li><li>Bezstratna jakość.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-webp\" aria-hidden=\"true\"></span> WEBP</p><ul class=\"format-pick-sublist\"><li>Najlepszy do stron internetowych.</li><li>Mniejsze pliki z obsługą przezroczystości.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-heic\" aria-hidden=\"true\"></span> HEIC</p><ul class=\"format-pick-sublist\"><li>Domyślny format zdjęć iPhone'a — przyjmowany jako wejście.</li><li>Przekonwertuj na JPG, PNG lub WEBP dla szerszej kompatybilności.</li></ul></div><div class=\"format-pick-group\"><p class=\"format-pick-name\"><span class=\"fmt-icon fmt-icon-pdf\" aria-hidden=\"true\"></span> PDF</p><ul class=\"format-pick-sublist\"><li>Najlepszy do udostępniania wielu obrazów jako jednego dokumentu.</li><li>Możesz je również połączyć za pomocą naszego narzędzia Combine.</li></ul></div></div>",
     cv_article1_heading: "Zaczynasz konwertować obrazy?",
     cv_article1_p: "Każdy format obrazu został zaprojektowany, aby rozwiązać inny problem, a wybór właściwego ma większy wpływ na rozmiar pliku i jakość niż niemal każda inna decyzja, którą podejmiesz podczas przygotowywania obrazów. Oto, co faktycznie dzieje się pod maską w każdym z nich i kiedy naprawdę ma to znaczenie.",
     cv_article1_p2: "Chcesz wiedzieć więcej? Przeczytaj w całości — to <a class=\"golden-rules-link-inline go-to-golden-rules\" data-tool=\"convert\">tylko jedno kliknięcie stąd.</a>",
@@ -9318,6 +9713,8 @@ const translations = {
     cv_faq2_a: "Tak, do 5 obrazów pobiera się pojedynczo; więcej niż 5 jest konwertowanych i pobieranych razem w jednym pliku ZIP.",
     cv_faq3_q: "Czy WEBP jest lepszy niż JPG?",
     cv_faq3_a: "WEBP zwykle osiąga mniejszy rozmiar pliku przy porównywalnej jakości, ale JPG ma szersze wsparcie w starszych aplikacjach.",
+    cv_faq4_q: "Czy mogę przekonwertować zdjęcia HEIC z iPhone'a?",
+    cv_faq4_a: "Tak. Przeciągnij zdjęcie .HEIC lub .HEIF i wybierz JPG, PNG lub WEBP — Convert dekoduje je w całości w Twojej przeglądarce, bez aplikacji czy przesyłania.",
     cp_drop_text: "Kliknij lub przeciągnij i upuść obrazy",
     cp_level_low: "Niska",
     cp_level_low_sub: "Najlepsza jakość",
@@ -10138,6 +10535,20 @@ window.addEventListener("load", syncColorBackdrops);
 window.addEventListener("resize", syncColorBackdrops);
 document.addEventListener("bc:langchange", syncColorBackdrops);
 
+/* .tool-app itself grows/shrinks whenever a tool's own content changes
+   size (e.g. a file drop adding result cards) — none of the triggers
+   above fire for that, so the backdrop rectangle would silently go
+   stale until the next full page switch. Watch each tracked .tool-app
+   directly so the backdrop always matches its live height. */
+if (window.ResizeObserver){
+  const toolAppResizeObserver = new ResizeObserver(() => syncColorBackdrops());
+  COLOR_BACKDROP_CONFIGS.forEach(cfg => {
+    const toolPageEl = document.getElementById("page-" + cfg.toolPage);
+    const toolApp = toolPageEl && toolPageEl.querySelector(".tool-app");
+    if (toolApp) toolAppResizeObserver.observe(toolApp);
+  });
+}
+
 function gotoPage(name){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + name).classList.add("active");
@@ -10410,7 +10821,7 @@ if (VALID_PAGES.includes(startPage)) {
 
   function appendPreviewCard(item){
     const card = document.createElement("div");
-    card.className = "result";
+    card.className = "result" + (/\.svg$/i.test(item.name) ? " result-svg" : "");
     card.innerHTML = `
       <img${item.src ? ` src="${item.src}"` : ""} alt="${item.name}">
       <div class="result-name">${item.name}</div>
@@ -10431,7 +10842,6 @@ if (VALID_PAGES.includes(startPage)) {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
-    "image/svg+xml": "svg",
     "application/pdf": "pdf"
   };
 
@@ -10616,8 +11026,16 @@ if (VALID_PAGES.includes(startPage)) {
     }
   }
 
+  /* Browsers that can't natively decode HEIC (everything but Safari)
+     also don't recognize its MIME type — f.type comes back empty
+     rather than "image/heic" — so the extension check is required,
+     not just a nice-to-have fallback like it is for .svg above. */
+  function isHeicFile(f){
+    return f.type === "image/heic" || f.type === "image/heif" || /\.hei[cf]$/i.test(f.name);
+  }
+
   function isImageFile(f){
-    return f.type.startsWith("image/") || /\.svg$/i.test(f.name);
+    return f.type.startsWith("image/") || /\.svg$/i.test(f.name) || isHeicFile(f);
   }
 
   function isPdfFile(f){
@@ -10660,13 +11078,13 @@ if (VALID_PAGES.includes(startPage)) {
   }
 
   // Only show format buttons valid for the current input: images can
-  // target JPG/PNG/WEBP/SVG/PDF, but a PDF input can only export as a
-  // raster image (PDF -> PDF/SVG don't apply).
+  // target JPG/PNG/WEBP/PDF, but a PDF input can only export as a
+  // raster image (PDF -> PDF doesn't apply).
   function updateFormatButtonVisibility(){
     const filesArePdf = files.length > 0 && files.every(isPdfFile);
     formatButtons.forEach(btn => {
       const value = btn.dataset.value;
-      const hide = filesArePdf && (value === "image/svg+xml" || value === "application/pdf");
+      const hide = filesArePdf && value === "application/pdf";
       btn.style.display = hide ? "none" : "";
       if (hide && btn.classList.contains("active")){
         btn.classList.remove("active");
@@ -10675,11 +11093,11 @@ if (VALID_PAGES.includes(startPage)) {
     });
     Array.from(formatSelect.options).forEach(opt => {
       if (!opt.value) return;
-      const hide = filesArePdf && (opt.value === "image/svg+xml" || opt.value === "application/pdf");
+      const hide = filesArePdf && opt.value === "application/pdf";
       opt.hidden = hide;
       opt.disabled = hide;
     });
-    if (filesArePdf && (formatSelect.value === "image/svg+xml" || formatSelect.value === "application/pdf")){
+    if (filesArePdf && formatSelect.value === "application/pdf"){
       formatSelect.value = "";
       selectedFormat = "";
     }
@@ -10732,6 +11150,22 @@ if (VALID_PAGES.includes(startPage)) {
           }
         });
         addRemoveButton(card, file);
+      } else if (isHeicFile(file)){
+        /* Same problem as the PDF branch above, different cause: an
+           <img> pointed straight at raw HEIC bytes just shows a broken
+           image icon in every browser but Safari, even though the file
+           itself is fine and will convert correctly — it needs to be
+           decoded first, same as the real conversion does. */
+        const card = appendPreviewCard({
+          src: "",
+          name: file.name,
+          info: `${(translations[currentLang] || translations.en).preview_original_size} ${formatKB(file.size)}`
+        });
+        const img = card.querySelector("img");
+        convertImageFile(file, "image/png").then(blob => {
+          img.src = URL.createObjectURL(blob);
+        }).catch(() => { img.remove(); });
+        addRemoveButton(card, file);
       } else {
         const card = appendPreviewCard({
           src: URL.createObjectURL(file),
@@ -10769,7 +11203,36 @@ if (VALID_PAGES.includes(startPage)) {
     convertBtn.disabled = files.length === 0;
   });
 
-  function convertImageFile(file, mimeType){
+  /* Loaded on demand (not a static <script> tag) — it's a ~1.3MB WASM
+     decoder bundle, and most visitors never touch a HEIC file, so
+     there's no reason to make everyone download it up front. Cached
+     after the first load so picking multiple HEIC files only pays the
+     download once. */
+  let heic2anyLoadPromise = null;
+  function loadHeic2any(){
+    if (window.heic2any) return Promise.resolve();
+    if (!heic2anyLoadPromise){
+      heic2anyLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/vendor/heic2any.min.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Nepodařilo se načíst HEIC dekodér."));
+        document.head.appendChild(script);
+      });
+    }
+    return heic2anyLoadPromise;
+  }
+
+  async function convertImageFile(file, mimeType){
+    /* HEIC can't be decoded by <img>/<canvas> in any browser but
+       Safari — run it through the WASM decoder first to get a real
+       PNG blob, then hand that to the exact same pipeline below as if
+       it had been a normal image all along. */
+    if (isHeicFile(file)){
+      await loadHeic2any();
+      const decoded = await window.heic2any({ blob: file, toType: "image/png", quality: 0.92 });
+      file = Array.isArray(decoded) ? decoded[0] : decoded;
+    }
     return new Promise((resolve, reject) => {
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
@@ -10784,23 +11247,6 @@ if (VALID_PAGES.includes(startPage)) {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-
-        if (mimeType === "image/svg+xml"){
-          // Wraps the rendered raster image in a valid .svg file — not a
-          // true vector trace, just base64 pixel data inside SVG markup.
-          canvas.toBlob(pngBlob => {
-            URL.revokeObjectURL(objectUrl);
-            if (!pngBlob) { reject(new Error("Nepodařilo se vytvořit obrázek pro SVG.")); return; }
-            const reader = new FileReader();
-            reader.onload = () => {
-              const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><image href="${reader.result}" width="${width}" height="${height}"/></svg>`;
-              resolve(new Blob([svgMarkup], { type: "image/svg+xml" }));
-            };
-            reader.onerror = () => reject(new Error("Nepodařilo se zakódovat obrázek do SVG."));
-            reader.readAsDataURL(pngBlob);
-          }, "image/png");
-          return;
-        }
 
         canvas.toBlob(blob => {
           URL.revokeObjectURL(objectUrl);
@@ -10953,7 +11399,7 @@ if (VALID_PAGES.includes(startPage)) {
         // Images -> images
         status.textContent = dict.cv_status_progress.replace("{done}", 0).replace("{total}", files.length);
         const useZip = files.length > 5;
-        const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/svg+xml": "svg" };
+        const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
         const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
         const zip = useZip ? new JSZip() : null;
         let done = 0;
@@ -11410,6 +11856,7 @@ if (VALID_PAGES.includes(startPage)) {
       // stale "files" array can't be reprocessed by clicking the button
       // again after removing a result card.
       files = [];
+      updateSvgOnlyUI();
     } catch (err){
       console.error(err);
       status.textContent = dict.cp_status_error;
@@ -11620,8 +12067,77 @@ if (VALID_PAGES.includes(startPage)) {
 
   let files = [];
 
+  function isSvgFile(f){
+    return f.type === "image/svg+xml" || /\.svg$/i.test(f.name);
+  }
+
   function isImageFile(f){
-    return f.type === "image/jpeg" || f.type === "image/png" || /\.(jpe?g|png)$/i.test(f.name);
+    return f.type === "image/jpeg" || f.type === "image/png" || /\.(jpe?g|png)$/i.test(f.name) || isSvgFile(f);
+  }
+
+  /* Any xmlns:<prefix> declaration other than the standard SVG-spec
+     "xlink" namespace is editor/authoring-tool territory — Inkscape's
+     inkscape/sodipodi, Illustrator's "ai" namespace, Dublin Core/
+     Creative Commons dc/cc/rdf, or whatever the next tool invents.
+     Rather than hardcode a fixed list of known editors (which drifts
+     out of date and misses whatever wrote the next file), find every
+     declared custom prefix in the document and sweep it generically:
+     its elements, its attributes, and the xmlns declaration itself. */
+  function findCustomNsPrefixes(text){
+    const prefixes = new Set();
+    const nsDeclRe = /xmlns:([\w.-]+)="[^"]*"/gi;
+    let m;
+    while ((m = nsDeclRe.exec(text))){
+      if (m[1].toLowerCase() !== "xlink") prefixes.add(m[1]);
+    }
+    return [...prefixes];
+  }
+
+  /* Pure string-based cleanup — strips editor-only cruft that design
+     tools leave behind (comments, embedded metadata/RDF blocks, any
+     custom-namespaced elements/attributes) and collapses insignificant
+     whitespace. Nothing here touches actual geometry or styling, so
+     the result renders and edits identically to the source — just
+     smaller and stripped of whatever authorship/tooling info the
+     metadata carried. */
+  function optimizeSvgMarkup(text){
+    let out = text;
+    out = out.replace(/<!--[\s\S]*?-->/g, "");
+    out = out.replace(/<\?xml[\s\S]*?\?>/gi, "");
+    out = out.replace(/<!DOCTYPE[\s\S]*?>/gi, "");
+    out = out.replace(/<metadata[\s\S]*?<\/metadata>/gi, "");
+    out = out.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, "");
+
+    findCustomNsPrefixes(out).forEach(prefix => {
+      const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(new RegExp(`<${esc}:[\\w-]+(?:\\s[^>]*)?/>`, "gi"), "");
+      out = out.replace(new RegExp(`<${esc}:[\\w-]+[^>]*>[\\s\\S]*?</${esc}:[\\w-]+>`, "gi"), "");
+      out = out.replace(new RegExp(`\\s+${esc}:[\\w-]+="[^"]*"`, "gi"), "");
+      out = out.replace(new RegExp(`\\s+xmlns:${esc}="[^"]*"`, "gi"), "");
+    });
+
+    out = out.replace(/>\s+</g, "><").trim();
+    return out;
+  }
+
+  async function readSvgFindings(file){
+    const found = [];
+    try {
+      const text = await file.text();
+      if (/<metadata[\s\S]*?<\/metadata>/i.test(text) || /<rdf:RDF/i.test(text)){
+        found.push("🧾 Embedded metadata");
+      }
+      const customNs = findCustomNsPrefixes(text);
+      if (customNs.length){
+        found.push(`🖋️ Editor authoring data (${customNs.join(", ")})`);
+      }
+      if (/<!--[\s\S]*?-->/.test(text)){
+        found.push("💬 Comments");
+      }
+    } catch (err){
+      /* unreadable as text — treat as clean, stripImage will still try */
+    }
+    return found;
   }
 
   function formatSize(bytes){
@@ -11718,11 +12234,11 @@ if (VALID_PAGES.includes(startPage)) {
   async function addFiles(newFiles){
     const picked = [...newFiles].filter(isImageFile);
     for (const file of picked){
-      const tags = await readTags(file);
+      const tags = isSvgFile(file) ? await readSvgFindings(file) : summarizeTags(await readTags(file));
       files.push({
         file,
         src: URL.createObjectURL(file),
-        tags: summarizeTags(tags)
+        tags
       });
     }
     renderList();
@@ -11746,7 +12262,13 @@ if (VALID_PAGES.includes(startPage)) {
     addFiles(e.dataTransfer.files);
   });
 
+  async function stripSvg(file){
+    const text = await file.text();
+    return new Blob([optimizeSvgMarkup(text)], { type: "image/svg+xml" });
+  }
+
   function stripImage(file){
+    if (isSvgFile(file)) return stripSvg(file);
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -11822,6 +12344,7 @@ if (VALID_PAGES.includes(startPage)) {
    without needing to convert existing boxes' positions. */
 (function(){
   const drop = document.getElementById("ctDrop");
+  const continueBtn = document.getElementById("ctContinueBtn");
   const input = document.getElementById("ctInput");
   const editor = document.getElementById("ctEditor");
   const canvas = document.getElementById("ctCanvas");
@@ -11867,6 +12390,7 @@ if (VALID_PAGES.includes(startPage)) {
   let pdfjsDoc = null;
   let pageCount = 1;
   let currentPage = 1;
+  let currentRenderTask = null;
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
@@ -11884,12 +12408,146 @@ if (VALID_PAGES.includes(startPage)) {
   let textBoxes = [];
   let boxIdSeq = 0;
   let selectedBoxId = null;
+  /* { id, page, xPt, topPt, widthPt, heightPt, dataUrl } — a signature
+     placed on the page, positioned the same way as a text box (topPt
+     measured from the top, converted to pdf-lib's bottom-origin space
+     only at download time). */
+  let signatureBoxes = [];
+  let sigBoxIdSeq = 0;
+  let currentFileBytes = null;
 
   function isPdfFile(f){
     return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
   }
 
-  async function loadFile(file){
+  /* ===== Session persistence (IndexedDB) — so a reload/tab-close
+     doesn't lose the loaded PDF and its edits. localStorage was ruled
+     out: it's a ~5-10MB string-only quota, and a base64'd PDF would eat
+     into that fast. IndexedDB has no such practical limit and stores
+     the raw bytes directly — still entirely client-side, nothing ever
+     leaves the browser. */
+  const CTX_DB_NAME = "bctools-context";
+  const CTX_DB_STORE = "session";
+
+  function openCtxDb(){
+    const opened = new Promise((resolve, reject) => {
+      const req = indexedDB.open(CTX_DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(CTX_DB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      /* Fires if another tab/connection still has an older-version
+         connection open — the request then waits indefinitely for that
+         connection to close rather than erroring, which would hang
+         every persistence call forever. Racing against a timeout below
+         is the safety net; there's nothing meaningful to do here on its
+         own since we don't control other tabs' connections. */
+      req.onblocked = () => {};
+    });
+    return Promise.race([
+      opened,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("IndexedDB open timed out")), 1500))
+    ]);
+  }
+
+  async function ctxDbPut(value){
+    let db;
+    try {
+      db = await openCtxDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(CTX_DB_STORE, "readwrite");
+        tx.objectStore(CTX_DB_STORE).put(value, "current");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { /* storage unavailable (private browsing etc.) — skip */
+    } finally { if (db) db.close(); }
+  }
+
+  async function ctxDbGet(){
+    let db;
+    try {
+      db = await openCtxDb();
+      return await new Promise((resolve, reject) => {
+        const req = db.transaction(CTX_DB_STORE, "readonly").objectStore(CTX_DB_STORE).get("current");
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) { return null;
+    } finally { if (db) db.close(); }
+  }
+
+  async function ctxDbClear(){
+    let db;
+    try {
+      db = await openCtxDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(CTX_DB_STORE, "readwrite");
+        tx.objectStore(CTX_DB_STORE).delete("current");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { /* ignore */
+    } finally { if (db) db.close(); }
+  }
+
+  let persistTimer = null;
+  function schedulePersist(){
+    if (!currentFileBytes) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  function persistNow(){
+    if (!currentFileBytes) return;
+    ctxDbPut({
+      fileName: currentFile ? currentFile.name : "document.pdf",
+      pdfBytes: currentFileBytes,
+      textBoxes,
+      signatureBoxes,
+      boxIdSeq,
+      sigBoxIdSeq,
+      currentPage,
+      filenameValue: filenameInput.value
+    });
+  }
+
+  /* Catches anything the targeted schedulePersist() calls elsewhere
+     might miss (style/color toggles, font-size changes) without having
+     to thread a save call through every single toolbar control. */
+  setInterval(() => { if (currentFileBytes) persistNow(); }, 4000);
+
+  /* loadFile() has several `await` points (arrayBuffer, pdf.js parse,
+     renderPage's own canvas render) — without a guard, two overlapping
+     calls (e.g. the startup session-restore below racing a real user
+     upload that happens to land in that same window) can interleave
+     and both end up calling page.render() on the same canvas at once,
+     which pdf.js rejects outright and was observed to leave the editor
+     stuck on "Preparing..." forever. Whichever call arrives first wins
+     the lock; a second one arriving mid-load is simply ignored rather
+     than allowed to race. */
+  let loadFileBusy = false;
+  async function loadFile(file, restoreState){
+    if (loadFileBusy) return;
+    loadFileBusy = true;
+    try {
+      await loadFileInner(file, restoreState);
+    } finally {
+      loadFileBusy = false;
+    }
+  }
+
+  /* restoreState (optional) carries saved boxes/page from a previous
+     session — passed in and applied BEFORE the one renderPage() call
+     below runs, rather than the old approach of loading normally (one
+     render with boxes reset empty) and then re-assigning boxes and
+     calling renderPage() a second time. That second call was racing
+     other renderPage() callers (window resize, fullscreen open) that
+     don't coordinate with each other — both mutating the shared
+     `scale` variable and populating the box overlay — and whichever
+     finished last won, unpredictably. This way there's only ever one
+     render for either a fresh upload or a restore, so there's nothing
+     for it to race against. */
+  async function loadFileInner(file, restoreState){
     if (!isPdfFile(file)){
       status.textContent = "Context only works with PDF files — \"" + file.name + "\" isn't one.";
       return;
@@ -11900,7 +12558,10 @@ if (VALID_PAGES.includes(startPage)) {
     }
     status.textContent = "Preparing \"" + file.name + "\"...";
     currentFile = file;
-    textBoxes = [];
+    textBoxes = restoreState ? (restoreState.textBoxes || []) : [];
+    signatureBoxes = restoreState ? (restoreState.signatureBoxes || []) : [];
+    boxIdSeq = restoreState ? (restoreState.boxIdSeq || 0) : 0;
+    sigBoxIdSeq = restoreState ? (restoreState.sigBoxIdSeq || 0) : 0;
 
     /* Reading/parsing a large PDF blocks the main thread hard enough
        that the browser can skip painting the status text above unless
@@ -11911,6 +12572,10 @@ if (VALID_PAGES.includes(startPage)) {
     let bytes, doc;
     try {
       bytes = await file.arrayBuffer();
+      /* pdf.js can take ownership of/detach the buffer it's given, so
+         keep a separate copy for persistence rather than reusing
+         `bytes` after handing it off below. */
+      currentFileBytes = bytes.slice(0);
       doc = await pdfjsLib.getDocument({ data: bytes }).promise;
     } catch (err){
       console.error(err);
@@ -11919,10 +12584,12 @@ if (VALID_PAGES.includes(startPage)) {
     }
     pdfjsDoc = doc;
     pageCount = pdfjsDoc.numPages;
-    currentPage = 1;
+    currentPage = restoreState ? Math.min(Math.max(1, restoreState.currentPage || 1), pageCount) : 1;
     pageNav.hidden = pageCount <= 1;
     downloadBtn.disabled = false;
-    filenameInput.value = file.name.replace(/\.pdf$/i, "") + "-context";
+    filenameInput.value = restoreState && restoreState.filenameValue
+      ? restoreState.filenameValue
+      : file.name.replace(/\.pdf$/i, "") + "-context";
     updateFilenameTriggerLabel();
 
     /* Render into the canvas while it's still hidden (off-screen canvas
@@ -11946,10 +12613,20 @@ if (VALID_PAGES.includes(startPage)) {
        that the toolbar would otherwise scroll out of reach and the
        site footer would show up underneath it, which is exactly the
        "too long, hard to manipulate" complaint this replaces. */
-    if (mobileMql.matches) openFullscreen();
+    if (mobileMql.matches) await openFullscreen();
+    persistNow();
   }
 
   async function renderPage(){
+    /* Rapid page-nav clicks can fire a new renderPage() before the
+       previous page.render() on this same canvas has finished, and
+       pdf.js throws ("Cannot use the same canvas during multiple
+       render() operations") rather than queueing — cancel any
+       in-flight render first so the canvas is free for the new one. */
+    if (currentRenderTask){
+      currentRenderTask.cancel();
+      currentRenderTask = null;
+    }
     const page = await pdfjsDoc.getPage(currentPage);
     const baseViewport = page.getViewport({ scale: 1 });
 
@@ -12021,7 +12698,15 @@ if (VALID_PAGES.includes(startPage)) {
     overlay.style.width = viewport.width + "px";
     overlay.style.height = viewport.height + "px";
 
-    await page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport }).promise;
+    const renderTask = page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport });
+    currentRenderTask = renderTask;
+    try {
+      await renderTask.promise;
+    } catch (err){
+      if (err && err.name === "RenderingCancelledException") return;
+      throw err;
+    }
+    if (currentRenderTask === renderTask) currentRenderTask = null;
 
     pageLabel.textContent = currentPage + " / " + pageCount;
     prevPageBtn.disabled = currentPage <= 1;
@@ -12044,6 +12729,10 @@ if (VALID_PAGES.includes(startPage)) {
     textBoxes
       .filter(b => b.page === currentPage)
       .forEach(box => overlay.appendChild(buildBoxEl(box)));
+    signatureBoxes
+      .filter(b => b.page === currentPage)
+      .forEach(box => overlay.appendChild(buildSignatureBoxEl(box)));
+    schedulePersist();
   }
 
   function findBoxById(id){
@@ -12091,8 +12780,7 @@ if (VALID_PAGES.includes(startPage)) {
     el.style.top = (box.topPt * scale) + "px";
 
     const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle";
-    handle.textContent = "⠿";
+    handle.className = "context-text-drag-handle context-drag-dot";
     el.appendChild(handle);
 
     const inner = document.createElement("span");
@@ -12107,6 +12795,7 @@ if (VALID_PAGES.includes(startPage)) {
     inner.textContent = box.text;
     inner.addEventListener("input", () => {
       box.text = inner.textContent;
+      schedulePersist();
     });
     inner.addEventListener("keydown", (e) => {
       if (e.key === "Enter"){
@@ -12154,6 +12843,7 @@ if (VALID_PAGES.includes(startPage)) {
           document.removeEventListener("pointermove", onPointerMove);
           document.removeEventListener("pointerup", onPointerUp);
           document.removeEventListener("pointercancel", onPointerUp);
+          schedulePersist();
         }
         document.addEventListener("pointermove", onPointerMove);
         document.addEventListener("pointerup", onPointerUp);
@@ -12168,8 +12858,16 @@ if (VALID_PAGES.includes(startPage)) {
          has to come out before converting to points, same as `scale`
          (the PDF render scale) already does. */
       const zoom = isFullscreen ? fsZoom : 1;
-      box.xPt = Math.max(0, start.xPt + dx / zoom / scale);
-      box.topPt = Math.max(0, start.topPt + dy / zoom / scale);
+      /* Clamped to the page's own rendered bounds — .context-canvas-wrap
+         no longer clips overflow (that was cutting off drag/resize
+         handles near any edge), so without a limit here a box could be
+         dragged arbitrarily far off the page entirely. canvas.clientWidth
+         /Height (CSS px) divided by scale gives the page size in the
+         same PDF-point space box.xPt/topPt are stored in. */
+      const maxXPt = Math.max(0, canvas.clientWidth / scale - 10);
+      const maxTopPt = Math.max(0, canvas.clientHeight / scale - 10);
+      box.xPt = Math.min(maxXPt, Math.max(0, start.xPt + dx / zoom / scale));
+      box.topPt = Math.min(maxTopPt, Math.max(0, start.topPt + dy / zoom / scale));
       el.style.left = (box.xPt * scale) + "px";
       el.style.top = (box.topPt * scale) + "px";
     });
@@ -12198,6 +12896,132 @@ if (VALID_PAGES.includes(startPage)) {
     });
 
     return el;
+  }
+
+  function findSignatureBoxById(id){
+    return signatureBoxes.find(b => b.id === id);
+  }
+
+  function deselectSignatureBox(){
+    overlay.querySelectorAll(".context-signature-box.selected").forEach(elx => elx.classList.remove("selected"));
+  }
+
+  /* Reuses the same visual drag/resize handles as buildBoxEl's text
+     boxes, but resizing here scales the whole image uniformly (keeping
+     its aspect ratio) instead of just bumping a font size. */
+  function buildSignatureBoxEl(box){
+    const el = document.createElement("div");
+    el.className = "context-signature-box";
+    el.dataset.boxId = box.id;
+    el.style.left = (box.xPt * scale) + "px";
+    el.style.top = (box.topPt * scale) + "px";
+    el.style.width = (box.widthPt * scale) + "px";
+    el.style.height = (box.heightPt * scale) + "px";
+
+    const img = document.createElement("img");
+    img.src = box.dataUrl;
+    img.alt = "Signature";
+    el.appendChild(img);
+
+    const handle = document.createElement("span");
+    handle.className = "context-text-drag-handle context-drag-dot";
+    el.appendChild(handle);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "context-text-remove";
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      signatureBoxes = signatureBoxes.filter(b => b.id !== box.id);
+      renderTextBoxes();
+    });
+    el.appendChild(removeBtn);
+
+    function startDrag(handleEl, onMove){
+      handleEl.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
+        function onPointerMove(ev){
+          onMove(ev.clientX - startX, ev.clientY - startY, start);
+        }
+        function onPointerUp(){
+          document.removeEventListener("pointermove", onPointerMove);
+          document.removeEventListener("pointerup", onPointerUp);
+          document.removeEventListener("pointercancel", onPointerUp);
+          schedulePersist();
+        }
+        document.addEventListener("pointermove", onPointerMove);
+        document.addEventListener("pointerup", onPointerUp);
+        document.addEventListener("pointercancel", onPointerUp);
+      });
+    }
+
+    el.addEventListener("pointerdown", () => {
+      deselectBox();
+      deselectSignatureBox();
+      el.classList.add("selected");
+    });
+
+    startDrag(handle, (dx, dy, start) => {
+      const zoom = isFullscreen ? fsZoom : 1;
+      /* Same page-bounds clamp as text boxes — see the comment there. */
+      const maxXPt = Math.max(0, canvas.clientWidth / scale - 10);
+      const maxTopPt = Math.max(0, canvas.clientHeight / scale - 10);
+      box.xPt = Math.min(maxXPt, Math.max(0, start.xPt + dx / zoom / scale));
+      box.topPt = Math.min(maxTopPt, Math.max(0, start.topPt + dy / zoom / scale));
+      el.style.left = (box.xPt * scale) + "px";
+      el.style.top = (box.topPt * scale) + "px";
+    });
+
+    const resizeHandle = document.createElement("span");
+    resizeHandle.className = "context-text-resize-handle";
+    resizeHandle.setAttribute("aria-hidden", "true");
+    resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
+    el.appendChild(resizeHandle);
+
+    startDrag(resizeHandle, (dx, dy, start) => {
+      const zoom = isFullscreen ? fsZoom : 1;
+      const ratio = start.widthPt / start.heightPt;
+      const growth = (dx + dy) / 2 / zoom / scale;
+      box.widthPt = Math.max(20, start.widthPt + growth);
+      box.heightPt = box.widthPt / ratio;
+      el.style.width = (box.widthPt * scale) + "px";
+      el.style.height = (box.heightPt * scale) + "px";
+    });
+
+    return el;
+  }
+
+  function dataUrlToBytes(dataUrl){
+    const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
+    /* Land it at a sensible fixed width (144pt ≈ 2in on a US Letter
+       page) instead of the image's raw pixel size, which could be
+       anywhere from tiny to huge depending on the source photo. */
+    const widthPt = 144;
+    const heightPt = widthPt * (naturalHeight / naturalWidth);
+    const box = {
+      id: ++sigBoxIdSeq,
+      page: currentPage,
+      xPt: (overlay.clientWidth / scale / 2) - (widthPt / 2),
+      topPt: (overlay.clientHeight / scale / 2) - (heightPt / 2),
+      widthPt,
+      heightPt,
+      dataUrl
+    };
+    signatureBoxes.push(box);
+    renderTextBoxes();
   }
 
   function addTextBox(){
@@ -12253,8 +13077,10 @@ if (VALID_PAGES.includes(startPage)) {
      "normal" view that mobile no longer uses. */
   function resetEditor(){
     currentFile = null;
+    currentFileBytes = null;
     pdfjsDoc = null;
     textBoxes = [];
+    signatureBoxes = [];
     selectedBoxId = null;
     drop.hidden = false;
     editor.hidden = true;
@@ -12265,6 +13091,7 @@ if (VALID_PAGES.includes(startPage)) {
     if (typeof window.syncColorBackdrops === "function"){
       window.syncColorBackdrops();
     }
+    ctxDbClear();
   }
 
   removePdfBtn.addEventListener("click", () => {
@@ -12305,7 +13132,7 @@ if (VALID_PAGES.includes(startPage)) {
   positionPageNav();
   mobileMql.addEventListener("change", positionPageNav);
 
-  function openFullscreen(){
+  async function openFullscreen(){
     if (isFullscreen) return;
     isFullscreen = true;
     /* Moves the entire overlay out from under #app-shell's light-theme
@@ -12364,7 +13191,17 @@ if (VALID_PAGES.includes(startPage)) {
       viewportMeta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
     }
     resetFsZoom();
-    if (pdfjsDoc) renderPage();
+    /* Was previously fire-and-forget (not awaited) — that let this
+       render race a caller's own subsequent renderPage() call (e.g.
+       the session-restore flow re-rendering once the real saved boxes
+       are back in memory). Both mutate the shared `scale` variable and
+       both populate the overlay; whichever happened to finish last won,
+       unpredictably — observed as the canvas coming out at the wrong
+       (pre-fullscreen) scale with boxes positioned against a different
+       one. Awaiting here, and at the one call site below, makes
+       fullscreen's own render fully finish before anything after it
+       (including a caller's re-render) can start. */
+    if (pdfjsDoc) await renderPage();
     /* Layout-independent safety net: if any viewport/layout quirk ever
        hides the close button again, the phone's native back gesture or
        button still closes this — it doesn't depend on anything on
@@ -12801,6 +13638,23 @@ if (VALID_PAGES.includes(startPage)) {
         }
       });
 
+      for (const box of signatureBoxes){
+        const page = pages[box.page - 1];
+        if (!page) continue;
+        const pageHeight = page.getHeight();
+        /* Decoding the data URL directly (base64 -> bytes) instead of
+           routing it through fetch()'s Response/stream machinery saves
+           real time here — on iOS Safari, navigator.share() below only
+           works within a short window after the tap that triggered
+           this handler, and every bit of avoidable delay in this loop
+           eats into that budget. */
+        const pngBytes = dataUrlToBytes(box.dataUrl);
+        const pngImage = await pdfDoc.embedPng(pngBytes);
+        const x = box.xPt;
+        const y = pageHeight - box.topPt - box.heightPt;
+        page.drawImage(pngImage, { x, y, width: box.widthPt, height: box.heightPt });
+      }
+
       const outBytes = await pdfDoc.save();
       const blob = new Blob([outBytes], { type: "application/pdf" });
       const chosenName = filenameInput.value.trim() || currentFile.name.replace(/\.pdf$/i, "") + "-context";
@@ -12865,6 +13719,614 @@ if (VALID_PAGES.includes(startPage)) {
     lastKnownWidth = window.innerWidth;
     if (pdfjsDoc) renderPage();
   });
+
+  /* ===== Signature capture: photo -> crop -> background removal ->
+     optional touch-up eraser -> saved as a PNG data URL in
+     localStorage. Everything below runs entirely in the browser —
+     no upload, no server, no ML model. Background removal is plain
+     pixel math: blur the photo to approximate its own lighting, divide
+     it out to flatten shadows/vignetting, then threshold what's left
+     (ink is dark relative to its local surroundings even under bad
+     lighting; paper isn't). */
+  const SIG_STORAGE_KEY = "bctools_ctx_signature_v1";
+  const sigBtn = document.getElementById("ctSignatureBtn");
+  const sigOverlay = document.getElementById("ctSigOverlay");
+  const sigClose = document.getElementById("ctSigClose");
+  const sigStepChoose = document.getElementById("ctSigStepChoose");
+  const sigSavedWrap = document.getElementById("ctSigSavedWrap");
+  const sigSavedPreview = document.getElementById("ctSigSavedPreview");
+  const sigPlaceSavedBtn = document.getElementById("ctSigPlaceSaved");
+  const sigReplaceBtn = document.getElementById("ctSigReplace");
+  const sigChoiceWrap = document.getElementById("ctSigChoiceWrap");
+  const sigUploadBtn = document.getElementById("ctSigUploadBtn");
+  const sigDrawBtn = document.getElementById("ctSigDrawBtn");
+  const sigFileInput = document.getElementById("ctSigFileInput");
+  const sigCameraBtn = document.getElementById("ctSigCameraBtn");
+  const sigStepCamera = document.getElementById("ctSigStepCamera");
+  const sigVideo = document.getElementById("ctSigVideo");
+  const sigCameraGuides = document.getElementById("ctSigCameraGuides");
+  const sigBadgeLight = document.getElementById("ctSigBadgeLight");
+  const sigBadgeBlur = document.getElementById("ctSigBadgeBlur");
+  const sigCameraError = document.getElementById("ctSigCameraError");
+  const sigCameraCaptureBtn = document.getElementById("ctSigCameraCapture");
+  const sigCameraCancelBtn = document.getElementById("ctSigCameraCancel");
+  const sigStepCrop = document.getElementById("ctSigStepCrop");
+  const sigCropWrap = document.getElementById("ctSigCropWrap");
+  const sigCropImg = document.getElementById("ctSigCropImg");
+  const sigCropBox = document.getElementById("ctSigCropBox");
+  const sigCropNextBtn = document.getElementById("ctSigCropNext");
+  const sigStepDraw = document.getElementById("ctSigStepDraw");
+  const sigDrawCanvas = document.getElementById("ctSigDrawCanvas");
+  const sigDrawClearBtn = document.getElementById("ctSigDrawClear");
+  const sigDrawNextBtn = document.getElementById("ctSigDrawNext");
+  const sigStepClean = document.getElementById("ctSigStepClean");
+  const sigCleanCanvas = document.getElementById("ctSigCleanCanvas");
+  const sigThreshold = document.getElementById("ctSigThreshold");
+  const sigEraseResetBtn = document.getElementById("ctSigEraseReset");
+  const sigSaveBtn = document.getElementById("ctSigSave");
+
+  if (sigBtn && sigOverlay){
+    /* In light theme, #app-shell gets filter:invert(1)hue-rotate(180deg)
+       (that's how the whole site fakes light mode) — a CSS filter on an
+       ancestor creates a new containing block for position:fixed
+       descendants, so this modal would be "fixed" relative to #app-shell
+       instead of the real viewport and could render off-screen. Same
+       bug .context-fullscreen-overlay already had to work around by
+       relocating to <body>; do the same here rather than leaving this
+       one broken on real devices in light mode (desktop devtools mobile
+       emulation doesn't reproduce it if the emulated page loads in dark
+       theme, which is why this can pass there and still fail on an
+       actual phone). */
+    document.body.appendChild(sigOverlay);
+
+    let sigSourceCanvas = null; // full-resolution cropped source, before cleanup
+    let sigCleanBaseImageData = null; // result of illumination-normalize + threshold, before erasing
+    let sigCleanCtx = null;
+
+    function getSavedSignature(){
+      try { return localStorage.getItem(SIG_STORAGE_KEY); } catch (e) { return null; }
+    }
+    function setSavedSignature(dataUrl){
+      try { localStorage.setItem(SIG_STORAGE_KEY, dataUrl); } catch (e) { /* storage unavailable */ }
+    }
+
+    function showSigStep(step){
+      [sigStepChoose, sigStepCamera, sigStepCrop, sigStepDraw, sigStepClean].forEach(s => { s.hidden = (s !== step); });
+      if (step !== sigStepCamera) stopCamera();
+    }
+
+    function openSigModal(){
+      const saved = getSavedSignature();
+      if (saved){
+        sigSavedPreview.src = saved;
+        sigSavedWrap.hidden = false;
+        sigChoiceWrap.hidden = true;
+      } else {
+        sigSavedWrap.hidden = true;
+        sigChoiceWrap.hidden = false;
+      }
+      showSigStep(sigStepChoose);
+      sigOverlay.hidden = false;
+    }
+
+    function closeSigModal(){
+      sigOverlay.hidden = true;
+      stopCamera();
+    }
+
+    sigBtn.addEventListener("click", openSigModal);
+    sigClose.addEventListener("click", closeSigModal);
+    sigOverlay.addEventListener("click", (e) => { if (e.target === sigOverlay) closeSigModal(); });
+
+    sigPlaceSavedBtn.addEventListener("click", () => {
+      const saved = getSavedSignature();
+      if (!saved) return;
+      const img = new Image();
+      img.onload = () => {
+        addSignatureBox(saved, img.naturalWidth, img.naturalHeight);
+        closeSigModal();
+      };
+      img.src = saved;
+    });
+
+    sigReplaceBtn.addEventListener("click", () => {
+      sigSavedWrap.hidden = true;
+      sigChoiceWrap.hidden = false;
+    });
+
+    /* ===== Upload + crop ===== */
+    /* Shared by the "Upload a photo" file path and the "Take a photo"
+       camera-capture path below — both end up with a plain image data
+       URL and need the exact same crop-step setup. */
+    function beginCropFromDataUrl(dataUrl){
+      sigCropImg.src = dataUrl;
+      sigCropImg.onload = () => {
+        /* Step must be visible (not display:none) before reading
+           sigCropWrap.clientWidth below — a hidden element always
+           measures 0, which previously collapsed the crop box to
+           0x0px at the top-left corner instead of its intended 70%
+           starting size. */
+        showSigStep(sigStepCrop);
+        /* Start the crop box covering the middle 70% — close enough
+           for a typical signature photo that the corner-drag handles
+           below only need small adjustments, not a full redraw.
+           sigCropWrap.clientHeight is already the right coordinate
+           space on its own (the crop box is positioned absolute inside
+           it, and its max-height:60vh + overflow:hidden already caps
+           it to whatever's actually visible) — multiplying it by the
+           image's aspect ratio, as this used to do, produced a
+           meaningless number and put the box nowhere near the visible
+           photo on portrait-oriented shots. */
+        const w = sigCropWrap.clientWidth, h = sigCropWrap.clientHeight;
+        sigCropBox.style.left = (w * 0.15) + "px";
+        sigCropBox.style.top = (h * 0.15) + "px";
+        sigCropBox.style.width = (w * 0.7) + "px";
+        sigCropBox.style.height = (h * 0.7) + "px";
+      };
+    }
+
+    sigUploadBtn.addEventListener("click", () => sigFileInput.click());
+    sigFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      sigFileInput.value = "";
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => beginCropFromDataUrl(reader.result);
+      reader.readAsDataURL(file);
+    });
+
+    /* ===== Camera capture — live guidance for lighting/sharpness =====
+       No AI: the same plain pixel math used everywhere else in this
+       feature. Lighting is the average luminance of a downsampled
+       frame; sharpness is a Laplacian-variance estimate (blurry frames
+       have low local-contrast variance, since blur is literally a
+       smoothing filter) — both are cheap enough to run every frame. */
+    let sigCameraStream = null;
+    let sigCameraRaf = null;
+
+    function stopCamera(){
+      if (sigCameraRaf) cancelAnimationFrame(sigCameraRaf);
+      sigCameraRaf = null;
+      if (sigCameraStream){
+        sigCameraStream.getTracks().forEach(t => t.stop());
+        sigCameraStream = null;
+      }
+      sigVideo.srcObject = null;
+    }
+
+    function setBadge(el, ok, okText, warnText){
+      el.textContent = ok ? okText : warnText;
+      el.classList.toggle("ok", ok);
+      el.classList.toggle("warn", !ok);
+    }
+
+    function analyzeCameraFrame(){
+      if (!sigVideo.videoWidth){
+        sigCameraRaf = requestAnimationFrame(analyzeCameraFrame);
+        return;
+      }
+      const sampleW = 80;
+      const sampleH = Math.max(1, Math.round(sampleW * (sigVideo.videoHeight / sigVideo.videoWidth)));
+      const sampleCanvas = analyzeCameraFrame._canvas || (analyzeCameraFrame._canvas = document.createElement("canvas"));
+      sampleCanvas.width = sampleW;
+      sampleCanvas.height = sampleH;
+      const ctx = sampleCanvas.getContext("2d");
+      ctx.drawImage(sigVideo, 0, 0, sampleW, sampleH);
+      const frame = ctx.getImageData(0, 0, sampleW, sampleH);
+
+      const gray = new Float32Array(sampleW * sampleH);
+      let sumLum = 0;
+      for (let p = 0, i = 0; i < frame.data.length; i += 4, p++){
+        const l = 0.299 * frame.data[i] + 0.587 * frame.data[i + 1] + 0.114 * frame.data[i + 2];
+        gray[p] = l;
+        sumLum += l;
+      }
+      const avgLum = sumLum / gray.length;
+
+      /* Laplacian variance: how much local pixel-to-pixel contrast
+         exists. Compare each interior pixel to its 4 neighbors — sharp
+         edges (real ink strokes) produce large differences; a blurry
+         photo smooths those differences away. */
+      let sumSq = 0, sumL = 0, n = 0;
+      for (let y = 1; y < sampleH - 1; y++){
+        for (let x = 1; x < sampleW - 1; x++){
+          const idx = y * sampleW + x;
+          const lap = 4 * gray[idx] - gray[idx - 1] - gray[idx + 1] - gray[idx - sampleW] - gray[idx + sampleW];
+          sumSq += lap * lap;
+          sumL += lap;
+          n++;
+        }
+      }
+      const variance = n ? (sumSq / n) - Math.pow(sumL / n, 2) : 0;
+
+      setBadge(sigBadgeLight, avgLum > 70 && avgLum < 235, "Lighting good", avgLum <= 70 ? "Too dark" : "Too bright");
+      setBadge(sigBadgeBlur, variance > 90, "Sharp", "Hold steady / move closer");
+
+      sigCameraRaf = requestAnimationFrame(analyzeCameraFrame);
+    }
+
+    sigCameraBtn.addEventListener("click", async () => {
+      sigCameraError.hidden = true;
+      showSigStep(sigStepCamera);
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        sigCameraError.textContent = "Camera access isn't available in this browser — try Upload instead.";
+        sigCameraError.hidden = false;
+        return;
+      }
+      try {
+        sigCameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        sigVideo.srcObject = sigCameraStream;
+        sigCameraRaf = requestAnimationFrame(analyzeCameraFrame);
+      } catch (err){
+        sigCameraError.textContent = "Couldn't access the camera — check permissions, or use Upload instead.";
+        sigCameraError.hidden = false;
+      }
+    });
+
+    sigCameraCancelBtn.addEventListener("click", () => {
+      showSigStep(sigStepChoose);
+    });
+
+    sigCameraCaptureBtn.addEventListener("click", () => {
+      if (!sigVideo.videoWidth) return;
+      const shot = document.createElement("canvas");
+      shot.width = sigVideo.videoWidth;
+      shot.height = sigVideo.videoHeight;
+      shot.getContext("2d").drawImage(sigVideo, 0, 0);
+      beginCropFromDataUrl(shot.toDataURL("image/png"));
+    });
+
+    /* Drag any corner handle to resize the crop rectangle; clamped to
+       the wrap's own bounds so it can never crop outside the photo. */
+    sigCropBox.querySelectorAll(".context-signature-crop-handle").forEach(handle => {
+      handle.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+        const dir = handle.dataset.h;
+        const startX = e.clientX, startY = e.clientY;
+        const start = {
+          left: sigCropBox.offsetLeft, top: sigCropBox.offsetTop,
+          width: sigCropBox.offsetWidth, height: sigCropBox.offsetHeight
+        };
+        const boundW = sigCropWrap.clientWidth, boundH = sigCropWrap.clientHeight;
+        function onMove(ev){
+          const dx = ev.clientX - startX, dy = ev.clientY - startY;
+          let { left, top, width, height } = start;
+          if (dir.includes("e")) width = Math.max(30, start.width + dx);
+          if (dir.includes("s")) height = Math.max(30, start.height + dy);
+          if (dir.includes("w")){ width = Math.max(30, start.width - dx); left = start.left + start.width - width; }
+          if (dir.includes("n")){ height = Math.max(30, start.height - dy); top = start.top + start.height - height; }
+          left = Math.max(0, left);
+          top = Math.max(0, top);
+          width = Math.min(width, boundW - left);
+          height = Math.min(height, boundH - top);
+          sigCropBox.style.left = left + "px";
+          sigCropBox.style.top = top + "px";
+          sigCropBox.style.width = width + "px";
+          sigCropBox.style.height = height + "px";
+        }
+        function onUp(){
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+        }
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
+      });
+    });
+
+    sigCropNextBtn.addEventListener("click", () => {
+      /* Map the on-screen crop box (CSS px within sigCropWrap) back to
+         the image's native pixel space before drawing it out — the
+         displayed <img> is scaled to fit the modal, but the crop needs
+         to read full-resolution source pixels. */
+      const displayScale = sigCropImg.naturalWidth / sigCropImg.clientWidth;
+      const sx = sigCropBox.offsetLeft * displayScale;
+      const sy = sigCropBox.offsetTop * displayScale;
+      const sw = sigCropBox.offsetWidth * displayScale;
+      const sh = sigCropBox.offsetHeight * displayScale;
+
+      const cropped = document.createElement("canvas");
+      cropped.width = sw;
+      cropped.height = sh;
+      cropped.getContext("2d").drawImage(sigCropImg, sx, sy, sw, sh, 0, 0, sw, sh);
+      sigSourceCanvas = cropped;
+      runCleanup();
+      showSigStep(sigStepClean);
+    });
+
+    /* ===== Draw pad (alternative to a photo) ===== */
+    let drawCtx = null;
+    function setupDrawCanvas(){
+      const rect = sigDrawCanvas.getBoundingClientRect();
+      sigDrawCanvas.width = rect.width;
+      sigDrawCanvas.height = rect.height;
+      drawCtx = sigDrawCanvas.getContext("2d");
+      drawCtx.fillStyle = "#ffffff";
+      drawCtx.fillRect(0, 0, sigDrawCanvas.width, sigDrawCanvas.height);
+      drawCtx.strokeStyle = "#000000";
+      drawCtx.lineWidth = 3;
+      drawCtx.lineCap = "round";
+      drawCtx.lineJoin = "round";
+    }
+
+    sigDrawBtn.addEventListener("click", () => {
+      showSigStep(sigStepDraw);
+      setupDrawCanvas();
+    });
+
+    (function(){
+      let drawing = false;
+      let lastX = 0, lastY = 0;
+      function pos(e){
+        const rect = sigDrawCanvas.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      }
+      sigDrawCanvas.addEventListener("pointerdown", (e) => {
+        drawing = true;
+        try { sigDrawCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        const p = pos(e);
+        lastX = p.x; lastY = p.y;
+      });
+      sigDrawCanvas.addEventListener("pointermove", (e) => {
+        if (!drawing || !drawCtx) return;
+        const p = pos(e);
+        drawCtx.beginPath();
+        drawCtx.moveTo(lastX, lastY);
+        drawCtx.lineTo(p.x, p.y);
+        drawCtx.stroke();
+        lastX = p.x; lastY = p.y;
+      });
+      ["pointerup", "pointercancel"].forEach(evt => sigDrawCanvas.addEventListener(evt, () => { drawing = false; }));
+    })();
+
+    sigDrawClearBtn.addEventListener("click", setupDrawCanvas);
+
+    sigDrawNextBtn.addEventListener("click", () => {
+      const copy = document.createElement("canvas");
+      copy.width = sigDrawCanvas.width;
+      copy.height = sigDrawCanvas.height;
+      copy.getContext("2d").drawImage(sigDrawCanvas, 0, 0);
+      sigSourceCanvas = copy;
+      runCleanup();
+      showSigStep(sigStepClean);
+    });
+
+    /* ===== Cleanup: illumination-normalize, then threshold ===== */
+    function computeCleanedImageData(sourceCanvas, sensitivity){
+      const w = sourceCanvas.width, h = sourceCanvas.height;
+      const srcCtx = sourceCanvas.getContext("2d");
+      const src = srcCtx.getImageData(0, 0, w, h);
+
+      /* Approximates "what the lighting looks like" (a photo of blank
+         paper would just BE this blur) — dividing it back out of the
+         original flattens shadows/vignetting before thresholding, the
+         same trick document-scanner apps use. Built via two downscale
+         -> upscale passes (drawImage only) rather than ctx.filter's
+         blur() — that relies on browser support for canvas filters,
+         which turned out to silently no-op on a real iPhone's Safari:
+         with no actual blur applied, "lighting" became an exact copy
+         of the source, every pixel's normalized luminance collapsed to
+         ~1 (dividing each pixel by itself), and the whole image read
+         as background regardless of the sensitivity slider. Two passes
+         at different scales (rather than one aggressive one) avoids
+         the blocky artifacts a single harsh downscale left behind. */
+      function boxBlur(canvas, downscale){
+        const bw = canvas.width, bh = canvas.height;
+        const smallW = Math.max(1, Math.round(bw / downscale));
+        const smallH = Math.max(1, Math.round(bh / downscale));
+        const small = document.createElement("canvas");
+        small.width = smallW;
+        small.height = smallH;
+        const sctx = small.getContext("2d");
+        sctx.imageSmoothingEnabled = true;
+        sctx.drawImage(canvas, 0, 0, smallW, smallH);
+        const big = document.createElement("canvas");
+        big.width = bw;
+        big.height = bh;
+        const bctx = big.getContext("2d");
+        bctx.imageSmoothingEnabled = true;
+        bctx.drawImage(small, 0, 0, bw, bh);
+        return big;
+      }
+      const blurred = boxBlur(boxBlur(sourceCanvas, 10), 4);
+      const lighting = blurred.getContext("2d").getImageData(0, 0, w, h);
+
+      const out = srcCtx.createImageData(w, h);
+      /* sensitivity 0-100 -> how faint a mark can be and still count as
+         ink. Kept well clear of 1.0 at both ends — letting it reach 1.0
+         (the old formula did at sensitivity=0) meant even near-white
+         background got a sliver of nonzero alpha, showing up as a faint
+         gray wash across the whole image regardless of slider position.
+         The feather band is the thin zone just above the cutoff where
+         alpha ramps instead of snapping, so stroke edges stay smooth. */
+      const cutoff = 0.35 + (sensitivity / 100) * 0.45;
+      const feather = 0.12;
+
+      for (let i = 0; i < src.data.length; i += 4){
+        const r = src.data[i], g = src.data[i + 1], b = src.data[i + 2];
+        const lr = lighting.data[i] || 1, lg = lighting.data[i + 1] || 1, lb = lighting.data[i + 2] || 1;
+        /* Normalized luminance is only used to DECIDE ink vs. background
+           under uneven lighting — the actual output color below comes
+           from the untouched source pixel, not this normalized value.
+           Dividing each color channel separately (the previous version's
+           approach) and using THAT as the output color is what was
+           washing the ink out toward gray: three channels normalized
+           against slightly different local blur values drift apart in
+           hue, even though luminance-wise they still read as "dark". */
+        const nr = Math.min(1, r / lr), ng = Math.min(1, g / lg), nb = Math.min(1, b / lb);
+        const luminance = 0.299 * nr + 0.587 * ng + 0.114 * nb;
+        /* Mostly-opaque core, only feathering right at the edge — the
+           original linear ramp from luminance 0 to the cutoff made even
+           solidly dark ink partially transparent unless it was pure
+           black, which looked faded/blended instead of a solid stroke.
+           But pinning the whole core to a flat 1 also erased the real
+           photo's subtle pen-pressure/skip texture (faint lighter
+           streaks within a stroke, visible in the source photo) — this
+           lets the core itself vary a little (0.85-1) with luminance
+           instead of clipping it all to the same value. */
+        const alpha = luminance >= cutoff ? 0
+          : luminance <= cutoff - feather ? Math.max(0.92, 1 - luminance * 0.15)
+          : (cutoff - luminance) / feather;
+        out.data[i] = r;
+        out.data[i + 1] = g;
+        out.data[i + 2] = b;
+        out.data[i + 3] = Math.round(alpha * 255);
+      }
+
+      /* Real pen strokes often have a highlight/sheen running through
+         them (the ink catching light) — a lighter streak that's still
+         visually part of the stroke, surrounded by dark ink on all
+         sides, not an actual gap to paper. Per-pixel luminance alone
+         can't tell "highlight inside a stroke" from "background", so
+         it was punching real holes through strokes wherever one of
+         these streaks appeared. This is a morphological "close" pass:
+         any weak/background pixel with mostly-ink neighbors in a small
+         window gets filled back in with the surrounding ink's own
+         color, closing the hole without touching real edges/background
+         (which don't have ink surrounding them on most sides). */
+      const alphaCopy = new Uint8ClampedArray(w * h);
+      for (let p = 0; p < w * h; p++) alphaCopy[p] = out.data[p * 4 + 3];
+      const radius = 2;
+      for (let y = 0; y < h; y++){
+        for (let x = 0; x < w; x++){
+          const idx = y * w + x;
+          if (alphaCopy[idx] >= 180) continue;
+          let inkCount = 0, total = 0, sumR = 0, sumG = 0, sumB = 0;
+          for (let dy = -radius; dy <= radius; dy++){
+            const ny = y + dy;
+            if (ny < 0 || ny >= h) continue;
+            for (let dx = -radius; dx <= radius; dx++){
+              if (dx === 0 && dy === 0) continue;
+              const nx = x + dx;
+              if (nx < 0 || nx >= w) continue;
+              total++;
+              const nIdx = ny * w + nx;
+              if (alphaCopy[nIdx] >= 180){
+                inkCount++;
+                const base = nIdx * 4;
+                sumR += out.data[base];
+                sumG += out.data[base + 1];
+                sumB += out.data[base + 2];
+              }
+            }
+          }
+          if (total > 0 && inkCount / total >= 0.55){
+            const base = idx * 4;
+            out.data[base] = Math.round(sumR / inkCount);
+            out.data[base + 1] = Math.round(sumG / inkCount);
+            out.data[base + 2] = Math.round(sumB / inkCount);
+            out.data[base + 3] = 230;
+          }
+        }
+      }
+
+      return out;
+    }
+
+    /* A hard-edged cutout reads as a vector sticker rather than real
+       ink on paper — real strokes feather slightly into the paper
+       fiber. Draw the computed pixels through a very light blur (both
+       color and alpha together, which is what an actual soft edge
+       looks like) instead of putImageData'ing them directly. If canvas
+       filter isn't supported, this just draws unblurred — a graceful,
+       purely cosmetic fallback, unlike relying on this same API for
+       the illumination estimate earlier. */
+    function drawSoftened(imageData){
+      const rawCanvas = document.createElement("canvas");
+      rawCanvas.width = sigCleanCanvas.width;
+      rawCanvas.height = sigCleanCanvas.height;
+      rawCanvas.getContext("2d").putImageData(imageData, 0, 0);
+      sigCleanCtx.clearRect(0, 0, sigCleanCanvas.width, sigCleanCanvas.height);
+      sigCleanCtx.filter = "blur(0.6px)";
+      sigCleanCtx.drawImage(rawCanvas, 0, 0);
+      sigCleanCtx.filter = "none";
+    }
+
+    function runCleanup(){
+      if (!sigSourceCanvas) return;
+      sigCleanCanvas.width = sigSourceCanvas.width;
+      sigCleanCanvas.height = sigSourceCanvas.height;
+      sigCleanCtx = sigCleanCanvas.getContext("2d");
+      sigCleanBaseImageData = computeCleanedImageData(sigSourceCanvas, Number(sigThreshold.value));
+      drawSoftened(sigCleanBaseImageData);
+    }
+
+    sigThreshold.addEventListener("input", runCleanup);
+    sigEraseResetBtn.addEventListener("click", () => {
+      if (!sigCleanBaseImageData) return;
+      drawSoftened(sigCleanBaseImageData);
+    });
+
+    /* Touch-up eraser — drag over the preview to punch alpha=0 into a
+       small radius under the pointer, for any shadow/smudge the
+       automatic cleanup above didn't fully catch. */
+    (function(){
+      let erasing = false;
+      function eraseAt(clientX, clientY){
+        const rect = sigCleanCanvas.getBoundingClientRect();
+        const scaleX = sigCleanCanvas.width / rect.width;
+        const scaleY = sigCleanCanvas.height / rect.height;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+        sigCleanCtx.save();
+        sigCleanCtx.globalCompositeOperation = "destination-out";
+        sigCleanCtx.beginPath();
+        sigCleanCtx.arc(x, y, Math.max(6, sigCleanCanvas.width * 0.02), 0, Math.PI * 2);
+        sigCleanCtx.fill();
+        sigCleanCtx.restore();
+      }
+      sigCleanCanvas.addEventListener("pointerdown", (e) => {
+        erasing = true;
+        try { sigCleanCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        eraseAt(e.clientX, e.clientY);
+      });
+      sigCleanCanvas.addEventListener("pointermove", (e) => { if (erasing) eraseAt(e.clientX, e.clientY); });
+      ["pointerup", "pointercancel"].forEach(evt => sigCleanCanvas.addEventListener(evt, () => { erasing = false; }));
+    })();
+
+    sigSaveBtn.addEventListener("click", () => {
+      const dataUrl = sigCleanCanvas.toDataURL("image/png");
+      setSavedSignature(dataUrl);
+      const img = new Image();
+      img.onload = () => {
+        addSignatureBox(dataUrl, img.naturalWidth, img.naturalHeight);
+        closeSigModal();
+      };
+      img.src = dataUrl;
+    });
+  }
+
+  /* Offer to restore a previously-saved PDF (with its text/signature
+     boxes) instead of auto-loading it. Auto-loading on page load kept
+     hitting layout-timing bugs (canvas measured/rendered before the
+     browser had finished settling — fonts still swapping in, etc.)
+     that a normal upload never hits, because a normal upload only ever
+     starts from a real click, by which point layout is long since
+     stable. Requiring a click here too sidesteps that whole class of
+     bug rather than trying to out-guess every way layout can still be
+     unsettled — the load path is byte-for-byte the same loadFile()
+     call a fresh upload uses, just fed saved bytes instead of a
+     just-picked File. */
+  (async () => {
+    const saved = await ctxDbGet();
+    if (!saved || !saved.pdfBytes) return;
+    if (currentFile) return; // user already picked a file before this resolved
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", async () => {
+      continueBtn.hidden = true;
+      try {
+        const restoredFile = new File([saved.pdfBytes], saved.fileName || "document.pdf", { type: "application/pdf" });
+        await loadFile(restoredFile, saved);
+        persistNow();
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();
 
 /* ===== NAV SHARE BUTTON (works on Convert + Compress) ===== */
