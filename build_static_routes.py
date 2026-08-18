@@ -47,6 +47,31 @@ ROUTES = {
         "title": "Golden Rules – BC Tools",
         "description": "Golden Rules for choosing image formats, compression, and settings with BC Tools.",
     },
+    "convert": {
+        "page_id": "page-convert",
+        "title": "Convert – Free Image & PDF Converter – BC Tools",
+        "description": "Convert images between JPG, PNG, WEBP, SVG, and PDF for free, right in your browser. No uploads, no server, nothing leaves your device.",
+    },
+    "compress": {
+        "page_id": "page-compress",
+        "title": "Compress – Free Image Compressor – BC Tools",
+        "description": "Compress images to a smaller file size for free, right in your browser. Choose your quality level — no uploads, nothing leaves your device.",
+    },
+    "combine": {
+        "page_id": "page-combine",
+        "title": "Combine – Merge Images or PDFs into One PDF – BC Tools",
+        "description": "Combine multiple images or PDF files into a single PDF for free, right in your browser. Drag to reorder pages — no uploads required.",
+    },
+    "cleanly": {
+        "page_id": "page-exif",
+        "title": "Cleanly – Strip Photo Metadata for Free – BC Tools",
+        "description": "Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.",
+    },
+    "context": {
+        "page_id": "page-context",
+        "title": "Context – Add Text to a PDF for Free – BC Tools",
+        "description": "Add your own text directly onto a PDF — captions, notes, signatures — for free, right in your browser, then download it.",
+    },
 }
 
 
