@@ -65,21 +65,67 @@
 :root{
   --icon-context: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDY0MCA2MjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEuNTsiPgogICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMSwtMTEyMC44NTQ3NjEsLTMwLjg1NDc2MSkiPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMzQ1NzUxLDAsMCwwLjM0NTc1MSwxMDcyLjgwMjEzNCwtMjMuNzY3MTI4KSI+CiAgICAgICAgICAgIDxyZWN0IHg9IjE3NyIgeT0iMTk2IiB3aWR0aD0iNDg3IiBoZWlnaHQ9IjQ4NyIgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6d2hpdGU7c3Ryb2tlLXdpZHRoOjQyLjE4cHg7Ii8+CiAgICAgICAgPC9nPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMTU5ODgsMCwwLDAuMTU5ODgsMTM1OC42ODExNjcsMjU3LjU4MjYyOCkiPgogICAgICAgICAgICA8cmVjdCB4PSIxNzciIHk9IjE5NiIgd2lkdGg9IjQ4NyIgaGVpZ2h0PSI0ODciIHN0eWxlPSJmaWxsOnJnYigyNTAsMjUwLDI1MCk7Ii8+CiAgICAgICAgPC9nPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMjY3Mzg2LDAsMCwwLjI3MDQ2MSwxNTM2LjAyNzQxMyw0MjQuMzE0MTM4KSI+CiAgICAgICAgICAgIDxyZWN0IHg9IjE3NyIgeT0iMTk2IiB3aWR0aD0iNDg3IiBoZWlnaHQ9IjQ4NyIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgPC9nPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMzQ1NzUxLDAsMCwwLjM0NTc1MSwxMjgwLjUyMjQxOSwxNzUuODkyMzMyKSI+CiAgICAgICAgICAgIDxyZWN0IHg9IjE3NyIgeT0iMTk2IiB3aWR0aD0iNDg3IiBoZWlnaHQ9IjQ4NyIgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6d2hpdGU7c3Ryb2tlLXdpZHRoOjQyLjE4cHg7Ii8+CiAgICAgICAgPC9nPgogICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuMzQ1NzUxLDAsMCwwLjM0NTc1MSwxNTAzLjA3NTEwOSwzOTEuMjI0Mzk3KSI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik03MDYuMTc5LDcyNS4xNzlMMTM0LjgyMSw3MjUuMTc5TDEzNC44MjEsMTUzLjgyMUw3MDYuMTc5LDE1My44MjFMNzA2LjE3OSw3MjUuMTc5Wk02NjQsMTk2TDE3NywxOTZMMTc3LDY4M0w2NjQsNjgzTDY2NCwxOTZaIiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPgo=");
   --context-yellow:#ffd155;
-  --border:rgba(255,255,255,.14);
-  --text:#ffffff;
-  --accent:#f1f5f9;
-  --accent2:#cbd5e1;
+  /* Structural tokens — real light-mode values here, real dark-mode
+     values in the :root[data-theme="dark"] block below. These replace
+     the old approach (one dark-only value + a filter:invert on
+     #app-shell to fake light mode at paint time), which never round
+     -tripped correctly for every hue and needed a growing pile of
+     per-element exceptions to patch. Brand/accent colors (the 5 tool
+     colors, --shape-color) are deliberately NOT here — they're meant to
+     render identically in both themes, so they stay plain hex at their
+     point of use. */
+  --bg:#ffffff;
+  --border:rgba(0,0,0,.14);
+  --border-strong:rgba(0,0,0,.4);
+  --text:#000000;
+  --accent:#1e293b;
+  --accent2:#475569;
   --icon-convert: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDUzMiA1NjYiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC02MjAuMjc0NjE0LC0xMSkiPgogICAgICAgIDxnIGlkPSJDb252ZXJ0IiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC01LjczMjg1NiwtMzMpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC44ODU4NDUsMCwwLDAuODg1ODQ1LC0xNy41MTgzNTIsMTM4Ljg5NDk3OCkiPgogICAgICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTIxNi41IiBjeT0iNDIxLjUiIHI9IjEwOS41IiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgwLjM0NTc1MSwwLDAsMC4zNDU3NTEsNTY0LjgwOTYwNCwtMjMuNzY3MTI4KSI+CiAgICAgICAgICAgICAgICA8cmVjdCB4PSIxNzciIHk9IjE5NiIgd2lkdGg9IjQ4NyIgaGVpZ2h0PSI0ODciIHN0eWxlPSJmaWxsOndoaXRlOyIvPgogICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDEsMCwwLDEsLTMxNi42MTE5NjIsMTkzLjg2ODc0NykiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTEzMDkuNzI0LDgyLjExN0wxMzA5LjcyNCwxNzQuOTc5QzEzMDkuNzI0LDIwMC42MDUgMTI4OC45MTksMjIxLjQxIDEyNjMuMjkzLDIyMS40MUwxMTcwLjQzMSwyMjEuNDFDMTE0NC44MDUsMjIxLjQxIDExMjQsMjAwLjYwNSAxMTI0LDE3NC45NzlMMTEyNCw4Mi4xMTdDMTEyNCw1Ni40OTEgMTE0NC44MDUsMzUuNjg2IDExNzAuNDMxLDM1LjY4NkwxMjYzLjI5MywzNS42ODZDMTI4OC45MTksMzUuNjg2IDEzMDkuNzI0LDU2LjQ5MSAxMzA5LjcyNCw4Mi4xMTdaIiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==");
   --icon-compress: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDU0MSA1NjEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0zOC4yMDU2NjEsLTY4MS40NDI5NykiPgogICAgICAgIDxnIGlkPSJDb21wcmVzcyIgdHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMSwtMTAyLjI4NDE2LC0xMjQuNjA3NjE4KSI+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuODg1ODQ1LDAsMCwwLjg4NTg0NSwtNjI4LjE0MDMxNiw3NDMuNjY3MDI3KSI+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMjE2LjUiIGN5PSI0MjEuNSIgcj0iMTA5LjUiIHN0eWxlPSJmaWxsOndoaXRlOyIvPgogICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDEuMTQ2MTE5LDAsMCwxLjE0NjExOSwtMTEyOC4yNjM2MDQsNDQ4LjQ2MTU0NykiPgogICAgICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTIxNi41IiBjeT0iNDIxLjUiIHI9IjEwOS41IiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgwLjY5NzIxNiwwLDAsMC42OTcyMTYsLTI0My4zMTA1NDIsOTk2LjUxOTIyNSkiPgogICAgICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTIxNi41IiBjeT0iNDIxLjUiIHI9IjEwOS41IiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==");
   --icon-combine: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDYyNyA2MzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0zNywtMTEpIj4KICAgICAgICA8ZyBpZD0iQ29tYmluZSIgdHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMSwwLC04KSI+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAsLTAuNzk4MzU0LDAuNzk4MzU0LDAsLTExMC42OTU0NzMsNTY5Ljg2NDE5OCkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTQ0NywxODVMNjkwLDQyOEw0NDcsNDI4TDQ0NywxODVaTTQ2NS4yNjcsMjI5LjFMNDY1LjI2Nyw0MDkuNzMzTDY0NS45LDQwOS43MzNMNDY1LjI2NywyMjkuMVoiIHN0eWxlPSJmaWxsOndoaXRlOyIvPgogICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAsLTAuNzk4MzU0LDAuNzk4MzU0LDAsMTA0LjgwNDUyNyw3ODkuNTUwMjQ0KSI+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNDQ3LDE4NUw2OTAsNDI4TDQ0Nyw0MjhMNDQ3LDE4NVoiIHN0eWxlPSJmaWxsOndoaXRlOyIvPgogICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAsMC43OTgzNTQsLTAuNzk4MzU0LDAsODExLjY5NTQ3Myw5OC45NjkxMzYpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik00NDcsMTg1TDY5MCw0MjhMNDQ3LDQyOEw0NDcsMTg1WiIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMCwwLjc5ODM1NCwtMC43OTgzNTQsMCw1OTUuMTk1NDczLC0xMTguMTc4MTUxKSI+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNDQ3LDE4NUw2OTAsNDI4TDQ0Nyw0MjhMNDQ3LDE4NVpNNDY1LjI2NywyMjkuMUw0NjUuMjY3LDQwOS43MzNMNjQ1LjksNDA5LjczM0w0NjUuMjY3LDIyOS4xWiIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPgo=");
   --icon-cleanly: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDU0NCA1NzAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC02MTIuOTA3MjM1LC02NTgpIj4KICAgICAgICA8ZyBpZD0iQ2xlYW5seSIgdHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMSwtMSwtNTYuMTA3NjE4KSI+CiAgICAgICAgICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuOTI4MTA3LDAsMCwwLjkyODEwNywtNzIuOTI0MTE0LDc5MC43NjM3OTcpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMjE2LjUsMzEyQzEyNzYuOTM1LDMxMiAxMzI2LDM2MS4wNjUgMTMyNiw0MjEuNUMxMzI2LDQ4MS45MzUgMTI3Ni45MzUsNTMxIDEyMTYuNSw1MzFDMTE1Ni4wNjUsNTMxIDExMDcsNDgxLjkzNSAxMTA3LDQyMS41QzExMDcsMzYxLjA2NSAxMTU2LjA2NSwzMTIgMTIxNi41LDMxMlpNMTIxNi41LDMyNy43MTNDMTE2NC43MzgsMzI3LjcxMyAxMTIyLjcxMywzNjkuNzM4IDExMjIuNzEzLDQyMS41QzExMjIuNzEzLDQ3My4yNjIgMTE2NC43MzgsNTE1LjI4NyAxMjE2LjUsNTE1LjI4N0MxMjY4LjI2Miw1MTUuMjg3IDEzMTAuMjg3LDQ3My4yNjIgMTMxMC4yODcsNDIxLjVDMTMxMC4yODcsMzY5LjczOCAxMjY4LjI2MiwzMjcuNzEzIDEyMTYuNSwzMjcuNzEzWiIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC42NTYyNzEsLTAuNjU2MjcxLDAuNjU2MjcxLDAuNjU2MjcxLC0xNzQuNDcyMjc5LDE1MTMuNDg3NjQ2KSI+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTEwNyw0MjEuNUwxMjE2LjUsNDIxLjVMMTMyNiw0MjEuNUMxMzI2LDQ4MS45NzUgMTI3Ni45NzUsNTMxIDEyMTYuNSw1MzFDMTE1Ni4wMjUsNTMxIDExMDcsNDgxLjk3NSAxMTA3LDQyMS41Wk0xMTI0LjAyMyw0MzcuMjEzQzExMzEuNDk5LDQ4MS41MyAxMTcwLjA1Nyw1MTUuMjg3IDEyMTYuNSw1MTUuMjg3QzEyNjIuOTQzLDUxNS4yODcgMTMwMS41MDEsNDgxLjUyOSAxMzA4Ljk3Niw0MzcuMjEzTDEyMTYuNSw0MzcuMjEzTDExMjQuMDIzLDQzNy4yMTNaIiBzdHlsZT0iZmlsbDp3aGl0ZTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgtMC42NTYyNzEsMC42NTYyNzEsLTAuNjU2MjcxLC0wLjY1NjI3MSwxOTc2LjQ1MTcyNSw0NzAuMDE2NjkxKSI+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTEwNyw0MjEuNUwxMjE2LjUsNDIxLjVMMTMyNiw0MjEuNUMxMzI2LDQ4MS45NzUgMTI3Ni45NzUsNTMxIDEyMTYuNSw1MzFDMTE1Ni4wMjUsNTMxIDExMDcsNDgxLjk3NSAxMTA3LDQyMS41WiIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC40MTE4NzIsMC40MTg2NTQsLTEuMzIxNDYsMS4zMDAwNTIsMTg1OC4yMDk3MzcsLTQxMC4yNzU4ODEpIj4KICAgICAgICAgICAgICAgIDxyZWN0IHg9IjU1NiIgeT0iNzY0IiB3aWR0aD0iMjMuOTE0IiBoZWlnaHQ9IjI3NCIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMSwwLDAsMSwtNTguMDA3NTUzLDkuODUxNDQ1KSI+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSI3NzMuNTQzIiBjeT0iODA1Ljg4NCIgcj0iMTAxLjYyOCIgc3R5bGU9ImZpbGw6d2hpdGU7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPgo=");
 }
 
-.icon-convert{background-image:var(--icon-convert);background-size:contain;background-repeat:no-repeat;background-position:center;}
-.icon-context{background-image:var(--icon-context);background-size:contain;background-repeat:no-repeat;background-position:center;}
-.icon-compress{background-image:var(--icon-compress);background-size:contain;background-repeat:no-repeat;background-position:center;}
-.icon-combine{background-image:var(--icon-combine);background-size:contain;background-repeat:no-repeat;background-position:center;}
-.icon-cleanly{background-image:var(--icon-cleanly);background-size:contain;background-repeat:no-repeat;background-position:center;}
+:root[data-theme="dark"]{
+  --bg:#202124;
+  --border:rgba(255,255,255,.14);
+  --border-strong:rgba(255,255,255,.4);
+  --text:#ffffff;
+  --accent:#f1f5f9;
+  --accent2:#cbd5e1;
+}
+
+/* Mask (not background-image) so the icon's color is set by CSS
+   (background-color below) instead of being baked into the SVG itself
+   — same white-in-dark/black-in-light behavior the old invert filter
+   used to give for free, but explicit and without needing a second set
+   of icon assets. A CSS mask only uses the SVG for its shape/alpha;
+   the actual paint color comes from background-color. */
+.icon-convert,
+.icon-context,
+.icon-compress,
+.icon-combine,
+.icon-cleanly{
+  -webkit-mask-size:contain;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  background-color:#ffffff;
+}
+html[data-theme="light"] .icon-convert,
+html[data-theme="light"] .icon-context,
+html[data-theme="light"] .icon-compress,
+html[data-theme="light"] .icon-combine,
+html[data-theme="light"] .icon-cleanly{
+  background-color:#000000;
+}
+.icon-convert{-webkit-mask-image:var(--icon-convert);mask-image:var(--icon-convert);}
+.icon-context{-webkit-mask-image:var(--icon-context);mask-image:var(--icon-context);}
+.icon-compress{-webkit-mask-image:var(--icon-compress);mask-image:var(--icon-compress);}
+.icon-combine{-webkit-mask-image:var(--icon-combine);mask-image:var(--icon-combine);}
+.icon-cleanly{-webkit-mask-image:var(--icon-cleanly);mask-image:var(--icon-cleanly);}
 /* Generic "no icon yet" placeholder — used until a real .icon-X slot
    (background-image via --icon-X, like the others above) is ready. */
 .gfx-placeholder{
@@ -106,81 +152,27 @@ html{
   overflow-x:hidden;
 }
 
-/* Light theme = CSS filter inverting the dark design; hue-rotate corrects
-   hue shift from the invert. Scoped to #app-shell (not html) so body's
-   background/text stay unfiltered. */
-html[data-theme="light"] #app-shell{
-  filter:invert(1) hue-rotate(180deg);
-}
-
-/* Re-inverts brand-colored elements (logos, thumbnails, decorative
-   shapes) so hue and brightness stay identical in both themes. The 5
-   tool accent colors are handled separately below with hand-picked
-   light-mode tints instead of relying on invert-cancel math — a plain
-   double-invert leaves saturated brand hues (especially yellow) looking
-   washed out or muddy on a light background. */
-html[data-theme="light"] .result img,
-html[data-theme="light"] .combine-file-thumb img,
-html[data-theme="light"] .exif-file-thumb img,
-html[data-theme="light"] .context-canvas-wrap,
-html[data-theme="light"] .context-color-dot,
-html[data-theme="light"] .site-logo,
-html[data-theme="light"] .engine-status-card,
-html[data-theme="light"] .mp-colors-bg-shape,
-html[data-theme="light"] .cookie-banner.docked,
-html[data-theme="light"] .fmt-icon,
-html[data-theme="light"] .no-invert{
-  filter:invert(1) hue-rotate(180deg);
-}
-
-/* Tool accents are locked to the exact same hex in both themes. The
-   double-invert-cancel technique (filter:invert(1)hue-rotate(180deg)
-   applied a second time, directly on the element) is required here —
-   filter:none does NOT exempt an element from an ancestor's filter, it
-   only skips adding a second one, so the element would still get
-   inverted once by the shell and land on the wrong color (verified:
-   this broke cyan/green even though it happened to look plausible for
-   purple/salmon by coincidence). Applying the same filter twice is a
-   true mathematical identity regardless of hue. */
-html[data-theme="light"] #page-mainpage .card.convert::before,
-html[data-theme="light"] #page-convert .tool-app::before{
-  filter:invert(1) hue-rotate(180deg);
-  background:linear-gradient(155deg, #c364fa);
-}
-html[data-theme="light"] #page-convert .tool-drop.active{
-  filter:invert(1) hue-rotate(180deg);
-  border-color:#7626f5;
-  background:rgba(118,38,245,.1);
-}
-
-html[data-theme="light"] #page-mainpage .card.combine::before,
-html[data-theme="light"] #page-combine .tool-app::before{
-  filter:invert(1) hue-rotate(180deg);
-  background:linear-gradient(155deg, #ed7064);
-}
+/* Light/dark theming now comes entirely from the --bg/--text/--border/
+   --accent tokens above (:root vs :root[data-theme="dark"]) plus each
+   brand color's own literal hex at its point of use — no page-wide
+   filter, no per-element "cancel the filter" exceptions. Brand colors
+   (tool accents, decorative shapes) render identically in both themes
+   simply because nothing is inverting them anymore. */
 
 body{
   margin:0;
   font-family:system-ui, sans-serif;
-  color:#ffffff;
-  background:#202124;
+  color:var(--text);
+  background:var(--bg);
   min-height:100vh;
 }
 
-html[data-theme="light"] body{
-  color:#000000;
-  background:#ffffff;
-}
-
-/* #app-shell keeps the dark-mode text color; the invert filter corrects
-   it at paint time. Elements inheriting color instead of var(--text)
-   would otherwise get inverted twice and disappear. */
 /* Sticky footer: on short pages (e.g. Context with no PDF loaded yet),
    the active page grows to fill any leftover viewport height so the
    footer sits flush at the bottom instead of leaving a gap of plain
    page background beneath it. */
 #app-shell{
-  color:#ffffff;
+  color:var(--text);
   display:flex;
   flex-direction:column;
   min-height:100vh;
@@ -534,6 +526,12 @@ html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
   color:#e5e7eb;
 }
 
+html[data-theme="light"] .cookie-mobile-settings-btn{
+  border-color:rgba(29,36,54,.25);
+  background:rgba(29,36,54,.06);
+  color:#1d2436;
+}
+
 /* No docking on mobile — plain button reopens the floating banner
    instead. */
 @media (max-width:768px){
@@ -694,6 +692,10 @@ html[data-theme="light"] .cookie-settings-btn-dot{
   border-bottom:1px solid rgba(255,255,255,.08);
 }
 
+html[data-theme="light"] .site-nav{
+  background:#d4dbee;
+}
+
 /* Central confirmation display for nav actions (theme, language,
    copy link) — terminal-styled to match the site's other terminal
    banners. Desktop only: there's no room for it once the nav collapses
@@ -755,7 +757,6 @@ html[data-theme="light"] .cookie-settings-btn-dot{
 }
 
 html[data-theme="light"] .brand-text{
-  filter:invert(1) hue-rotate(180deg);
   color:#121727;
 }
 
@@ -1244,14 +1245,16 @@ html[data-theme="light"] .engine-status-glitch{
   padding:36px;
   border:1px solid rgba(255,255,255,.25);
   border-radius:28px;
-  /* Space stays dark regardless of theme — a light-mode starfield
-     wouldn't read as space. */
   background:#202124;
 }
 
+html[data-theme="light"] .tool-card-blueprint{
+  border-color:rgba(0,0,0,.15);
+  background:#d4dbee;
+}
+
 /* Rocks are generated/animated from JS (asteroid-field driver); five
-   varied cycles avoid an obvious repeating loop. Dark-mode colors only —
-   light mode goes through the #app-shell invert filter. */
+   varied cycles avoid an obvious repeating loop. */
 .tool-card-asteroid{
   position:absolute;
   top:0;
@@ -1265,6 +1268,15 @@ html[data-theme="light"] .engine-status-glitch{
   background:#ffffff;
   border-radius:50%;
   box-shadow:0 0 6px 1px rgba(255,255,255,.6);
+}
+
+html[data-theme="light"] .tool-card-asteroid{
+  background:#5b6478;
+}
+
+html[data-theme="light"] .tool-card-asteroid.is-comet{
+  background:#2c3550;
+  box-shadow:0 0 6px 1px rgba(44,53,80,.5);
 }
 
 /* Tail trails opposite the comet's travel direction. --tail-angle is set
@@ -1290,6 +1302,10 @@ html[data-theme="light"] .engine-status-glitch{
   background:#ffffff;
   opacity:.5;
   animation:tool-card-star-twinkle 3s ease-in-out infinite;
+}
+
+html[data-theme="light"] .tool-card-star{
+  background:#5b6478;
 }
 
 @keyframes tool-card-star-twinkle{
@@ -1367,6 +1383,7 @@ html[data-theme="light"] .engine-status-glitch{
   display:flex;
   flex-direction:column;
   width:100%;
+  min-height:270px;
   text-align:left;
   padding:0;
   border-radius:28px;
@@ -1376,6 +1393,10 @@ html[data-theme="light"] .engine-status-glitch{
   overflow:hidden;
   font-family:inherit;
   transition:filter .2s ease;
+}
+
+@media (max-width:768px){
+  #page-mainpage .card{ min-height:0; }
 }
 
 #page-mainpage .card:hover{
@@ -1394,31 +1415,20 @@ html[data-theme="light"] .engine-status-glitch{
   background:linear-gradient(155deg, #c364fa);
 }
 
-/* No background — Compress's blue can't survive the light-mode invert
-   filter's math (same out-of-gamut clamping issue as Context's yellow).
-   Its color comes from #cprCardBackdrop instead, a real element outside
-   #app-shell. See syncColorBackdrops() near the end of the page. */
 #page-mainpage .card.compress::before{
-  background:none;
+  background:#51c4e6;
 }
 
 #page-mainpage .card.combine::before{
   background:linear-gradient(155deg, #ed7064);
 }
 
-/* Same story as Compress above — see #clnCardBackdrop. */
 #page-mainpage .card.exif::before{
-  background:none;
+  background:#4bde80;
 }
 
-/* No background here — Context's yellow can't survive the light-mode
-   invert filter's math (proven: needs an out-of-gamut negative blue
-   channel mid-pipeline). Its color comes from #ctxCardBackdrop instead,
-   a real element rendered OUTSIDE #app-shell so the invert filter never
-   touches it, positioned via JS to sit exactly behind this transparent
-   cutout. See syncContextBackdrops() near the end of the page. */
 #page-mainpage .card.context::before{
-  background:none;
+  background:var(--context-yellow);
 }
 
 #page-mainpage .card-open{
@@ -1483,8 +1493,8 @@ html[data-theme="light"] .engine-status-glitch{
   padding:0;
   margin:0;
   border:none;
-  border-top:1px solid rgba(255,255,255,.16);
-  background:rgba(0,0,0,.1);
+  border-top:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.16);
   font-weight:400;
   font-size:15px;
   font-family:inherit;
@@ -1496,9 +1506,19 @@ html[data-theme="light"] .engine-status-glitch{
 
 #page-mainpage .card-readmore:hover,
 #page-mainpage .card-readmore:focus-visible{
-  color:#fff;
-  background:rgba(0,0,0,.18);
+  color:var(--text);
+  background:rgba(255,255,255,.26);
   text-decoration:underline;
+}
+
+html[data-theme="dark"] #page-mainpage .card-readmore{
+  border-top:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.1);
+}
+
+html[data-theme="dark"] #page-mainpage .card-readmore:hover,
+html[data-theme="dark"] #page-mainpage .card-readmore:focus-visible{
+  background:rgba(0,0,0,.18);
 }
 
 @media (max-width:768px){
@@ -1510,6 +1530,11 @@ footer{
   padding:32px 24px;
   font-size:13px;
   background:#1d2436;
+  color:var(--text);
+}
+
+html[data-theme="light"] footer{
+  background:#d4dbee;
 }
 
 .footer-dashboard{
@@ -1518,6 +1543,10 @@ footer{
   display:flex;
   justify-content:center;
   background:#1d2436;
+}
+
+html[data-theme="light"] .footer-dashboard{
+  background:#d4dbee;
 }
 
 .footer-dashboard-inner{
@@ -1536,7 +1565,7 @@ footer{
 }
 
 .footer-dashboard-col h3{
-  color:#fff;
+  color:var(--text);
   font-size:13px;
   font-weight:900;
   text-transform:uppercase;
@@ -1567,7 +1596,7 @@ footer{
 }
 
 .footer-dash-link:hover{
-  color:#fff;
+  color:var(--text);
   text-decoration:underline;
 }
 
@@ -1619,23 +1648,6 @@ footer a{
 }
 
 /* ===== SHARED TOOL STYLES (convert + compress) ===== */
-/* Tool color backdrops: real elements OUTSIDE #app-shell (see body
-   markup), so the light-mode invert filter never touches them — the
-   only way to show these exact colors, since they don't survive that
-   filter's round-trip math (proven, per color, before adding it here).
-   JS keeps each positioned behind its transparent .card.<tool> /
-   .tool-app cutout. Hidden by default; shown only when on screen. */
-.color-backdrop{
-  position:absolute;
-  z-index:0;
-  pointer-events:none;
-  display:none;
-}
-
-#ctxCardBackdrop, #ctxToolBackdrop{ background:var(--context-yellow); }
-#cprCardBackdrop, #cprToolBackdrop{ background:#51c4e6; }
-#clnCardBackdrop, #clnToolBackdrop{ background:#4bde80; }
-
 .tool-wrap{
   display:flex;
   align-items:center;
@@ -1665,23 +1677,20 @@ footer a{
   background:linear-gradient(155deg,#c364fa);
 }
 
-/* No background — see #cprToolBackdrop (same story as Context above). */
 #page-compress .tool-app::before{
-  background:none;
+  background:#51c4e6;
 }
 
 #page-combine .tool-app::before{
   background:linear-gradient(155deg,#ed7064);
 }
 
-/* No background — see #clnToolBackdrop. */
 #page-exif .tool-app::before{
-  background:none;
+  background:#4bde80;
 }
 
-/* Same story as .card.context::before above — see #ctxToolBackdrop. */
 #page-context .tool-app::before{
-  background:none;
+  background:var(--context-yellow);
 }
 
 /* Glow disabled — tabs use solid fills instead */
@@ -1834,7 +1843,7 @@ footer a{
   justify-content:center;
   width:36px;
   height:36px;
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid var(--border);
   border-radius:10px;
   background:none;
   line-height:1;
@@ -1866,7 +1875,7 @@ footer a{
   width:36px;
   height:36px;
   padding:0;
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid var(--border);
   border-radius:10px;
   background:none;
   color:var(--text);
@@ -1885,7 +1894,7 @@ footer a{
 }
 
 .nav-lang-btn:hover{
-  border-color:rgba(255,255,255,.4);
+  border-color:var(--border-strong);
 }
 
 .nav-lang-menu{
@@ -1895,7 +1904,7 @@ footer a{
   width:150px;
   padding:8px;
   border-radius:18px;
-  background:rgba(15,23,42,.96);
+  background:#1C2436;
   border:1px solid rgba(255,255,255,.14);
   display:none;
   gap:6px;
@@ -1928,8 +1937,8 @@ footer a{
 }
 
 .nav-close-btn:hover{
-  color:#ffffff;
-  border-color:rgba(255,255,255,.4);
+  color:var(--text);
+  border-color:var(--border-strong);
 }
 
 .tool-logo{
@@ -1949,13 +1958,14 @@ footer a{
   margin-top:24px;
   padding:56px 24px;
   border-radius:28px;
-  border:2px dashed #ffffff;
+  border:2px dashed var(--border-strong);
+  background:transparent;
   text-align:center;
   cursor:pointer;
   transition:.25s;
   font-size:22px;
   font-weight:800;
-  color:#ffffff;
+  color:var(--text);
 }
 
 .tool-drop:hover{
@@ -1968,13 +1978,15 @@ footer a{
   background:rgba(255,255,255,.06);
 }
 
-.context-continue-btn{
+.context-continue-btn,
+.tool-continue-btn{
   display:block;
   width:100%;
   margin-top:14px;
   box-sizing:border-box;
 }
-.context-continue-btn[hidden]{ display:none; }
+.context-continue-btn[hidden],
+.tool-continue-btn[hidden]{ display:none; }
 
 #page-convert .tool-drop.active{
   border-color:#7626f5;
@@ -2018,9 +2030,9 @@ footer a{
 .tool-format-btn{
   height:74px;
   border-radius:26px;
-  border:1px solid rgba(255,255,255,.22);
+  border:1px solid var(--border-strong);
   background:transparent;
-  color:#ffffff;
+  color:var(--text);
   font-size:18px;
   font-weight:800;
   cursor:pointer;
@@ -2028,13 +2040,27 @@ footer a{
 }
 
 .tool-format-btn:hover{
-  border-color:rgba(255,255,255,.4);
-  background:rgba(255,255,255,.04);
+  border-color:var(--border-strong);
+  background:rgba(127,127,127,.1);
+}
+
+.tool-format-btn:focus-visible{
+  outline:2px solid rgba(255,255,255,.5);
+  outline-offset:2px;
+}
+
+html[data-theme="dark"] .tool-format-btn:focus-visible{
+  outline-color:rgba(0,0,0,.4);
 }
 
 .tool-format-btn.active{
-  background:rgba(0,0,0,.28);
+  background:rgba(255,255,255,.2);
   color:var(--text);
+  border-color:rgba(255,255,255,.5);
+}
+
+html[data-theme="dark"] .tool-format-btn.active{
+  background:rgba(0,0,0,.14);
   border-color:rgba(0,0,0,.4);
 }
 
@@ -2045,9 +2071,9 @@ footer a{
   height:74px;
   padding:0 24px;
   border-radius:26px;
-  border:1px solid rgba(255,255,255,.22);
+  border:1px solid var(--border-strong);
   background-color:transparent;
-  color:#ffffff;
+  color:var(--text);
   font-size:20px;
   font-weight:800;
   font-family:inherit;
@@ -2061,8 +2087,8 @@ footer a{
 }
 
 .tool-format-select:hover{
-  border-color:rgba(255,255,255,.4);
-  background:rgba(255,255,255,.04);
+  border-color:var(--border-strong);
+  background:rgba(127,127,127,.1);
 }
 
 .tool-format-select option{
@@ -2074,23 +2100,46 @@ footer a{
   height:74px;
   padding:0 32px;
   border-radius:26px;
-  border:1px solid rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.5);
   cursor:pointer;
   font-weight:900;
   font-size:20px;
-  background:rgba(0,0,0,.28);
+  background:rgba(255,255,255,.35);
   color:var(--text);
   transition:.2s;
 }
 
 .tool-primary-btn:hover{
-  border-color:rgba(255,255,255,.4);
-  background:rgba(0,0,0,.36);
+  border-color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.45);
+}
+
+.tool-primary-btn:focus-visible{
+  outline:2px solid rgba(255,255,255,.5);
+  outline-offset:2px;
 }
 
 .tool-primary-btn:disabled{
   cursor:not-allowed;
   transform:none;
+  background:rgba(255,255,255,.2);
+}
+
+html[data-theme="dark"] .tool-primary-btn{
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.28);
+}
+
+html[data-theme="dark"] .tool-primary-btn:focus-visible{
+  outline-color:rgba(0,0,0,.4);
+}
+
+html[data-theme="dark"] .tool-primary-btn:hover{
+  border-color:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.36);
+}
+
+html[data-theme="dark"] .tool-primary-btn:disabled{
   background:rgba(0,0,0,.14);
 }
 
@@ -2309,6 +2358,13 @@ footer a{
   background:rgba(74,222,128,.25);
 }
 
+.exif-scan-note{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--text);
+  opacity:.75;
+}
+
 .exif-file-remove{
   flex-shrink:0;
   width:28px;
@@ -2473,51 +2529,14 @@ footer a{
   display:none;
 }
 
-/* JS (openFullscreen) moves this whole overlay to be a direct child of
-   <body> while open — outside #app-shell, so its light-mode invert
-   filter no longer touches anything in here (fixes the yellow-toolbar
-   and red-× color drift documented above/below). That also means the
-   navy #1d2436 above no longer auto-inverts to a pale tone in light
-   theme like it used to as an #app-shell descendant — restoring that
-   look needs an explicit value instead, computed by hand from the same
-   filter math (this navy, unlike the saturated brand colors, survives
-   the round-trip cleanly with no clamping, so this is the exact same
-   shade it used to land on, just no longer relying on the filter to
-   get there). */
+/* A deliberately lighter shade for light theme (not the same navy as
+   dark) — this tool page is still reparented to <body> at fullscreen
+   time for other DOM/stacking reasons, but no longer needs any color
+   -filter compensation now that #app-shell has no ambient filter to
+   escape. */
 html[data-theme="light"] .context-fullscreen-overlay,
 html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   background:#d4dbed;
-}
-/* Same story as the toolbar yellow above — this button's usual light-
-   theme rule (further down) assumes it's still under #app-shell's
-   filter and cancels it accordingly; now that it's reparented outside
-   that filter entirely while fullscreen is open, that cancel would be
-   inverting a color that was never inverted to begin with. Reset it
-   back to none so the button's own true-red background (declared
-   unconditionally, no theme check) shows as-is. */
-html[data-theme="light"] .context-fullscreen-overlay .context-remove-btn{
-  filter:none;
-}
-/* Same story again, this time for the PDF canvas itself:
-   .context-canvas-wrap has its own long-standing light-theme cancel
-   filter (see the .no-invert exemption list near :root) for when it's
-   a normal #app-shell descendant — inverting the true-white page would
-   otherwise turn it black under the ambient filter. Once reparented
-   outside that filter for fullscreen, the same cancel rule still
-   matches (it's a plain class selector, doesn't care about DOM
-   position) and now runs alone with nothing to cancel — inverting an
-   already-true-white page straight to black. This is exactly the bug
-   reported: a solid black canvas where an A4 page should be. */
-html[data-theme="light"] .context-fullscreen-overlay .context-canvas-wrap{
-  filter:none;
-}
-/* Same bug a third time: the text-color swatch dots (toolbar trigger
-   + open color menu) are also on the .no-invert-style cancel-filter
-   list near :root, for the same "keep true colors when a normal
-   #app-shell descendant" reason, and are also reparented into the
-   fullscreen overlay along with the rest of the toolbar. */
-html[data-theme="light"] .context-fullscreen-overlay .context-color-dot{
-  filter:none;
 }
 .context-fullscreen-canvas-area{
   position:relative;
@@ -2626,19 +2645,6 @@ html[data-theme="light"] .context-fullscreen-overlay .context-color-dot{
    Rename file). */
 .context-toolbar-gap{
   margin-left:auto;
-}
-
-/* Saturated red doesn't survive a blind invert (shows as pale pink) —
-   same double-invert-cancel fix used for the tool accent colors. */
-html[data-theme="light"] .context-remove-btn{
-  filter:invert(1) hue-rotate(180deg);
-  border-color:#b91c3c;
-  background:#e11d48;
-}
-
-html[data-theme="light"] .context-remove-btn:hover{
-  filter:invert(1) hue-rotate(180deg);
-  background:#b91c3c;
 }
 
 .context-toolbar{
@@ -3266,7 +3272,10 @@ html[data-theme="light"] .context-remove-btn:hover{
 .context-signature-crop-box{
   position:absolute;
   border:2px dashed #ffffff;
-  box-shadow:0 0 0 2000px rgba(0,0,0,.5);
+  /* No dimming outside the selection — the photo stays exactly as the
+     user shot it. The dashed border alone marks the crop box; the old
+     box-shadow dimming (even at low opacity) read as if the paper
+     itself had gone dark, which was confusing more than it helped. */
   touch-action:none;
 }
 .context-signature-crop-handle{
@@ -3278,10 +3287,10 @@ html[data-theme="light"] .context-remove-btn:hover{
   background:#ffffff;
   touch-action:none;
 }
-.context-signature-crop-handle[data-h="nw"]{ top:0; left:0; }
-.context-signature-crop-handle[data-h="ne"]{ top:0; right:0; margin-right:-10px; margin-left:auto; left:auto; }
-.context-signature-crop-handle[data-h="sw"]{ bottom:0; left:0; margin-bottom:-10px; margin-top:auto; top:auto; }
-.context-signature-crop-handle[data-h="se"]{ bottom:0; right:0; margin-bottom:-10px; margin-right:-10px; top:auto; left:auto; }
+.context-signature-crop-handle[data-h="nw"]{ top:0; left:0; cursor:nwse-resize; }
+.context-signature-crop-handle[data-h="ne"]{ top:0; right:0; margin-right:-10px; margin-left:auto; left:auto; cursor:nesw-resize; }
+.context-signature-crop-handle[data-h="sw"]{ bottom:0; left:0; margin-bottom:-10px; margin-top:auto; top:auto; cursor:nesw-resize; }
+.context-signature-crop-handle[data-h="se"]{ bottom:0; right:0; margin-bottom:-10px; margin-right:-10px; top:auto; left:auto; cursor:nwse-resize; }
 
 .context-signature-draw-canvas{
   display:block;
@@ -3342,15 +3351,31 @@ html[data-theme="light"] .context-remove-btn:hover{
   touch-action:none;
 }
 
-.context-signature-threshold-label{
-  display:block;
-  font-size:13px;
+.context-signature-color-row{
+  display:flex;
+  gap:10px;
   margin-top:14px;
 }
-.context-signature-threshold-label input{
+.context-signature-color-swatch{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:2px solid transparent;
+  padding:2px;
+  background:none;
+  cursor:pointer;
+}
+.context-signature-color-swatch span{
   display:block;
   width:100%;
-  margin-top:6px;
+  height:100%;
+  border-radius:50%;
+}
+.context-signature-color-swatch--orig{
+  background:conic-gradient(#000, #2563eb, #e11d48, #eab308, #000);
+}
+.context-signature-color-swatch.active{
+  border-color:var(--context-yellow);
 }
 
 /* Compression level buttons — compress tab only */
@@ -3363,9 +3388,9 @@ html[data-theme="light"] .context-remove-btn:hover{
 .compress-level-btn{
   height:74px;
   border-radius:26px;
-  border:1px solid rgba(255,255,255,.22);
+  border:1px solid var(--border-strong);
   background:transparent;
-  color:#ffffff;
+  color:var(--text);
   font-size:18px;
   font-weight:800;
   cursor:pointer;
@@ -3375,13 +3400,27 @@ html[data-theme="light"] .context-remove-btn:hover{
 }
 
 .compress-level-btn:hover{
-  border-color:rgba(255,255,255,.4);
-  background:rgba(255,255,255,.04);
+  border-color:var(--border-strong);
+  background:rgba(127,127,127,.1);
+}
+
+.compress-level-btn:focus-visible{
+  outline:2px solid rgba(255,255,255,.5);
+  outline-offset:2px;
+}
+
+html[data-theme="dark"] .compress-level-btn:focus-visible{
+  outline-color:rgba(0,0,0,.4);
 }
 
 .compress-level-btn.active{
-  background:rgba(0,0,0,.28);
+  background:rgba(255,255,255,.35);
   color:var(--text);
+  border-color:rgba(255,255,255,.5);
+}
+
+html[data-theme="dark"] .compress-level-btn.active{
+  background:rgba(0,0,0,.28);
   border-color:rgba(0,0,0,.4);
 }
 
@@ -3529,7 +3568,7 @@ html[data-theme="light"] .context-remove-btn:hover{
   width:36px;
   height:36px;
   padding:0;
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid var(--border);
   border-radius:10px;
   background:none;
   display:flex;
@@ -3542,8 +3581,8 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .nav-share-btn:hover,
 .nav-theme-btn:hover{
-  color:#e5e7eb;
-  border-color:rgba(255,255,255,.4);
+  color:var(--text);
+  border-color:var(--border-strong);
 }
 
 .nav-theme-btn svg{
@@ -3697,7 +3736,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-compress th{
   background:#68e1ff21;
-  color:#fff;
+  color:var(--text);
   font-weight:800;
 }
 
@@ -3707,7 +3746,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-compress td:first-child,
 .info-table-compress th:first-child{
-  color:#fff;
+  color:var(--text);
   font-weight:700;
 }
 
@@ -3731,7 +3770,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-combine th{
   background:#ec6f6321;
-  color:#fff;
+  color:var(--text);
   font-weight:800;
 }
 
@@ -3741,7 +3780,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-combine td:first-child,
 .info-table-combine th:first-child{
-  color:#fff;
+  color:var(--text);
   font-weight:700;
 }
 
@@ -3765,7 +3804,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-exif th{
   background:#4ade8021;
-  color:#fff;
+  color:var(--text);
   font-weight:800;
 }
 
@@ -3775,7 +3814,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-exif td:first-child,
 .info-table-exif th:first-child{
-  color:#fff;
+  color:var(--text);
   font-weight:700;
 }
 
@@ -3835,11 +3874,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 .content-section-compress[data-tool="compress"] .cs-shape{ background:#68e1ff; }
 .content-section-convert[data-tool="combine"] .cs-shape{ background:#ec6f63; }
 .content-section-convert[data-tool="exif"] .cs-shape{ background:#4ade80; }
-/* Higher opacity than the other tools' shapes — yellow at the shared
-   .22 opacity blends with the dark page background into a muddy brown
-   rather than reading as yellow, unlike the other (more saturated at
-   low opacity) tool accent colors. */
-.content-section-convert[data-tool="context"] .cs-shape{ background:var(--context-yellow); opacity:.75; }
+.content-section-convert[data-tool="context"] .cs-shape{ background:#ffde89; }
 
 .content-section-convert[data-tool="convert"] .cs-shape-3,
 .content-section-compress[data-tool="compress"] .cs-shape-3{ bottom:40px; }
@@ -4212,7 +4247,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-convert th{
   background:#d670ff21;
-  color:#fff;
+  color:var(--text);
   font-weight:800;
 }
 
@@ -4226,7 +4261,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .info-table-convert td:first-child,
 .info-table-convert th:first-child{
-  color:#fff;
+  color:var(--text);
   font-weight:700;
 }
 
@@ -4287,7 +4322,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 .info-table-exif td::before{
   content:attr(data-label);
   font-weight:800;
-  color:#fff;
+  color:var(--text);
   text-align:left;
   flex-shrink:0;
 }
@@ -4365,7 +4400,7 @@ html[data-theme="light"] .context-remove-btn:hover{
   padding:24px 24px 0;
   font-size:22px;
   letter-spacing:-0.01em;
-  color:#fff;
+  color:var(--text);
   border-top:1px solid rgba(255,255,255,.08);
 }
 
@@ -4389,7 +4424,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
 .faq-item-mainpage .faq-q{
   font-weight:700;
-  color:#fff;
+  color:var(--text);
   margin:0 0 8px;
   font-size:clamp(17px, 1.8vw, 19px);
   line-height:1.5;
@@ -4596,7 +4631,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 .about-section-heading{
   font-size:clamp(28px, 3.6vw, 40px);
   margin:0 0 20px;
-  color:#fff;
+  color:var(--text);
   text-align:left;
 }
 
@@ -4636,7 +4671,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 }
 
 .terms-article h2{
-  color:#fff;
+  color:var(--text);
   font-size:clamp(28px, 3.6vw, 40px);
   margin:36px 0 12px;
 }
@@ -4680,8 +4715,8 @@ html[data-theme="light"] .context-remove-btn:hover{
 .golden-rules-tool-btn{
   padding:12px 28px;
   border-radius:14px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
   color:var(--text);
   font-weight:800;
   font-size:16px;
@@ -4690,8 +4725,12 @@ html[data-theme="light"] .context-remove-btn:hover{
   transition:.2s;
 }
 
+html[data-theme="dark"] .golden-rules-tool-btn{
+  background:rgba(255,255,255,.05);
+}
+
 .golden-rules-tool-btn:hover{
-  border-color:rgba(255,255,255,.4);
+  border-color:var(--border-strong);
 }
 
 .golden-rules-tool-btn.active{
@@ -4783,7 +4822,7 @@ html[data-theme="light"] .context-remove-btn:hover{
   padding:18px 0;
   font-weight:800;
   font-size:19px;
-  color:#fff;
+  color:var(--text);
   cursor:pointer;
   list-style:none;
 }
@@ -4811,7 +4850,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 }
 
 .golden-rules-body h3{
-  color:#fff;
+  color:var(--text);
   font-size:19px;
   margin:24px 0 10px;
 }
@@ -4878,12 +4917,6 @@ html[data-theme="light"] .context-remove-btn:hover{
     <button type="button" id="cookieBannerSave" data-i18n="cookie_banner_save">Confirm choices</button>
   </div>
 </div>
-<div class="color-backdrop" id="ctxCardBackdrop" aria-hidden="true"></div>
-<div class="color-backdrop" id="ctxToolBackdrop" aria-hidden="true"></div>
-<div class="color-backdrop" id="cprCardBackdrop" aria-hidden="true"></div>
-<div class="color-backdrop" id="cprToolBackdrop" aria-hidden="true"></div>
-<div class="color-backdrop" id="clnCardBackdrop" aria-hidden="true"></div>
-<div class="color-backdrop" id="clnToolBackdrop" aria-hidden="true"></div>
 <div id="app-shell">
 
 <div class="site-nav">
@@ -5005,7 +5038,7 @@ html[data-theme="light"] .context-remove-btn:hover{
             <span class="gfx-lg card-icon icon-cleanly" role="img" aria-label="Cleanly icon"></span>
             <h2>Cleanly</h2>
           </div>
-          <p data-i18n="mp_card_exif_desc">Remove hidden metadata like GPS location or camera model from your photos before sharing them.</p>
+          <p data-i18n="mp_card_exif_desc">Remove hidden metadata like GPS location, camera model, or editor data in SVGs — before sharing.</p>
         </button>
         <button type="button" class="card-readmore go-to-golden-rules" data-tool="exif" data-i18n="mp_card_readmore">Read more</button>
       </div>
@@ -5073,10 +5106,6 @@ html[data-theme="light"] .context-remove-btn:hover{
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="ad-slot ad-slot-banner">
-      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000011"></ins>
     </div>
 
     <div class="mp-colors-wrap">
@@ -5323,6 +5352,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <div class="tool-drop" id="cvDrop" data-i18n="cv_drop_text">Click or drag and drop images or a PDF</div>
       <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue where you left off</button>
 
       <div class="tool-controls">
         <div class="tool-format-buttons" id="cvFormatPicker">
@@ -5416,6 +5446,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <div class="tool-drop" id="cpDrop" data-i18n="cp_drop_text">Click or drag and drop images</div>
       <input type="file" id="cpInput" accept="image/*" multiple hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>Continue where you left off</button>
 
       <div class="tool-controls" id="cpToolControls">
         <div class="compress-level-buttons" id="cpLevelButtons">
@@ -5506,6 +5537,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <div class="tool-drop" id="cbDrop" data-i18n="cb_drop_text">Click or drag and drop PDF files</div>
       <input type="file" id="cbInput" accept="application/pdf,.pdf" multiple hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Continue where you left off</button>
 
       <div class="combine-file-list" id="cbFileList"></div>
 
@@ -5561,6 +5593,7 @@ html[data-theme="light"] .context-remove-btn:hover{
 
       <div class="tool-drop" id="exDrop" data-i18n="ex_drop_text">Click or drag and drop JPEG, PNG, or SVG images</div>
       <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
 
       <div class="exif-file-list" id="exFileList"></div>
 
@@ -5733,7 +5766,7 @@ html[data-theme="light"] .context-remove-btn:hover{
         </div>
       </div>
 
-      <div class="context-signature-overlay no-invert" id="ctSigOverlay" hidden>
+      <div class="context-signature-overlay" id="ctSigOverlay" hidden>
         <div class="context-signature-modal">
           <div class="context-signature-header">
             <span>Signature</span>
@@ -5795,10 +5828,12 @@ html[data-theme="light"] .context-remove-btn:hover{
             <div class="context-signature-clean-preview">
               <canvas id="ctSigCleanCanvas"></canvas>
             </div>
-            <label class="context-signature-threshold-label">Sensitivity
-              <input type="range" id="ctSigThreshold" min="0" max="100" value="55">
-            </label>
-            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigEraseReset">Undo erasing</button>
+            <div class="context-signature-color-row" id="ctSigColorRow">
+              <button type="button" class="context-signature-color-swatch context-signature-color-swatch--orig active" data-color="original" aria-label="Original ink color" aria-pressed="true"></button>
+              <button type="button" class="context-signature-color-swatch" data-color="#0d0d0f" aria-label="Black" aria-pressed="false"><span style="background:#0d0d0f"></span></button>
+              <button type="button" class="context-signature-color-swatch" data-color="#2E2548" data-shademix="true" aria-label="Blue" aria-pressed="false"><span style="background:#2E2548"></span></button>
+              <button type="button" class="context-signature-color-swatch" data-color="#7a1f2b" aria-label="Red" aria-pressed="false"><span style="background:#7a1f2b"></span></button>
+            </div>
             <button type="button" class="context-signature-action-btn" id="ctSigSave">Use this signature</button>
           </div>
         </div>
@@ -8457,13 +8492,15 @@ const translations = {
     mp_colors_p7: "Náš vývojář tvrdí, že barvy byly pečlivě vytvořeny pomocí pokročilých digitálních barevných kmenů z jeho domovské planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Tato tvrzení se nám nepodařilo ověřit, ale rozhodně nám z toho vyhládlo.",
     mp_hero_p1: "Vstupte do našeho světa... kde se kreativita pohybuje rychleji než rychlost světla. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1b: "Právě teď: pět rychlých a soukromých nástrojů běžících přímo v prohlížeči pro práci s obrázky a PDF, další jsou na cestě.",
+    mp_hero_p1_mobile: "Creative Hub — pět rychlých a soukromých nástrojů běžících v prohlížeči pro obrázky a PDF, další jsou na cestě.",
     mp_hero_p3: "Rychlé, jednoduché a dostupné odkudkoli ve vesmíru.",
     mp_hero_p4: "...počkat, naše systémy zaznamenaly neoprávněný únik paměti z interního úložiště BC Tools, který byste si asi neměli číst.",
     mp_cards_heading: "Začněte s Creative Hubem:",
     mp_card_convert_desc: "Převádějte obrázky mezi formáty JPG, PNG, WEBP, HEIC i PDF.",
     mp_card_compress_desc: "Komprimujte obrázky na libovolnou velikost bez viditelné ztráty kvality.",
     mp_card_combine_desc: "Kombinujte více PDF souborů do jednoho v libovolném pořadí.",
-    mp_card_exif_desc: "Odstraňte ze svých fotek skrytá metadata jako GPS polohu nebo model fotoaparátu — a vyčistěte SVG od balastu z editoru — než je budete sdílet.",
+    mp_card_exif_desc: "Odstraňte skrytá metadata jako GPS polohu, model fotoaparátu nebo data editoru v SVG — před sdílením.",
     mp_card_context_desc: "Přidejte vlastní text přímo do PDF — popisky, poznámky, podpisy — a stáhněte si ho.",
     ex_drop_text: "Klikněte nebo přetáhněte JPEG, PNG či SVG obrázky",
     ex_strip_btn: "Odstranit metadata a stáhnout",
@@ -8489,6 +8526,7 @@ const translations = {
     ex_status_done: "Hotovo. Vyčištěno obrázků: {count}.",
     ex_status_error: "Při odstraňování metadat došlo k chybě. Zkuste to prosím znovu.",
     ex_no_metadata: "Nenalezena žádná metadata",
+    ex_svg_scan_note: "Cleanly kontroluje známé vzory — nezaručuje, že váš soubor bude zcela čistý.",
     preview_original_size: "Původní velikost:",
     gr_lead: "Praktičtí, podrobní průvodci, jak vytěžit z každého nástroje maximum — jak, proč a jakým chybám se vyhnout.",
     gr_read_guide: "Přečíst si o tom více →",
@@ -8942,16 +8980,16 @@ const translations = {
     mp_colors_p6: "As the Creative Hub expands, so will its spectrum. New tools will bring new colors and new energy signatures from across the creative universe.",
     mp_colors_p7: "Our developer claims the colors were carefully crafted using advanced digital color strains from his home planet, Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "We have not been able to verify this claim, but we sure did get hungry.",
-    mp_hero_p1: "Start working with Creative Hub... a place where creativity travels faster than the speed of light.",
-    mp_hero_p1b: "A growing collection of browser-based tools for images, video, audio, and code.",
-    mp_hero_p1_mobile: "Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.",
+    mp_hero_p1: "Welcome to Creative Hub — a place where creativity travels faster than the speed of light.",
+    mp_hero_p1b: "Right now: five fast, private, browser-based tools for working with images and PDFs, with more on the way.",
+    mp_hero_p1_mobile: "Creative Hub — five fast, private, browser-based tools for images and PDFs, with more on the way.",
     mp_hero_p3: "Our tools are built to be the fastest, simplest, and accessible from anywhere in the universe.",
     mp_hero_p4: "...wait our systems detected an unauthorized memory leak from the BC Tools internal storage that you probably shouldn't read.",
     mp_cards_heading: "Start with Creative Hub:",
     mp_card_convert_desc: "Convert images between JPG, PNG, WEBP, HEIC and PDF.",
     mp_card_compress_desc: "Reduce image size while keeping quality.",
     mp_card_combine_desc: "Merge multiple PDF files into a single document in any order you like.",
-    mp_card_exif_desc: "Remove hidden metadata like GPS location or camera model from your photos — and clean editor bloat out of SVGs — before sharing them.",
+    mp_card_exif_desc: "Remove hidden metadata like GPS location, camera model, or editor data in SVGs — before sharing.",
     mp_card_context_desc: "Add your own text directly onto a PDF — captions, notes, signatures — then download it.",
     ex_drop_text: "Click or drag and drop JPEG, PNG, or SVG images",
     ex_strip_btn: "Strip metadata and download",
@@ -8983,6 +9021,7 @@ const translations = {
     ex_status_done: "Done. Cleaned {count} images.",
     ex_status_error: "Something went wrong removing metadata. Please try again.",
     ex_no_metadata: "No metadata found",
+    ex_svg_scan_note: "Cleanly checks for known patterns — it does not guarantee your file will be completely clean.",
     preview_original_size: "Original size:",
     gr_lead: "Practical, in-depth guides for getting the most out of every tool — the how, the why, and the mistakes worth avoiding.",
     gr_read_guide: "Read more about it →",
@@ -9434,13 +9473,15 @@ const translations = {
     mp_colors_p7: "Nasz twórca twierdzi, że kolory zostały starannie wykonane przy użyciu zaawansowanych cyfrowych szczepów kolorów z jego rodzinnej planety Bonbonia<span class=\"bonbonia-candy\" aria-hidden=\"true\">🍬</span>.",
     mp_colors_p8: "Nie udało nam się zweryfikować tych twierdzeń, ale z pewnością zgłodnieliśmy.",
     mp_hero_p1: "Wejdź do naszego świata... gdzie kreatywność porusza się szybciej niż prędkość światła. <span class=\"no-invert\">⚡</span>",
+    mp_hero_p1b: "Obecnie: pięć szybkich i prywatnych narzędzi działających w przeglądarce do pracy z obrazami i plikami PDF, kolejne w drodze.",
+    mp_hero_p1_mobile: "Creative Hub — pięć szybkich i prywatnych narzędzi w przeglądarce do obrazów i PDF, kolejne w drodze.",
     mp_hero_p3: "Szybki, prosty i dostępny z dowolnego miejsca we wszechświecie.",
     mp_hero_p4: "...czekaj, nasze systemy wykryły nieautoryzowany wyciek pamięci z wewnętrznego magazynu BC Tools, którego prawdopodobnie nie powinieneś czytać.",
     mp_cards_heading: "Zacznij od Creative Hub:",
     mp_card_convert_desc: "Konwertuj obrazy między formatami JPG, PNG, WEBP, HEIC i PDF.",
     mp_card_compress_desc: "Zmniejsz rozmiar obrazu przy zachowaniu jakości.",
     mp_card_combine_desc: "Połącz wiele plików PDF w jeden dokument w dowolnej kolejności.",
-    mp_card_exif_desc: "Usuń ukryte metadane, takie jak lokalizacja GPS czy model aparatu, ze zdjęć — i wyczyść pliki SVG z balastu edytora — zanim je udostępnisz.",
+    mp_card_exif_desc: "Usuń ukryte metadane, takie jak lokalizacja GPS, model aparatu czy dane edytora w plikach SVG — przed udostępnieniem.",
     mp_card_context_desc: "Dodaj własny tekst bezpośrednio do PDF-u — podpisy, notatki, sygnatury — a potem go pobierz.",
     ex_drop_text: "Kliknij lub przeciągnij i upuść obrazy JPEG, PNG lub SVG",
     ex_strip_btn: "Usuń metadane i pobierz",
@@ -9466,6 +9507,7 @@ const translations = {
     ex_status_done: "Gotowe. Wyczyszczono obrazów: {count}.",
     ex_status_error: "Wystąpił błąd podczas usuwania metadanych. Spróbuj ponownie.",
     ex_no_metadata: "Nie znaleziono metadanych",
+    ex_svg_scan_note: "Cleanly sprawdza znane wzorce — nie gwarantuje, że Twój plik będzie całkowicie czysty.",
     preview_original_size: "Oryginalny rozmiar:",
     gr_lead: "Praktyczne, szczegółowe poradniki, jak wycisnąć maksimum z każdego narzędzia — jak, dlaczego i jakich błędów unikać.",
     gr_read_guide: "Przeczytaj więcej na ten temat →",
@@ -10474,88 +10516,9 @@ function pathToName(pathname){
   return seg;
 }
 
-/* ===== TOOL COLOR BACKDROPS =====
-   Some tool accent colors (Context yellow, Compress blue, Cleanly
-   green) can't survive the light-mode invert filter's round-trip math
-   intact (proven per-color: an intermediate step needs a negative,
-   unrepresentable channel, so the browser clamps it and the true color
-   is unrecoverable). For those, color lives on real elements OUTSIDE
-   #app-shell (see markup near the top of <body>) — the filter simply
-   never touches them, regardless of hue. This keeps each one positioned
-   behind its transparent .card.<tool> / .tool-app cutout.
-   Declared here (before gotoPage, not after it) because gotoPage calls
-   syncColorBackdrops() and runs during initial page load — a const
-   declared further down the script wouldn't be initialized yet at that
-   point and would throw a temporal-dead-zone ReferenceError. */
-const COLOR_BACKDROP_CONFIGS = [
-  { cardId: "ctxCardBackdrop", toolId: "ctxToolBackdrop", cardSelector: "#page-mainpage .card.context", toolPage: "context" },
-  { cardId: "cprCardBackdrop", toolId: "cprToolBackdrop", cardSelector: "#page-mainpage .card.compress", toolPage: "compress" },
-  { cardId: "clnCardBackdrop", toolId: "clnToolBackdrop", cardSelector: "#page-mainpage .card.exif", toolPage: "exif" },
-];
-
-function syncColorBackdrops(){
-  const mainpageActive = document.getElementById("page-mainpage").classList.contains("active");
-
-  COLOR_BACKDROP_CONFIGS.forEach(cfg => {
-    const cardBackdrop = document.getElementById(cfg.cardId);
-    const toolBackdrop = document.getElementById(cfg.toolId);
-    if (!cardBackdrop || !toolBackdrop) return;
-
-    const card = mainpageActive ? document.querySelector(cfg.cardSelector) : null;
-    if (card){
-      const r = card.getBoundingClientRect();
-      cardBackdrop.style.display = "block";
-      cardBackdrop.style.left = (r.left + window.scrollX) + "px";
-      cardBackdrop.style.top = (r.top + window.scrollY) + "px";
-      cardBackdrop.style.width = r.width + "px";
-      cardBackdrop.style.height = r.height + "px";
-      cardBackdrop.style.borderRadius = "28px";
-    } else {
-      cardBackdrop.style.display = "none";
-    }
-
-    const toolPageEl = document.getElementById("page-" + cfg.toolPage);
-    const toolActive = toolPageEl && toolPageEl.classList.contains("active");
-    const toolApp = toolActive ? toolPageEl.querySelector(".tool-app") : null;
-    if (toolApp){
-      const r = toolApp.getBoundingClientRect();
-      toolBackdrop.style.display = "block";
-      toolBackdrop.style.left = (r.left + window.scrollX) + "px";
-      toolBackdrop.style.top = (r.top + window.scrollY) + "px";
-      toolBackdrop.style.width = r.width + "px";
-      toolBackdrop.style.height = r.height + "px";
-      toolBackdrop.style.borderRadius = "36px";
-    } else {
-      toolBackdrop.style.display = "none";
-    }
-  });
-}
-
-window.addEventListener("load", syncColorBackdrops);
-window.addEventListener("resize", syncColorBackdrops);
-document.addEventListener("bc:langchange", syncColorBackdrops);
-
-/* .tool-app itself grows/shrinks whenever a tool's own content changes
-   size (e.g. a file drop adding result cards) — none of the triggers
-   above fire for that, so the backdrop rectangle would silently go
-   stale until the next full page switch. Watch each tracked .tool-app
-   directly so the backdrop always matches its live height. */
-if (window.ResizeObserver){
-  const toolAppResizeObserver = new ResizeObserver(() => syncColorBackdrops());
-  COLOR_BACKDROP_CONFIGS.forEach(cfg => {
-    const toolPageEl = document.getElementById("page-" + cfg.toolPage);
-    const toolApp = toolPageEl && toolPageEl.querySelector(".tool-app");
-    if (toolApp) toolAppResizeObserver.observe(toolApp);
-  });
-}
-
 function gotoPage(name){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + name).classList.add("active");
-
-  if (typeof window.syncColorBackdrops === "function"){
-    window.syncColorBackdrops();
-  }
 
   const navCloseBtn = document.getElementById("navCloseBtn");
   if (navCloseBtn){
@@ -10809,6 +10772,73 @@ if (VALID_PAGES.includes(startPage)) {
   gotoPage(startPage);
 }
 
+/* ===== SHARED "CONTINUE WHERE YOU LEFT OFF" PERSISTENCE =====
+   IndexedDB helpers shared by every tool that offers a Continue button
+   (Convert/Compress/Combine/Cleanly — Context has its own, older,
+   single-file copy of this same pattern). One object store per tool
+   under a single "current" key — a tool only ever needs to remember its
+   own most-recent session, not a history of them. localStorage isn't
+   used here since file bytes can comfortably exceed its ~5MB quota. */
+function openBcDb(dbName, storeName){
+  const opened = new Promise((resolve, reject) => {
+    const req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(storeName);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+    /* Fires if another tab/connection still has an older-version
+       connection open — the request then waits indefinitely for that
+       connection to close rather than erroring, which would hang every
+       persistence call forever. Racing a timeout below is the safety
+       net. */
+    req.onblocked = () => {};
+  });
+  return Promise.race([
+    opened,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("IndexedDB open timed out")), 1500))
+  ]);
+}
+
+async function bcDbPut(dbName, storeName, value){
+  let db;
+  try {
+    db = await openBcDb(dbName, storeName);
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      tx.objectStore(storeName).put(value, "current");
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) { /* storage unavailable (private browsing etc.) — skip */
+  } finally { if (db) db.close(); }
+}
+
+async function bcDbGet(dbName, storeName){
+  let db;
+  try {
+    db = await openBcDb(dbName, storeName);
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction(storeName, "readonly").objectStore(storeName).get("current");
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) { return null;
+  } finally { if (db) db.close(); }
+}
+
+async function bcDbClear(dbName, storeName){
+  let db;
+  try {
+    db = await openBcDb(dbName, storeName);
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      tx.objectStore(storeName).delete("current");
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) { /* ignore */
+  } finally { if (db) db.close(); }
+}
+
 /* ===== CONVERT TOOL ===== */
 (function(){
   const drop = document.getElementById("cvDrop");
@@ -10991,6 +11021,7 @@ if (VALID_PAGES.includes(startPage)) {
       btn.classList.add("active");
       formatSelect.value = selectedFormat;
       updateFormatHelper(selectedFormat);
+      schedulePersist();
     });
   });
 
@@ -10998,6 +11029,7 @@ if (VALID_PAGES.includes(startPage)) {
     selectedFormat = formatSelect.value;
     formatButtons.forEach(b => b.classList.toggle("active", b.dataset.value === selectedFormat));
     updateFormatHelper(selectedFormat);
+    schedulePersist();
   });
 
   document.addEventListener("bc:langchange", () => {
@@ -11115,6 +11147,8 @@ if (VALID_PAGES.includes(startPage)) {
       updateFormatButtonVisibility();
       showSelectedPreviews();
       convertBtn.disabled = files.length === 0;
+      if (files.length === 0) bcDbClear(CV_DB_NAME, CV_DB_STORE);
+      else schedulePersist();
     });
     card.appendChild(btn);
   }
@@ -11177,8 +11211,7 @@ if (VALID_PAGES.includes(startPage)) {
     });
   }
 
-  input.addEventListener("change", e => {
-    const picked = [...e.target.files].filter(isConvertibleFile);
+  function applyPickedFiles(picked){
     files = picked.every(isPdfFile) || picked.every(isImageFile) ? picked : [];
     if (picked.length && files.length === 0){
       status.textContent = (translations[currentLang] || translations.en).cv_status_mixed_files;
@@ -11188,19 +11221,15 @@ if (VALID_PAGES.includes(startPage)) {
     updateFormatButtonVisibility();
     showSelectedPreviews();
     convertBtn.disabled = files.length === 0;
+    schedulePersist();
+  }
+
+  input.addEventListener("change", e => {
+    applyPickedFiles([...e.target.files].filter(isConvertibleFile));
   });
 
   drop.addEventListener("drop", e => {
-    const picked = [...e.dataTransfer.files].filter(isConvertibleFile);
-    files = picked.every(isPdfFile) || picked.every(isImageFile) ? picked : [];
-    if (picked.length && files.length === 0){
-      status.textContent = (translations[currentLang] || translations.en).cv_status_mixed_files;
-    } else {
-      renderStatus();
-    }
-    updateFormatButtonVisibility();
-    showSelectedPreviews();
-    convertBtn.disabled = files.length === 0;
+    applyPickedFiles([...e.dataTransfer.files].filter(isConvertibleFile));
   });
 
   /* Loaded on demand (not a static <script> tag) — it's a ~1.3MB WASM
@@ -11443,6 +11472,7 @@ if (VALID_PAGES.includes(startPage)) {
       // after removing a result card (result cards only remove themselves
       // from view, they never represented the source files anymore).
       files = [];
+      bcDbClear(CV_DB_NAME, CV_DB_STORE);
     } catch (err){
       console.error(err);
       status.textContent = dict.cv_status_error;
@@ -11457,6 +11487,59 @@ if (VALID_PAGES.includes(startPage)) {
     renderStatus();
     showSelectedPreviews();
   });
+
+  /* ===== "Continue where you left off" persistence ===== */
+  const CV_DB_NAME = "bctools-convert";
+  const CV_DB_STORE = "session";
+  const continueBtn = document.getElementById("cvContinueBtn");
+
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (files.length === 0) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (files.length === 0 || persistBusy) return;
+    persistBusy = true;
+    try {
+      const storedFiles = await Promise.all(files.map(async f => ({
+        name: f.name,
+        type: f.type,
+        bytes: await f.arrayBuffer()
+      })));
+      await bcDbPut(CV_DB_NAME, CV_DB_STORE, { files: storedFiles, selectedFormat });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  /* Safety net — catches anything a missed call site might not, same
+     pattern as Context's session persistence. */
+  setInterval(() => { if (files.length) persistNow(); }, 4000);
+
+  (async () => {
+    const saved = await bcDbGet(CV_DB_NAME, CV_DB_STORE);
+    if (!saved || !saved.files || !saved.files.length) return;
+    if (files.length) return; // user already picked files before this resolved
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        applyPickedFiles(restored);
+        if (saved.selectedFormat){
+          selectedFormat = saved.selectedFormat;
+          formatSelect.value = selectedFormat;
+          formatButtons.forEach(b => b.classList.toggle("active", b.dataset.value === selectedFormat));
+        }
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();
 
 /* ===== COMPRESS TOOL ===== */
@@ -11606,6 +11689,7 @@ if (VALID_PAGES.includes(startPage)) {
       selectedCompression.textContent = `${levelDict.cp_selected_level} ${levelName}`;
       updateLevelHelper(btn.dataset.levelKey);
       updateAllEstimates();
+      schedulePersist();
     });
   });
 
@@ -11678,6 +11762,8 @@ if (VALID_PAGES.includes(startPage)) {
         renderStatus();
         showSelectedPreviews();
         compressBtn.disabled = files.length === 0;
+        if (files.length === 0) bcDbClear(CP_DB_NAME, CP_DB_STORE);
+        else schedulePersist();
       });
       card.appendChild(btn);
 
@@ -11734,6 +11820,7 @@ if (VALID_PAGES.includes(startPage)) {
     renderStatus();
     showSelectedPreviews();
     compressBtn.disabled = files.length === 0;
+    schedulePersist();
   }
 
   input.addEventListener("change", e => setFiles(e.target.files));
@@ -11856,7 +11943,7 @@ if (VALID_PAGES.includes(startPage)) {
       // stale "files" array can't be reprocessed by clicking the button
       // again after removing a result card.
       files = [];
-      updateSvgOnlyUI();
+      bcDbClear(CP_DB_NAME, CP_DB_STORE);
     } catch (err){
       console.error(err);
       status.textContent = dict.cp_status_error;
@@ -11877,6 +11964,60 @@ if (VALID_PAGES.includes(startPage)) {
       selectedCompression.textContent = `${levelDict.cp_selected_level} ${levelName}`;
     }
   });
+
+  /* ===== "Continue where you left off" persistence ===== */
+  const CP_DB_NAME = "bctools-compress";
+  const CP_DB_STORE = "session";
+  const continueBtn = document.getElementById("cpContinueBtn");
+
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (files.length === 0) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (files.length === 0 || persistBusy) return;
+    persistBusy = true;
+    try {
+      const storedFiles = await Promise.all(files.map(async f => ({
+        name: f.name,
+        type: f.type,
+        bytes: await f.arrayBuffer()
+      })));
+      const activeBtn = document.querySelector("#cpLevelButtons .compress-level-btn.active");
+      await bcDbPut(CP_DB_NAME, CP_DB_STORE, {
+        files: storedFiles,
+        levelKey: activeBtn ? activeBtn.dataset.levelKey : null
+      });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  setInterval(() => { if (files.length) persistNow(); }, 4000);
+
+  (async () => {
+    const saved = await bcDbGet(CP_DB_NAME, CP_DB_STORE);
+    if (!saved || !saved.files || !saved.files.length) return;
+    if (files.length) return;
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        setFiles(restored);
+        if (saved.levelKey){
+          const matchingBtn = document.querySelector(`#cpLevelButtons .compress-level-btn[data-level-key="${saved.levelKey}"]`);
+          if (matchingBtn) matchingBtn.click();
+        }
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();
 
 /* ===== COMBINE TOOL (PDF merge with drag-to-reorder) ===== */
@@ -11992,6 +12133,8 @@ if (VALID_PAGES.includes(startPage)) {
     });
 
     combineBtn.disabled = files.length === 0;
+    if (files.length === 0) bcDbClear(CB_DB_NAME, CB_DB_STORE);
+    else schedulePersist();
   }
 
   function addFiles(newFiles){
@@ -12054,6 +12197,56 @@ if (VALID_PAGES.includes(startPage)) {
       finishPrivacyCheck(document.getElementById("cbPrivacyBadge"));
     }
   });
+
+  /* ===== "Continue where you left off" persistence =====
+     Unlike Convert/Compress, a successful merge doesn't clear `files` —
+     the list stays so you can reorder and merge again — so persistence
+     only ever clears when the list itself is emptied (handled inside
+     renderList() above), not on a successful combine. */
+  const CB_DB_NAME = "bctools-combine";
+  const CB_DB_STORE = "session";
+  const continueBtn = document.getElementById("cbContinueBtn");
+
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (files.length === 0) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (files.length === 0 || persistBusy) return;
+    persistBusy = true;
+    try {
+      const storedFiles = await Promise.all(files.map(async f => ({
+        name: f.name,
+        type: f.type,
+        bytes: await f.arrayBuffer()
+      })));
+      await bcDbPut(CB_DB_NAME, CB_DB_STORE, { files: storedFiles });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  setInterval(() => { if (files.length) persistNow(); }, 4000);
+
+  (async () => {
+    const saved = await bcDbGet(CB_DB_NAME, CB_DB_STORE);
+    if (!saved || !saved.files || !saved.files.length) return;
+    if (files.length) return;
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        files = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        renderList();
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();
 
 /* ===== EXIF STRIPPER TOOL ===== */
@@ -12211,12 +12404,18 @@ if (VALID_PAGES.includes(startPage)) {
         ? item.tags.map(label => `<span class="exif-tag">${label}</span>`).join("")
         : `<span class="exif-tag exif-tag-clean">${noMetadataText}</span>`;
 
+      const dict = translations[currentLang] || translations.en;
+      const svgScanNote = isSvgFile(item.file)
+        ? `<div class="exif-scan-note">${dict.ex_svg_scan_note}</div>`
+        : "";
+
       el.innerHTML = `
         <div class="exif-file-thumb"><img src="${item.src}" alt=""></div>
         <div class="exif-file-info">
           <div class="exif-file-name">${item.file.name}</div>
           <div class="exif-file-size">${formatSize(item.file.size)}</div>
           <div class="exif-tags">${tagsHtml}</div>
+          ${svgScanNote}
         </div>
         <button type="button" class="exif-file-remove" aria-label="Remove">×</button>
       `;
@@ -12229,6 +12428,9 @@ if (VALID_PAGES.includes(startPage)) {
 
       fileList.appendChild(el);
     });
+
+    if (files.length === 0) bcDbClear(EX_DB_NAME, EX_DB_STORE);
+    else schedulePersist();
   }
 
   async function addFiles(newFiles){
@@ -12336,6 +12538,55 @@ if (VALID_PAGES.includes(startPage)) {
   document.addEventListener("bc:langchange", () => {
     renderList();
   });
+
+  /* ===== "Continue where you left off" persistence =====
+     Same "list stays after a successful run" behavior as Combine —
+     persistence only clears when the list itself is emptied (handled
+     inside renderList() above), not after a successful strip. */
+  const EX_DB_NAME = "bctools-cleanly";
+  const EX_DB_STORE = "session";
+  const continueBtn = document.getElementById("exContinueBtn");
+
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (files.length === 0) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (files.length === 0 || persistBusy) return;
+    persistBusy = true;
+    try {
+      const storedFiles = await Promise.all(files.map(async item => ({
+        name: item.file.name,
+        type: item.file.type,
+        bytes: await item.file.arrayBuffer()
+      })));
+      await bcDbPut(EX_DB_NAME, EX_DB_STORE, { files: storedFiles });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  setInterval(() => { if (files.length) persistNow(); }, 4000);
+
+  (async () => {
+    const saved = await bcDbGet(EX_DB_NAME, EX_DB_STORE);
+    if (!saved || !saved.files || !saved.files.length) return;
+    if (files.length) return;
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        addFiles(restored);
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();
 
 /* ===== CONTEXT TOOL (click-to-place text on a PDF, then embed it) =====
@@ -12601,13 +12852,6 @@ if (VALID_PAGES.includes(startPage)) {
     editor.hidden = false;
     status.textContent = "";
 
-    /* renderPage()'s own resync ran while the editor was still hidden,
-       so it measured the pre-reveal (shorter) card height — resync again
-       now that the toolbar/preview panel are actually part of the layout. */
-    if (typeof window.syncColorBackdrops === "function"){
-      window.syncColorBackdrops();
-    }
-
     /* Mobile: skip the plain in-page editor entirely and go straight to
        the fixed-toolbar fullscreen view — a loaded PDF is tall enough
        that the toolbar would otherwise scroll out of reach and the
@@ -12713,15 +12957,6 @@ if (VALID_PAGES.includes(startPage)) {
     nextPageBtn.disabled = currentPage >= pageCount;
 
     renderTextBoxes();
-
-    /* The .tool-app box just grew a lot taller (the PDF canvas is now
-       visible) — resync the yellow backdrop immediately so it wraps the
-       whole thing right away, instead of staying sized to the pre-PDF
-       (toolbar-only) height until some unrelated event happens to
-       trigger a resync later. */
-    if (!isFullscreen && typeof window.syncColorBackdrops === "function"){
-      window.syncColorBackdrops();
-    }
   }
 
   function renderTextBoxes(){
@@ -13088,9 +13323,6 @@ if (VALID_PAGES.includes(startPage)) {
     filenameInput.value = "";
     updateFilenameTriggerLabel();
     status.textContent = "";
-    if (typeof window.syncColorBackdrops === "function"){
-      window.syncColorBackdrops();
-    }
     ctxDbClear();
   }
 
@@ -13680,10 +13912,14 @@ if (VALID_PAGES.includes(startPage)) {
          "Downloaded" while nothing had actually saved anywhere). The
          Web Share API opens the native Share sheet directly, where
          "Save to Files" is one tap away — the normal, expected way to
-         get a file out of Safari on iPhone. Feature-detected so
-         desktop/other browsers keep the plain anchor-download, which
-         already works fine there. */
-      if (navigator.canShare && navigator.canShare({ files: [outFile] })){
+         get a file out of Safari on iPhone. Gated on viewport width,
+         not just feature support — Windows Chrome/Edge also implement
+         canShare({files}) via the OS share flyout, so relying on
+         feature-detection alone (as this once did) hijacked the
+         desktop download into an unwanted share popup there too. The
+         width check matches the pattern already used by the page's
+         other share button. */
+      if (window.innerWidth <= 768 && navigator.canShare && navigator.canShare({ files: [outFile] })){
         try {
           await navigator.share({ files: [outFile], title: fileName });
           status.textContent = "";
@@ -13761,22 +13997,19 @@ if (VALID_PAGES.includes(startPage)) {
   const sigDrawNextBtn = document.getElementById("ctSigDrawNext");
   const sigStepClean = document.getElementById("ctSigStepClean");
   const sigCleanCanvas = document.getElementById("ctSigCleanCanvas");
-  const sigThreshold = document.getElementById("ctSigThreshold");
-  const sigEraseResetBtn = document.getElementById("ctSigEraseReset");
+  const sigColorRow = document.getElementById("ctSigColorRow");
   const sigSaveBtn = document.getElementById("ctSigSave");
 
   if (sigBtn && sigOverlay){
-    /* In light theme, #app-shell gets filter:invert(1)hue-rotate(180deg)
-       (that's how the whole site fakes light mode) — a CSS filter on an
-       ancestor creates a new containing block for position:fixed
-       descendants, so this modal would be "fixed" relative to #app-shell
-       instead of the real viewport and could render off-screen. Same
-       bug .context-fullscreen-overlay already had to work around by
-       relocating to <body>; do the same here rather than leaving this
-       one broken on real devices in light mode (desktop devtools mobile
-       emulation doesn't reproduce it if the emulated page loads in dark
-       theme, which is why this can pass there and still fail on an
-       actual phone). */
+    /* Historical note: this reparenting to <body> was originally required
+       because #app-shell used to carry a light-theme filter, and a CSS
+       filter on an ancestor creates a new containing block for
+       position:fixed descendants — this modal would render "fixed"
+       relative to #app-shell instead of the real viewport and could end
+       up off-screen. #app-shell no longer has any filter (real light/
+       dark tokens replaced it), so this specific bug no longer applies —
+       left in place since it's harmless and removing it isn't verified
+       against the live editor yet. */
     document.body.appendChild(sigOverlay);
 
     let sigSourceCanvas = null; // full-resolution cropped source, before cleanup
@@ -14100,80 +14333,103 @@ if (VALID_PAGES.includes(startPage)) {
       const srcCtx = sourceCanvas.getContext("2d");
       const src = srcCtx.getImageData(0, 0, w, h);
 
-      /* Approximates "what the lighting looks like" (a photo of blank
-         paper would just BE this blur) — dividing it back out of the
-         original flattens shadows/vignetting before thresholding, the
-         same trick document-scanner apps use. Built via two downscale
-         -> upscale passes (drawImage only) rather than ctx.filter's
-         blur() — that relies on browser support for canvas filters,
-         which turned out to silently no-op on a real iPhone's Safari:
-         with no actual blur applied, "lighting" became an exact copy
-         of the source, every pixel's normalized luminance collapsed to
-         ~1 (dividing each pixel by itself), and the whole image read
-         as background regardless of the sensitivity slider. Two passes
-         at different scales (rather than one aggressive one) avoids
-         the blocky artifacts a single harsh downscale left behind. */
-      function boxBlur(canvas, downscale){
-        const bw = canvas.width, bh = canvas.height;
-        const smallW = Math.max(1, Math.round(bw / downscale));
-        const smallH = Math.max(1, Math.round(bh / downscale));
-        const small = document.createElement("canvas");
-        small.width = smallW;
-        small.height = smallH;
-        const sctx = small.getContext("2d");
-        sctx.imageSmoothingEnabled = true;
-        sctx.drawImage(canvas, 0, 0, smallW, smallH);
-        const big = document.createElement("canvas");
-        big.width = bw;
-        big.height = bh;
-        const bctx = big.getContext("2d");
-        bctx.imageSmoothingEnabled = true;
-        bctx.drawImage(small, 0, 0, bw, bh);
-        return big;
+      /* Sauvola local thresholding — the standard algorithm real document
+         -scanner apps (Adobe Scan, CamScanner, etc.) use to binarize
+         photographed ink against uneven paper lighting, rather than a
+         hand-rolled blur-and-divide ratio. For every pixel it derives a
+         threshold from that pixel's own local mean and standard
+         deviation (via an integral image, so this stays O(1) per pixel
+         instead of re-scanning a window every time): T = mean * (1 + k *
+         (std/R - 1)). Ink shows up as a strong local deviation from its
+         neighborhood regardless of whether the paper nearby is bright or
+         shadowed; smooth paper — even shadowed paper — has low local
+         variance and doesn't get pulled in as false ink. This is what
+         actually fixed the two failure modes the old ratio approach kept
+         trading off against each other (gray halo around every stroke
+         vs. strokes fragmenting into disconnected blobs): those were
+         symptoms of the ratio method, not of any one constant being
+         mistuned. */
+      const lum = new Float64Array(w * h);
+      for (let p = 0; p < w * h; p++){
+        const i = p * 4;
+        lum[p] = 0.299 * src.data[i] + 0.587 * src.data[i + 1] + 0.114 * src.data[i + 2];
       }
-      const blurred = boxBlur(boxBlur(sourceCanvas, 10), 4);
-      const lighting = blurred.getContext("2d").getImageData(0, 0, w, h);
+
+      const ii = new Float64Array((w + 1) * (h + 1));
+      const ii2 = new Float64Array((w + 1) * (h + 1));
+      for (let y = 0; y < h; y++){
+        let rowSum = 0, rowSum2 = 0;
+        for (let x = 0; x < w; x++){
+          const v = lum[y * w + x];
+          rowSum += v;
+          rowSum2 += v * v;
+          const idx = (y + 1) * (w + 1) + (x + 1);
+          ii[idx] = ii[idx - (w + 1)] + rowSum;
+          ii2[idx] = ii2[idx - (w + 1)] + rowSum2;
+        }
+      }
+
+      /* Window scales with the crop's own size rather than a fixed pixel
+         count, so a tightly-cropped signature and a loosely-cropped one
+         get a proportionally similar-sized neighborhood to sample. */
+      const half = Math.max(6, Math.round(Math.min(w, h) * 0.04));
+      const R = 128;
+      /* sensitivity 0-100 nudges k (Sauvola's sensitivity constant) a
+         modest ±15% around its textbook default of 0.34 — high
+         sensitivity lowers k, which raises the threshold and picks up
+         fainter marks; low sensitivity does the opposite. */
+      const k = 0.34 * (1 + (50 - sensitivity) / 333);
+
+      /* Sauvola alone assumes every local window contains a genuine mix
+         of ink and paper — true for thin pen strokes, but a thick
+         solid-filled mark (wider than the window) has nothing but ink
+         inside its own window once you're deep in its interior, so
+         local contrast collapses toward zero and those pixels read as
+         "no local contrast, therefore background" even though they're
+         unambiguously dark. A global fallback catches that case: any
+         pixel meaningfully darker than the WHOLE crop's own average
+         (still dominated by paper even with a large mark in frame)
+         counts as ink regardless of what its immediate neighborhood
+         looks like. */
+      const totalCount = w * h;
+      const globalMean = ii[h * (w + 1) + w] / totalCount;
+      const globalVar = Math.max(0, ii2[h * (w + 1) + w] / totalCount - globalMean * globalMean);
+      const globalCutoff = globalMean - Math.sqrt(globalVar) * 0.6;
 
       const out = srcCtx.createImageData(w, h);
-      /* sensitivity 0-100 -> how faint a mark can be and still count as
-         ink. Kept well clear of 1.0 at both ends — letting it reach 1.0
-         (the old formula did at sensitivity=0) meant even near-white
-         background got a sliver of nonzero alpha, showing up as a faint
-         gray wash across the whole image regardless of slider position.
-         The feather band is the thin zone just above the cutoff where
-         alpha ramps instead of snapping, so stroke edges stay smooth. */
-      const cutoff = 0.35 + (sensitivity / 100) * 0.45;
-      const feather = 0.12;
+      const feather = 6; // luminance units the soft edge ramps over
 
-      for (let i = 0; i < src.data.length; i += 4){
-        const r = src.data[i], g = src.data[i + 1], b = src.data[i + 2];
-        const lr = lighting.data[i] || 1, lg = lighting.data[i + 1] || 1, lb = lighting.data[i + 2] || 1;
-        /* Normalized luminance is only used to DECIDE ink vs. background
-           under uneven lighting — the actual output color below comes
-           from the untouched source pixel, not this normalized value.
-           Dividing each color channel separately (the previous version's
-           approach) and using THAT as the output color is what was
-           washing the ink out toward gray: three channels normalized
-           against slightly different local blur values drift apart in
-           hue, even though luminance-wise they still read as "dark". */
-        const nr = Math.min(1, r / lr), ng = Math.min(1, g / lg), nb = Math.min(1, b / lb);
-        const luminance = 0.299 * nr + 0.587 * ng + 0.114 * nb;
-        /* Mostly-opaque core, only feathering right at the edge — the
-           original linear ramp from luminance 0 to the cutoff made even
-           solidly dark ink partially transparent unless it was pure
-           black, which looked faded/blended instead of a solid stroke.
-           But pinning the whole core to a flat 1 also erased the real
-           photo's subtle pen-pressure/skip texture (faint lighter
-           streaks within a stroke, visible in the source photo) — this
-           lets the core itself vary a little (0.85-1) with luminance
-           instead of clipping it all to the same value. */
-        const alpha = luminance >= cutoff ? 0
-          : luminance <= cutoff - feather ? Math.max(0.92, 1 - luminance * 0.15)
-          : (cutoff - luminance) / feather;
-        out.data[i] = r;
-        out.data[i + 1] = g;
-        out.data[i + 2] = b;
-        out.data[i + 3] = Math.round(alpha * 255);
+      for (let y = 0; y < h; y++){
+        const y0 = Math.max(0, y - half), y1 = Math.min(h, y + half + 1);
+        for (let x = 0; x < w; x++){
+          const x0 = Math.max(0, x - half), x1 = Math.min(w, x + half + 1);
+          const area = (y1 - y0) * (x1 - x0);
+          const A = y0 * (w + 1) + x0, B = y0 * (w + 1) + x1, C = y1 * (w + 1) + x0, D = y1 * (w + 1) + x1;
+          const sum = ii[D] - ii[B] - ii[C] + ii[A];
+          const sum2 = ii2[D] - ii2[B] - ii2[C] + ii2[A];
+          const mean = sum / area;
+          const variance = Math.max(0, sum2 / area - mean * mean);
+          const std = Math.sqrt(variance);
+          const T = mean * (1 + k * (std / R - 1));
+
+          const p = y * w + x;
+          const diffLocal = T - lum[p]; // > 0 means darker than its local threshold, i.e. ink
+          const diffGlobal = globalCutoff - lum[p]; // catches thick fills Sauvola's local window sees no contrast in
+          const diff = Math.max(diffLocal, diffGlobal);
+          const i = p * 4;
+          /* Mostly-opaque core, only feathering right at the edge — a
+             flat ramp from 0 all the way to T made even solidly dark ink
+             partially transparent unless it was pure black. Letting the
+             core itself vary a little (0.85-1) instead of clipping it
+             flat keeps the real photo's subtle pen-pressure texture. */
+          const alpha = diff <= 0 ? 0
+            : diff >= feather ? Math.max(0.92, 1 - (lum[p] / 255) * 0.15)
+            : diff / feather;
+          out.data[i] = src.data[i];
+          out.data[i + 1] = src.data[i + 1];
+          out.data[i + 2] = src.data[i + 2];
+          out.data[i + 3] = Math.round(alpha * 255);
+        }
       }
 
       /* Real pen strokes often have a highlight/sheen running through
@@ -14213,13 +14469,45 @@ if (VALID_PAGES.includes(startPage)) {
               }
             }
           }
-          if (total > 0 && inkCount / total >= 0.55){
+          if (total > 0 && inkCount / total >= 0.6){
             const base = idx * 4;
             out.data[base] = Math.round(sumR / inkCount);
             out.data[base + 1] = Math.round(sumG / inkCount);
             out.data[base + 2] = Math.round(sumB / inkCount);
             out.data[base + 3] = 230;
           }
+        }
+      }
+
+      /* The global fallback above (for thick fills the local Sauvola
+         window can't judge) has no local-contrast requirement at all,
+         so it will happily flag a shadowed patch of paper or a bit of
+         camera noise as ink too, wherever that happens to be darker
+         than the crop's overall average — real strokes are elongated
+         and densely connected, while this kind of false positive shows
+         up as small isolated speckles. This pass removes exactly that:
+         any ink pixel without enough OTHER ink nearby gets cleared,
+         which a true stroke (surrounded by more of itself along its
+         length) never triggers. */
+      const closedAlpha = new Uint8ClampedArray(w * h);
+      for (let p = 0; p < w * h; p++) closedAlpha[p] = out.data[p * 4 + 3];
+      const denoiseRadius = 2;
+      for (let y = 0; y < h; y++){
+        for (let x = 0; x < w; x++){
+          const idx = y * w + x;
+          if (closedAlpha[idx] < 180) continue;
+          let inkNeighbors = 0;
+          for (let dy = -denoiseRadius; dy <= denoiseRadius; dy++){
+            const ny = y + dy;
+            if (ny < 0 || ny >= h) continue;
+            for (let dx = -denoiseRadius; dx <= denoiseRadius; dx++){
+              if (dx === 0 && dy === 0) continue;
+              const nx = x + dx;
+              if (nx < 0 || nx >= w) continue;
+              if (closedAlpha[ny * w + nx] >= 180) inkNeighbors++;
+            }
+          }
+          if (inkNeighbors < 3) out.data[idx * 4 + 3] = 0;
         }
       }
 
@@ -14245,20 +14533,117 @@ if (VALID_PAGES.includes(startPage)) {
       sigCleanCtx.filter = "none";
     }
 
+    /* Fixed sensitivity — matches the old slider's default. The
+       Sauvola threshold plus its global fallback (see
+       computeCleanedImageData) turned out not to need per-photo manual
+       tuning the way the old ratio-based cutoff did. */
+    const SIG_SENSITIVITY = 55;
+
+    let sigInkColor = "original";
+
     function runCleanup(){
       if (!sigSourceCanvas) return;
       sigCleanCanvas.width = sigSourceCanvas.width;
       sigCleanCanvas.height = sigSourceCanvas.height;
       sigCleanCtx = sigCleanCanvas.getContext("2d");
-      sigCleanBaseImageData = computeCleanedImageData(sigSourceCanvas, Number(sigThreshold.value));
+      sigCleanBaseImageData = computeCleanedImageData(sigSourceCanvas, SIG_SENSITIVITY);
       drawSoftened(sigCleanBaseImageData);
+      /* Fresh source photo — reset any color override from a previous
+         attempt rather than silently carrying it over. */
+      sigInkColor = "original";
+      if (sigColorRow){
+        sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(btn => {
+          const active = btn.dataset.color === "original";
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", String(active));
+        });
+      }
     }
 
-    sigThreshold.addEventListener("input", runCleanup);
-    sigEraseResetBtn.addEventListener("click", () => {
+    function hexToRgb(hex){
+      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    }
+
+    /* Shades a base color lighter (amt > 0) or darker (amt < 0) by
+       lerping each channel toward 255 or 0. */
+    function shadeRgb([r, g, b], amt){
+      const target = amt > 0 ? 255 : 0;
+      const t = Math.abs(amt);
+      return [r + (target - r) * t, g + (target - g) * t, b + (target - b) * t];
+    }
+
+    /* Smooth, low-frequency 2D value noise (a coarse random grid,
+       bilinear-interpolated) — a flat solid fill reads as printed
+       plastic, not ink, but per-pixel randomness would look like TV
+       static. Sampling a coarse grid gives soft, blotchy tonal drift
+       instead, closer to how real ink actually varies with pressure
+       and paper texture. */
+    function makeSmoothNoise(w, h, cell){
+      const cols = Math.max(2, Math.round(w / cell) + 1);
+      const rows = Math.max(2, Math.round(h / cell) + 1);
+      const grid = new Float32Array(cols * rows);
+      for (let i = 0; i < grid.length; i++) grid[i] = Math.random();
+      return function sample(x, y){
+        const gx = (x / w) * (cols - 1), gy = (y / h) * (rows - 1);
+        const gx0 = Math.min(cols - 2, Math.floor(gx)), gy0 = Math.min(rows - 2, Math.floor(gy));
+        const fx = gx - gx0, fy = gy - gy0;
+        const v00 = grid[gy0 * cols + gx0], v10 = grid[gy0 * cols + gx0 + 1];
+        const v01 = grid[(gy0 + 1) * cols + gx0], v11 = grid[(gy0 + 1) * cols + gx0 + 1];
+        const vx0 = v00 + (v10 - v00) * fx, vx1 = v01 + (v11 - v01) * fx;
+        return vx0 + (vx1 - vx0) * fy;
+      };
+    }
+
+    /* Recolors whatever's currently ink (alpha > 0) without disturbing
+       any erasing the user's already done — reads the live canvas for
+       its current alpha channel, but pulls RGB either from the fixed
+       swatch color (optionally shade-mixed for a less flat, more ink
+       -like look) or, for "original", from the untouched base image's
+       own per-pixel color (so switching back after trying a swatch
+       restores the real photographed texture, not a flattened guess). */
+    function applyInkColor(color, shademix){
       if (!sigCleanBaseImageData) return;
-      drawSoftened(sigCleanBaseImageData);
-    });
+      const w = sigCleanCanvas.width, h = sigCleanCanvas.height;
+      const current = sigCleanCtx.getImageData(0, 0, w, h);
+      const base = sigCleanBaseImageData;
+      const baseRgb = color !== "original" ? hexToRgb(color) : null;
+      const noise = shademix && color !== "original" ? makeSmoothNoise(w, h, 24) : null;
+
+      for (let p = 0; p < current.data.length; p += 4){
+        if (current.data[p + 3] === 0) continue;
+        if (color === "original"){
+          current.data[p] = base.data[p];
+          current.data[p + 1] = base.data[p + 1];
+          current.data[p + 2] = base.data[p + 2];
+          continue;
+        }
+        let rgb = baseRgb;
+        if (noise){
+          const pix = p / 4;
+          const x = pix % w, y = Math.floor(pix / w);
+          // maps [0,1) noise to a ±18% shade offset around the base color
+          rgb = shadeRgb(baseRgb, (noise(x, y) - 0.5) * 0.36);
+        }
+        current.data[p] = Math.round(rgb[0]);
+        current.data[p + 1] = Math.round(rgb[1]);
+        current.data[p + 2] = Math.round(rgb[2]);
+      }
+      sigCleanCtx.putImageData(current, 0, 0);
+    }
+
+    if (sigColorRow){
+      sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(btn => {
+        btn.addEventListener("click", () => {
+          sigInkColor = btn.dataset.color;
+          sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(b => {
+            const active = b === btn;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-pressed", String(active));
+          });
+          applyInkColor(sigInkColor, btn.dataset.shademix === "true");
+        });
+      });
+    }
 
     /* Touch-up eraser — drag over the preview to punch alpha=0 into a
        small radius under the pointer, for any shadow/smudge the
@@ -14411,16 +14796,17 @@ if (VALID_PAGES.includes(startPage)) {
   const root = document.documentElement;
 
   function applyTheme(theme){
-    if (theme === "light"){
-      root.setAttribute("data-theme", "light");
-    } else {
-      root.removeAttribute("data-theme");
-    }
+    /* Both states set an explicit data-theme value now — the token
+       system's :root[data-theme="dark"] override (see :root in <style>)
+       needs "dark" to actually be present as an attribute value, not
+       represented by the attribute's absence like the old filter-based
+       approach did. */
+    root.setAttribute("data-theme", theme === "light" ? "light" : "dark");
   }
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  if (saved !== "dark") applyTheme("light");
+  applyTheme(saved === "dark" ? "dark" : "light");
 
   if (themeBtn){
     themeBtn.addEventListener("click", () => {
