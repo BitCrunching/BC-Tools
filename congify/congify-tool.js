@@ -27,6 +27,9 @@
   const scrubberLabelToggle = document.getElementById("gifScrubberLabelToggle");
   const scrubberFileName = document.getElementById("gifScrubberFileName");
   const fpsBtn = document.getElementById("gifFpsBtn");
+  const fpsInfoBtn = document.getElementById("gifFpsInfoBtn");
+  const fpsInfoTooltip = document.getElementById("gifFpsInfoTooltip");
+  bcRegisterInfoTooltip(fpsInfoBtn, fpsInfoTooltip);
   const previewFrame = document.getElementById("gifPreviewFrame");
   const previewPanel = document.getElementById("gifPreviewPanel");
   const resizeHandle = document.getElementById("gifResizeHandle");
@@ -83,7 +86,12 @@
   const captionStrokeWidthBtn = document.getElementById("gifCaptionStrokeWidthBtn");
   const captionStrokeWidthBtnLine = document.getElementById("gifCaptionStrokeWidthBtnLine");
   const cropBtn = document.getElementById("gifCropBtn");
+  const cropFreeIcon = document.getElementById("gifCropFreeIcon");
+  const cropBtnLabel = document.getElementById("gifCropBtnLabel");
   const orderBtn = document.getElementById("gifOrderBtn");
+  const orderInfoBtn = document.getElementById("gifOrderInfoBtn");
+  const orderInfoTooltip = document.getElementById("gifOrderInfoTooltip");
+  bcRegisterInfoTooltip(orderInfoBtn, orderInfoTooltip);
   const speedTrigger = document.getElementById("gifSpeedTrigger");
   const speedTriggerLabel = document.getElementById("gifSpeedTriggerLabel");
   const speedMenu = document.getElementById("gifSpeedMenu");
@@ -118,7 +126,8 @@
   const CAPTION_DEFAULT_X = 0.5, CAPTION_DEFAULT_Y = 0.12;
   const CAPTION_SIZE_MIN = 10, CAPTION_SIZE_MAX = 120;
   let fps = 10;
-  let cropMode = "full"; // "full" | "square" | "portrait"
+  let cropMode = "free"; // matches a CROP_OPTIONS[].crop key — see its own declaration for the ratio each maps to
+  let cropRatio = null; // width/height for the currently selected cropMode (null = no forced crop), kept in sync by the CROP_OPTIONS click handler
   let orderMode = "normal"; // "normal" | "reverse" | "boomerang"
   let playbackSpeed = 1; // 0.25 | 0.5 | 1 | 2 | 4
   let previewPlaying = false;
@@ -192,12 +201,17 @@
        screen, same as setFile() would do at any other point. */
     drop.hidden = false;
     urlRow.hidden = false;
+    /* Minimize only makes sense once you're back editing alongside the
+       result (see hideDoneView) — collapsing it here, while it's the
+       one thing this screen exists to show you, does nothing useful. */
+    resultsHeader.hidden = true;
   }
   function hideDoneView(){
     editorControls.hidden = false;
     doneActions.hidden = true;
     drop.hidden = true;
     urlRow.hidden = true;
+    resultsHeader.hidden = false;
   }
   doneContinueBtn.addEventListener("click", hideDoneView);
 
@@ -216,11 +230,16 @@
     resultsToggle.textContent = collapsed ? "+" : "−";
     resultsToggle.setAttribute("aria-expanded", String(!collapsed));
     resultsToggle.setAttribute("aria-label", collapsed ? "Expand result" : "Minimize result");
+    resultsToggle.title = collapsed ? "Expand result" : "Minimize result";
   });
 
   /* Renders a finished GIF blob into the results panel — used both
      right after conversion and when restoring a previously saved
-     result via "Continue where you left off". */
+     result via "Continue where you left off". Doesn't touch
+     resultsHeader's visibility itself — showDoneView()/hideDoneView()
+     own that, since whether minimizing makes sense depends on which of
+     those two views this render is happening into (see their own
+     comments), not on the render itself. */
   function renderResult(blob){
     const url = URL.createObjectURL(blob);
     const result = document.createElement("div");
@@ -231,10 +250,10 @@
     resultsEl.innerHTML = "";
     resultsEl.appendChild(result);
     resultsEl.hidden = false;
-    resultsHeader.hidden = false;
     resultsToggle.textContent = "−";
     resultsToggle.setAttribute("aria-expanded", "true");
     resultsToggle.setAttribute("aria-label", "Minimize result");
+    resultsToggle.title = "Minimize result";
   }
 
   /* ===== file loading ===== */
@@ -315,24 +334,26 @@
      always agree on exactly what gets cut. Centered crops rather than
      freeform drag-resize — covers the common cases (squaring off a
      phone video, cropping to a vertical GIF) without the extra UI/edge
-     cases a fully custom crop box would need. */
+     cases a fully custom crop box would need.
+     One formula for every ratio (16:9, 1:1, 2:3, ...) instead of a
+     square/portrait/full special case each — a 1:1 crop and a 2:3 crop
+     are both just "fit this aspect centered", the same shape of
+     problem the old "portrait" branch already solved generically; only
+     the target number was hardcoded to 9/16. CROP_OPTIONS' own .ratio
+     supplies that number now — null (the default "Free" option) means
+     no forced crop at all, so it's handled separately, before this
+     formula rather than as a ratio value of its own. */
   function getCropRect(){
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return { sx:0, sy:0, sw:0, sh:0 };
-    if (cropMode === "square"){
-      const side = Math.min(vw, vh);
-      return { sx:(vw - side) / 2, sy:(vh - side) / 2, sw:side, sh:side };
+    if (!cropRatio) return { sx:0, sy:0, sw:vw, sh:vh };
+    const targetAspect = cropRatio;
+    if (vw / vh > targetAspect){
+      const sh = vh, sw = vh * targetAspect;
+      return { sx:(vw - sw) / 2, sy:0, sw, sh };
     }
-    if (cropMode === "portrait"){
-      const targetAspect = 9 / 16;
-      if (vw / vh > targetAspect){
-        const sh = vh, sw = vh * targetAspect;
-        return { sx:(vw - sw) / 2, sy:0, sw, sh };
-      }
-      const sw = vw, sh = vw / targetAspect;
-      return { sx:0, sy:(vh - sh) / 2, sw, sh };
-    }
-    return { sx:0, sy:0, sw:vw, sh:vh };
+    const sw = vw, sh = vw / targetAspect;
+    return { sx:0, sy:(vh - sh) / 2, sw, sh };
   }
 
   /* Caption rendering, shared by the preview and the real output frames
@@ -1111,17 +1132,34 @@
 
   /* Aspect ratio / Playback — same .option-change-btn click-to-advance
      pattern as fps above: short, ordered option lists, no real "browse"
-     need. */
+     need. Aspect ratio itself now lives as a corner button on the
+     preview frame (see its own markup/CSS) rather than in the settings
+     row — same component, just repositioned and icon-only until
+     clicked. */
   const CROP_OPTIONS = [
-    { crop: "full", label: "Full" },
-    { crop: "square", label: "Square" },
-    { crop: "portrait", label: "Portrait" }
+    { crop: "free", label: "Free", ratio: null },
+    { crop: "16:9", label: "16:9", ratio: 16 / 9 },
+    { crop: "9:16", label: "9:16", ratio: 9 / 16 },
+    { crop: "1:1", label: "1:1", ratio: 1 },
+    { crop: "2:3", label: "2:3", ratio: 2 / 3 },
+    { crop: "3:2", label: "3:2", ratio: 3 / 2 }
   ];
+  /* "Free" shows the corner-brackets icon instead of text (see the
+     icon's own CSS comment); every other ratio shows its plain label,
+     same as the rest of the option-change-btns. */
+  function renderCropOption(opt, btn){
+    const isFree = opt.crop === "free";
+    cropFreeIcon.hidden = !isFree;
+    cropBtnLabel.hidden = isFree;
+    if (!isFree) cropBtnLabel.textContent = opt.label;
+    btn.setAttribute("aria-label", "Aspect ratio: " + opt.label);
+  }
   const cropControl = bcRegisterOptionChangeBtn(cropBtn, CROP_OPTIONS, (opt) => {
     cropMode = opt.crop;
+    cropRatio = opt.ratio;
     renderPreview();
     schedulePersist();
-  }, CROP_OPTIONS.findIndex(o => o.crop === cropMode));
+  }, CROP_OPTIONS.findIndex(o => o.crop === cropMode), renderCropOption);
 
   const ORDER_OPTIONS = [
     { order: "normal", label: "Normal" },
@@ -1626,9 +1664,12 @@
           if (opt){ bcSetDropdownActive(resolutionMenu, opt); resolutionTriggerLabel.textContent = opt.dataset.label; }
         }
         if (saved.cropMode){
-          cropMode = saved.cropMode;
           const idx = CROP_OPTIONS.findIndex(o => o.crop === saved.cropMode);
-          if (idx !== -1) cropControl.setIndex(idx);
+          if (idx !== -1){
+            cropMode = CROP_OPTIONS[idx].crop;
+            cropRatio = CROP_OPTIONS[idx].ratio;
+            cropControl.setIndex(idx);
+          }
         }
         if (saved.orderMode){
           orderMode = saved.orderMode;
@@ -1688,6 +1729,10 @@
           lastResultType = saved.result.type || "image/gif";
           lastResultBytes = saved.result.bytes;
           renderResult(new Blob([lastResultBytes], { type: lastResultType }));
+          /* Restores straight into the editor (no showDoneView() call in
+             this path), so minimize is meaningful here — same as after
+             clicking "Continue working". */
+          resultsHeader.hidden = false;
         }
       } catch (err){
         console.error(err);
