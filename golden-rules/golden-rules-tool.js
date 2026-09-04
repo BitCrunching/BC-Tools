@@ -1,35 +1,14 @@
 let currentGoldenRulesTool = "convert";
 
-let goldenRulesInContentAd = null;
-let goldenRulesInContentAdPushed = false;
-
-function placeGoldenRulesInContentAd(){
-  const activeArticles = document.querySelector(".golden-rules-articles.active");
-  const articles = activeArticles ? activeArticles.querySelectorAll(".golden-rules-article") : [];
-  const targetArticle = articles[2] || articles[articles.length - 1];
-  if (!targetArticle) return;
-
-  if (!goldenRulesInContentAd){
-    goldenRulesInContentAd = document.createElement("ins");
-    goldenRulesInContentAd.className = "adsbygoogle ad-slot ad-slot-incontent ad-slot-banner";
-    goldenRulesInContentAd.style.width = "320px";
-    goldenRulesInContentAd.style.height = "50px";
-    goldenRulesInContentAd.setAttribute("data-ad-client", "ca-pub-3037236608651508");
-    goldenRulesInContentAd.setAttribute("data-ad-slot", "0000000005");
-  }
-
-  targetArticle.insertAdjacentElement("afterend", goldenRulesInContentAd);
-
-  if (!goldenRulesInContentAdPushed){
-    goldenRulesInContentAdPushed = true;
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error("[adsense] in-content push failed:", err);
-    }
-  }
-}
-
+/* An in-content ad slot used to get inserted after each tool's 3rd
+   article here (adsbygoogle .ad-slot-incontent, ~50px + 24-32px margin
+   each side) — removed: this page never actually loads the AdSense
+   script (no <script src=".../adsbygoogle.js"> anywhere in it, unlike
+   index.html which at least keeps that commented out pending real ad
+   units), so the slot never rendered anything — it just permanently
+   reserved dead space, visible as a much bigger gap between article 3
+   and 4 than the uniform 16px every other pair gets. Re-add only
+   alongside the actual script tag if/when ads are wired up here. */
 function selectGoldenRulesTool(tool){
   if (tool) currentGoldenRulesTool = tool;
   document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
@@ -38,7 +17,6 @@ function selectGoldenRulesTool(tool){
   document.querySelectorAll(".golden-rules-articles").forEach(el => {
     el.classList.toggle("active", el.dataset.tool === currentGoldenRulesTool);
   });
-  placeGoldenRulesInContentAd();
 }
 
 document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
