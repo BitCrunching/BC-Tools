@@ -1,0 +1,88 @@
+/* shared/textures.css — the 4 category texture treatments (Image/Video/
+   Sound/Code), one canonical copy shared by both the homepage card grid
+   (#page-mainpage .card[data-category="X"]) and any tool's own banner
+   (.tool-app[data-category="X"]) — linked directly by both
+   shared/site.css (via @import, so every standalone tool page gets it
+   automatically) and index.html (via its own <link>, since the SPA
+   intentionally keeps the rest of its CSS inline and doesn't load
+   shared/site.css itself). Same reasoning as shared/icons.css: one real
+   source instead of a homepage-only copy that a tool page would
+   otherwise have to hand-duplicate the day it wants the same texture on
+   its own banner.
+
+   Each texture is a background layer only — content-free, absolutely
+   positioned, painted behind the real content (see the z-index rules
+   split out per context below) — so it never competes for layout space
+   with whatever sits on top of it, same conclusion reached for the
+   video/filmstrip case specifically (see index.html's card-title-row
+   history) but true of all four by construction.
+
+   border-radius:inherit (not a hardcoded px value) is what lets the same
+   rule work on both surfaces — homepage cards are 28px, .tool-app
+   banners are 36px, and inherit picks up whichever the actual parent
+   uses instead of baking in one card shape only. */
+
+/* Image: no texture at all, on purpose. It's the largest category by
+   far on the homepage grid, and staying plain keeps the other three
+   treatments reading as deliberate accents instead of "every category
+   has a gimmick." Written here only so the 4-category set stays
+   complete/self-documenting — there is nothing to add a rule for. */
+
+#page-mainpage .card[data-category="sound"]::after,
+.tool-app[data-category="sound"]::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:repeating-radial-gradient(
+    circle at 50% 58%,
+    transparent 0,
+    transparent 16px,
+    rgba(255,255,255,.22) 17px,
+    rgba(255,255,255,.22) 19px,
+    transparent 20px,
+    transparent 38px
+  );
+}
+#page-mainpage .card[data-category="sound"]::after{ z-index:0; }
+.tool-app[data-category="sound"]::after{ z-index:-1; }
+
+#page-mainpage .card[data-category="code"]::after,
+.tool-app[data-category="code"]::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  opacity:.5;
+  background-image:
+    linear-gradient(rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,.14) 1px, transparent 1px);
+  background-size:14px 14px, 14px 14px, 28px 28px, 28px 28px;
+  background-position:0 0, 0 0, 7px 7px, 7px 7px;
+}
+#page-mainpage .card[data-category="code"]::after{ z-index:0; }
+.tool-app[data-category="code"]::after{ z-index:-1; }
+
+/* Filmstrip perforations on the top edge only — a bottom row was tried
+   and dropped on the homepage card, since it visually crowded the Read
+   more button sitting right below it. Only the top corners round off
+   (border-radius:inherit isn't valid per-corner inside the shorthand,
+   so the top two are set individually and the bottom two pinned flat). */
+#page-mainpage .card[data-category="video"]::after,
+.tool-app[data-category="video"]::after{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height:22px;
+  border-top-left-radius:inherit;
+  border-top-right-radius:inherit;
+  border-bottom-left-radius:0;
+  border-bottom-right-radius:0;
+  background-image:radial-gradient(circle, var(--bg) 4.5px, transparent 4.6px);
+  background-size:26px 22px;
+  background-position:13px center;
+}
+#page-mainpage .card[data-category="video"]::after{ z-index:0; }
+.tool-app[data-category="video"]::after{ z-index:-1; }
