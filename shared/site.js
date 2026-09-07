@@ -166,6 +166,49 @@ function bcSetupBannerDropTarget(toolApp, opts){
   });
 }
 
+/* ===== .bc-info-btn / .bc-info-tooltip — small "i" toggle =====
+   Click to reveal a short explanation, click again (or click outside,
+   or open a different one) to close — same one-open-at-a-time pattern
+   as bcRegisterDropdown's group above, tracked separately since these
+   aren't dropdowns. */
+const bcInfoTooltips = [];
+function bcRegisterInfoTooltip(btn, tooltip){
+  const entry = { btn, tooltip };
+  bcInfoTooltips.push(entry);
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willShow = tooltip.hidden;
+    bcInfoTooltips.forEach(o => {
+      o.tooltip.hidden = true;
+      o.btn.setAttribute("aria-expanded", "false");
+    });
+    tooltip.hidden = !willShow;
+    btn.setAttribute("aria-expanded", String(willShow));
+  });
+}
+document.addEventListener("click", (e) => {
+  bcInfoTooltips.forEach(o => {
+    if (!o.tooltip.hidden && !o.tooltip.contains(e.target) && e.target !== o.btn){
+      o.tooltip.hidden = true;
+      o.btn.setAttribute("aria-expanded", "false");
+    }
+  });
+});
+
+/* ===== .bc-canvas-remove-btn — shared title for the "remove the loaded
+   file" button on a tool's own single-file canvas (Congify's
+   #gifRemoveBtn, Context's #ctRemoveBtn, Colorfy's #cyRemoveBtn,
+   Coudio's #cdRemoveBtn) — all four already share .bc-remove-btn for
+   their visual, this centralizes their title/tooltip text too so it
+   only needs to change in one place. Not applied to every
+   .bc-remove-btn (Colorfy's picker/palette color-remove buttons use
+   that same visual class for a different job, so they keep their own
+   aria-label instead). Only fills in a title when the button doesn't
+   already carry a more specific one. */
+document.querySelectorAll(".bc-canvas-remove-btn").forEach(btn => {
+  if (!btn.title) btn.title = "Close project";
+});
+
 /* ===== Step-through help banner ===== every tool's dismissible,
    step-numbered terminal-styled intro ("<TOOL>_GUIDE: STEP 1/N") —
    this was hand-copied identically into all 9 tools' own -tool.js
@@ -227,6 +270,31 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
     const collapsed = banner.classList.toggle("collapsed");
     toggle.setAttribute("aria-expanded", String(!collapsed));
   });
+
+  /* "?" nav button (.nav-help-btn, #navHelpBtn — same id on every tool
+     page) is the only way back to this guide once its own red dot has
+     dismissed it. Resets to step 1 rather than reopening on whatever
+     step it was last dismissed from — someone deliberately asking to
+     see the guide again most likely wants the whole thing, not a
+     middle step they may not remember the start of. */
+  const reopenBtn = document.getElementById("navHelpBtn");
+  if (reopenBtn){
+    reopenBtn.addEventListener("click", () => {
+      index = 0;
+      try { localStorage.removeItem(storageKey); } catch (e) { /* storage unavailable */ }
+      banner.classList.remove("collapsed");
+      toggle.setAttribute("aria-expanded", "true");
+      banner.hidden = false;
+      render();
+      /* Same central nav confirmation the theme/language/share buttons
+         already use (#navTerminal) — not yet in the i18n dict (see
+         CLAUDE.md's translation-timing rule: English first, cs/pl only
+         once this line is confirmed final), so it's a plain literal
+         for now rather than a translations[currentLang] lookup that
+         would silently render "undefined" for non-English visitors. */
+      showNavTerminal("Guide panel ready — at your service.");
+    });
+  }
 }
 
 /* ===== .bc-combo — shared SEARCHABLE dropdown ===== reserved for

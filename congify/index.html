@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Congify – Free Video to GIF Converter – BC Tools</title>
+<meta name="description" content="Convert a video clip into a GIF for free, right in your browser. Trim the range, pick fps and size — no uploads, nothing leaves your device.">
+<link rel="canonical" href="https://bitcrunching.com/congify/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Congify – Free Video to GIF Converter – BC Tools">
+<meta property="og:description" content="Convert a video clip into a GIF for free, right in your browser. Trim the range, pick fps and size — no uploads, nothing leaves your device.">
+<meta property="og:url" content="https://bitcrunching.com/congify/">
+<meta property="og:image" content="https://bitcrunching.com/favicon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Congify – Free Video to GIF Converter – BC Tools">
+<meta name="twitter:description" content="Convert a video clip into a GIF for free, right in your browser. Trim the range, pick fps and size — no uploads, nothing leaves your device.">
+<meta name="twitter:image" content="https://bitcrunching.com/favicon.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgUGl4ZWxtYXRvciBQcm8gNC4wIC0tPgo8c3ZnIHdpZHRoPSIxNTAiIGhlaWdodD0iMTA0IiB2aWV3Qm94PSIwIDAgMTUwIDEwNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8aW1hZ2UgaWQ9IlF1YXJ0ZXItQ2lyY2xlLWNvcHkiIHg9IjAiIHk9IjAiIHdpZHRoPSIxNTAiIGhlaWdodD0iMTA0IiB4bGluazpocmVmPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsIGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFKWUFBQUJvQ0FZQUFBQVRtUW1MQUFBQUFYTlNSMElBcnM0YzZRQUFBRVJsV0VsbVRVMEFLZ0FBQUFnQUFZZHBBQVFBQUFBQkFBQUFHZ0FBQUFBQUE2QUJBQU1BQUFBQkFBRUFBS0FDQUFRQUFBQUJBQUFBbHFBREFBUUFBQUFCQUFBQWFBQUFBQURnVDZZY0FBQWh3MGxFUVZSNEFlMWRDVnhVMTdrLzU4NEFNMndLcmxGUUVEQXFMazFpMUN4dFlwdThwR2wrYmJya3ZUVE43NW0wTWMzcUFxNG9DSW9ZOXkweGFVMWUyNlRaVFBOZTJyUkprNmJSOUdWUlk1NktZbHhBRVhBWEVGQ1lnWmw3My9jL00rZk9CVm1HWVZnR09MOGZuTHVjZSs0NTMzejMrNzd6YlljelA1ZTg0b3BvemVaNFVXUHNmc1kwcG5CbGVjMGxXODdFaVVPcS9meXEzdTU4Z0VCTXpFMVdIcUkreFRoYlFZK2I2VGY2dXhMay9PWEpiNzQrNDBOM1RUNmlOSG5IaHh2N2psd2NxdG9kTDdtUUNoMXdwbXJhakpESTRMUnRtbWJ5b2N2ZVIvd0lnZjdYM2hMQkxXcTZCNm53NmZNNzFEclRCaUNjSDEvRi9JWll4NDRkQ3pFcGZCbU45TDRHQTR4Z25DOGNmYXgwM2JadDIzcVJxd0Z3T3ZMVTZuRE9vUGZOb1QraVZLN0N4VEcvbnhEdTNSdHV1Q0ZJWG05clRmMjJ2ZXpaY3pvMHBJOWxFZUgvZk9yTnBLb3FPM3o0TU9zWDNZOE5HanpJL1FMTnBtbmFhaXUvdER3cEtjbmU5cmYyOXVBdEJLNGxTbFd0T21iUlI1OUJ6d2lrR2pac0dBc0pDV0ZFRUdRM3hHajRodHJRNnZSenVibFg1RVZmNnpaVExFSVdzNlZ2U0NyVjgyZ1FnaUpoc092V3JtTlpXVm1zcUtqSVBUWnU0VXhKc2JIbzVkUzJsM0w1K291MThqbXd1Q3RPUnhvaFZUbzlLcENxZi8vK2JPYk1tU3c5UFoyTkd6ZE85a2hFUm5zc3BNYjZxTHpRbHJyTkZDdnZXUG1QVktiK2pnWVJoWUZjdkhDUnpacy9qNTA5YzFhTWEvVG8wV3pPM0Ruc21tdXVFZWZpbjhaVzk3VldMNG1OamEzeFhPdzk4amNFRWhNVFEycFovMWthMDdLcGI0RlVBd1lNWU5uWjJRd1VDNldrcElRdFg3NmNGUllXaW5QNjUrUmN1Ni9vMk83MzZWaVZGMXRidDRseTVINVRObzRwNnN0RVFvZml4YWRQbjJZclY2NDBEcEpkdkhpUkhUOStuSTBhTllyMTZkUEhOVDdPSnRqcWdvT25mdnZaVDk5K080dEljRy94TndRU0V5ZEgybG5vWXVwWHAxVERodzlucWFtcGpCQk9mMTFFUkFTTGlZbGh1M2Z2WnJXMXRiaE9YRXk1TlNycW1sMFY1YWVMOVlhdFBQQ1pGZTdQUHp0UU1XdnZFRktKVVdKUXIvM3hqK3pJa1NOWERlSGdnWU1zWjNrT08xVnlTdDRMSjdJN2IvUjFwWnQ2VjRzU0pQNnM3emZaTlRhWGVreWxQMEdwUWtORDJkeTVjeGs0aUxGd1RsLzVoQWtzUFNPZEJRY0h1Mjlwc1Nybk9XMVpLZnFFV01YRm10V2tCUzhoVXBPQWtUZ2NEdmJ1dSsreVR6LzlGeVA1eVRodS9mamt5Wk5zOCtiTjdNd1p0N3FFc3lDbThjZEdGNVF2UFgxYUM5VWI5aDYwQ1FJRGttOFBqMDA0dVlCVUNndW9vMkFnRHRqZTJyVnJXVUpDQWkzUXI1WitjRzFzOGxqMjRJTVBTdVNpUnZ3MnhhcXRqSXU3M2VMTGdIeENyRXBiMmIzRXR4K2lGeXBBcE8zYnR4TzFlbzFoTmRoY3ljM05aU3R5VmpBZ21TaWN2aWJTYzVWZUxzdnFGZWliZzV4Mzk0QlVWbHROQm1GUEZqMGhLQlZrV3dqcVlJUE5GU0RYUGZmY3cwamxvRGVqMytSSk5haDZHbDI0R2h2MVZvMGZ0QnF4aEJLVXNhM1VYU1M2aE5EMzVodHZzcnE2dXNiZjBPQnFmbjQrVzdONkRUdHpXbGYwaHRPdzV4d3NLRnNMWFZpRDVyMm4za0xnOXR2TkZsdjFUSTJ6RkhwRXlNNTkrL1psbVptWmJNeVlNWTFTcW9aZFE5NmFuVEtiWWRYb0xpWk40Nm5ERW04Y0l5OTRXN2NLc1hKekwwVXBDdHRDblFzcEhDenc5ZGRlOTdBM0w5OWFVRkRBTm16WUlGWWtoa2VtMjFpL2pGN0taWUNJbDRjalJ0elFKN2JFbGtYWWswbVBDS1NLajQ5bm1WbVpqRmJlWHZiaWFoWVJEdVJLWVVCS2QwbFVtVUw2eWZ0RnYvSmlTM1dyRUl0Wm5OQ3EzeWs3SlUwNiszTG5sL0swVmZXQkF3ZlkwcVZMUFhvdWpaR2NwYVhrNVpkdjZrVXU3MEVKbFlKRE1TMGsyT2thOWNqSVNEWjc5bXcyTW1tazl4MFpXbzRuM2RZZGQ5d2hxUnlrc2dkaUU0dkFFcjB1WGlOV1hsNUZOTEdzVk02NHNDa2RQSGlRYlh0ckcxT2R6Y3RWelkya3BMaUViZHE0eWJoYXRKRHM5aVN4eFJWNWVlZHA1ZGhibW9QQW9QSGp3K3hhLzdsazc4UHFUd2pxVUIxQVVDZnJoa1NNNXJwbzlKN1piR1kvL3ZHUDJaQWhRK1Q5SUVMY1o0ZU9tT1ExcG5xRldFUkJ1QnJzV0VtWW00dzNYYjU4bWIzenAzZWsza08rM0tmNjBLRkRiTTJhTmV4azRVblA4eW9KalNHbVhyYm9nY2hWUjlCVEJWZGJsdElQbmtrM2hhQWVPeXhXNkttQVhHMHQwZEhSZ3VwWnJicHR1aDhKK0U4bEpuN2ZLem5ZSzhRNmRMeml1elRRUitWZzkrN2RLeFJxOHJ5dE5YUmYwUDVDd1NvSzUyRmtncGg3NEZqWmxtM2JlczAvamNHWDlGVEUrdmhNNGlKQzlvR2VLbjF4dWxCRU45YmVsMnZKeWNuczNudnZkVC9LRmVLSjA2cWRGK0s4NmF0RnhOcDdvcnl2cHFxd2lvdHk0Y0lGdHZXM1c1dlVWOGwycmExaFd0aXdmb01IdWFnRCtrS21qYm11ZlBrWFh4VHJuMDFyKysxdTdZV2dualFwbXhDSzVDcG1ncHBneElnUmJQWHExVUtEN3UvNTNubm5uY1orKzVqTnBuV0VjRktUMnVUcldrU3NZS2M2aGNqdFZQVGdkRHJacTYrK0tzdzBUZmJZaGh1UTJ6S1hMREdZaExRUXNrUE9pQnhnWGRVcjBET1NlVzRJclZOTUdVemxVSDRLOWdmYkgvUlVXQVcyUnhrNmRDZ0Rjc2xDYXN1N0ttM2hQNUhuVGRYTkloYjltR2JTbzgraHZ3aDA4TTAzMzdBOVgrMXBxaSsvWEM4aHN3OG9WM0Z4c2VnUGl3VVNUcDgrZUt4MDdmNnpXcGhmWGhLQW5jQzhvb1NhNTVDMVFyQS9VQ29vUHlGQ2pCdzUwbWRCdlNWUUtLUmYrdUVQZjhnR0RaTHVUOFI2T1pzVmszeFRkSFBQTm90WXVmbGw5eEdHQ21vRnJmcjJUN2F6aW9xSzV2cnp5NzJqUjQ4SzVOSTE5TlFyS2Y2bUs1ZkxsdlJFeWhVWDk2MiszT0xNNWpBb3UyVXFVS2dGQ3hZWTJaUmZZTjlZSnhhTGhUM3h4Qk1zS0lnV2g2NlNyTmkxTytSSlkzV1RpTFgvN05rd3VwbEZENGsyWmFWbDdKTlBQdkc3Yk5YWW9IQU4xSEZwMWxKV1hLUlRybEJDOHBTRCtXVy82VkhJUlJwMTFSUzhrS2cyNUZ6Qi9pQ296NXMzVDZnVW1vS2Z2Ni9EVUQxKy9IalpiVGdoUXJONnJTWVJpMWNGM1VPOURFZFBrSzIydkxDRjJlMTIyWEdIMURCWWI5eTQwY0FXbVluWThzT2s1M28yNzN6MzEzTkJwUkJiWEpPaGNaNUMxTW9NOWdkS3RXSGpCbUg3dzNsSEZWQ3Q3OXoySFdta0pqR1AvVnZzaUVrVG0zcC9vNGoxUlhHeGxXU2JIOUZEcEExM1VZL2R1M1kzMVVlN1hvZWVDNGJyRXlkT2lQY1FLRTMwdFR5cFZwcTZ0U2Nxa0twV1k4dUk5YVhSeEFXbGdpQTlhOVlzRmh2VE9qT052MzZnU1RkT1lsZ3NvQWhFVi9pbXBrdzlqU0tXcGNvMGtINjg3K041VUt1UC8vRnhpNTRMNG0zdDlBK0c3dFdyVnV1VWk0WVZTbnF1R1lmeXl6ZkRoYWVkWHR0cDNXSTVEejBWeVpWUDBTQ0VuZ3FHNFNXMFlvYWczbGtGOXNNZi9PQUgrdXVKZTB5SkhYbnladjJDNGFCUnhBb0tDbjZNVUZKSS9XQkhlWGw1aGtjNjV4REl0WEhEUm85dGtZWkJxb2hITHRuS2x1M1pzMGVYS2p0bmRQNTdLL2svOWEyMGg2MGcrQXM5RlhxR3gyZG1abWFIQ09vdHplU3V1KzdTcVJhMTVacVQvNnl4Nko2ckVPdnc0UXVrV3VENFVrU0Jia2wzenBNWE82a0dXOFJYQ3lSekZRNG50R2RDK3NTLzBCMEVlampWT2MwMVN3ait1cUFlRlJVbFRDdFFnbmFGZ29YRDNYZmY3UmtLMTc1OTVwSXkySFBCZFhRVll0V1psSCtuVzhJdEJpcUdqejc4cUZQWllNTUJuenQ3VGxBdWd5b0NXdUJmdWZ5NVNpTWJ0ZytVY3dTVE9rMDFpMmk4VDlPZkVOVGo0dUtFUmgxSTFaR0Nla3N3bXp4NXNoNi9RTEo0c3NKTVl4cytVdyt4M0VLN0huQ0syRURvbExwYWdXMFJ6b0lJMHRDTHhxWlQ0T0t5UUtSYzBGTlpuYzRjTi9zVGducDhmRHhMSWI4b0NPeGRyU0JXMUJDUUVheHc3Y0dHWTZ5SFdHSDJzQVJ5V3hrakc3MzNsL2U2RkxXUzQwSU5aOEhsMmN1Tk1sY29mZFl6U00rMWxXVENGbTFaeHI0NitWaFJ6Y0Zrb2xHZnBIRUlRUjMrVklzV0xlcFFQVlZyWUJBZUZtN1VhZEU2aXYwTUxqekdQdW9obGtsbEZMM29DdVdDc1JuT2VGMjVDRDFYQTRHZXh2OExMWGp3cy92M242MDMwYTQ0ajJIRGJvMktUWnE4MHVWUEJlOEJMcEJwMWFwVlJsK29yamgwTm1uU0pDTjd0Z1JWaC83Y09OQjZpS1Z5R0pzMTRXOXorSnZEN01xVk5rZGFHOS9WTHNmUTBHY3V5VFN3UlMyWXZxQW5lR2pRK3E3TUZoSDRvQVhYVWE0TExZVUFJOWpmb01HRGhVRlpCcE8yQzhEODFDbkdhR0NIWko0UjdGREhKLzBBZms4a2lIMFA3NFh1Q25KTVIydmFmWjN6MmJObjJmcDE2dzJyUlViaC9HejZ3ZnpTelR1UGRUMkJmdENnOFdFV3V3M3FoTWVKd2dwS0JlZTg3R1hMbWd6UjhoVTI3ZlVjak5NTmRGcEpNUWszalpEdjB4RnIxUFVYdjBYVUtoNDNiRFpibHhUYTVhQWJxeUZ6clYrLzNrQzVhRGFNUHh6V3hRUjZzTC9nQ090S0doMEZLTGhrS256NU1DaDNSVUc5TVZqTGE3ZmNjZ3N6ZUpqMnBXQkEzWmlvSXhaWGxRZm9BZnJRWFlpRk1LMUFLOGVPSGhOc1VibzUwMlNzSkFnOGZlQlk2Uis2QWx1RUlwSFlYd2JCbFNpVkM2bkN3c0xZL1BuekJhVUtOSGhqN0VramsrU3dZWmlHMmtIZ2xQaTNuZnl1Q0tWZ0d4UWxkMyt1b0ZyeVBKQnE1SXBBYUZuaGlVSTViTENhbjVPZWE5MnhUbVNMVUNsY3VCU1VUWU9DbmtwNGZpTGdZZE9tVFFGSHFTUmdzZGdZUFdxMFBBVlZ1bzZVdkdKRkxoQnJZRUZsSEpGbTNiSzVjK2RPdlhFZ0hrQSt6TW5KWVFhcVM3SWxtMTZqc1ZVVXRTMEU1WTZjRjl5Sm5hYVFaeWtrUlEvUmd2QUx6MDlESkV4SERzbHY3NG9uZlpzaDU4TTRzN25HZzFpcVdrZThrUXNkQ2dSM0JFc0Vlb0VQUFF6WDBpdUM1bU9sRCt6WC9XUEd2OWlSb1dVdzB6aTRLWTArNTBlbG9ENllWbjhaR1JrQnlmNGE0Z1U4U3hGQjdTcDhoSjJaaFB1RFM4WlNGTkF6Z1ZoSWxJYndydTVRNE40TWZ5NERXNlJwYVErcFFVcE9SNFR6dzMyWGJIOXJYSG9xRjN4SFhqdFMyRHNEblZKSi9CZzRjQ0FMRHcrWHAxeGpqcWs0VVlTV1d0TVNjSXdMRUlDN1V6bDY1Q2hidkhpeFliWElRMmlGL3ppRjg3L1VubXdSUHVyYzdvUk05VGhSSy9IUjl1dlhqNlhNVG1reFFVY2d3Uit1TkRDVXk2SlFsaG9jRXpKRmh0T0tTWTl3UEg2OFFMYnBOblZaV1pud29UOWVJRzJMR3JuWmFBLzFqNW13NlFTRnQvbDdvcENwbEJBMWkxamZZOVMzRU5RVEVoT0VRUm15VlZjeUtMZDE3dEJuR1QwdlNEa04veXl1cUNHaFlUUlI0ZmFBSkIrblRwMXE2N3U2NVBNaXl3MUZYQnNFZWhxbjl2QmxwM09GUHlrWDlGUU94YnphbVBVRmVpcFFxbnJwTXJza2xId2JsQkd4Q0taeEJJTytpdXBRNFg0c1luc3VYNzdDS3F1cWZPczlBSjZDSDFmMnNtd0RXeVE5bDhZZko4cjFPMzhFeFVvOUZYMjF2eUp3Q1BhSFVQV0ZDeGZXKzZvREFGU3RHbUw5M0Z0YzBjejJSRVVKWWhFVS9TSzhSUzlmcm1JMTFUV3Q2alRRR3A4L2YxNGtJcW5uY3NQWWYwUU9DRnY5bVhCeTlHMUdFTlRQVndTdG82ZWZvVDlocGtGYVJ1Ums3YTZVU2tKcXlOQWhEQ3hSRmpKU3haRitoOGZTTWx6b2RtQjBycW5wM29pRnljUEhESVpyVDQ1ekxZamt6T2w5emNwbVg5Z2k4cWdyZGlmTU5McnJDOHd6MEZNRm1wbEdJa2RyNmxCcktJdUs5Z2p3bEVObU9QbG84ZUd5RTFBcjJBbDdRb0dHSG9aclhlYmlMSmdvOTdRQk1lTmZ5TTA5NllGU0M4Q0E1MmUxMDdHRVZBcVBVRk5CcWVMaTRrVHVMN0NJN2lTb053ZUt3WU9FbU81cXd2a1F5aUhLZEJmRkdsdE53SGcwTkRkSmIrOUI1a0k0djQ1YzlDREpSdy94MExBY2J5algwRkdUK3BIbjUzcDZiQmI5Q1pucTJtdXZGYmEvN3M3K0dzSjR3RUJYV0pqNytpQlNPMmc2cW9GaVlXWFlrd3BrTGFUL01jaGNGcGRBUC83TjVnelhDTkZTSEJUM3h6UlFLb0ZVVUJUQ29BeUsxZE5LUDFxa3lNSTFyYTlDSkx5ZnZOQmROTzV5UHQ3V3lFZlJrSExSc3o4NVdGRDZYR05za1pTZjBSVzI4RlZ1UFpVdXFDUGRPTXcxUGJIMDZlTlJCNnJrTEFwUlhyOVNYVlBkRTJFaTVneDJpSWhyUS9BSUo3NzRDTGVHcnpXeVJjVDkwWDUvYTJuQmc5V2ZvRlR4WklpRm9ONVRrUW9BTkpoMXlOREFFV0RCZE4vd1FQRVlGWmpRRHYvZ1F3OS9jODlxa2N3L2pEMHlJSGJDeTNzS3l2b2dQNVdJKytQYWY5SjFRYW5nK1FtVFVYMWRUanNNcm90M2FYRDRJOGhvRmtYam1rV08yVkhYcytRck9XOWpmZnJVYWFIbmdrZXFMQ1JyUFdDL1ZMSE8yamYwZWJwR2xNcmxUb3o4NmZCUzZHbUN1b1NMc2ZhNHp0QlZUYkZDM2FEN0p6bFZwN0Z0anowR1VxV1J0dHl3V2d5K2ZPWEt3NlFFbkVaQUVld1B5VEVROTlmYVBPcmRGYWdta3dDTG1CN1h5SCtFRkMyMHd1NHREU0VRVGo1R1J0R0FoRkdWMm5EWkRtbDk3TFYyOHNidEJaK0VpYXhwZ3llTlZvVWVNbVV5cU9WbG81NVlReGpISnBISUdveEN1T01JajR4OFNYVTZYcEx3Z0s4WGN0U2ZPM2RPWHVyUk5SeEVaU0hoM1FHVGpxNXFOM3RTQWNvMlBhNkdDUWI3eWVpNktNNmNDbWYvRXpvNGVFN0JONTlQSjNpOVNFQnhnRkloQlFFaWxoSGMyOU1wbDN1dlF4ZSthR29Ocld5WTdpNktQWUo3Y3NIS0RsdUZlQUl4TmZDNjMvSmE1eThuREI0c29uZWRwcnAwVWtPOExPR0UzUFRaMmRsR0YyaDVxMGZWOVczTTNFYXNrT25aYW1GTTdLa0ZTTFZvOFNJMkpubU1CQUhSSlA2S2hmRUZ5Y2tEOVkvdjlOR3ZMOWFHMWFSU0k2d1FSWUY2QXR1TVZKRjNTRTh0UnVVNjVmK29KWmxVSzVYQUNBdlhWVnJ5VW8rb1kyS0dzbWRtUEdOTWJGWkxWT2t0VTYwekpTbXBYMlZESUdDWGQ1UERTcW14Mlcvb1hoM1lJRXhDczJiT0Vuc3g5a1MyV0QrYk5sRXNzcjZmbFlCRFVpMXMwTk9UQ3J3ZjU4OWZJUGIwYzgrN2x0WitMOW9yN2I4eVVxcUdNQ2tzM0dGem1oeUw2Y1BVQlhxd1JVUmp5eHoxRFovcHp1ZWxaVHA5Z2tkSEJUVHZ1aSt5MVdKbFBVbk9ncUErYi80OEJuOTBkeUdQWXY0bit5WDd3b2tUaDdSbzN3SmJMTTdmRFI4czdPRW85QTZJYVVSYXgvcGZzT3krKzlZWHpsOHdUdTZjb3FuYVNYbkZHbXBsME0vMGhBTEY1cXpaczhSK3lhNzVrcURPR1FucWpsOTdnMVJHR1BIYUlGQXVyQlpGZ1drb0xTMk41UmZrOTVqVkloS3o2RVhUVGltYVNTdWlDdzVjUkN4K1BadVAzcko3SFlEOVpTeko4T2lwS01FT1o4cldJSWM2dHpuMjF4UVVpb28rS3c5U25aUTloajhuMnlCUUZzbDRTMHM5TEVMZTYyNDFWb1RsNWVYNnRFZy9XcVJvRHFGdUtNTlZiTnNLcXRXZEN5alZqSmt6akM3RGRXUitlTXNaRWJWZzFLZ0JQaS9yamgvL3VxSTRmK2NNZ2gzWVlpMEVlSmlFc0lNRW9ySzdzMENQeUM3alJ2T2F5azRvaWxtQkxDSFV4K0VSNFladzZlNkhYcUJVcVhOU0RiblNOVXFuenA2UERvdWFQbUV3RjNxcU5zNWFjeXFPSmRUSFZ0a1AyQ0syZkRPRStzdGIzYVkySkJyR25EU1RHcHF2S1BicUt5UjJDZ1lKUTJMTTBKaHVNMkhqUkJBb21yWW96WUJVdU10ZjZ4OFd2V2pJRU42aW9HN3NxN2xqSWRESFdHZlJvbWlUYkFjZkx5UXBxZXFtb1hVRzcxdE1tVHkrZDF3aVBWYmxaUkphU3lRUVJpU01rSWZkcHNhV3RqTm5HVE83YUhheUpyK2sxRHBuK2hPcGRJRHQyT0dvc1ZnWDBUbVVxRUorQmJ0SVRVMFY3TEU3c1VYWUNJM1VtT0Q2T2VDZ2tLR1Y5RFlhbkk5Z3ZlK3ltWG94Tmw4S3pETXdLQ1BHejEzcVNLTytKVG9zZXFZdmdycnNwS1g2UXQ2T3k3UmFUQ2ZLQlpsTEZNaGFTRktpYjFFc2J3UndEYlVLVWhqSVFtN0puK0tZS0JhSzZSRDlFK1pwbURhd091d09aZGp3WWNLZzdObDhteFAxNEc4UysxdmNMcFNxQWRDd1dpd3EyRFhUelJhRmhoNENQVHhPSVh0MUI4cUZBR0NQT1lmRWRzMjBBMkFRaUtVdzVRREpYQUt4RU5GNi9mWFhOd0JSNEozR2o0Z1hCbVc0d0xpTGpXeFl6Nm5WdFU5MEJGTEpsNkpXTFVvV0xjRjFQUmQwUHRnWjFlQklhR3dlVU1kd0d6TElqaWNzWEQyUENRakVHcE1RZVp5aVY4L0lHVTJaTWtVZUJtUU5wSUxMTUdMODNJVVcvOXJMV2tUZDRna1RYRjRLOGtaSDFDVjVYNVlwZGFIemlGb2lCbEVVQ0x4cktFbEpaZVZWcGtqWkpDQnF5RmNlbHhsK3dPR3cxbUxnQXJISXRrUDdHckozNUV6R2poM0xZRGNNeEFKV1BtUEdETU1leHR4TzgvaTlGdEZ2dm5SOTZZeDV3YllZR1ZLMXdNMFdoWjRMU2U2Z1U0TXJkQ0N5Ull3WmVmYmRCUi92UHBxbkI3RndRK0hLNjdKRmFGaG9RR1pIU1V4S1pQTVh6RGRRS2tJcXJtMnF1bEQ5bEovMFZCSkVQdFdVNUs0V2JKRitnUmRrQjloMFNpVGpMU3lVbHdLbXJxNnVOa1Ewc1NzVVkwSWlsV3NSNkJiZUdVdE9pdHBMVG45aWRyQVhkdWFHaTc1QWRuamM4SVpSeUxUSzFWNnZDcWxlY3ZQTnNWMG0wd25ZWWtuQkxvVGtiNkEvSWRkQzFscTZkR25BbVg4Kysrd3pZeEtaUzdTZmI2Nzg3WFRFd2dWVlkvOUFEVVVwNUpOQThYU0FHekcydFBWa2R0RnNwSnQ3VG8yb2UrYm0ySzZEVklDdExFR3FJNU1vbDI1YmhFQVBOMmQ0UndRQ1c0UUo1NjkvL2F1Y0RuM0Q3SEJKYkVpaHZGQVBzWWhpL1pNbVc0ZWIwUHNFZ3RvQmVxcXNyQ3dEKzJNT2NuM1pvbDZwUyt0TW1Vb0N1S2thdGtXN3hicVlmaEhrMUJJRk1oZllJbnpvdTNyQldPdkZYbkwrRmlQRnNCeDNQY1JTR2M4ajVDckd6ZjREK3JPeDQ2N2EzMUErMXlWcXFCSVEybTdJZEFLaCtGVm5kVjFHWjZ6K1dnc1VLRkhKbnl1Vm5pTzJTSFpMK3FySkhpSllPdXF1U3Jrd3JxKysra29mSHkzOHFzd08yNStNODYrSFdGZENydER5aE9saS9uMzMzZGRsOHp0QlVFOUpUVEU2NmRtSVVxMnZyYXg5T2hDUXl2Z2phRFpsR1MyZmRBMDkyQ0pVRVYxVno0VUVmYm01dWppRnFmeTVzSERmSmVPYzZpR1drRWNvMUVrMkdEVnFWSmMwOFVDbWdwa21JVUgzL0tRUFh2djlCWE5GWm11ZDlPUmNPN011S2ZteWpGeHVVa2t1WENQSEFUWURKV3BsVmRmVGMwRXA2c2x2UVFzUXpsNlI0NVoxUGNUQ1JjVmlKc1RpT3BPLzYrNjdoREF2SCtqc0d1d1BucDhJY1hjVkRScjE1OVVheDV5cDhmRzJ6aDVmRzk2dk9hODR5T1ZHeUZ4Q3pzVVBPSHZXYkhiNHlHR2Q3YlNoZjc4OWlpMXhwT3Mxd1Q3WG9hcUhHM1orRldJbHgvYUJSWEdyYkRodTNMZ3VrNTRIS3BEMGpIU0RLb1RYa3VmbmhnaHoxWnhBWTM4U3ZzYjY5T212cTJsM2d5eWlBQnZsZFJpc0VYSGRWUUkwa0hiZy9mZmZsOE1qL1NmNzdIUnMyQm45Z3Z2Z0tzVENkVElYSXF4Sm1LeVI4eWw1YkxLN2VlZFZjT2VCVE9YSlFjWHBxOVplc1ZYWWxoRVZDMlJLVlErbytmbTdLb3VQN1pycllvdmtoMDhGWmhPWXFJQmNuUzNRZi9EQkIwWnZCaWRGbjd4dFhBM0t5VFNLV0JYbnJoQXIxRDVBSTRTRDNYbm5uWjBxeEVPbEFEMFZuUFhjcFlZemRaMDl6RDR6RUdVcU9Zbm1hbE9kZlRtSkpMcWVDMndSem9JSTYrK3NBcjkySUphaGZENHd3cm5UY0s0Zk5vcFkwRlNUejlLZmlYOVdveVh5UU4xNDQ0MzZReDE1QUtUS3pNbzBoTDFEajh0ZXJMVFVaRTBjMG5LSVZrZU8xWi92d2lvck11UnlHcVVWWENuN2hRb0NxOFh5Uy9VV1lQSjJ1OWQ3OXV3UjdqN3VGMm1xb3MzNCt1dXZoVHpZOE9XTkloWWFPYzNLUDZnNmdtTXlVclBwajAzdmNJVXBWbjB3MG1KM0IzY2hscWY5UnF1dVMrK3FHblU1VUgvVXNDME82T05NZDdGRkp0ZzlaSzVacEx1RHUzTkhza1drYWQveDZRNVdWK2ZDSXpLbWYzRHE2Tzc5VGMyelNjUzZMajdxRXVjbTBxKzRDclpCKzg1dDM1R243VjZMdE5aa1VBYkZFa1VqZDJKYWpsODBWNlYwQjBIZFd3Q0NJb0F0VW9LOFRmSVpPTmRCUTIvVWZNdDc3Vlh2MzcrZkhjaUZqVmtVY21mbmY1QW5qZFZOSWhZYWowdU1JdFdEeTlVVVZPdTdVNy9Mc0kxWWV4ZFFLa1FvUzg5UFluM1FsZnhYbUNsNmVZQ3JGSHdDSGRoaVVjSE8rVzYyS0VnR0JQcGx0T3M5WksvMnBseFlDVzdac2tXblZqU0pQS2RaL1dkemsya1dzY1NEbXJLYWFwR1JCcHM0VHA0eXVibisybndQU0lYQUI1blhrK1E4NUZwYWF3L3JOeWMrM3BQTHE4MHZDc0FPcWsxQlJMbUVWNFNJVHdEbGdwc3pmS0xhQzdsZ2JINzMzWGNaM3VVdTlKUHc5YWNPNzI0MkVyZEZ4TEp3N1gvSnpQTVpPZzJpeEd6VHBrMWprWkdSOGlWK3JZRzRTK2tybE95UFRGS1VHWTV0RERORkxabm94eEF0dnc2NkF6dTdlT1R6S2tjTmVVVXd0a3ErRnRFL1NFUUNIL3IyS09qLzQ0OC9OblN0ZlRpd2I5MS9HeTQwZXRnaVlpR05EOFdmYjZhbkJRa0dLM3gwK3FNQ3lScnQwY2VMMk5FZGFZQ2lvaVNyNVNSVGFWdHRZYldrcCtyWmxNb0lVaWhSUy9KM0xhVGRINEJjTmFCVWlQN0Ixbld3TGZxYmNuMzAwVWZHUFN3dnFncGIwTlJLMERqT0ZoRUxqY3RMY3Y5SkkzNVpQbmpUVFRmNU5lQUNnanFVbjNIeGNmSVZBTmlxcWdzMXFkMVpwU0FuNjB1dE9HdFhrTXhWVDZDSEtnTCtYUDRxQnc0Y1lPOS84TDVFVnBYWThPdFd0WjlYaWpUeWVQQ3U1T1Zwd1dwd2VSNEo4MktaaHBkbXBHZlV5eXpzWFUvMVd5VUlmNnBNbzBxQlZHaHNVN0ZXTnYrZXBDU2hlYTcvUk8rWkVRS3hpVk5Ja2FvdG9HdUNTTUNHaXRoRjR6N054dmJlSGlPazYvSEhIemQ2dFpaU2NOZE5KY2QzSGZPbUQ1TTNqZERtK2VjejFmTmxOWmRKM3JxRGZ2aGc3RjZPQWdUemxmeUMvVUZRbDU2ZkVOUnA5Ym5KSG1wZmZGdGNuTkRiaUpmMC9tc1NBcEdoc1Y4eXMyWW1DakdKR3BuZ2h3NlhZY0FXU0liVmZHc0xkRld2di9FNjIvdC9lK1Z2Q3pGb0pybFVON3NTTkw3SEsxYUlCMmlBV3BCVGZadkcrUy8zT2Z2cHozN0ticjRaZTB1M3Zvd2lEOVhGNllzTnJpOGtVekcrU3JGSHAvV3lQKy9oU1M0M05mWVFLOHcvdXNzTlZCQ2dXdERVKzFKZ052cnc3eDhhTThpOFVSeGpmYVUxZlhtTldPZ1VhWDVVemZFMFVTeVJuUWFyeEFkKy9nQ0Q4clExQmF1L0ZFcDU3WEY5NGJXVWIzNXJsYVY2WlhJeUYrRkRyZW12cDdkMWVhTHVYRVRJbFVPd3FBRThZTERPek13VUJ1eldjQlNFeTJPVmFRaENQVXAyMlZXTkdacWJnM3VyRUFzZGpSODU2RGl4d3hsMEtIUmJjWEZ4N0JjUC9hTGVuc0ROdlJDQ090eUpwZktUa0xTYWhOQm5veXcxODNxQ21hWTUyTFQxWG9qTHJyaEI5Z1BkMDRvVkt4aVpodVNsWm1zRXp6Ni81Zmw2cWdzU1QxWVY1Y2Q1SmJBYk8vZGF4akkrbERKalpiNkQyMkxvMmczRUlqbVFDMTRRKy9jMWFUb1NqOE9mYWxuMk1rOHdLZWRPU2xXNW9aaVhMNXZZalZ4ZmpMRHF5T095c2xQMnlyS2JkL1NKcWlDcGd0Mkdkd05aNEVaODY2MjNOaHVFREtyMjNudnZzYi85N1c5U3JxSXV0SmZJSjUvTWVvZUVRclkxYzJrMXhVTG5TVW1jdFB5MkZZVE4rM0FPQVJIKzhiZFB2YjFKeWlVb0ZRbnFFYlJIamJ2VWtDNW1FL21vTCsxZC9VbVErS04rMjFsY01Dekx5QlloYzJGRHFVT0hEdWxJWTN3VGtHcjM3dDNzcmJmZVl1NnRTOGpOaW0ydkNRbWRUZTFhalZUbzJ5ZkV3b01UazRjVUJTbkJEeEJPRmVJY01ZalF5c2ZIeCtPMFhoa3paclN3L1hudWtUdXh4bGFFc0RLdnNoUFg2NnozeEFzSXZPME1OWm1lSlpLelZqWkdTQmtNMTRhTlB1VXR0bS9mUHJadTNUcUdJQWwzT1VNYkxTMGsyVTIvSUc5NFd4Tml0cTNrSHI3NEkyYml2NmVPaE1vY3U4UFBuVE5YMzd3SWxHcGgya0ltMVJNa256bm9jM2l1dEtSeTRkU3AzY2Z6czIxUWJMK25ZeE1tTDZVMEEvT0lnb1hnTFZnd3dXRVFLaDV3R2dqNU9TdHlXT0dKUWprSWNxTGtEeGZsNzl3bUwvaFMreVJqR1YrVU1uTmxvWVBaS0VpVWZZK3VjeVFUZ1N3RnNnczNZdWlwZEVHZGthQ3VzRlY5TGRGWkV5WkU5ZXFwaklCc3AyTnJiTC9kSm9lWmZtZCtDNzFDZ1o0TERudkl4NG9DdFlUVTF0TnZXRVYvaTR2eWQrbFdGdEhJaDMvVVQ5c0xyVHFDMVpCcmxoQURUME52NE5sdzZ3Q1YwdmNLUm9RMVp6bEtiWFJPcjBxaDdUQnZUUStKaWQ4UHFXWGxDMGttWGlLZkd6Um9rS0JZaHZ6cytOazJtNTNXK1lXVUdVZTI4N1gyQzJMaDVWOThVV3dONzIvZFFtVDBJVUlnYzRNQlVZZ1dleUhLVXIySTBtRUxQVXVEKzcybkhRQUJ3UllaUS94aWFJUFhrYitiOXBjUWpUK01ZSTRHOTN3NjlWbDRiL2cyK01tYmc2MXB0TWYwKzhaNzlKWFVFQW5MTGpWWHB2VWlsUkV5SFg4Y2FqYkR0MDRYNkYwajBKQWI3UTEvSWhYNjlSdkZjZzJTMXFqYnQ1djdEeDMvQWZWOGg3aW1zVFZLWGZTaVh2WW5JZFQ1OWJERUtlVFRwV1hRU09qMzF6NnRZM1gzbjgzZlM1RlovaXYvRHllU0hhTVF2THlIQUFBQUFFbEZUa1N1UW1DQyIvPgo8L3N2Zz4K">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=46">
+<style>
+#page-gif::before{
+  background:#22D3D0;
+}
+#page-gif::after{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height:22px;
+  z-index:-1;
+  border-radius:36px 36px 0 0;
+  background-image:radial-gradient(circle, var(--bg) 4.5px, transparent 4.6px);
+  background-size:26px 22px;
+  background-position:13px center;
+}
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now — same recipe as Convert/Context's help banners. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+  border-bottom:1px dashed rgba(255,255,255,.14);
+}
+html[data-theme="light"] .help-banner-header{
+  border-bottom-color:rgba(29,36,54,.25);
+}
+.help-banner-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+.help-banner-term-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.14);
+  background:none;
+  color:#e5e7eb;
+  opacity:.8;
+  font-family:"Courier New", Courier, monospace;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:.2s;
+}
+html[data-theme="light"] .help-banner-term-btn{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+.help-banner-term-btn:hover{
+  opacity:1;
+  border-color:#4ade80;
+  color:#4ade80;
+}
+.help-banner-term-btn:disabled{
+  opacity:.3;
+  cursor:default;
+}
+.help-banner-term-btn:disabled:hover{
+  border-color:rgba(255,255,255,.14);
+  color:#e5e7eb;
+}
+html[data-theme="light"] .help-banner-term-btn:disabled:hover{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+/* Lively springy hover, same feel as Convert's. Targets the whole
+   .tool-app banner (not #gifDrop) since #gifDrop itself has a
+   transparent background — brightening it alone produced no visible
+   change, only the colored banner underneath actually shows it.
+   :has() drops it the moment a video is loaded and #gifDrop is
+   hidden, so it never fights the caption/output controls once there's
+   real content to interact with. */
+#page-gif:has(#gifDrop:not([hidden])){
+  min-height:322.5px;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+/* Same "jump" also plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+#page-gif:has(#gifDrop:not([hidden])):hover,
+#page-gif:has(#gifDrop:not([hidden])).active{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+#page-gif:has(#gifDrop:not([hidden])):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Drag-over highlight on the whole banner, same idea as Convert's —
+   toolApp.js adds this class while a file is being dragged over any
+   part of the banner before a video is loaded. */
+.tool-app.active{
+  background:rgba(235,70,126,.08);
+}
+
+/* Same as Convert's #cvDrop — since the whole banner is now the actual
+   click/drop target, the dashed box just blends into it (no border, no
+   fill of its own) instead of reading as a second, separate drop zone
+   nested inside the first. */
+#gifDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#gifDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#gifDrop.active{
+  border-color:#22D3D0;
+  background:rgba(235,70,126,.1);
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. Same recipe as Combine's. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .gfx-placeholder{ animation:icon-wobble .5s ease; }
+
+/* Congify only ever shows one result (unlike Compress/Cleanly's batch
+   row of small thumbnails, which the shared 160px .result width was
+   sized for) — so it gets its own much larger, centered size instead
+   of inheriting that fixed small card. */
+#page-gif #gifResults{
+  justify-content:center;
+  overflow-x:visible;
+}
+/* Full width like the drop zone and Continue button above/below it,
+   rather than a fixed 420px card floating in the middle — that fixed
+   width read as mis-sized next to those two full-width elements. Tall
+   (portrait-crop) results are capped by height instead so they don't
+   blow out the page, letterboxed rather than cropped. */
+#page-gif #gifResults .result{
+  flex:0 1 100%;
+  width:100%;
+  max-width:100%;
+}
+#page-gif #gifResults .result img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:70vh;
+  object-fit:contain;
+  margin:0 auto;
+  border-radius:10px;
+}
+
+/* Page-specific: trim scrubber + fps/width sliders — the two genuinely
+   new components this tool introduces. Uses the same tokens as
+   shared/site.css (var(--border-strong), var(--text)) rather than
+   inventing new colors. */
+.gif-video-wrap{
+  position:relative;
+  margin-top:24px;
+  display:none;
+}
+.gif-video-wrap.active{
+  display:block;
+}
+
+/* Same "×" remove button as Context's ctRemoveBtn — clears the loaded
+   clip and brings back the drop zone, rather than requiring a second
+   file pick to replace what's loaded. */
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here. */
+.gif-remove-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:6;
+  width:30px;
+  height:30px;
+  font-size:19px;
+}
+/* The <video> itself is never shown — it stays in the DOM purely as the
+   decode source for the filmstrip thumbnails and the real frame-by-frame
+   canvas extraction at convert time. A hidden <video> can still be drawn
+   to a canvas via drawImage() in every browser this tool targets, so
+   there's no functional loss versus keeping it visible. */
+.gif-video-wrap video{
+  display:none;
+}
+
+/* Filmstrip timeline: a strip of evenly-spaced thumbnails spanning the
+   full clip, much shorter than the old full-width video preview. The
+   trim handles + dimming overlays sit on top of it so it doubles as
+   both "what does this clip look like" and "which frames are actually
+   getting cut into the GIF." */
+.gif-filmstrip{
+  position:relative;
+  margin-top:16px;
+  height:64px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid var(--border-strong);
+  background:#000;
+  touch-action:none;
+}
+.gif-filmstrip canvas{
+  width:100%;
+  height:100%;
+  /* The canvas's real pixel size (60px per cell) rarely matches its
+     displayed CSS width, and width:100%/height:100% alone stretches a
+     replaced element's content to fill both dimensions independently —
+     that's what was blowing each thumbnail out wide. object-fit:cover
+     scales it uniformly instead, cropping any excess rather than
+     distorting it, so each cell keeps its real ~60:64 aspect. */
+  object-fit:cover;
+  display:block;
+}
+.gif-filmstrip-mask{
+  position:absolute;
+  top:0;
+  bottom:0;
+  background:rgba(0,0,0,.6);
+  pointer-events:none;
+}
+.gif-filmstrip-mask-left{ left:0; }
+.gif-filmstrip-mask-right{ right:0; }
+.gif-scrubber-handle{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:12px;
+  margin-left:-6px;
+  border-radius:5px;
+  border:1px solid var(--border-strong);
+  background:var(--text);
+  opacity:.9;
+  cursor:ew-resize;
+  touch-action:none;
+  z-index:2;
+}
+/* Plain body font + full color (not the terminal-monospace/grey
+   treatment this used to inherit) — the ">" prompt glyph is the only
+   piece meant to carry that "readout" motif (see CLAUDE.md's Terminal
+   text section: reserved for transient confirmations/diagnostic copy,
+   not a standing duration/filename label like this one), and it
+   already scopes its own dim opacity to just itself via
+   .nav-terminal-prompt. */
+.gif-scrubber-label{
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.gif-scrubber-label-toggle{
+  appearance:none;
+  border:none;
+  background:none;
+  padding:0;
+  margin:0;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  border-radius:4px;
+}
+.gif-scrubber-label-toggle:hover,
+.gif-scrubber-label-toggle:focus-visible{
+  opacity:.6;
+}
+.gif-scrubber-filename-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.gif-scrubber-filename-tag{
+  flex-shrink:0;
+}
+.gif-scrubber-filename{
+  /* Sized to its actual content instead of stretching to fill the row
+     — a 10-char name shows a 10-char-wide underline, not one spanning
+     the full remaining width. field-sizing is Chrome-only for now; the
+     max-width cap plus ellipsis below is the fallback everywhere else,
+     capping how wide it can grow rather than how tightly it fits. */
+  field-sizing:content;
+  max-width:220px;
+  min-width:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:inherit;
+  font:inherit;
+  cursor:text;
+}
+.gif-scrubber-filename:hover{
+  border-bottom-color:var(--border-strong);
+}
+.gif-scrubber-filename:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+
+/* Preview frame: shows the actual crop + caption exactly as they'll be
+   baked into the output GIF (not the full source frame with an overlay
+   rectangle) — a true WYSIWYG preview. Static (one redrawn frame) at
+   rest — redrawn at controlled points (file load, trim release, crop/
+   caption change) — but playable: the play button loops actual video
+   playback between the trim handles, redrawing the crop+caption on
+   every animation frame while it runs. */
+/* The dark workspace the video lives in — same idea as Context's
+   .context-preview-panel: a bounded "playground" layer beneath
+   everything else in the editor. The video frame is contained fully
+   inside it; captions can be dragged freely within it but never past
+   its edges (see the caption drag clamp in congify-tool.js, which
+   clamps to this panel's rect rather than the frame's). Handles that
+   sit slightly outside the frame's own corners (resize handle, remove
+   button) render against this background instead of getting clipped —
+   no overflow:hidden needed here, same as the canvas-wrap it mirrors. */
+/* Panel is width:fit-content + margin:auto, so at the frame's 1006px max
+   inside the 1028px workspace, the 22px difference splits evenly into an
+   11px gap on the left and right automatically. Vertical padding is set
+   to that same 11px here so the frame sits with an even margin on all
+   four sides, not a wide top/bottom gap next to a tight left/right one. */
+.gif-preview-panel{
+  position:relative;
+  width:fit-content;
+  max-width:100%;
+  margin:16px auto 0;
+  padding:11px 0;
+  border-radius:20px;
+  background:#1d2436;
+}
+.gif-preview-frame{
+  position:relative;
+  width:1006px;
+  max-width:100%;
+  margin:0 auto;
+  border-radius:16px;
+  background:#000;
+  border:1px solid var(--border-strong);
+}
+.gif-preview-frame canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:16px;
+}
+
+/* Drag-to-resize handle on the preview's corner — resizes the on-screen
+   editor frame only (a display comfort control), not the real export
+   resolution; that's the Resolution dropdown's job (see
+   #gifResolutionDropdown). Circle geometry is the shared
+   .bc-resize-handle (shared/site.css, originated in Context) — only
+   the corner offset and cursor stay local. */
+.gif-resize-handle{
+  right:6px;
+  bottom:6px;
+  width:30px;
+  height:30px;
+  cursor:nwse-resize;
+}
+.gif-resize-handle::before{
+  content:"";
+  width:18px;
+  height:18px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
+}
+
+/* Result stays in its original spot (full width, below the editor) in
+   both the done view and while you're back editing — just collapsible
+   now, since it's secondary once you're restyling rather than looking
+   at what downloaded. */
+.gif-results-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:20px;
+}
+.gif-results-header span{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.gif-results-toggle{
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-size:15px;
+  line-height:1;
+  cursor:pointer;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.2s;
+}
+.gif-results-toggle:hover{
+  background:rgba(255,255,255,.45);
+}
+html[data-theme="dark"] .gif-results-toggle{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .gif-results-toggle:hover{
+  background:rgba(0,0,0,.35);
+}
+.gif-results-header-btns{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+/* Lets you grab the already-converted file again after "Continue
+   working" without re-running Convert — resultsHeader only shows once
+   back in the editor alongside an existing result (see
+   showDoneView()/hideDoneView() in congify-tool.js), so this and the
+   Minimize toggle next to it only ever appear together with something
+   to actually download. Text label instead of a glyph (an arrow icon
+   this small/plain read as ambiguous — "Download" doesn't need
+   explaining even at this size), so it trades the circle shape for a
+   small pill sized to the word instead of .gif-results-toggle's fixed
+   26px circle. */
+.gif-results-download{
+  width:auto;
+  height:26px;
+  padding:0 10px;
+  border-radius:13px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+#gifResults[hidden]{
+  display:none;
+}
+#gifResultsHeader[hidden]{
+  display:none;
+}
+
+/* Shown once conversion finishes, replacing the single "Continue where
+   you left off" button that used to sit here (that text/id — and its
+   own gifContinueBtn near the top of the page — belongs to restoring a
+   saved session on page load, a different thing this was borrowing
+   copy from). Download no longer fires automatically, so this pair is
+   the actual point where the user picks what happens to the result.
+   Stacked with Continue working on top — it's the button most people
+   reach for right after seeing the result (styling more, not leaving
+   with the file), Download sits right under it as the other option.
+   Both buttons reuse .tool-primary-btn's own look; this container just
+   overrides the margin .tool-continue-btn normally sets for being the
+   sole button in its slot, down to the gap between the two here. */
+.gif-done-actions{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:14px;
+}
+.gif-done-actions[hidden]{
+  display:none;
+}
+.gif-done-actions .tool-primary-btn{
+  margin-top:0;
+}
+/* .tool-continue-btn's shared mobile rule (shared/site.css) swaps in
+   "Continue editing" via ::before at ≤768px — written for the
+   page-load restore button, wrong wording for this one. Override just
+   the content, same media query so it doesn't leak a duplicate label
+   at desktop widths (font-size:0 there only exists inside that query). */
+@media (max-width:768px){
+  #gifDoneContinueBtn::before{
+    content:"Continue working";
+  }
+}
+.gif-preview-play-btn{
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  width:45px;
+  height:45px;
+  padding:0 0 0 2px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#22D3D0;
+  color:#fff;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:3;
+}
+.gif-preview-play-btn:hover{
+  background:#1aa8a6;
+}
+
+/* Aspect ratio, moved off the settings row onto the preview's own
+   top-left corner — click-to-advance-through CROP_OPTIONS behavior
+   (congify-tool.js's bcRegisterOptionChangeBtn call), restyled as a
+   viewfinder icon rather than a pill button: four corner brackets
+   filling the whole 30x30 square with the current ratio's label inside
+   (0 for Free, 16:9, 1:1, ...) — congify-tool.js's renderCropOption()
+   just updates #gifCropFreeIconNumber's text now, no separate icon/
+   label swap. Solid Congify teal (#22D3D0) square, sharp corners (no
+   border-radius) and no border/stroke — the brackets sit flush at the
+   button's own edges (0px inset) so the teal fill aligns exactly with
+   them instead of overflowing past. White brackets/label via
+   currentColor/inherited color. Sits directly on the video/canvas
+   surface like the play button and resize handle next to it, so it
+   stays fixed regardless of site theme rather than following the
+   normal light/dark flip: the thing behind it is unpredictable video
+   content, not a themed page surface.
+   top:10px/left:10px lines it up with the remove button (top-right,
+   same top offset) and the play button (bottom-left, same left
+   offset) — same 10px corner inset all three share, just on the one
+   corner still free. */
+#gifPreviewFrame .gif-crop-corner-btn{
+  position:absolute;
+  /* -1px, not 10px: the remove button it's aligning with sits on
+     .gif-preview-panel (top:10px there), but this button is positioned
+     relative to .gif-preview-frame instead, which itself starts 11px
+     further down (.gif-preview-panel's own padding-top) — this offsets
+     for that gap so the two buttons' top edges land on the same line. */
+  top:-1px;
+  left:10px;
+  width:30px;
+  height:30px;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:0;
+  background:#22D3D0;
+  color:#fff;
+  cursor:pointer;
+  z-index:3;
+}
+#gifPreviewFrame .gif-crop-corner-btn:hover{
+  background:#1aa8a6;
+}
+/* Corner brackets fill the whole 30x30 button (not just a small icon
+   inside it), with the current ratio's label centered in the middle —
+   shown for every ratio (0, 16:9, 1:1, ...), not just Free. */
+.gif-crop-free-icon{
+  position:relative;
+  width:30px;
+  height:30px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.gif-crop-free-corner{
+  position:absolute;
+  width:9px;
+  height:9px;
+  border:2px solid currentColor;
+}
+.gif-crop-free-corner-tl{ top:0; left:0; border-right:none; border-bottom:none; }
+.gif-crop-free-corner-tr{ top:0; right:0; border-left:none; border-bottom:none; }
+.gif-crop-free-corner-bl{ bottom:0; left:0; border-right:none; border-top:none; }
+.gif-crop-free-corner-br{ bottom:0; right:0; border-left:none; border-top:none; }
+.gif-crop-free-icon-number{
+  font-size:15px;
+  font-weight:800;
+  line-height:1;
+}
+
+/* Caption text box — same click-to-edit/drag pattern as Context's text
+   boxes (.context-text-box/.context-text-inner/.context-text-remove),
+   just one box instead of many and centered on captionX/Y (its
+   position fraction) rather than a top-left corner. Typing happens
+   directly here, styled to match what actually gets baked into the
+   output (drawCaption() in congify-tool.js uses the same font/size/
+   color/stroke math) — no separate input field or live canvas redraw
+   needed for the caption itself. */
+.gif-caption-box{
+  position:absolute;
+  z-index:10;
+  transform:translate(-50%, -50%);
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+  touch-action:none;
+}
+.gif-caption-box[hidden]{
+  display:none;
+}
+/* Corner drag-to-resize handle for one caption's own text size — circle
+   geometry is the shared .bc-obj-resize-handle (shared/site.css), split
+   from the canvas-level .bc-resize-handle used by the video preview's
+   own resize handle since this one resizes an object ON the canvas. */
+.gif-caption-resize-handle{
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+}
+.gif-caption-resize-handle::before{
+  content:"";
+  width:16px;
+  height:16px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
+}
+.gif-caption-size-badge{
+  position:absolute;
+  top:-34px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:4px 9px;
+  border-radius:999px;
+  background:rgba(0,0,0,.65);
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  z-index:4;
+  pointer-events:none;
+}
+.gif-caption-drag-handle{
+  flex-shrink:0;
+}
+.gif-caption-inner{
+  display:inline-block;
+  min-width:16px;
+  padding:2px 4px;
+  outline:1px dashed rgba(255,255,255,.5);
+  border-radius:4px;
+  cursor:text;
+  line-height:1.2;
+}
+.gif-caption-inner:focus{
+  outline:1px solid #22D3D0;
+}
+.gif-caption-remove{
+  top:-10px;
+  right:-10px;
+  z-index:6;
+}
+
+
+/* Toggle buttons (Add text, Stroke, Bold/Italic/Underline) are the
+   shared .bc-toggle-btn/.bc-toggle-btn-group/.bc-toggle-btn-icon
+   (shared/site.css). */
+
+/* Dropdown component shared by Crop, Playback, Playback speed, Font,
+   and Color & style — same trigger+menu pattern as Context's color
+   dropdown, so multi-choice settings read as pickers rather than a row
+   of always-visible buttons. The component itself (.bc-dropdown-*) now
+   lives in shared/site.css — Coudio and Colorfy use the same classes —
+   this page only keeps the layout rule scoping it to this tool's own
+   .gif-slider-group, plus the color-swatch/width-line extras only
+   Congify's option rows need. */
+.gif-slider-group > .bc-dropdown{
+  display:inline-block;
+  min-width:100px;
+  max-width:140px;
+}
+/* Font's own label ("Arial", "Comic Sans", ...) runs longer than the
+   other pills in this row — 122px keeps the longest option from
+   ellipsis-truncating at the generic 100px floor above. */
+#gifCaptionFontDropdown{
+  min-width:122px;
+}
+.gif-slider-group > .option-change-btn{
+  min-width:100px;
+  max-width:140px;
+}
+/* The two groups that also carry a .bc-info-btn (Frame rate, Playback)
+   need to lay their pill + "i" out as a row instead of the plain block
+   every other single-control group defaults to — :has() scopes this to
+   just those two rather than a blanket layout change site-wide.
+   position:relative is what the "i" button's tooltip anchors against. */
+.gif-slider-group:has(> .bc-info-btn){
+  display:flex;
+  align-items:center;
+  gap:6px;
+  position:relative;
+}
+/* Fixed widths for the two option-change-btns whose labels are all a
+   known, similar length ("5 fps"…"33.3 fps", "Normal"/"Reverse"/
+   "Boomerang") — sized to fit the longest without the generic
+   100–140px range letting the button jump width as it cycles. */
+#gifFpsBtn{
+  min-width:126px;
+  max-width:126px;
+}
+#gifOrderBtn{
+  min-width:135px;
+  max-width:135px;
+}
+#gifCaptionStrokeColorDropdown{
+  min-width:100px;
+  max-width:150px;
+}
+/* Chrome now lives in shared/site.css as .bc-color-dot (added as a
+   second class on the markup, class="gif-dropdown-dot bc-color-dot") —
+   this was a byte-for-byte duplicate of that recipe (Context's
+   .context-color-dot had grown the exact same one independently).
+   .gif-dropdown-dot itself now only exists as a JS-addressing hook. */
+/* Stroke thickness shown as an actual line at that weight, not a word
+   ("Thin"/"Medium"/...) — reads the same way a font-weight swatch would. */
+.gif-width-line{
+  display:inline-block;
+  width:28px;
+  border-radius:999px;
+  background:#fff;
+  flex-shrink:0;
+}
+.bc-dropdown-option .gif-width-line{
+  margin:0 auto;
+}
+
+/* Settings list: one row per control, all dropdown/button based now —
+   left-aligned, capped at 100px, aligned to the row's bottom edge. */
+.gif-sliders{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  align-content:center;
+  gap:14px;
+  margin-top:16px;
+}
+/* Basic/Advanced switch, right above whichever of the two .gif-sliders
+   groups below is currently shown — two segments, each independently
+   styled by its own [aria-pressed] state rather than one sliding
+   highlight: unselected matches Compress's unselected .tool-format-btn
+   (outline only, transparent fill); selected matches Congify's own
+   filled pills (.bc-toggle-btn's recipe, same as #gifAddTextBtn) — a
+   smooth border/background transition stands in for the "toggle
+   animation" instead of an animated chip sliding between them.
+   Mobile-only: at desktop widths both groups already fit comfortably
+   side by side with room to spare, so there's nothing to switch
+   between — the toggle only earns its keep once space is tight enough
+   that showing both at once gets cramped, i.e. mobile. Desktop hides
+   the toggle and force-shows both groups regardless of the JS-set
+   [hidden] attribute (see the two rules below). */
+.gif-mode-toggle{
+  display:none;
+}
+@media (max-width:768px){
+  .gif-mode-toggle{
+    display:flex;
+    width:280.5px;
+    margin:14px auto 0;
+  }
+}
+/* Connected segments, not two separate pills with a gap between them —
+   each button takes half the full 280.5px width, square on the
+   touching edge and rounded only on its own outer corner, with the
+   second button's left border dropped so the two share a single
+   dividing line instead of doubling it up. */
+.gif-mode-toggle button{
+  flex:1;
+  height:34px;
+  padding:0 14px;
+  border-radius:0;
+  border:1px solid var(--border-strong);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.gif-mode-toggle button:first-child{
+  border-top-left-radius:17px;
+  border-bottom-left-radius:17px;
+}
+.gif-mode-toggle button:last-child{
+  border-top-right-radius:17px;
+  border-bottom-right-radius:17px;
+  border-left:none;
+}
+.gif-mode-toggle button[aria-pressed="true"]{
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+}
+html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* border-color above (not the border shorthand) is what keeps this
+   from re-adding a left border on the second segment when it's
+   selected — :last-child's own border-left:none needs to survive the
+   selected state too, or the shared divider between the two doubles
+   up the moment Advanced is active. */
+.gif-mode-toggle button:last-child[aria-pressed="true"]{
+  border-left:none;
+}
+/* Desktop keeps showing both groups regardless of whichever mode
+   congify-tool.js's setGifMode() last set (the toggle itself is hidden
+   above, but the [hidden] attribute it applies is still sitting on the
+   elements) — this is what makes them ignore it above 768px. */
+@media (min-width:769px){
+  #gifCaptionSliders[hidden],
+  #gifOutputSliders[hidden]{
+    display:flex;
+  }
+}
+.gif-slider-group > .bc-toggle-btn{
+  min-width:100px;
+  max-width:140px;
+  height:38px;
+  padding:0 12px;
+  white-space:nowrap;
+}
+
+/* Add text matches Context's "Add text" pill (130x74, 26px radius,
+   800-weight 18px text) instead of the smaller shared .bc-toggle-btn
+   sizing every other control here uses — it's the primary action on
+   this row, same as it is on Context's toolbar. */
+#gifAddTextBtn{
+  width:130px;
+  height:74px;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  border-radius:26px;
+  font-size:18px;
+  font-weight:800;
+  white-space:nowrap;
+}
+/* Invisible flex line-break: forces whatever comes after it onto a
+   fresh row without occupying a row itself (a real element, not a
+   media-query display:none one, since a flex item needs to stay part
+   of the layout for the flex-basis:100% break trick to work) — no-op
+   on desktop (flex-basis:0), only breaks the row on mobile below. */
+.gif-row-break{ flex-basis:0; width:0; height:0; }
+
+/* Mobile-only control layout — desktop is untouched. Explicit rows,
+   none of them left to incidental flex-wrap (a pairing that only holds
+   "because it happens to fit at this width" silently breaks on a
+   slightly wider or narrower phone):
+     1. Add text (alone, 280.5x34)      4. Resolution (alone)
+     2. Font (180x34) + Color + B/I/U   5. Frame rate + Speed
+     3. Stroke (180x34) + Color + Thickness   6. Playback (alone)
+   Color/Stroke color/B/I/U/Thickness are each their own separate
+   button sized to fit their content within a 29-70px range (icons at
+   the low end, the width-line/hamburger combo at the high end) rather
+   than a single shared icon width — 34px tall throughout, matching. */
+@media (max-width:768px){
+  #gifCaptionSliders,
+  #gifOutputSliders{
+    width:280.5px;
+    height:190px;
+    /* Exactly 20px below the Basic/Advanced toggle regardless of the
+       shared (desktop) .gif-sliders margin-top:16px above. */
+    margin-top:20px;
+  }
+  /* .gif-sliders' own align-content:center vertically centers whatever
+     rows are present within the fixed height — fine when Advanced's 4
+     rows nearly fill it, but not always (and Basic's 3 rows sat lower
+     than its own top-flush Add text row too). Packing from the top on
+     both keeps their first row flush against the panel's own top edge
+     instead of drifting depending on row count. */
+  #gifCaptionSliders,
+  #gifOutputSliders{
+    align-content:flex-start;
+  }
+  #gifOutputSliders{
+    gap:10px;
+  }
+  /* Without this, [hidden] never actually took effect — .gif-sliders'
+     own display:flex is author CSS, which beats the browser's default
+     [hidden]{display:none} regardless of the attribute being set (same
+     bug already hit once on .gif-crop-free-icon) — so toggling Basic/
+     Advanced looked like it did nothing and both stayed visible at
+     once. */
+  #gifCaptionSliders[hidden],
+  #gifOutputSliders[hidden]{
+    display:none;
+  }
+  /* Basic panel doesn't use the shared `gap` at all — every gap here
+     (row AND column) is an explicit margin on the real items instead.
+     This was tried with `gap:10px` + a negative margin on
+     .gif-row-break to cancel its extra line, on the theory that a
+     flex item's margin offsets the fixed inter-line `gap` — verified
+     in an isolated test harness that it does NOT: `gap` is inserted
+     between flex lines independent of any item's margin, so the
+     negative margin silently did nothing and Font->Stroke stayed at
+     20px (double the intended 10px). Margins avoid that failure mode
+     entirely since there's no separate auto-inserted gap to fight. */
+  #gifCaptionSliders{
+    justify-content:flex-start;
+    gap:0;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionFontDropdown),
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionColorDropdown){
+    margin-top:18px;
+    margin-right:10px;
+  }
+  /* Font -> Color is the one exception at 2px instead of the flat
+     10px everywhere else in this row. */
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionFontDropdown){
+    margin-right:2px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(.bc-toggle-btn-group){
+    margin-top:18px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeBtn),
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeColorDropdown){
+    margin-top:10px;
+    margin-right:10px;
+  }
+  /* Stroke -> Color, same 2px exception as Font -> Color above. */
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeBtn){
+    margin-right:2px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeWidthBtn){
+    margin-top:10px;
+  }
+  /* No longer contributes any space of its own (see the note above) —
+     it only still exists to force Stroke's row to wrap onto a fresh
+     line regardless of how wide the container happens to be; the
+     actual Font->Stroke gap now comes entirely from Stroke's own
+     margin-top above. */
+  .gif-row-break{
+    flex-basis:100%;
+    width:0;
+    height:0;
+    margin:0;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifAddTextBtn){
+    flex:1 1 100%;
+    display:flex;
+    justify-content:center;
+  }
+  #gifCaptionSliders .bc-dropdown-trigger,
+  #gifCaptionSliders .bc-toggle-btn:not(#gifAddTextBtn),
+  #gifCaptionSliders .option-change-btn,
+  #gifOutputSliders .bc-dropdown-trigger,
+  #gifOutputSliders .bc-toggle-btn:not(#gifAddTextBtn),
+  #gifOutputSliders .option-change-btn{
+    height:34px;
+    font-size:15px;
+  }
+  /* Advanced: one control per row — Resolution, Frame rate, Speed,
+     Playback stacked in that order, each full-width. Frame rate/
+     Playback's own "i" button rides along in the same row (that
+     flex-row layout is .gif-slider-group:has(>.bc-info-btn) further up
+     this file). */
+  #gifOutputSliders .gif-slider-group{
+    flex:1 1 100%;
+    display:flex;
+    justify-content:center;
+  }
+  /* All four Advanced controls are a fixed 200x34px now, regardless of
+     row width or whether an "i" button rides along next to them. */
+  #gifOutputSliders .bc-dropdown-trigger,
+  #gifOutputSliders .option-change-btn{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  /* Resolution/Speed's own .bc-dropdown wrapper (not the trigger
+     itself) is what the row centers via justify-content — the
+     unconditional .gif-slider-group > .bc-dropdown rule caps it at
+     140px, so the 200px trigger above overflowed past its own centered
+     wrapper instead of sitting centered like Frame rate/Playback
+     (which have no such wrapper). Matching the wrapper's width to the
+     trigger's fixes it. */
+  #gifOutputSliders .bc-dropdown{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  #gifFpsBtn,
+  #gifOrderBtn{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  /* The "i" rides ON the pill now instead of next to it — a badge
+     inset into the button's own left edge — rather than counting as a
+     separate item in the row that pulled the 200px pill's centering
+     off Resolution/Speed's identical centerline (whatever "i" position
+     was tried, it kept doing that as long as it stayed a sibling in
+     the same flex row). The pill itself keeps its normal 200px width;
+     only the badge overlaps into it, so nothing about the button's own
+     size changes. */
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn){
+    position:relative;
+    gap:0;
+    justify-content:center;
+  }
+  /* Belt-and-suspenders on top of the row's own justify-content:center
+     above — margin:0 auto centers the pill even if something about the
+     :has() row's flex context ever stops cooperating, since this
+     doesn't depend on it at all. */
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn) .option-change-btn{
+    margin:0 auto;
+  }
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn) .bc-info-btn{
+    position:absolute;
+    left:calc(50% - 100px + 6px);
+    top:50%;
+    transform:translateY(-50%);
+    z-index:1;
+    background:var(--bg);
+  }
+  /* Row order is Resolution/Frame rate/Speed/Playback — DOM order is
+     actually Resolution/Frame rate/Playback/Speed (desktop's own
+     flex-wrap doesn't care), so this flips just the mobile visual
+     position without touching desktop or the markup itself. */
+  #gifOutputSliders .gif-slider-group:has(#gifSpeedDropdown){ order:1; }
+  #gifOutputSliders .gif-slider-group:has(#gifOrderBtn){ order:2; }
+  /* :not() above keeps this rule from clobbering the Add-text sizing
+     right below — #gifCaptionSliders .bc-toggle-btn (id + class, (1,1,0))
+     would otherwise outrank the plain #gifAddTextBtn selector (1,0,0)
+     regardless of source order. */
+  #gifAddTextBtn{
+    width:280.5px;
+    height:34px;
+    padding:0;
+    border-radius:17px;
+    font-size:15px;
+  }
+  #gifCaptionFontDropdown{
+    min-width:122px;
+    max-width:122px;
+  }
+  #gifCaptionStrokeBtn{
+    width:122px;
+  }
+  /* Color/B/I/U/Thickness are each their own button now, sized to fit
+     their own content within a 29-70px range instead of a single
+     shared icon width — a plain color swatch needs less room than the
+     width-line + hamburger pair Thickness shows. */
+  #gifCaptionSliders .bc-toggle-btn-icon,
+  #gifCaptionColorTrigger,
+  #gifCaptionStrokeColorTrigger{
+    min-width:29px;
+    max-width:70px;
+    width:auto;
+    height:34px;
+    padding:0 8px;
+  }
+  #gifCaptionStrokeWidthBtn{
+    min-width:29px;
+    max-width:70px;
+    height:34px;
+  }
+  #gifCaptionColorTriggerLabel,
+  #gifCaptionStrokeColorTriggerLabel,
+  #gifCaptionColorTrigger .bc-dropdown-chevron,
+  #gifCaptionStrokeColorTrigger .bc-dropdown-chevron{
+    display:none;
+  }
+  /* Icon-only triggers above shrink the button itself, but the
+     .gif-slider-group > .bc-dropdown wrapper around it still enforces
+     the desktop 100-140px column width — without shrinking these two
+     wrappers as well, Color would keep reserving desktop-width space
+     it no longer needs. */
+  #gifCaptionColorDropdown,
+  #gifCaptionStrokeColorDropdown{
+    min-width:29px;
+    max-width:70px;
+  }
+  /* The open dropdown drops its text same as Context's #ctColorMenu on
+     mobile, but stays the default vertical stack (column, one swatch
+     per row) instead of Context's own horizontal row — narrowed to fit
+     just the dot per row instead of the desktop dot+label width. */
+  #gifCaptionColorMenu,
+  #gifCaptionStrokeColorMenu{
+    left:auto;
+    right:0;
+    width:50px;
+  }
+  #gifCaptionColorMenu .bc-color-option,
+  #gifCaptionStrokeColorMenu .bc-color-option{
+    justify-content:center;
+    padding:0;
+    height:40px;
+  }
+  #gifCaptionColorMenu .gif-option-label,
+  #gifCaptionStrokeColorMenu .gif-option-label{
+    display:none;
+  }
+  #gifCaptionColorMenu .gif-dropdown-dot,
+  #gifCaptionStrokeColorMenu .gif-dropdown-dot{
+    width:18px;
+    height:18px;
+  }
+}
+/* Mobile shows just "Convert" on the primary action button — the
+   fuller desktop label ("Convert to GIF") doesn't fit well at phone
+   widths. */
+@media (max-width:768px){
+  #gifConvertBtn{ font-size:0; }
+  #gifConvertBtn::before{
+    content:"Convert";
+    font-size:20px;
+  }
+}
+/* Mobile shortens "File name:" to "File:" — same font-size:0 +
+   ::before swap as #gifConvertBtn above, so congify-tool.js never
+   needs to know which text is on screen. */
+@media (max-width:768px){
+  .gif-scrubber-filename-tag-text{ font-size:0; }
+  .gif-scrubber-filename-tag-text::before{
+    content:"File:";
+    font-size:13px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating" data-i18n="cookie_banner_text">We use cookies. Choose which categories to allow below — see our <a data-goto="cookies">Cookie Policy</a> for details.</p>
+  <p class="cookie-banner-text-mobile" data-i18n="cookie_banner_text_mobile">Choose which categories to allow</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Toggle cookie settings contents" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title" data-i18n="ck_settings_btn">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span data-i18n="cookie_banner_text_docked">Choose which categories to allow</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="More about necessary cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span data-i18n="cookie_cat_necessary">Necessary (always on)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" data-i18n="cookie_cat_necessary_detail" hidden>These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="More about analytics cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span data-i18n="cookie_cat_analytics">Analytics (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" data-i18n="cookie_cat_analytics_detail" hidden>Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="More about advertising cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span data-i18n="cookie_cat_advertising">Advertising (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" data-i18n="cookie_cat_advertising_detail" hidden>Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll" data-i18n="cookie_banner_accept_all">Accept All</button>
+    <button type="button" id="cookieBannerSave" data-i18n="cookie_banner_save">Confirm choices</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <div class="nav-lang-wrap">
+          <button id="navLangBtn" type="button" class="nav-lang-btn" aria-label="Change language" title="Change language" data-i18n-label="nav_lang">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.5"></circle>
+              <ellipse cx="12" cy="12" rx="4" ry="9.5"></ellipse>
+              <line x1="2.5" y1="12" x2="21.5" y2="12"></line>
+              <path d="M4.2 7.5h15.6M4.2 16.5h15.6"></path>
+            </svg>
+          </button>
+          <div class="nav-lang-menu" id="navLangMenu">
+            <button type="button" data-lang="en" class="active">English</button>
+            <button type="button" data-lang="cs">Čeština</button>
+            <button type="button" data-lang="pl">Polski</button>
+            <button type="button" data-lang="g7">7G</button>
+          </div>
+        </div>
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Toggle light and dark mode" title="Toggle light and dark mode" data-i18n-label="nav_theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share" data-i18n-label="nav_share">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy" data-i18n="share_copy">Copy link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="More share options" data-i18n-label="share_more"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email" data-i18n="share_email">Email</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub" data-i18n-label="nav_back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="gifHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="gifHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="gifHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="gifHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="help-banner-term-btn" id="gifHelpBack">&lt; BACK</button>
+      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="gifHelpCloseMobile">CLOSE</button>
+      <button type="button" class="help-banner-term-btn" id="gifHelpNext">NEXT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="gifHelpBody">
+    <div class="engine-status-row">&gt; <span id="gifHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-gif">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-gif" role="img" aria-label="Congify icon"></span>
+        <span>Congify</span>
+      </div>
+    </div>
+
+    <div class="tool-drop" id="gifDrop">Click or drop a video</div>
+    <input type="file" id="gifInput" accept="video/*" hidden>
+
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="gifContinueBtn" hidden>Continue where you left off</button>
+
+    <div class="gif-video-wrap" id="gifVideoWrap">
+    <div id="gifEditorControls">
+      <video id="gifVideo" muted playsinline></video>
+
+      <div class="gif-preview-panel" id="gifPreviewPanel">
+        <button type="button" class="gif-remove-btn bc-remove-btn bc-canvas-remove-btn" id="gifRemoveBtn" aria-label="Remove video">×</button>
+        <div class="gif-preview-frame" id="gifPreviewFrame">
+          <canvas id="gifPreviewCanvas"></canvas>
+          <button type="button" class="gif-crop-corner-btn" id="gifCropBtn" title="Aspect ratio">
+            <span class="gif-crop-free-icon" id="gifCropFreeIcon" aria-hidden="true">
+              <span class="gif-crop-free-corner gif-crop-free-corner-tl"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-tr"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-bl"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-br"></span>
+              <span class="gif-crop-free-icon-number" id="gifCropFreeIconNumber">0</span>
+            </span>
+          </button>
+          <button type="button" class="gif-preview-play-btn" id="gifPreviewPlayBtn" aria-label="Play preview" title="Play/pauze (space)">▶</button>
+          <div class="gif-resize-handle bc-resize-handle" id="gifResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></div>
+        </div>
+      </div>
+
+      <div class="gif-filmstrip" id="gifFilmstrip">
+        <canvas id="gifFilmstripCanvas"></canvas>
+        <div class="gif-filmstrip-mask gif-filmstrip-mask-left" id="gifMaskLeft"></div>
+        <div class="gif-filmstrip-mask gif-filmstrip-mask-right" id="gifMaskRight"></div>
+        <div class="gif-scrubber-handle" id="gifScrubberStart" role="slider" aria-label="Trim start" tabindex="0"></div>
+        <div class="gif-scrubber-handle" id="gifScrubberEnd" role="slider" aria-label="Trim end" tabindex="0"></div>
+      </div>
+      <div class="gif-scrubber-label">
+        <button type="button" class="gif-scrubber-label-toggle" id="gifScrubberLabelToggle" aria-label="Toggle timecode display"><span class="nav-terminal-prompt">&gt;</span> <span id="gifScrubberLabel">0:00:00</span></button>
+        <span class="gif-scrubber-filename-group">
+          <span class="gif-scrubber-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="gif-scrubber-filename-tag-text">File name:</span></span>
+          <input type="text" class="gif-scrubber-filename" id="gifScrubberFileName" aria-label="Output file name" spellcheck="false">
+        </span>
+      </div>
+
+      <!-- Basic = text/stroke controls (gifCaptionSliders), Advanced =
+           video/export controls (gifOutputSliders) — only one of the two
+           groups below is ever shown at once, toggled here. Basic is the
+           default since captions are this tool's primary editing task;
+           Advanced's controls (resolution, fps, speed, playback) matter
+           less often and used to sit visible at all times. -->
+      <div class="gif-mode-toggle" id="gifModeToggle">
+        <button type="button" id="gifModeBasicBtn" aria-pressed="true">Basic</button>
+        <button type="button" id="gifModeAdvancedBtn" aria-pressed="false">Advanced</button>
+      </div>
+
+      <div class="gif-sliders" id="gifCaptionSliders">
+        <div class="gif-slider-group">
+          <button type="button" class="bc-toggle-btn" id="gifAddTextBtn">Add text</button>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionFontDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionFontTrigger" title="Font" aria-haspopup="listbox" aria-expanded="false" style="font-family:Arial, sans-serif;">
+              <span class="bc-dropdown-trigger-label" id="gifCaptionFontTriggerLabel">Font</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifCaptionFontMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-font="Arial, sans-serif" data-label="Arial" style="font-family:Arial, sans-serif;" role="option" aria-selected="false">Arial</button>
+              <button type="button" class="bc-dropdown-option" data-font="Impact, sans-serif" data-label="Impact" style="font-family:Impact, sans-serif;" role="option" aria-selected="false">Impact</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Times New Roman', serif" data-label="Times" style="font-family:'Times New Roman', serif;" role="option" aria-selected="false">Times</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Comic Sans MS', cursive" data-label="Comic Sans" style="font-family:'Comic Sans MS', cursive;" role="option" aria-selected="false">Comic Sans</button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionColorDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionColorTrigger" title="Text color" aria-haspopup="listbox" aria-expanded="false">
+              <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionColorTriggerDot" style="background:transparent;" hidden></span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionColorTriggerLabel">Text color</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionColorMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#ffffff" data-label="White" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#ffffff;"></span><span class="gif-option-label">White</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#000000" data-label="Black" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#000000;"></span><span class="gif-option-label">Black</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#e11d48" data-label="Red" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#e11d48;"></span><span class="gif-option-label">Red</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#2563eb" data-label="Blue" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#2563eb;"></span><span class="gif-option-label">Blue</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#eab308" data-label="Yellow" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#eab308;"></span><span class="gif-option-label">Yellow</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-toggle-btn-group">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionBoldBtn" title="Bold" aria-pressed="false" aria-label="Bold"><b>B</b></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionItalicBtn" title="Italic" aria-pressed="false" aria-label="Italic"><i>I</i></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionUnderlineBtn" title="Underline" aria-pressed="false" aria-label="Underline"><u>U</u></button>
+          </div>
+        </div>
+        <div class="gif-row-break" aria-hidden="true"></div>
+        <div class="gif-slider-group">
+          <button type="button" class="bc-toggle-btn" id="gifCaptionStrokeBtn" title="Stroke" aria-pressed="false">Stroke</button>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionStrokeColorDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionStrokeColorTrigger" title="Stroke color" aria-haspopup="listbox" aria-expanded="false">
+              <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionStrokeColorTriggerDot" style="background:transparent;" hidden></span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionStrokeColorTriggerLabel">Stroke color</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionStrokeColorMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#000000" data-label="Black" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#000000;"></span><span class="gif-option-label">Black</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#ffffff" data-label="White" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#ffffff;"></span><span class="gif-option-label">White</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#e11d48" data-label="Red" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#e11d48;"></span><span class="gif-option-label">Red</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#2563eb" data-label="Blue" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#2563eb;"></span><span class="gif-option-label">Blue</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#eab308" data-label="Yellow" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#eab308;"></span><span class="gif-option-label">Yellow</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifCaptionStrokeWidthBtn" title="Stroke thickness" aria-label="Stroke thickness: Medium">
+            <span class="gif-width-line" id="gifCaptionStrokeWidthBtnLine" style="height:4px;"></span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="gif-sliders" id="gifOutputSliders" hidden>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifResolutionDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifResolutionTrigger" title="Expected resolution" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label" id="gifResolutionTriggerLabel">Resolution</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifResolutionMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-width="320" data-label="320px" role="option" aria-selected="false">320px</button>
+              <button type="button" class="bc-dropdown-option" data-width="480" data-label="480px" role="option" aria-selected="false">480px</button>
+              <button type="button" class="bc-dropdown-option" data-width="640" data-label="640px" role="option" aria-selected="false">640px</button>
+              <button type="button" class="bc-dropdown-option" data-width="960" data-label="960px" role="option" aria-selected="false">960px</button>
+              <button type="button" class="bc-dropdown-option" data-width="1280" data-label="1280px" role="option" aria-selected="false">1280px</button>
+              <button type="button" class="bc-dropdown-option" data-width="1920" data-label="1920px" role="option" aria-selected="false">1920px</button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifFpsBtn" title="Frame rate">
+            <span class="option-change-btn-label" id="gifFpsBtnLabel">10 fps</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="bc-info-btn" id="gifFpsInfoBtn" aria-label="What does Frame rate mean?" aria-expanded="false">i</button>
+          <div class="bc-info-tooltip" id="gifFpsInfoTooltip" hidden>Higher frame rates look smoother but make a bigger file — most clips still read fine at 10–15 fps.</div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifOrderBtn" title="Playback">
+            <span class="option-change-btn-label" id="gifOrderBtnLabel">Normal</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="bc-info-btn" id="gifOrderInfoBtn" aria-label="What does Playback mean?" aria-expanded="false">i</button>
+          <div class="bc-info-tooltip" id="gifOrderInfoTooltip" hidden>Reverse plays the clip backwards; Boomerang plays it forward then back for a bounce effect.</div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifSpeedDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifSpeedTrigger" title="Playback speed" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label" id="gifSpeedTriggerLabel">Speed</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifSpeedMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-speed="0.25" data-label="0.25x" role="option" aria-selected="false">0.25x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="0.5" data-label="0.5x" role="option" aria-selected="false">0.5x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1" data-label="1x" role="option" aria-selected="false">1x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1.25" data-label="1.25x" role="option" aria-selected="false">1.25x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1.5" data-label="1.5x" role="option" aria-selected="false">1.5x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="2" data-label="2x" role="option" aria-selected="false">2x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="4" data-label="4x" role="option" aria-selected="false">4x</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-controls" id="gifToolControls" style="grid-template-columns:1fr;">
+        <button class="tool-primary-btn" id="gifConvertBtn" disabled>Convert to GIF</button>
+      </div>
+    </div>
+
+    <div class="gif-results-header" id="gifResultsHeader" hidden>
+      <span><span class="nav-terminal-prompt">&gt;</span> Result</span>
+      <div class="gif-results-header-btns">
+        <button type="button" class="gif-results-toggle gif-results-download" id="gifResultsDownloadBtn" aria-label="Download result" title="Download result">Download</button>
+        <button type="button" class="gif-results-toggle" id="gifResultsToggle" aria-label="Minimize result" title="Minimize result" aria-expanded="true">&#8722;</button>
+      </div>
+    </div>
+    <div class="tool-results" id="gifResults"></div>
+    <div class="gif-done-actions" id="gifDoneActions" hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="gifDoneContinueBtn">Continue working</button>
+      <button type="button" class="tool-primary-btn" id="gifDownloadBtn">Download</button>
+    </div>
+    <div class="tool-status" id="gifStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="gif">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>New to making GIFs?</h3>
+    <p>A GIF isn't compressed video — it's a sequence of individual frames capped at 256 colors each, with no audio track at all, which is exactly why frame rate, trim length, and crop hit its file size so differently than they would for a video. Here's what's actually happening under the hood, and how to pick settings that hold up.</p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000021" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3 data-i18n="footer_company_heading">Company</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" data-i18n-label="nav_about_title"><span class="footer-link-fun" data-i18n="nav_about">Our Universe</span><span class="footer-link-plain" data-i18n="nav_about_title">About Us</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" data-i18n-label="nav_faq_title"><span class="footer-link-fun" data-i18n="nav_faq">Already Answered</span><span class="footer-link-plain" data-i18n="nav_faq_title">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" data-i18n-label="mp_footer_terms_title"><span class="footer-link-fun" data-i18n="mp_footer_terms">Galactic Handbook</span><span class="footer-link-plain" data-i18n="mp_footer_terms_title">Terms of Use</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" data-i18n-label="mp_footer_privacy_title"><span class="footer-link-fun" data-i18n="mp_footer_privacy">Alien Privacy Protocol</span><span class="footer-link-plain" data-i18n="mp_footer_privacy_title">Privacy Policy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" data-i18n-label="mp_footer_cookies_title"><span class="footer-link-fun" data-i18n="mp_footer_cookies">Cookie Registry</span><span class="footer-link-plain" data-i18n="mp_footer_cookies_title">Cookie Policy</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3 data-i18n="footer_getting_started_heading">Getting started with</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3 data-i18n="footer_contact_heading">Get in touch with us</h3>
+      <span class="footer-dash-text" data-i18n="footer_contact_email"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text" data-i18n="footer_contact_discord"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address" data-i18n="footer_contact_address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=23" defer></script>
+<script src="/congify/congify-tool.js?v=121" defer></script>
+</body>
+</html>

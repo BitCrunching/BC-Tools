@@ -746,7 +746,8 @@ span.gfx-md, span.gfx-lg{
   .site-nav{height:72px;padding:0 16px;}
   .site-nav-brand{font-size:30px;}
   .site-logo{width:34px;height:34px;}
-  .nav-close-btn{display:none !important;}
+  .nav-close-btn,
+  .nav-help-btn{display:none !important;}
 }
 
 /* Below the general mobile breakpoint, the brand text + logo + 3 nav
@@ -1378,7 +1379,8 @@ html[data-theme="dark"] .result{
 }
 
 .nav-share-btn,
-.nav-theme-btn{
+.nav-theme-btn,
+.nav-help-btn{
   color:var(--text);
   width:36px;
   height:36px;
@@ -1395,7 +1397,8 @@ html[data-theme="dark"] .result{
 }
 
 .nav-share-btn:hover,
-.nav-theme-btn:hover{
+.nav-theme-btn:hover,
+.nav-help-btn:hover{
   color:var(--text);
   border-color:var(--border-strong);
 }
@@ -1403,6 +1406,17 @@ html[data-theme="dark"] .result{
 .nav-theme-btn svg{
   width:20px;
   height:20px;
+}
+
+/* Plain "?" text rather than a custom SVG — same approach
+   .tool-io-info-btn's "i" glyph already uses for a help-flavored
+   button elsewhere on the site, simpler than drawing icon art for a
+   single character. Click reopens the tool's own step-through help
+   banner (bcSetupHelpBanner wires this up directly, by this exact id)
+   after it's been dismissed — the only way back to it otherwise. */
+.nav-help-btn{
+  font-size:16px;
+  font-weight:800;
 }
 
 .nav-share-icon{
@@ -2676,6 +2690,55 @@ html[data-theme="dark"] .bc-dropdown-option.active{
   background:rgba(255,255,255,.14);
 }
 
+/* ===== .bc-color-menu / .bc-color-option — dark "swatch list" dropdown
+   for a preset color picker ===== Added as a SECOND class alongside
+   the generic .bc-dropdown-menu/.bc-dropdown-option above (and placed
+   after them in the cascade so these overrides actually win — same
+   specificity, so source order decides) — those still own positioning
+   and all the JS wiring (bcRegisterDropdown's event delegation and
+   active-state toggling both key off .bc-dropdown-option specifically),
+   this pair only replaces the visual: a dark navy list instead of the
+   plain light/dark-flip dropdown every other .bc-dropdown-menu uses,
+   fixed-dark regardless of site theme (no html[data-theme] variant
+   needed). Originated in Context (.context-color-menu/
+   .context-color-option, predating the shared .bc-dropdown component
+   entirely — Context's own hand-rolled viewport-clamped positioning
+   doesn't fit bcRegisterDropdown's plain trigger/menu contract, so its
+   JS still keys off its own local class names, kept as JS-addressing
+   hooks the same way .cf-color-trigger etc. are elsewhere); Congify's
+   text/stroke color pickers now use the same look via
+   bc-dropdown-menu/-option's normal JS path. */
+.bc-color-menu{
+  padding:6px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background:#1d2436;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.bc-color-option{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:36px;
+  padding:0 10px;
+  border:none;
+  border-radius:9px;
+  background:transparent;
+  color:#fff;
+  font-size:14px;
+  text-align:left;
+  cursor:pointer;
+}
+.bc-color-option:hover{
+  background:rgba(255,255,255,.1);
+}
+.bc-color-option.active{
+  background:rgba(255,255,255,.14);
+  font-weight:700;
+}
+
 /* ===== .bc-toggle-btn — shared pressed/unpressed pill button =====
    Originated in Context (.context-style-btn, its Bold/Italic/Underline
    row); Congify's own comment said it copied "Context's .context-tool-btn/
@@ -2788,6 +2851,59 @@ html[data-theme="dark"] .bc-editor-input{
 html[data-theme="dark"] .bc-editor-input:hover{
   background:rgba(0,0,0,.32);
 }
+
+/* ===== .bc-info-btn / .bc-info-tooltip — small "i" info toggle =====
+   For a control whose label alone doesn't say what it does (Playback's
+   Normal/Reverse/Boomerang, say) — click the "i" to reveal a short
+   explanation, click again (or click outside, or open another one) to
+   close. Originated in Convert's Expected-Input helper (still its own
+   local .tool-io-info-btn/-tooltip copy there); this is the shared
+   version for new uses — register via bcRegisterInfoTooltip
+   (shared/site.js) rather than hand-rolling the toggle/outside-click
+   logic again. Needs a positioned ancestor (position:relative) for the
+   tooltip to anchor against. */
+.bc-info-btn{
+  width:16px;
+  height:16px;
+  flex-shrink:0;
+  border-radius:50%;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-size:11px;
+  font-weight:800;
+  font-style:italic;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  cursor:pointer;
+  transition:.2s;
+}
+.bc-info-btn:hover,
+.bc-info-btn[aria-expanded="true"]{
+  border-color:var(--text);
+}
+.bc-info-tooltip{
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  z-index:5;
+  width:220px;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--border-strong);
+  background:var(--bg);
+  color:var(--text);
+  font-size:13px;
+  font-weight:400;
+  line-height:1.5;
+  text-align:left;
+  text-transform:none;
+  letter-spacing:normal;
+}
+.bc-info-tooltip[hidden]{ display:none; }
 
 /* ===== .bc-resize-handle — shared drag-to-resize circle =====
    Originated in Context (an inline-<svg> <span>, JS-created per text/
