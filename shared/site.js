@@ -105,7 +105,15 @@ document.addEventListener("click", (e) => {
   const golden = e.target.closest(".go-to-golden-rules");
   if (golden){
     e.preventDefault();
-    location.href = "/golden-rules/";
+    /* Every one of these already carries data-tool (convert/compress/
+       combine/exif/context/gif/coudio/codify — the same values
+       golden-rules-tool.js's selectGoldenRulesTool() expects), but this
+       always ignored it and sent everyone to the page's default
+       ("convert") tab regardless of which tool's link was actually
+       clicked. Forward it as a query param so golden-rules/index.html
+       can open the right tab on load. */
+    const tool = golden.dataset.tool;
+    location.href = tool ? `/golden-rules/?tool=${encodeURIComponent(tool)}` : "/golden-rules/";
   }
 });
 
@@ -272,6 +280,13 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
       toggle.setAttribute("aria-expanded", "true");
       banner.hidden = false;
       render();
+      /* Same central nav confirmation the theme/language/share buttons
+         already use (#navTerminal) — not yet in the i18n dict (see
+         CLAUDE.md's translation-timing rule: English first, cs/pl only
+         once this line is confirmed final), so it's a plain literal
+         for now rather than a translations[currentLang] lookup that
+         would silently render "undefined" for non-English visitors. */
+      showNavTerminal("Guide panel ready — at your service.");
     });
   }
 }
@@ -565,6 +580,20 @@ function bcRegisterOptionChangeBtn(btn, options, onSelect, initialIndex, renderO
     get current(){ return options[index]; }
   };
 }
+
+/* ===== .bc-canvas-remove-btn — shared title for the "remove the loaded
+   file" button on a tool's own single-file canvas (Congify's
+   #gifRemoveBtn, Context's #ctRemoveBtn, Colorfy's #cyRemoveBtn,
+   Coudio's #cdRemoveBtn) — all four already share .bc-remove-btn for
+   their visual, this centralizes their title/tooltip text too so it
+   only needs to change in one place. Not applied to every
+   .bc-remove-btn (Colorfy's picker/palette color-remove buttons use
+   that same visual class for a different job, so they keep their own
+   aria-label instead). Only fills in a title when the button doesn't
+   already carry a more specific one. */
+document.querySelectorAll(".bc-canvas-remove-btn").forEach(btn => {
+  if (!btn.title) btn.title = "Close project";
+});
 
 /* ===== Live "safe & private" check — real, not decorative: reflects
    what genuinely happened during a tool's file processing. ===== */

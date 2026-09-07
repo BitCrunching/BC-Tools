@@ -1081,6 +1081,19 @@ footer a{
   grid-template-columns:1.6fr 1fr;
 }
 
+/* Compress's two controls (Low/Medium/High level picker, Compress and
+   download button) used to share one row (1fr 1.2fr split) — moved to
+   their own stacked rows instead so the Compress button spans the full
+   row width (matches the picker's own full-width grid below it) rather
+   than being squeezed into whatever the level-picker column left over.
+   .compress-level-buttons is already a 3-column grid spanning its own
+   container's width, so once that container is the full row, its three
+   buttons end up spread edge-to-edge across it — no extra centering
+   rule needed. */
+#page-compress .tool-controls{
+  grid-template-columns:1fr;
+}
+
 @media (max-width:768px){
   .tool-controls{grid-template-columns:1fr;}
   #page-convert .tool-controls{grid-template-columns:1fr;}
@@ -1324,6 +1337,56 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
 
 .tool-results .result{
   flex:0 0 160px;
+}
+
+/* ===== .bc-add-tile — 160x160 "add more" dropzone, sits inline with
+   a .tool-results file list =====
+   Originated in Coudio, meant to generalize to any tool that lists
+   multiple loaded files in a .tool-results row and wants a persistent,
+   always-visible way to add more — clicking it (or dropping a file
+   on it) should reopen the same file picker/drop handling the initial
+   empty-state banner uses, not a separate code path. Sits as the
+   list's first child (files load in to its right) rather than last,
+   so it doesn't jump around as the list grows. The dashed border is
+   the one deliberate exception to "no shadows, borders/background
+   instead" here since it's specifically borrowing the drop-zone
+   visual language every tool's own empty-state dashed box already
+   uses, not a new one. */
+.bc-add-tile{
+  flex:0 0 160px;
+  width:160px;
+  height:160px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px dashed rgba(255,255,255,.5);
+  border-radius:16px;
+  background:rgba(255,255,255,.12);
+  color:var(--text);
+  font-size:40px;
+  font-weight:300;
+  line-height:1;
+  cursor:pointer;
+  transition:.2s;
+}
+.bc-add-tile:hover{
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="dark"] .bc-add-tile{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.12);
+}
+html[data-theme="dark"] .bc-add-tile:hover{
+  background:rgba(0,0,0,.2);
+}
+/* Matches the drag-over highlight every tool's own banner uses
+   (.active class, shared/site.js's bcSetupBannerDropTarget) — a
+   visible, bolder cue specifically on the tile once it becomes the
+   actual drop target (once files are already loaded and the rest of
+   the banner is full of real controls). */
+.bc-add-tile.active{
+  border-color:#2563eb;
+  background:rgba(37,99,235,.15);
 }
 
 /* The shared "loaded file" card core — every tool that lists files it
@@ -2276,13 +2339,20 @@ html[data-theme="dark"] .exif-tag-clean{
   align-items:center;
   gap:8px;
   width:100%;
-  height:40px;
   padding:0 12px;
-  border-radius:12px;
   border:1px solid rgba(255,255,255,.5);
   background:rgba(255,255,255,.35);
   cursor:pointer;
   transition:.2s;
+}
+/* Size/roundness split out of the base rule above, same reasoning as
+   .bc-dropdown-trigger's own companion selector just below it — a tool
+   that needs a different height overrides these two properties
+   directly (or uses the .bc-combo-trigger-lg variant below) rather
+   than fighting a hardcoded default. */
+.bc-combo-trigger:not(.bc-combo-trigger-lg){
+  height:40px;
+  border-radius:12px;
 }
 .bc-combo-trigger:hover,
 .bc-combo-trigger[aria-expanded="true"]{
@@ -2295,6 +2365,25 @@ html[data-theme="dark"] .bc-combo-trigger{
 html[data-theme="dark"] .bc-combo-trigger:hover,
 html[data-theme="dark"] .bc-combo-trigger[aria-expanded="true"]{
   background:rgba(0,0,0,.35);
+}
+/* .bc-combo-trigger-lg — 74px variant, mirroring .bc-dropdown-trigger-lg
+   exactly (same height/padding/radius/font recipe — see that class's
+   own comment for why). Add as a second class alongside
+   .bc-combo-trigger. First used by Coudio's Output format picker. */
+.bc-combo-trigger-lg{
+  height:74px;
+  padding:0 20px;
+  border-radius:26px;
+}
+.bc-combo-trigger-lg .bc-combo-input{
+  font-size:18px;
+  font-weight:800;
+  /* .bc-combo-input is left-aligned by default (it's a real, typeable
+     search field elsewhere) — but at this size it's standing in for a
+     .bc-dropdown-trigger-label (which is text-align:center), so it
+     needs to match that centering explicitly rather than inherit the
+     plain search-box default. */
+  text-align:center;
 }
 .bc-combo-input{
   flex:1;
@@ -2446,9 +2535,7 @@ html[data-theme="dark"] .bc-combo-option-check{
   align-items:center;
   gap:8px;
   width:100%;
-  height:40px;
   padding:0 12px;
-  border-radius:12px;
   border:1px solid rgba(255,255,255,.5);
   background:rgba(255,255,255,.35);
   color:var(--text);
@@ -2457,6 +2544,17 @@ html[data-theme="dark"] .bc-combo-option-check{
   font-weight:700;
   cursor:pointer;
   transition:.2s;
+}
+/* Size/roundness live here, not on the base rule above — a tool that
+   needs its own height (Coudio's 74px Input/Output/Bitrate row, scoped
+   in coudio/index.html's own <style>) overrides these two properties
+   directly instead of fighting a hardcoded default on the shared
+   class. Every other trigger site-wide still gets this same 40px/12px
+   pair by default via this companion selector, so nothing changes
+   visually anywhere except where a tool now deliberately opts out. */
+.bc-dropdown-trigger:not(.bc-dropdown-trigger-lg){
+  height:40px;
+  border-radius:12px;
 }
 .bc-dropdown-trigger:hover,
 .bc-dropdown-trigger[aria-expanded="true"]{
@@ -2682,6 +2780,55 @@ html[data-theme="dark"] .bc-dropdown-option.active{
   background:rgba(255,255,255,.14);
 }
 
+/* ===== .bc-color-menu / .bc-color-option — dark "swatch list" dropdown
+   for a preset color picker ===== Added as a SECOND class alongside
+   the generic .bc-dropdown-menu/.bc-dropdown-option above (and placed
+   after them in the cascade so these overrides actually win — same
+   specificity, so source order decides) — those still own positioning
+   and all the JS wiring (bcRegisterDropdown's event delegation and
+   active-state toggling both key off .bc-dropdown-option specifically),
+   this pair only replaces the visual: a dark navy list instead of the
+   plain light/dark-flip dropdown every other .bc-dropdown-menu uses,
+   fixed-dark regardless of site theme (no html[data-theme] variant
+   needed). Originated in Context (.context-color-menu/
+   .context-color-option, predating the shared .bc-dropdown component
+   entirely — Context's own hand-rolled viewport-clamped positioning
+   doesn't fit bcRegisterDropdown's plain trigger/menu contract, so its
+   JS still keys off its own local class names, kept as JS-addressing
+   hooks the same way .cf-color-trigger etc. are elsewhere); Congify's
+   text/stroke color pickers now use the same look via
+   bc-dropdown-menu/-option's normal JS path. */
+.bc-color-menu{
+  padding:6px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.16);
+  background:#1d2436;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.bc-color-option{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:36px;
+  padding:0 10px;
+  border:none;
+  border-radius:9px;
+  background:transparent;
+  color:#fff;
+  font-size:14px;
+  text-align:left;
+  cursor:pointer;
+}
+.bc-color-option:hover{
+  background:rgba(255,255,255,.1);
+}
+.bc-color-option.active{
+  background:rgba(255,255,255,.14);
+  font-weight:700;
+}
+
 /* ===== .bc-toggle-btn — shared pressed/unpressed pill button =====
    Originated in Context (.context-style-btn, its Bold/Italic/Underline
    row); Congify's own comment said it copied "Context's .context-tool-btn/
@@ -2879,6 +3026,73 @@ html[data-theme="dark"] .bc-editor-input:hover{
   pointer-events:none;
 }
 
+/* ===== .bc-obj-remove-btn / .bc-obj-resize-handle / .bc-obj-drag-handle
+   — shared controls for an in-canvas OBJECT (a text box, caption, or
+   signature placed on the canvas), kept deliberately separate from
+   .bc-remove-btn/.bc-resize-handle above (those are for the canvas/frame
+   itself — the loaded file's own remove button and preview-size handle).
+   Originated as near-identical duplicates: .context-text-remove +
+   .gif-caption-remove (red circle), .context-text-resize-handle +
+   .gif-caption-resize-handle (blue circle, both already piggybacking on
+   .bc-resize-handle before this split), .context-drag-dot +
+   .gif-caption-drag-handle (yellow move circle). Position offsets
+   (top/right/bottom/left) and any icon/svg sizing stay local per tool
+   since layout differs (caption boxes vs. a text/signature box). */
+.bc-obj-remove-btn{
+  position:absolute;
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  border:2px solid #fff;
+  background:#e11d48;
+  color:#fff;
+  font-size:19px;
+  font-weight:700;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.bc-obj-resize-handle{
+  position:absolute;
+  width:25px;
+  height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#2563eb;
+  border:2px solid #fff;
+  touch-action:none;
+  z-index:4;
+}
+.bc-obj-resize-handle svg{
+  width:16px;
+  height:16px;
+  pointer-events:none;
+}
+.bc-obj-drag-handle{
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  background:var(--context-yellow, #eab308);
+  border:2px solid #fff;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:move;
+  user-select:none;
+  touch-action:none;
+  -webkit-touch-callout:none;
+}
+.bc-obj-drag-handle svg{
+  width:16px;
+  height:16px;
+  pointer-events:none;
+}
+
 /* ===== .bc-remove-btn — shared red "×" circle remove button =====
    Just the shared visual: circle shape, red fill/border, hover shade.
    Size (width/height/font-size) and position (absolute vs inline,
@@ -2891,7 +3105,7 @@ html[data-theme="dark"] .bc-editor-input:hover{
 .bc-remove-btn{
   padding:0;
   border-radius:50%;
-  border:1px solid #b91c3c;
+  border:2px solid #fff;
   background:#e11d48;
   color:#fff;
   font-weight:900;
@@ -2903,6 +3117,47 @@ html[data-theme="dark"] .bc-editor-input:hover{
 }
 .bc-remove-btn:hover{
   background:#b91c3c;
+}
+
+/* ===== .bc-canvas-back-btn — mobile-only "go back" stand-in =====
+   shared/site.css hides the nav's own #navCloseBtn entirely at mobile
+   widths (.nav-close-btn,.nav-help-btn{display:none!important}, see
+   above), which leaves a tool's canvas page with no way back to the
+   Hub once you're in it. This sits on the canvas itself instead (next
+   to a tool's own remove/close button, same corner) — same visual
+   recipe as the desktop .nav-close-btn itself (bordered rounded
+   square, no fill) rather than a new invented look, just shown at the
+   opposite breakpoint (mobile-only here vs. .nav-close-btn's own
+   desktop-only .visible toggle) since adding .nav-close-btn's class
+   directly would still get caught by that same mobile
+   display:none!important rule. Position/size stay local per tool, same
+   split as .bc-remove-btn above (e.g. Context's own .context-back-btn
+   holds position:absolute/top/right/z-index/width/height). Originated
+   in Context. */
+.bc-canvas-back-btn{
+  display:none;
+}
+@media (max-width:768px){
+  .bc-canvas-back-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:2px solid #fff;
+    border-radius:50%;
+    background:#1d2436;
+    color:#fff;
+    line-height:1;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .bc-canvas-back-btn:hover{
+    background:#141a29;
+  }
+  .bc-canvas-back-btn svg{
+    width:16px;
+    height:16px;
+  }
 }
 
 /* ===== .bc-file-remove-btn — shared translucent "×" circle on a
@@ -2935,98 +3190,42 @@ html[data-theme="dark"] .bc-file-remove-btn:hover{
   background:rgba(0,0,0,.5);
 }
 
-/* ===== .bc-url-row — shared "or paste a link" URL-load row =====
-   Originated in Congify, Coudio hand-copied an identical version under
-   its own prefix — both now point at this one. Tool-specific bits
-   (placeholder text, aria-label, the actual load/paste logic) stay in
-   each tool's own markup/JS; this only covers the shared visual. */
-.bc-url-row{
-  position:relative;
-  z-index:1;
-  max-width:480px;
-  margin:8px auto 0;
-}
-.bc-url-divider{
+/* ===== .tool-io-swap — the "→" between a pair of 74px-tall pickers =====
+   Originated in Convert (Input → Output). Same treatment as the nav's
+   "go back" button (.nav-close-btn): a small centered box aligned
+   against its 74px-tall neighbors via the parent row's
+   align-items:flex-end plus this box's own margin-bottom — (74-36)/2 =
+   19px centers a 36px box against a 74px sibling exactly. Promoted
+   here (was Convert-only) once Coudio became a second consumer. */
+.tool-io-swap{
+  flex:0 0 auto;
   display:flex;
   align-items:center;
-  gap:10px;
-  margin-bottom:12px;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  margin-bottom:19px;
   color:var(--text);
-  opacity:.65;
-  font-size:13px;
-  font-weight:700;
 }
-.bc-url-divider span:not(:only-child){
-  flex:1;
-  height:1px;
-  background:rgba(29,36,54,.2);
+.tool-io-swap-arrow{
+  display:inline-block;
+  font-size:18px;
 }
-html[data-theme="dark"] .bc-url-divider span:not(:only-child){
-  background:rgba(255,255,255,.25);
-}
-.bc-url-form{
-  display:flex;
-  gap:8px;
-}
-/* Flips light/dark same as .bc-dropdown/.bc-combo/.bc-toggle-btn above
-   — see "On-banner controls flip with theme" in this file's header
-   comment. */
-.bc-url-input{
-  flex:1;
-  min-width:0;
-  height:40px;
-  padding:0 14px;
-  border-radius:20px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-  font-family:inherit;
-  font-size:14px;
-  font-weight:600;
-  transition:.2s;
-}
-.bc-url-input::placeholder{
-  color:var(--text);
-  opacity:.55;
-  font-weight:600;
-}
-.bc-url-input:focus{
-  outline:none;
-  border-color:#1d2436;
-}
-html[data-theme="dark"] .bc-url-input{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .bc-url-input:focus{
-  border-color:#fff;
-}
-.bc-url-btn{
-  flex-shrink:0;
-  width:auto;
-  padding:0 20px;
-  height:40px;
-  border-radius:20px;
-  font-size:14px;
-}
-.bc-url-status{
-  margin-top:10px;
-  font-size:13px;
-  color:var(--text);
-  opacity:.85;
-  text-align:center;
-}
-.bc-url-status[hidden]{ display:none; }
 
-/* Mobile-only Paste button — a phone keyboard's paste affordance is
-   easy to miss on a URL-type field, so mobile gets an explicit button.
-   Reflows to two rows so Input/Paste/Load never squeezes onto one
-   cramped line. */
-.bc-url-paste-btn{ display:none; }
-@media (max-width:768px){
-  .bc-url-form{ flex-wrap:wrap; }
-  .bc-url-input{ flex:1 1 100%; }
-  .bc-url-paste-btn{ display:block; flex:1; }
-  .bc-url-btn{ flex:1; }
+/* ===== Native <audio>/<video> controls follow site theme =====
+   The play/pause button, scrubber, volume icon, etc. are rendered by
+   the browser's own UA styling — no real DOM, so normal CSS can't
+   restyle individual pieces of them. color-scheme is the one lever
+   browsers actually give you: it tells Chrome/Edge (and, to a lesser
+   degree, Firefox) to swap the whole native panel to its dark variant
+   instead of always rendering the light one regardless of site theme.
+   No accent-color control, and Safari's support here is inconsistent —
+   this gets it roughly matching dark mode, not fully re-themed. */
+audio, video{
+  color-scheme:light;
+}
+html[data-theme="dark"] audio,
+html[data-theme="dark"] video{
+  color-scheme:dark;
 }
 

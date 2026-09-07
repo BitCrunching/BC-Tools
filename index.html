@@ -882,6 +882,71 @@ main{
   padding-bottom:8px;
 }
 
+/* Ambient decoration over the hero title — a terminal-styled
+   rectangle that floats over the actual title text, flanked by "!!!"
+   on both sides, slowly drifting up and down forever. Pure overlay,
+   not layout: .hff-wrap only exists to give the floating piece
+   something sized to the title to position against — the title
+   itself (.hff-wrap h1) keeps its normal box/margins completely
+   untouched, so the float never nudges real content around, it just
+   visually sits on top of it (positioned after the h1 in source order,
+   so it paints over it with no z-index needed). aria-hidden, pointer-
+   events:none — atmosphere, not a control. Borrows the site's one
+   "technical" terminal voice (green-on-dark, monospace — see
+   shared/site.css's .nav-terminal) for a one-off decorative use
+   rather than that voice's usual job of a transient confirmation;
+   deliberate exception, not a precedent to reuse elsewhere without
+   thinking about it again. */
+.hff-wrap{
+  position:relative;
+  display:inline-block;
+}
+
+.hero-float-frame{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  animation:hff-drift 3.9s ease-in-out infinite;
+}
+
+@keyframes hff-drift{
+  0%, 100%{ transform:translateY(0) rotate(-1deg); }
+  50%{ transform:translateY(-12px) rotate(-1deg); }
+}
+
+.hff-box{
+  position:absolute;
+  inset:0;
+  border:1.5px solid #4ade80;
+  background:rgba(74,222,128,.06);
+}
+
+.hff-bang{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  color:#4ade80;
+  font-family:Arial, Helvetica, sans-serif;
+  font-size:70px;
+  font-weight:400;
+  letter-spacing:.02em;
+  opacity:.85;
+  white-space:nowrap;
+}
+
+.hff-bang-left{ right:100%; margin-right:14px; }
+.hff-bang-right{ left:100%; margin-left:14px; }
+
+@media (max-width:768px){
+  /* No room for the flanking "!!!" once the title itself drops to
+     31px — see the .hero-intro h1 mobile override just below. The
+     rectangle overlay itself stays; it's sized to the title's own
+     box, not extra decoration competing for horizontal space. */
+  .hff-bang{
+    display:none;
+  }
+}
+
 /* Just wide enough that the intro sentence stops wrapping to a second
    line on typical desktop widths, without touching the shared .hero p
    max-width every other page's hero also relies on. Selector is
@@ -1479,7 +1544,15 @@ html[data-theme="light"] .tool-card-star{
 }
 
 @media (max-width:768px){
-  #page-mainpage .card{ min-height:0; }
+  /* Was min-height:0 — letting card height be purely content-driven
+     (icon + title + description), so a tool with a shorter description
+     ended up visibly shorter than one with a longer one (164px vs
+     188px, reported live). 188px matches the tallest naturally-sized
+     card, so every card floors out at the same height instead of the
+     grid looking uneven — flex-direction:column on .card (see the base
+     rule above) is what lets the shorter ones' content just have more
+     breathing room below it rather than stretching awkwardly. */
+  #page-mainpage .card{ min-height:188px; }
 }
 
 #page-mainpage .card::before{
@@ -2353,7 +2426,14 @@ footer a{
 <section class="page active" id="page-mainpage">
   <main>
     <div class="hero hero-intro">
-      <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
+      <div class="hff-wrap">
+        <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
+        <div class="hero-float-frame" aria-hidden="true">
+          <span class="hff-box"></span>
+          <span class="hff-bang hff-bang-left">&gt;!!!</span>
+          <span class="hff-bang hff-bang-right">!!!</span>
+        </div>
+      </div>
       <p class="hero-p1-desktop" data-i18n="mp_hero_p1">Get working with Creative Hub... a place where creativity travels faster than the speed of light.</p>
       <p class="hero-p1-desktop" data-i18n="mp_hero_p1b">A growing collection of browser-based tools for images, video, audio, and code.</p>
       <p class="hero-p1-mobile" data-i18n="mp_hero_p1_mobile">Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.</p>
@@ -2378,7 +2458,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_convert_desc">Convert images between JPG, PNG, WEBP, and PDF. You can also upload HEIC/HEIF!</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/convert-dark.gif?v=6" data-preview-img-light="/shared/previews/convert-light.gif?v=5" data-preview-name="Convert" data-preview-desc="Turn any image or PDF into exactly the format you need — JPG, PNG, WEBP, PDF, even HEIC straight from an iPhone. Instant, right in your browser, nothing ever uploaded." data-preview-href="/convert/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/convert-dark.gif?v=8" data-preview-img-light="/shared/previews/convert-light.gif?v=6" data-preview-name="Convert" data-preview-desc="Turn any image or PDF into exactly the format you need — JPG, PNG, WEBP, PDF, even HEIC straight from an iPhone. Instant, right in your browser, nothing ever uploaded." data-preview-href="/convert/">Read more</button>
       </div>
 
       <div class="card compress" data-category="image" title="The color is: Sky Blue">
@@ -2389,7 +2469,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_compress_desc">Reduce image file size while keeping quality. Choose a compression level and download the compressed files as a ZIP.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/compress-dark.gif?v=4" data-preview-img-light="/shared/previews/compress-light.gif?v=4" data-preview-name="Compress" data-preview-desc="Shrink your photos without wrecking the quality. Pick Low, Medium, or High, and download — one file or a whole batch, done in seconds, no upload." data-preview-href="/compress/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/compress-dark.gif?v=6" data-preview-img-light="/shared/previews/compress-light.gif?v=5" data-preview-name="Compress" data-preview-desc="Shrink your photos without wrecking the quality. Pick Low, Medium, or High, and download — one file or a whole batch, done in seconds, no upload." data-preview-href="/compress/">Read more</button>
       </div>
 
       <div class="card combine" data-category="image" title="The color is: Coral Red">
@@ -2400,7 +2480,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_combine_desc">Merge multiple PDF files into a single document in any order you like.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/combine-dark.gif?v=3" data-preview-img-light="/shared/previews/combine-light.gif?v=3" data-preview-name="Combine" data-preview-desc="Merge two or more PDFs into one — drag them into any order you want, then download. Stitched together right in your browser, no upload." data-preview-href="/combine/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/combine-dark.gif?v=5" data-preview-img-light="/shared/previews/combine-light.gif?v=4" data-preview-name="Combine" data-preview-desc="Merge two or more PDFs into one — drag them into any order you want, then download. Stitched together right in your browser, no upload." data-preview-href="/combine/">Read more</button>
       </div>
 
       <div class="card exif" data-category="image" title="The color is: Lime Green">
@@ -2411,7 +2491,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_exif_desc">Remove hidden metadata like GPS location, camera model, or editor data in SVGs — before sharing.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/cleanly-dark.gif?v=3" data-preview-img-light="/shared/previews/cleanly-light.gif?v=3" data-preview-name="Cleanly" data-preview-desc="Wipe hidden GPS, camera, and timestamp data from your photos before you share them — scanned and cleaned instantly, right in your browser." data-preview-href="/cleanly/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/cleanly-dark.gif?v=5" data-preview-img-light="/shared/previews/cleanly-light.gif?v=4" data-preview-name="Cleanly" data-preview-desc="Wipe hidden GPS, camera, and timestamp data from your photos before you share them — scanned and cleaned instantly, right in your browser." data-preview-href="/cleanly/">Read more</button>
       </div>
 
       <div class="card context" data-category="image" title="The color is: Yellow">
@@ -2422,7 +2502,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_context_desc">Add your own text directly onto a PDF — captions, notes, signatures.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/context-dark.gif?v=5" data-preview-img-light="/shared/previews/context-light.gif?v=5" data-preview-name="Context" data-preview-desc="Click anywhere on a PDF to drop in text or a signature, style it your way, and download — instantly, right in your browser, no upload." data-preview-href="/context/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/context-dark.gif?v=7" data-preview-img-light="/shared/previews/context-light.gif?v=6" data-preview-name="Context" data-preview-desc="Click anywhere on a PDF to drop in text or a signature, style it your way, and download — instantly, right in your browser, no upload." data-preview-href="/context/">Read more</button>
       </div>
 
       <div class="card gif" data-category="video" title="The color is: Teal">
@@ -2433,7 +2513,7 @@ footer a{
           </div>
           <p>Turn a video clip into a GIF — trim the range, pick fps and size.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/congify-dark.gif?v=2" data-preview-img-light="/shared/previews/congify-light.gif?v=2" data-preview-name="Congify" data-preview-desc="Turn a video clip into a GIF — trim the range you want, add captions if you like, pick a frame rate and size, then download. Instantly, right in your browser, no upload." data-preview-href="/congify/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/congify-dark.gif?v=5" data-preview-img-light="/shared/previews/congify-light.gif?v=4" data-preview-name="Congify" data-preview-desc="Turn a video clip into a GIF — trim the range you want, add captions if you like, pick a frame rate and size, then download. Instantly, right in your browser, no upload." data-preview-href="/congify/">Read more</button>
       </div>
 
       <div class="card coudio" data-category="sound" title="The color is: Emerald Green">
@@ -2444,7 +2524,7 @@ footer a{
           </div>
           <p>Convert audio between MP3 and WAV — pick a file, choose a format.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/coudio-dark.gif?v=2" data-preview-img-light="/shared/previews/coudio-light.gif?v=2" data-preview-name="Coudio" data-preview-desc="Convert audio (or pull the audio track out of a video) between MP3 and WAV — pick a file, choose a format and bitrate, then download. Instantly, right in your browser, no upload." data-preview-href="/coudio/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/coudio-dark.gif?v=4" data-preview-img-light="/shared/previews/coudio-light.gif?v=3" data-preview-name="Coudio" data-preview-desc="Convert audio (or pull the audio track out of a video) between MP3 and WAV — pick a file, choose a format and bitrate, then download. Instantly, right in your browser, no upload." data-preview-href="/coudio/">Read more</button>
       </div>
 
       <div class="card codify" data-category="code" title="The color is: Pink">
@@ -2455,7 +2535,7 @@ footer a{
           </div>
           <p>Turn a code snippet into a beautiful, styled screenshot — pick a language.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/codify-dark.gif?v=2" data-preview-img-light="/shared/previews/codify-light.gif?v=2" data-preview-name="Codify" data-preview-desc="Turn a code snippet into a beautiful, styled screenshot — pick a language and theme, or start from a template, then download. Instantly, right in your browser, no upload." data-preview-href="/codify/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/codify-dark.gif?v=4" data-preview-img-light="/shared/previews/codify-light.gif?v=3" data-preview-name="Codify" data-preview-desc="Turn a code snippet into a beautiful, styled screenshot — pick a language and theme, or start from a template, then download. Instantly, right in your browser, no upload." data-preview-href="/codify/">Read more</button>
       </div>
 
       <div class="card colorfy" data-category="image" title="The color is: Orange">
@@ -2563,16 +2643,27 @@ footer a{
       <h3 data-i18n="footer_getting_started_heading">Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <a class="footer-dash-link" href="/golden-rules/">Convert</a>
-          <a class="footer-dash-link" href="/golden-rules/">Compress</a>
-          <a class="footer-dash-link" href="/golden-rules/">Combine</a>
-          <a class="footer-dash-link" href="/golden-rules/">Cleanly</a>
-          <a class="footer-dash-link" href="/golden-rules/">Context</a>
+          <!-- Each links straight to its own tab on the golden-rules
+               page via ?tool=<id> (the same ids golden-rules-tool.js's
+               selectGoldenRulesTool() and every other tool page's
+               go-to-golden-rules buttons use) — this page doesn't load
+               shared/site.js (SPA, own inline JS instead), so it can't
+               rely on that file's click delegate to add the query
+               param the way every standalone tool page does; these
+               plain hrefs just carry it directly. Previously all 8
+               pointed at the bare /golden-rules/ URL, so every one of
+               these silently landed on Convert's tab regardless of
+               which tool you clicked. -->
+          <a class="footer-dash-link" href="/golden-rules/?tool=convert">Convert</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=compress">Compress</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=combine">Combine</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=exif">Cleanly</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=context">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <a class="footer-dash-link" href="/golden-rules/">Congify</a>
-          <a class="footer-dash-link" href="/golden-rules/">Coudio</a>
-          <a class="footer-dash-link" href="/golden-rules/">Codify</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=gif">Congify</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=coudio">Coudio</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=codify">Codify</a>
         </div>
       </div>
     </div>
@@ -3943,7 +4034,24 @@ if (VALID_PAGES.includes(startPage)) {
     if (lastFocused) lastFocused.focus();
   }
 
+  /* Preload both the light and dark preview gif the moment a visitor
+     shows intent (hover, or focus from tabbing in) — by the time they
+     actually click, the request is usually already in flight or done,
+     instead of only starting once the modal opens. Preloading both
+     (not just the current theme's) covers a mid-hover theme toggle too.
+     A plain Image() object is enough to warm the browser cache; nothing
+     needs to hold a reference to it once loading has started. Guarded
+     so the same pair only ever gets requested once per button. */
   document.querySelectorAll(".card-readmore").forEach(btn => {
+    function preload(){
+      if (btn.dataset.preloaded) return;
+      btn.dataset.preloaded = "1";
+      [btn.dataset.previewImgLight, btn.dataset.previewImgDark].forEach(src => {
+        if (src) new Image().src = src;
+      });
+    }
+    btn.addEventListener("mouseenter", preload);
+    btn.addEventListener("focus", preload);
     btn.addEventListener("click", () => openPreview(btn));
   });
 
