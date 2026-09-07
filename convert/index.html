@@ -61,17 +61,30 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=49">
+<link rel="stylesheet" href="/shared/site.css?v=65">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #cvAfterDrop is revealed, so it never fights the dropdowns
-   or Convert button once there's real content to interact with. */
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
 .tool-app:has(#cvAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cvAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
 }
 .tool-app:has(#cvAfterDrop[hidden]):active{
   transform:scale(.99);
@@ -272,8 +285,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(118,38,245,.1);
 }
 .tool-app.active{
-  outline:3px dashed #7626f5;
-  outline-offset:-10px;
   background:rgba(118,38,245,.08);
 }
 
@@ -349,27 +360,24 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   .io-label-short{ display:inline; }
 }
 
-/* Input/Output pickers are always dropdowns on this page, not just
-   on mobile — overrides the desktop-pills/mobile-select split that
-   .tool-format-select normally follows. */
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
 .tool-io-group .tool-format-select{ display:block; }
+@media (max-width:768px){
+  .tool-io-group .tool-format-select{ display:none !important; }
+}
 
-/* Same treatment as the nav's "go back" button (.nav-close-btn) —
-   just centered against the 74px-tall selects on either side. */
-.tool-io-swap{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  height:36px;
-  margin-bottom:19px;
-  color:var(--text);
-}
-.tool-io-swap-arrow{
-  display:inline-block;
-  font-size:18px;
-}
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
 
 .format-pick-intro{
   max-width:680px;
@@ -539,7 +547,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       </div>
     </div>
     <div class="nav-exit-group">
-      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Show the help guide again" title="Show the help guide again">?</button>
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub" data-i18n-label="nav_back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -743,7 +751,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
     <h3>New to converting images?</h3>
     <p>Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert" href="/golden-rules/?tool=convert">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -792,7 +800,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/convert/convert-tool.js?v=17" defer></script>
+<script src="/shared/site.js?v=28" defer></script>
+<script src="/convert/convert-tool.js?v=18" defer></script>
 </body>
 </html>

@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=49">
+<link rel="stylesheet" href="/shared/site.css?v=65">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -213,6 +213,19 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
+/* Drag-over gets a bolder, unmistakable reaction than plain hover —
+   this class is added by shared/site.js's bcSetupBannerDropTarget while
+   a file is being dragged over the banner. 1.012/1.08 read fine when
+   you're stationary hovering, but during an actual drag your attention
+   is on the OS drag cursor, not the banner, so anything that subtle
+   goes unnoticed ("doesn't react to drag") — see Convert/Compress/
+   Combine/Cleanly/Context/Congify's version of this same fix. Coudio
+   missed it originally since it wasn't published yet when that fix
+   went out. */
+#page-coudio:has(#cdDrop:not([hidden])).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
 #page-coudio:has(#cdDrop:not([hidden])):active{
   transform:scale(.99);
   transition-duration:.1s;
@@ -222,8 +235,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    coudio-tool.js adds this class while a file is being dragged over
    any part of the banner before an audio file is loaded. */
 .tool-app.active{
-  outline:3px dashed #18C98A;
-  outline-offset:-10px;
   background:rgba(0,245,212,.08);
 }
 
@@ -234,11 +245,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 #cdDrop{
   border-color:transparent;
   background:transparent;
-  /* Tighter than the shared 56px .tool-drop padding — with the "or
-     paste a link" row now sitting right below it, the full 56px would
-     push the banner's fixed 322.5px height into overflow. */
-  padding-top:32px;
-  padding-bottom:16px;
 }
 #cdDrop:not(.active):hover{
   border-color:transparent;
@@ -248,13 +254,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#18C98A;
   background:rgba(0,245,212,.1);
 }
-
-/* "Or paste a link" is now the shared .bc-url-row (shared/site.css) —
-   sits below the (now invisible) drop zone, inside the same
-   whole-banner pre-upload state. Its own click/keydown handlers stay
-   scoped to itself (stopPropagation on click) so it doesn't get
-   swallowed by the banner's "click anywhere opens the file picker"
-   handler. */
 
 /* Just a fun easter egg on double-click — not a functional cue, so it's
    fine that it's low priority and simple. Same recipe as Combine's. */
@@ -274,24 +273,61 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 .tool-app.wobble .tool-logo .icon-coudio{ animation:icon-wobble .5s ease; }
 
-/* Page-specific: the player rows — the only genuinely new component
-   this tool introduces (the format/bitrate dropdowns themselves are
-   the shared .bc-combo/.bc-dropdown from shared/site.css). */
-.cd-player-row{
-  margin-top:20px;
-}
-.cd-player-row audio{
+/* The single shared player — plays whichever file is currently
+   selected in the file list below (#cdFileList). */
+#cdSourceAudio{
   width:100%;
   display:block;
+  margin-top:20px;
 }
-.cd-file-name{
-  margin-top:8px;
-  font-size:13px;
-  color:var(--text);
-  opacity:.7;
+
+/* Page-specific: the loaded-files list — one .result card per file
+   (shared/site.css's .tool-results/.result, same component Convert's
+   own loaded-file list uses), fixed to a 160x160 square. No individual
+   audio element or play button per card — the whole card is clickable
+   and selects that file into the one shared player above, with a
+   small dot indicating which one is currently selected. Multiple
+   files share one Output format/Bitrate; there's no per-file
+   input-format picker since each file's own format is auto-detected
+   at decode time, not chosen. */
+.cd-file-card{
+  width:160px;
+  height:160px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:16px;
+  gap:14px;
+  text-align:center;
+  cursor:pointer;
+}
+.cd-file-dot{
+  width:30px;
+  height:30px;
+  flex-shrink:0;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.15);
+  transition:.2s;
+}
+html[data-theme="dark"] .cd-file-dot{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.15);
+}
+/* Selected state — same blue as .bc-resize-handle/.bc-obj-resize-handle
+   (shared/site.css), flat regardless of theme (same reasoning as
+   .result's own per-tool border accents: reads fine against both the
+   light and dark .result background). */
+.cd-file-card.active .cd-file-dot{
+  background:#2563eb;
+  border:2px solid #fff;
+}
+.cd-file-card .result-name{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  max-width:100%;
 }
 
 /* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
@@ -303,7 +339,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   z-index:6;
   width:28px;
   height:28px;
-  font-size:15px;
+  font-size:18px;
 }
 .cd-editor{
   position:relative;
@@ -313,6 +349,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .cd-settings{
   display:flex;
   flex-wrap:wrap;
+  align-items:flex-end;
   gap:24px;
   margin-top:24px;
 }
@@ -326,6 +363,58 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .cd-setting-group[hidden]{
   display:none;
 }
+/* Bitrate isn't part of the Input → Output pairing the arrow implies —
+   pushed off to its own side of the row instead of sitting right next
+   to Output, and back down to the plain 40px trigger height (no
+   -lg class) since it's a small side setting, not one of the two main
+   pickers. */
+.cd-bitrate-group{
+  margin-left:auto;
+}
+
+/* Input → Output as one centered unit: flex:1 claims whatever width
+   Bitrate isn't using, and justify-content:center positions the pair
+   in the middle of that space, rather than each just sitting at its
+   natural position in the row. */
+.cd-io-group{
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:24px;
+  flex:1;
+}
+.cd-io-setting{
+  flex:1 1 auto;
+  min-width:103.5px;
+  max-width:400px;
+}
+/* The 103.5px floor × 2 + the 36px arrow + gaps needs ~291px, which is
+   already tighter than the available content width on common phones
+   (Convert's equivalent row avoids this entirely by using min-width:0
+   instead of a hard floor). Dropping the floor only below 768px keeps
+   the desktop 103.5-400px range exactly as specified, while letting
+   mobile shrink further instead of overflowing. */
+@media (max-width:768px){
+  .cd-io-setting{
+    min-width:0;
+  }
+}
+
+/* Found input is a plain display, not a real control — .bc-dropdown-
+   trigger's default cursor:pointer would otherwise still suggest it's
+   clickable even with no click listener attached. */
+.cd-input-btn{
+  cursor:default;
+}
+/* Not a real control — cancels .bc-dropdown-trigger's hover darken/
+   lighten (shared/site.css), which otherwise still reacted to mouse
+   hover despite there being nothing to click here. */
+.cd-input-btn:hover{
+  background:rgba(255,255,255,.35);
+}
+html[data-theme="dark"] .cd-input-btn:hover{
+  background:rgba(0,0,0,.25);
+}
 
 /* The .bc-combo/.bc-dropdown component itself (shared/site.css) has no
    opinion on width — it sizes to whatever wraps it. Coudio's own
@@ -334,6 +423,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .cd-setting-group .bc-dropdown{
   width:100%;
 }
+
 /* Mobile shows just "Download" on the primary action button — the
    fuller desktop label ("Convert and download", "Strip metadata and
    download", etc.) doesn't fit well at phone widths, and "Download" is
@@ -448,7 +538,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       </div>
     </div>
     <div class="nav-exit-group">
-      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Show the help guide again" title="Show the help guide again">?</button>
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub" data-i18n-label="nav_back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -484,51 +574,66 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       </div>
     </div>
 
-    <div class="tool-drop" id="cdDrop">Click or drop an audio or video file</div>
-    <input type="file" id="cdInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.mp4,.m4v,.webm,.mov,.ogv" hidden>
-
-    <div class="bc-url-row" id="cdUrlRow">
-      <span class="bc-url-divider" aria-hidden="true"><span></span>or paste a link<span></span></span>
-      <div class="bc-url-form">
-        <input type="url" class="bc-url-input" id="cdUrlInput" placeholder="https://example.com/track.mp3" aria-label="Audio or video URL" inputmode="url" autocomplete="off" spellcheck="false">
-        <button type="button" class="tool-primary-btn bc-url-btn bc-url-paste-btn" id="cdUrlPasteBtn">Paste</button>
-        <button type="button" class="tool-primary-btn bc-url-btn" id="cdUrlBtn">Load</button>
-      </div>
-      <div class="bc-url-status" id="cdUrlStatus" hidden></div>
-    </div>
+    <div class="tool-drop" id="cdDrop">Click or drop one or more audio or video files</div>
+    <input type="file" id="cdInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.mp4,.m4v,.webm,.mov,.ogv" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cdContinueBtn" hidden>Continue where you left off</button>
 
     <div class="cd-editor" id="cdEditor" hidden>
-      <button type="button" class="cd-remove-btn bc-remove-btn" id="cdRemoveBtn" aria-label="Remove audio">×</button>
+      <button type="button" class="cd-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdRemoveBtn" aria-label="Remove all files">×</button>
 
-      <div class="cd-player-row">
-        <audio id="cdSourceAudio" controls></audio>
-        <div class="cd-file-name" id="cdFileName"></div>
-      </div>
+      <!-- One shared player — plays whichever loaded file is currently
+           selected via the file list below (defaults to the first file
+           loaded). -->
+      <audio id="cdSourceAudio" controls controlsList="nodownload"></audio>
 
       <div class="cd-settings">
-        <div class="cd-setting-group">
-          <label class="bc-label">Output format</label>
-          <!-- 7 options — long enough that search helps, so this one
-               uses the shared searchable .bc-combo rather than the
-               plain .bc-dropdown Bitrate below uses. -->
-          <div class="bc-combo" id="cdFormatDropdown">
-            <div class="bc-combo-trigger" id="cdFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <input class="bc-combo-input" id="cdFormatInput" value="MP3" readonly aria-label="Search output formats">
-              <span class="bc-combo-chevron" aria-hidden="true"></span>
+        <div class="cd-io-group">
+          <div class="cd-setting-group cd-io-setting">
+            <label class="bc-label" id="cdInputLabel">Found input</label>
+            <!-- Display only, no click behavior — there's nothing to
+                 select here (unlike Convert's real Expected Input
+                 dropdown, which has actual options and its own "I have
+                 this" presets); this just echoes the one loaded file's
+                 detected type. Kept the same classes/look as the other
+                 two triggers, just not a <button> and no listener.
+                 role="status" + aria-live so screen readers actually
+                 announce the detected type changing once a file loads
+                 (a plain div update alone is silent), and
+                 aria-labelledby stands in for the <label for> a real
+                 form control would get, since this isn't one. -->
+            <div class="cd-input-btn bc-dropdown-trigger bc-dropdown-trigger-lg" id="cdInputBtn" role="status" aria-live="polite" aria-labelledby="cdInputLabel">
+              <span class="bc-dropdown-trigger-label" id="cdInputBtnLabel">Choose file</span>
             </div>
-            <div class="bc-combo-menu" id="cdFormatMenu" role="listbox" hidden>
-              <button type="button" class="bc-combo-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true"><span>MP3</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="wav" data-label="WAV" role="option" aria-selected="false"><span>WAV</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="ogg" data-label="OGG (Opus)" role="option" aria-selected="false"><span>OGG (Opus)</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="aiff" data-label="AIFF" role="option" aria-selected="false"><span>AIFF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="au" data-label="AU" role="option" aria-selected="false"><span>AU</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="caf" data-label="CAF" role="option" aria-selected="false"><span>CAF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <button type="button" class="bc-combo-option" data-format="voc" data-label="VOC" role="option" aria-selected="false"><span>VOC</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-              <div class="bc-combo-empty" id="cdFormatEmpty" hidden>No matches</div>
+          </div>
+
+          <span class="tool-io-swap" aria-hidden="true">
+            <span class="tool-io-swap-arrow">&rarr;</span>
+          </span>
+
+          <div class="cd-setting-group cd-io-setting">
+            <label class="bc-label">Output format</label>
+            <!-- 7 options — long enough that search helps, so this one
+                 uses the shared searchable .bc-combo rather than the
+                 plain .bc-dropdown Bitrate below uses. -->
+            <div class="bc-combo" id="cdFormatDropdown">
+              <div class="bc-combo-trigger bc-combo-trigger-lg" id="cdFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+                <input class="bc-combo-input" id="cdFormatInput" value="MP3" readonly aria-label="Search output formats">
+                <span class="bc-combo-chevron" aria-hidden="true"></span>
+              </div>
+              <div class="bc-combo-menu" id="cdFormatMenu" role="listbox" hidden>
+                <button type="button" class="bc-combo-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true"><span>MP3</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="wav" data-label="WAV" role="option" aria-selected="false"><span>WAV</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="ogg" data-label="OGG (Opus)" role="option" aria-selected="false"><span>OGG (Opus)</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="aiff" data-label="AIFF" role="option" aria-selected="false"><span>AIFF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="au" data-label="AU" role="option" aria-selected="false"><span>AU</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="caf" data-label="CAF" role="option" aria-selected="false"><span>CAF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <button type="button" class="bc-combo-option" data-format="voc" data-label="VOC" role="option" aria-selected="false"><span>VOC</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+                <div class="bc-combo-empty" id="cdFormatEmpty" hidden>No matches</div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="cd-setting-group" id="cdBitrateGroup">
+        <div class="cd-setting-group cd-bitrate-group" id="cdBitrateGroup">
           <label class="bc-label">Bitrate</label>
           <div class="bc-dropdown" id="cdBitrateDropdown">
             <button type="button" class="bc-dropdown-trigger" id="cdBitrateTrigger" aria-haspopup="listbox" aria-expanded="false">
@@ -547,6 +652,14 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <div class="tool-controls" style="grid-template-columns:1fr;">
         <button class="tool-primary-btn" id="cdConvertBtn" disabled>Convert and download</button>
       </div>
+
+      <!-- One .result card per loaded file (shared/site.css — same
+           component Convert's own loaded-file list uses), minus its
+           own audio element — a play button on each instead selects
+           that file into the single shared player above. -->
+      <div class="tool-results" id="cdFileList">
+        <button type="button" class="bc-add-tile" id="cdAddTile" aria-label="Add more files">+</button>
+      </div>
     </div>
 
     <div class="tool-status" id="cdStatus"></div>
@@ -554,9 +667,20 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   </div>
 </div>
 
-<div class="content-section-coudio" data-tool="coudio" style="max-width:900px;margin:0 auto;padding:60px 24px;">
-  <h2 style="text-align:center;font-size:clamp(28px, 3.6vw, 40px);letter-spacing:-0.02em;">Convert audio and video to MP3 and more</h2>
-  <p style="text-align:center;opacity:.8;">Pick an audio file — or an MP4, WEBM, MOV, or OGV video, and just its audio track gets pulled out — choose an output format, and download, entirely in your browser. Nothing is uploaded anywhere.</p>
+<div class="content-section-convert" data-tool="coudio">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>New to converting audio?</h3>
+    <p>MP3 and WAV split along the same lossy-vs-lossless line every compressed format does: MP3 throws away detail your ears barely notice to shrink the file down to a fraction of the size, while WAV keeps every sample intact at several times the size, which is exactly why bitrate and source format hit file size so differently depending on which one you pick. Here's what's actually happening under the hood, and how to choose the right one for what you're doing.</p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="coudio" href="/golden-rules/?tool=coudio">just one click away.</a></p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000022" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
 </div>
 </main>
 <div class="footer-dashboard" id="siteFooterDashboard">
@@ -600,7 +724,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/coudio/coudio-tool.js?v=16" defer></script>
+<script src="/shared/site.js?v=28" defer></script>
+<script src="/coudio/coudio-tool.js?v=32" defer></script>
 </body>
 </html>

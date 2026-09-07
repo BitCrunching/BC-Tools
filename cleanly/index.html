@@ -60,7 +60,7 @@
 <script src="/vendor/exif.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=49">
+<link rel="stylesheet" href="/shared/site.css?v=65">
 <style>
 .tool-app::before{ background:#7ED321; }
 .cs-shape{ background:#4ade80; }
@@ -68,10 +68,23 @@
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #exAfterDrop is revealed, so it never fights the file list/
-   Strip button once there's real content to interact with. */
+   Strip button once there's real content to interact with. Same "jump"
+   plays while a file is being dragged over the banner (.active class,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
+   confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
 .tool-app:has(#exAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#exAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
 }
 .tool-app:has(#exAfterDrop[hidden]):active{
   transform:scale(.99);
@@ -228,8 +241,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(74,222,128,.1);
 }
 .tool-app.active{
-  outline:3px dashed #4ade80;
-  outline-offset:-10px;
   background:rgba(74,222,128,.08);
 }
 /* Mobile shows just "Download" on the primary action button — the
@@ -346,7 +357,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       </div>
     </div>
     <div class="nav-exit-group">
-      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Show the help guide again" title="Show the help guide again">?</button>
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub" data-i18n-label="nav_back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -408,7 +419,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
     <h3>New to cleaning images?</h3>
     <p>Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif" href="/golden-rules/?tool=exif">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -457,7 +468,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=10" defer></script>
+<script src="/shared/site.js?v=28" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=11" defer></script>
 </body>
 </html>

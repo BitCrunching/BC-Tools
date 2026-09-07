@@ -517,6 +517,42 @@ altitude. Originated in Context (`.context-text-resize-handle`); Congify,
 Codify, and Colorfy each independently copied it under their own prefix
 before this was shared — all four now point at the one component.
 
+**This is the canvas/frame-level handle only** (resizing the loaded file's
+own preview — Convert/Compress/Congify/Codify/Colorfy's own preview-size
+sliders). An in-canvas *object* (a text box, caption, or signature placed
+on top of the canvas) uses a separate family instead — see
+`.bc-obj-resize-handle` below — even though the visual recipe looks close;
+don't reach for `.bc-resize-handle` for a new object-level control.
+
+## In-canvas object controls: `.bc-obj-remove-btn` / `.bc-obj-resize-handle` / `.bc-obj-drag-handle`
+
+For a text box, caption, or signature placed ON a tool's canvas (not the
+canvas/frame itself), use this family (`shared/site.css`) rather than
+`.bc-remove-btn`/`.bc-resize-handle` above, which are reserved for the
+canvas/frame's own controls:
+
+- **`.bc-obj-remove-btn`** — 25×25px red circle, white 2px border,
+  `#e11d48` fill, centered "×".
+- **`.bc-obj-resize-handle`** — 25×25px blue (`#2563eb`) circle, white 2px
+  border; icon sized via `.bc-obj-resize-handle svg` (16×16) or a local
+  `::before` background-image, same either-technique rule as
+  `.bc-resize-handle`.
+- **`.bc-obj-drag-handle`** — 25×25px yellow (`var(--context-yellow)`)
+  circle, white 2px border, `cursor:move`; icon via
+  `.bc-obj-drag-handle svg` (16×16).
+
+All three cover only size/shape/color/border — position offsets
+(`top`/`right`/`bottom`/`left`) and any per-tool z-index stay local on the
+tool's own class alongside it (e.g. `class="context-text-remove
+bc-obj-remove-btn"`, `class="gif-caption-drag-handle bc-obj-drag-handle"`).
+Originated as near-duplicates — Context's `.context-text-remove`/
+`.context-text-resize-handle`/`.context-drag-dot` and Congify's
+`.gif-caption-remove`/`.gif-caption-resize-handle`/
+`.gif-caption-drag-handle` — split out into this shared family once both
+tools' object controls were resized to the same 25px and the duplication
+became obvious. Use these (not `.bc-remove-btn`/`.bc-resize-handle`) for
+any future in-canvas object control.
+
 ## Drag & drop
 
 Reuse `bcSetupBannerDropTarget(toolApp, opts)` from `shared/site.js`

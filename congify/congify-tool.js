@@ -4,11 +4,6 @@
    pattern) so most visitors who never open this page never fetch it. */
 (function(){
   const drop = document.getElementById("gifDrop");
-  const urlRow = document.getElementById("gifUrlRow");
-  const urlInput = document.getElementById("gifUrlInput");
-  const urlBtn = document.getElementById("gifUrlBtn");
-  const urlPasteBtn = document.getElementById("gifUrlPasteBtn");
-  const urlStatus = document.getElementById("gifUrlStatus");
   const input = document.getElementById("gifInput");
   const videoWrap = document.getElementById("gifVideoWrap");
   const editorControls = document.getElementById("gifEditorControls");
@@ -60,10 +55,30 @@
   ]);
 
   const convertBtn = document.getElementById("gifConvertBtn");
+  const captionSliders = document.getElementById("gifCaptionSliders");
+  const outputSliders = document.getElementById("gifOutputSliders");
+  const modeBasicBtn = document.getElementById("gifModeBasicBtn");
+  const modeAdvancedBtn = document.getElementById("gifModeAdvancedBtn");
+  /* Basic (text/stroke controls) and Advanced (resolution/fps/speed/
+     playback) are mutually exclusive views onto the same settings —
+     switching modes only changes which group is visible, nothing about
+     the settings themselves. Basic is the default. Each segment styles
+     itself off its own [aria-pressed] state (shared/site.css-adjacent
+     .gif-mode-toggle button rules in congify/index.html). */
+  function setGifMode(mode){
+    const isBasic = mode === "basic";
+    captionSliders.hidden = !isBasic;
+    outputSliders.hidden = isBasic;
+    modeBasicBtn.setAttribute("aria-pressed", String(isBasic));
+    modeAdvancedBtn.setAttribute("aria-pressed", String(!isBasic));
+  }
+  modeBasicBtn.addEventListener("click", () => setGifMode("basic"));
+  modeAdvancedBtn.addEventListener("click", () => setGifMode("advanced"));
   const statusEl = document.getElementById("gifStatus");
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
   const resultsToggle = document.getElementById("gifResultsToggle");
+  const resultsDownloadBtn = document.getElementById("gifResultsDownloadBtn");
   const previewCanvas = document.getElementById("gifPreviewCanvas");
   const previewPlayBtn = document.getElementById("gifPreviewPlayBtn");
   const addTextBtn = document.getElementById("gifAddTextBtn");
@@ -86,8 +101,7 @@
   const captionStrokeWidthBtn = document.getElementById("gifCaptionStrokeWidthBtn");
   const captionStrokeWidthBtnLine = document.getElementById("gifCaptionStrokeWidthBtnLine");
   const cropBtn = document.getElementById("gifCropBtn");
-  const cropFreeIcon = document.getElementById("gifCropFreeIcon");
-  const cropBtnLabel = document.getElementById("gifCropBtnLabel");
+  const cropFreeIconNumber = document.getElementById("gifCropFreeIconNumber");
   const orderBtn = document.getElementById("gifOrderBtn");
   const orderInfoBtn = document.getElementById("gifOrderInfoBtn");
   const orderInfoTooltip = document.getElementById("gifOrderInfoTooltip");
@@ -159,7 +173,15 @@
      the frame flush to it. Going past 1028 would mean widening the
      shared banner itself (kept at 1100px on purpose). */
   let frameWidth = 1006; // px — cosmetic, drag-handle-controlled
-  const PREVIEW_WIDTH_MIN = 140, PREVIEW_WIDTH_MAX = 1006;
+  const PREVIEW_WIDTH_MAX = 1006;
+  /* 140 used to be the floor here — small enough to be useless (the
+     preview was barely bigger than the corner buttons sitting on it).
+     360 is the real usable minimum on desktop; mobile gets its own
+     lower floor (265) since the workspace itself is narrower there,
+     same 768px breakpoint as the rest of this page's mobile rules. */
+  function getPreviewWidthMin(){
+    return window.matchMedia("(max-width:768px)").matches ? 265 : 360;
+  }
   /* outputWidth is the actual export resolution, picked from the fixed
      preset options on #gifResolutionMenu (see the dropdown registration
      below). Restored from the last successful download's choice
@@ -200,7 +222,6 @@
        back so dropping/picking a different video works right from this
        screen, same as setFile() would do at any other point. */
     drop.hidden = false;
-    urlRow.hidden = false;
     /* Minimize only makes sense once you're back editing alongside the
        result (see hideDoneView) — collapsing it here, while it's the
        one thing this screen exists to show you, does nothing useful. */
@@ -210,7 +231,6 @@
     editorControls.hidden = false;
     doneActions.hidden = true;
     drop.hidden = true;
-    urlRow.hidden = true;
     resultsHeader.hidden = false;
   }
   doneContinueBtn.addEventListener("click", hideDoneView);
@@ -219,11 +239,17 @@
      downloads automatically (see the "finished" handler below), this is
      the only thing that does. Re-wraps the already-held result bytes
      rather than needing the original blob in scope. */
-  downloadBtn.addEventListener("click", () => {
+  function downloadGifResult(){
     if (!lastResultBytes) return;
     const outName = (scrubberFileName.value.trim() || "converted") + ".gif";
     downloadBlob(new Blob([lastResultBytes], { type: lastResultType || "image/gif" }), outName);
-  });
+  }
+  downloadBtn.addEventListener("click", downloadGifResult);
+  /* Same download, reachable from back in the editor too — clicking
+     "Continue working" hides gifDoneActions (and its own Download
+     button) but keeps lastResultBytes around; without this, getting
+     the already-converted file back out meant re-running Convert. */
+  resultsDownloadBtn.addEventListener("click", downloadGifResult);
 
   resultsToggle.addEventListener("click", () => {
     const collapsed = resultsEl.hidden = !resultsEl.hidden;
@@ -276,6 +302,10 @@
     statusEl.textContent = "";
     previewCanvas.width = previewCanvas.width; // clears the old clip's frame
     hideDoneView();
+    /* hideDoneView() always shows resultsHeader (it owns showing it once
+       back in the editor alongside a result) — but a freshly loaded file
+       has no result yet, so re-hide it until the user actually converts. */
+    resultsHeader.hidden = true;
     continueBtn.hidden = true;
     /* Captions are tied to the clip they were placed on — without this,
        swapping in a different video (drop a new file while one's
@@ -520,7 +550,7 @@
       boxEl.dataset.captionId = cap.id;
 
       const handle = document.createElement("span");
-      handle.className = "gif-caption-drag-handle";
+      handle.className = "gif-caption-drag-handle bc-obj-drag-handle";
       handle.setAttribute("role", "slider");
       handle.setAttribute("aria-label", "Caption position");
       handle.tabIndex = 0;
@@ -536,13 +566,13 @@
 
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
-      removeBtn.className = "gif-caption-remove";
+      removeBtn.className = "gif-caption-remove bc-obj-remove-btn";
       removeBtn.setAttribute("aria-label", "Remove caption");
       removeBtn.textContent = "×";
       boxEl.appendChild(removeBtn);
 
       const sizeHandle = document.createElement("span");
-      sizeHandle.className = "gif-caption-resize-handle bc-resize-handle";
+      sizeHandle.className = "gif-caption-resize-handle bc-obj-resize-handle";
       sizeHandle.setAttribute("role", "slider");
       sizeHandle.setAttribute("aria-label", "Caption text size");
       sizeHandle.tabIndex = 0;
@@ -952,7 +982,7 @@
        already gone. */
     const containerMax = editorControls.getBoundingClientRect().width;
     const max = Math.min(PREVIEW_WIDTH_MAX, containerMax);
-    resizeVirtualWidth = Math.min(max, Math.max(PREVIEW_WIDTH_MIN, resizeVirtualWidth + (e.clientX - resizeLastX)));
+    resizeVirtualWidth = Math.min(max, Math.max(getPreviewWidthMin(), resizeVirtualWidth + (e.clientX - resizeLastX)));
     resizeLastX = e.clientX;
     /* Skips the "useless" in-between sizes (142, 143, 144...) by
        snapping to the nearest multiple of 5 by default, or 10 with
@@ -1144,14 +1174,10 @@
     { crop: "2:3", label: "2:3", ratio: 2 / 3 },
     { crop: "3:2", label: "3:2", ratio: 3 / 2 }
   ];
-  /* "Free" shows the corner-brackets icon instead of text (see the
-     icon's own CSS comment); every other ratio shows its plain label,
-     same as the rest of the option-change-btns. */
+  /* Every ratio (including Free, shown as "0") uses the same
+     corner-brackets icon — only the centered label text changes. */
   function renderCropOption(opt, btn){
-    const isFree = opt.crop === "free";
-    cropFreeIcon.hidden = !isFree;
-    cropBtnLabel.hidden = isFree;
-    if (!isFree) cropBtnLabel.textContent = opt.label;
+    cropFreeIconNumber.textContent = opt.crop === "free" ? "0" : opt.label;
     btn.setAttribute("aria-label", "Aspect ratio: " + opt.label);
   }
   const cropControl = bcRegisterOptionChangeBtn(cropBtn, CROP_OPTIONS, (opt) => {
@@ -1225,7 +1251,6 @@
   video.addEventListener("loadedmetadata", () => {
     duration = video.duration;
     drop.hidden = true;
-    urlRow.hidden = true;
     videoWrap.classList.add("active");
     convertBtn.disabled = false;
     if (isRestoringSession) return;
@@ -1262,74 +1287,12 @@
     previewCanvas.width = previewCanvas.width;
     hideDoneView();
     drop.hidden = false;
-    urlRow.hidden = false;
-    urlStatus.hidden = true;
-    urlInput.value = "";
     bcDbClear(GIF_DB_NAME, GIF_DB_STORE);
   }
 
   removeBtn.addEventListener("click", resetGif);
 
   input.addEventListener("change", (e) => setFile(e.target.files[0]));
-
-  /* ===== load from a direct URL — same mechanism as Coudio's link
-     loader. Only works for links the source server actually lets a
-     browser fetch cross-origin (CORS); most sites don't opt into that,
-     so there's no way to tell "blocked by CORS" apart from "the link
-     is dead" from here, hence the error message covering both. */
-  async function loadFromUrl(){
-    const url = urlInput.value.trim();
-    if (!url) return;
-    urlBtn.disabled = true;
-    urlStatus.hidden = false;
-    urlStatus.textContent = "Fetching...";
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Server returned " + res.status);
-      const blob = await res.blob();
-      let name = "video";
-      try {
-        const path = new URL(url).pathname;
-        const last = path.split("/").pop();
-        if (last) name = decodeURIComponent(last);
-      } catch (err) { /* malformed URL — keep the fallback name */ }
-      const file = new File([blob], name, { type: blob.type || "video/mp4" });
-      if (!file.type.startsWith("video/")){
-        urlStatus.textContent = "That link doesn't look like a video file.";
-        return;
-      }
-      setFile(file);
-    } catch (err){
-      console.error(err);
-      urlStatus.hidden = false;
-      urlStatus.textContent = "Couldn't load that link — it may be down, or the server may not allow cross-origin downloads (most don't). Try downloading it yourself and dropping the file instead.";
-    } finally {
-      urlBtn.disabled = false;
-    }
-  }
-  urlBtn.addEventListener("click", loadFromUrl);
-  /* Mobile-only (see .bc-url-paste-btn CSS) — reads the clipboard
-     straight into the field since a phone keyboard's own paste
-     affordance is easy to miss on a URL-type input. Fails quietly
-     into just focusing the
-     input if clipboard access is denied or unsupported. */
-  if (urlPasteBtn){
-    urlPasteBtn.addEventListener("click", async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text) urlInput.value = text.trim();
-      } catch (err){
-        /* clipboard read denied/unsupported — fall through to focus */
-      }
-      urlInput.focus();
-    });
-  }
-  urlInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      loadFromUrl();
-    }
-  });
 
   /* Same whole-banner drop target as Convert's — before a video is
      loaded, #gifDrop is just the dashed visual cue, not the actual
@@ -1530,8 +1493,15 @@
          dithering every frame against a palette only tuned to frame one
          costs more in scattered noise (worse LZW compression) than it
          saves in dropped per-frame palette tables. Left out. */
+      /* Was a hardcoded 2 — gif.js splits the palette/LZW encode across
+         this many Web Workers, so it's pure parallelism with no quality
+         cost (unlike `quality` above, which trades encode speed for
+         accuracy on purpose). Scales to the machine's actual core count
+         instead of leaving most of them idle, capped at 6 since gif.js's
+         own per-worker overhead stops paying off past that on typical
+         clip lengths. */
       const gif = new GIF({
-        workers: 2,
+        workers: Math.min(navigator.hardwareConcurrency || 4, 6),
         quality: 1,
         dither: "FloydSteinberg-serpentine",
         width: outputWidth,
@@ -1652,7 +1622,7 @@
           if (idx !== -1) fpsControl.setIndex(idx);
         }
         if (saved.width){
-          frameWidth = Math.min(PREVIEW_WIDTH_MAX, Math.max(PREVIEW_WIDTH_MIN, saved.width));
+          frameWidth = Math.min(PREVIEW_WIDTH_MAX, Math.max(getPreviewWidthMin(), saved.width));
           previewFrame.style.width = frameWidth + "px";
         }
         /* Older saved sessions (before preview/output were split) have

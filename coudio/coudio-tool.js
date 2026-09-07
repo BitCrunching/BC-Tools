@@ -10,12 +10,15 @@
   const input = document.getElementById("cdInput");
   const editor = document.getElementById("cdEditor");
   const removeBtn = document.getElementById("cdRemoveBtn");
+  const inputBtnLabel = document.getElementById("cdInputBtnLabel");
+  const fileListEl = document.getElementById("cdFileList");
+  const addTile = document.getElementById("cdAddTile");
   const sourceAudio = document.getElementById("cdSourceAudio");
-  const fileNameEl = document.getElementById("cdFileName");
   const convertBtn = document.getElementById("cdConvertBtn");
   const statusEl = document.getElementById("cdStatus");
   const resultsEl = document.getElementById("cdResults");
   const bitrateGroup = document.getElementById("cdBitrateGroup");
+  const continueBtn = document.getElementById("cdContinueBtn");
 
   const formatTrigger = document.getElementById("cdFormatTrigger");
   const formatInput = document.getElementById("cdFormatInput");
@@ -25,24 +28,22 @@
   const bitrateTriggerLabel = document.getElementById("cdBitrateTriggerLabel");
   const bitrateMenu = document.getElementById("cdBitrateMenu");
 
-  const urlRow = document.getElementById("cdUrlRow");
-  const urlInput = document.getElementById("cdUrlInput");
-  const urlBtn = document.getElementById("cdUrlBtn");
-  const urlPasteBtn = document.getElementById("cdUrlPasteBtn");
-  const urlStatus = document.getElementById("cdUrlStatus");
-
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("coudio", "cd", [
-    ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click or drop a file below to get started."],
+    ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click or drop one or more files below to get started."],
     ["PICK_YOUR_FORMAT", "Choose MP3 or WAV as the output — MP3 also lets you pick a bitrate to trade file size for quality."],
-    ["CHECK_BEFORE_CONVERTING", "Your file shows up below once picked — give it a quick listen before converting."],
-    ["YOU_ARE_SET", "Hit Convert and the file downloads automatically. Close this with the red dot and we won't show it again."]
+    ["CHECK_BEFORE_CONVERTING", "Your files show up below once picked — give each a quick listen before converting."],
+    ["YOU_ARE_SET", "Hit Convert and each file downloads automatically. Close this with the red dot and we won't show it again."]
   ]);
 
-  let currentFile = null;
-  let objectUrl = null;
+  /* Each entry: { file: File, objectUrl: string }. Every file decodes
+     and converts independently — its own input format is auto-detected
+     at decode time (decodeAudioData doesn't care what container it
+     came from), there's no per-file input-format choice to make. All
+     loaded files share the one Output format/Bitrate below. */
+  let loaded = [];
   let outputFormat = "mp3"; // "mp3" | "wav"
   let bitrate = 192;
 
@@ -65,17 +66,24 @@
   /* ===== dropdowns (Format / Bitrate) =====
      Format has 7 options — long enough that search helps — so it uses
      the shared searchable bcRegisterCombo (shared/site.js). Bitrate
-     only has 3, so it stays on the shared plain bcRegisterDropdown. */
-  bcRegisterCombo(formatTrigger, formatInput, formatMenu, formatEmpty, (opt) => {
+     only has 3, so it stays on the shared plain bcRegisterDropdown.
+     Named functions (not inline onSelect callbacks) so "Continue where
+     you left off" can re-run the exact same selection logic when
+     restoring a saved format/bitrate, instead of duplicating it. */
+  function handleFormatSelect(opt){
     outputFormat = opt.dataset.format;
     /* Bitrate only applies to the two lossy formats (MP3, OGG/Opus) —
        every other option here is uncompressed PCM, no such setting. */
     bitrateGroup.hidden = outputFormat !== "mp3" && outputFormat !== "ogg";
-  });
-  bcRegisterDropdown(bitrateTrigger, bitrateMenu, (opt) => {
+    schedulePersist();
+  }
+  function handleBitrateSelect(opt){
     bitrate = parseInt(opt.dataset.bitrate, 10);
     bitrateTriggerLabel.textContent = opt.dataset.label;
-  });
+    schedulePersist();
+  }
+  bcRegisterCombo(formatTrigger, formatInput, formatMenu, formatEmpty, handleFormatSelect);
+  bcRegisterDropdown(bitrateTrigger, bitrateMenu, handleBitrateSelect);
 
   /* ===== file loading ===== */
   /* Video is accepted alongside audio files — decodeAudioData() and
@@ -100,109 +108,224 @@
     return false;
   }
 
-  function setFile(file){
-    if (!isAcceptableFile(file)) return;
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    currentFile = file;
-    objectUrl = URL.createObjectURL(file);
-    sourceAudio.src = objectUrl;
-    fileNameEl.textContent = file.name;
+  /* Short recognized-format label (e.g. "MP3", "MP4") for a single
+     loaded file — same idea as Output format's own short label.
+     Falls back to the MIME subtype, then a generic label, for a file
+     with no/an unusual extension. */
+  function detectedTypeLabel(file){
+    const extMatch = /\.([a-z0-9]+)$/i.exec(file.name);
+    if (extMatch) return extMatch[1].toUpperCase();
+    const mimeMatch = /\/([a-z0-9-]+)$/i.exec(file.type);
+    if (mimeMatch) return mimeMatch[1].toUpperCase();
+    return "File";
+  }
+
+  function formatKB(bytes){
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  /* Wiping a results container via innerHTML="" directly (as this used
+     to) drops any previous result <audio>'s object URL without ever
+     revoking it — a real leak the moment a new batch replaces the old
+     one without every individual × being clicked first. Shared
+     by both the pre-conversion file list and the post-conversion
+     results, since both hold the same kind of <audio>-bearing card. */
+  function clearResultsContainer(container){
+    container.querySelectorAll("audio").forEach(a => {
+      if (a.src && a.src.startsWith("blob:")) URL.revokeObjectURL(a.src);
+    });
+    container.innerHTML = "";
+  }
+
+  /* Which loaded file is currently playing in the one shared
+     #cdSourceAudio player — an index into `loaded`, not a stored
+     reference, so it stays valid across renderFileList() rebuilds. */
+  let selectedIndex = -1;
+
+  /* "Found input" — Convert's real Expected Input dropdown has actual
+     options to choose between; Coudio's doesn't (each file's format is
+     auto-detected, not picked), so this just echoes whatever the
+     currently *selected* file was detected as, whether there's one
+     file loaded or several. */
+  function updateInputSummary(){
+    inputBtnLabel.textContent = loaded[selectedIndex]
+      ? detectedTypeLabel(loaded[selectedIndex].file)
+      : "Choose file";
+  }
+
+  function selectFile(index){
+    if (!loaded[index]) return;
+    selectedIndex = index;
+    sourceAudio.src = loaded[index].objectUrl;
+    fileListEl.querySelectorAll(".cd-file-card").forEach((card, i) => {
+      card.classList.toggle("active", i === index);
+    });
+    updateInputSummary();
+  }
+
+  function renderFileList(){
+    /* Only clears the .cd-file-card entries, not #cdAddTile — that
+       tile is a permanent fixture of the list (files load in beside
+       it), not something rebuilt on every render. */
+    fileListEl.querySelectorAll(".cd-file-card").forEach(el => el.remove());
+    loaded.forEach((entry, index) => {
+      const card = document.createElement("div");
+      card.className = "result cd-file-card" + (index === selectedIndex ? " active" : "");
+      card.innerHTML = `
+        <span class="cd-file-dot" aria-hidden="true"></span>
+        <div class="result-name">${entry.file.name}</div>
+        <div class="result-size">${formatKB(entry.file.size)}</div>
+      `;
+      /* Whole card selects the file — not just a sub-control — so the
+         remove button (which sits on top of it) has to stop the click
+         from also bubbling up into this handler and re-selecting the
+         card it's about to remove. */
+      card.addEventListener("click", () => selectFile(index));
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "result-remove";
+      btn.setAttribute("aria-label", "Remove");
+      btn.textContent = "×";
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeFileAt(index);
+      });
+      card.appendChild(btn);
+      fileListEl.appendChild(card);
+    });
+  }
+
+  function addFiles(fileList){
+    const accepted = [...fileList].filter(isAcceptableFile);
+    if (accepted.length === 0) return;
+    const hadNone = loaded.length === 0;
+    accepted.forEach(file => {
+      loaded.push({ file, objectUrl: URL.createObjectURL(file) });
+    });
+    updateInputSummary();
+    renderFileList();
+    if (hadNone) selectFile(0);
     drop.hidden = true;
-    urlRow.hidden = true;
     editor.hidden = false;
     convertBtn.disabled = false;
-    resultsEl.innerHTML = "";
+    clearResultsContainer(resultsEl);
     statusEl.textContent = "";
+    continueBtn.hidden = true;
+    schedulePersist();
+  }
+
+  function removeFileAt(index){
+    const [removed] = loaded.splice(index, 1);
+    if (removed) URL.revokeObjectURL(removed.objectUrl);
+    if (loaded.length === 0){
+      resetTool();
+    } else {
+      updateInputSummary();
+      /* Keep playing the same file if it's still around (its index
+         just shifted down by one); otherwise fall back to whatever
+         is now at that position, or the last file if it was removed. */
+      const nextIndex = Math.min(index, loaded.length - 1);
+      renderFileList();
+      selectFile(selectedIndex === index ? nextIndex : (selectedIndex > index ? selectedIndex - 1 : selectedIndex));
+      schedulePersist();
+    }
   }
 
   function resetTool(){
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = null;
-    currentFile = null;
+    loaded.forEach(entry => URL.revokeObjectURL(entry.objectUrl));
+    loaded = [];
+    selectedIndex = -1;
     sourceAudio.removeAttribute("src");
     editor.hidden = true;
     drop.hidden = false;
-    urlRow.hidden = false;
     convertBtn.disabled = true;
-    resultsEl.innerHTML = "";
+    /* Only the .cd-file-card entries — not innerHTML="" — since that
+       would also delete #cdAddTile itself (a real, permanent DOM node,
+       not something renderFileList() recreates). That's exactly what
+       was happening: the tile would vanish for good after a reset,
+       since the const addTile reference still pointed at the now-
+       detached node afterward. */
+    fileListEl.querySelectorAll(".cd-file-card").forEach(el => el.remove());
+    clearResultsContainer(resultsEl);
     statusEl.textContent = "";
-    urlStatus.hidden = true;
-    urlInput.value = "";
+    updateInputSummary();
+    bcDbClear(CD_DB_NAME, CD_DB_STORE);
   }
+
+  /* ===== "Continue where you left off" persistence =====
+     Same IndexedDB pattern Convert/Compress/Combine/Cleanly/Context/
+     Congify already use (shared/site.js's bcDbPut/bcDbGet/bcDbClear) —
+     stores the file's bytes plus the chosen format/bitrate, so a
+     reload (or coming back later) can offer to restore exactly where
+     you left off instead of starting over. */
+  const CD_DB_NAME = "bctools-coudio";
+  const CD_DB_STORE = "session";
+
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (loaded.length === 0) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (loaded.length === 0 || persistBusy) return;
+    persistBusy = true;
+    try {
+      const files = await Promise.all(loaded.map(async entry => ({
+        name: entry.file.name,
+        type: entry.file.type,
+        bytes: await entry.file.arrayBuffer()
+      })));
+      await bcDbPut(CD_DB_NAME, CD_DB_STORE, { files, outputFormat, bitrate });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  (async () => {
+    const saved = await bcDbGet(CD_DB_NAME, CD_DB_STORE);
+    if (!saved || !saved.files || !saved.files.length) return;
+    if (loaded.length) return;
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        addFiles(restored);
+        if (saved.outputFormat){
+          bcSetComboDisplay(formatMenu, formatInput, "format", saved.outputFormat);
+          const formatOpt = formatMenu.querySelector(`[data-format="${saved.outputFormat}"]`);
+          if (formatOpt) handleFormatSelect(formatOpt);
+        }
+        if (saved.bitrate){
+          const bitrateOpt = bitrateMenu.querySelector(`[data-bitrate="${saved.bitrate}"]`);
+          if (bitrateOpt){
+            bcSetDropdownActive(bitrateMenu, bitrateOpt);
+            handleBitrateSelect(bitrateOpt);
+          }
+        }
+      } catch (err){
+        console.error(err);
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 
   removeBtn.addEventListener("click", resetTool);
-  input.addEventListener("change", (e) => setFile(e.target.files[0]));
+  input.addEventListener("change", (e) => addFiles(e.target.files));
+  addTile.addEventListener("click", () => input.click());
 
-  /* ===== load from a direct URL — an alternative to picking/dropping a
-     local file. This only works for links the source server actually
-     lets a browser fetch cross-origin (CORS); most sites don't opt
-     into that, so fetch() just throws a generic network error for
-     those — there's no way to tell "blocked by CORS" apart from "the
-     link is dead" from here, so the error message below covers both
-     rather than guessing wrong. */
-  async function loadFromUrl(){
-    const url = urlInput.value.trim();
-    if (!url) return;
-    urlBtn.disabled = true;
-    urlStatus.hidden = false;
-    urlStatus.textContent = "Fetching...";
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Server returned " + res.status);
-      const blob = await res.blob();
-      let name = "audio";
-      try {
-        const path = new URL(url).pathname;
-        const last = path.split("/").pop();
-        if (last) name = decodeURIComponent(last);
-      } catch (err) { /* malformed URL — keep the fallback name */ }
-      const file = new File([blob], name, { type: blob.type || "application/octet-stream" });
-      if (!isAcceptableFile(file)){
-        urlStatus.textContent = "That link doesn't look like an audio or video file.";
-        return;
-      }
-      setFile(file);
-    } catch (err){
-      console.error(err);
-      urlStatus.hidden = false;
-      urlStatus.textContent = "Couldn't load that link — it may be down, or the server may not allow cross-origin downloads (most don't). Try downloading it yourself and dropping the file instead.";
-    } finally {
-      urlBtn.disabled = false;
-    }
-  }
-  urlBtn.addEventListener("click", loadFromUrl);
-  /* Mobile-only (see .bc-url-paste-btn CSS) — reads the clipboard
-     directly into the field instead of relying on a phone keyboard's
-     paste affordance, which is easy to miss on a URL-type field.
-     navigator.clipboard.readText() needs a secure context and can be
-     denied by the user or blocked entirely on some browsers, so this
-     fails quietly into just focusing the input — worst case, they're
-     exactly where they'd be without the button. */
-  if (urlPasteBtn){
-    urlPasteBtn.addEventListener("click", async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text) urlInput.value = text.trim();
-      } catch (err){
-        /* clipboard read denied/unsupported — fall through to focus */
-      }
-      urlInput.focus();
-    });
-  }
-  urlInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      loadFromUrl();
-    }
-  });
-
-  /* Same whole-banner drop target as Convert/Congify's — before an
-     audio file is loaded, #cdDrop is just the dashed visual cue, not
-     the actual click/drag scope: the entire .tool-app banner opens the
-     picker and accepts a drag/drop. isDragEventInScope() flips the
-     moment a file loads and #cdDrop is hidden, so it never fights the
-     format/bitrate controls once there's real content to interact
-     with. */
+  /* Whole-banner drop target as Convert/Congify's — before any file is
+     loaded, #cdDrop is just the dashed visual cue, not the actual
+     click/drag scope: the entire .tool-app banner opens the picker and
+     accepts a drag/drop. Once files ARE loaded, #cdAddTile (the
+     shared .bc-add-tile — always present in #cdFileList, files load in
+     to its right) takes over as the target instead — the banner stays
+     a drop target throughout (previously it silently stopped accepting
+     drops the moment a file loaded, since the old scope check keyed
+     entirely off #cdDrop, which is hidden by then), just handing the
+     "active" highlight to whichever affordance is actually visible. */
   const toolApp = document.querySelector(".tool-app");
   if (toolApp){
     toolApp.addEventListener("click", e => {
@@ -213,13 +336,13 @@
     });
 
     function isDragEventInScope(e){
-      return !drop.hidden || drop.contains(e.target);
+      return !drop.hidden || drop.contains(e.target) || !editor.hidden;
     }
     bcSetupBannerDropTarget(toolApp, {
       isInScope: isDragEventInScope,
-      getEnterTarget: e => (!drop.hidden ? toolApp : drop),
-      clearTargets: [toolApp, drop],
-      onDrop: e => setFile(e.dataTransfer.files[0])
+      getEnterTarget: e => (!drop.hidden ? toolApp : (!editor.hidden ? addTile : drop)),
+      clearTargets: [toolApp, drop, addTile],
+      onDrop: e => addFiles(e.dataTransfer.files)
     });
 
     /* Just a fun double-click easter egg — skips buttons/selects/etc.
@@ -520,76 +643,109 @@
     });
   }
 
-  /* ===== conversion ===== */
-  convertBtn.addEventListener("click", async () => {
-    if (!currentFile) return;
-    convertBtn.disabled = true;
-    statusEl.textContent = "Decoding audio...";
+  /* ===== result preview — shares Convert's .result card ===== same
+     shared/site.css component Convert's appendPreviewCard()/
+     addResultRemoveButton() use (.result/.result-name/.result-size/
+     .result-remove) — just standing in an <audio> element where
+     Convert puts an <img>, since there's no visual thumbnail for
+     audio. Lets you listen to what you were just converted (or a
+     previous batch's results still sitting there) instead of only
+     getting a status line. */
+  function addResultRemoveButton(card){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "result-remove";
+    btn.setAttribute("aria-label", "Remove");
+    btn.textContent = "×";
+    btn.addEventListener("click", () => {
+      const resultAudio = card.querySelector("audio");
+      if (resultAudio && resultAudio.src.startsWith("blob:")) URL.revokeObjectURL(resultAudio.src);
+      card.remove();
+    });
+    card.appendChild(btn);
+  }
 
+  async function convertOneFile(file){
+    const arrayBuffer = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    /* try/finally so a decode failure (a genuinely malformed or
+       unsupported file mid-batch) still closes the context — Chrome
+       caps concurrent AudioContexts at ~6, so repeated failures
+       without this would eventually throw on every later file too,
+       not just the bad one. */
     try {
-      const arrayBuffer = await currentFile.arrayBuffer();
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-      let blob, ext, mime;
+      let blob, ext;
       if (outputFormat === "wav"){
-        statusEl.textContent = "Encoding WAV...";
         blob = encodeWav(audioBuffer);
         ext = "wav";
-        mime = "audio/wav";
       } else if (outputFormat === "ogg"){
-        statusEl.textContent = "Encoding OGG...";
         blob = await encodeOgg(audioBuffer, bitrate);
         ext = "ogg";
-        mime = "audio/ogg";
       } else if (outputFormat === "aiff"){
-        statusEl.textContent = "Encoding AIFF...";
         blob = encodeAiff(audioBuffer);
         ext = "aiff";
-        mime = "audio/aiff";
       } else if (outputFormat === "au"){
-        statusEl.textContent = "Encoding AU...";
         blob = encodeAu(audioBuffer);
         ext = "au";
-        mime = "audio/basic";
       } else if (outputFormat === "caf"){
-        statusEl.textContent = "Encoding CAF...";
         blob = encodeCaf(audioBuffer);
         ext = "caf";
-        mime = "audio/x-caf";
       } else if (outputFormat === "voc"){
-        statusEl.textContent = "Encoding VOC...";
         blob = encodeVoc(audioBuffer);
         ext = "voc";
-        mime = "audio/x-voc";
       } else {
-        statusEl.textContent = "Encoding MP3...";
         blob = await encodeMp3(audioBuffer, bitrate);
         ext = "mp3";
-        mime = "audio/mpeg";
       }
+      return { blob, ext };
+    } finally {
       audioCtx.close();
-
-      statusEl.textContent = "Done.";
-      const outName = currentFile.name.replace(/\.[^.]+$/, "") + "." + ext;
-      downloadBlob(blob, outName);
-
-      const url = URL.createObjectURL(blob);
-      const result = document.createElement("div");
-      result.className = "result";
-      const resultAudio = document.createElement("audio");
-      resultAudio.controls = true;
-      resultAudio.style.width = "100%";
-      resultAudio.src = url;
-      result.appendChild(resultAudio);
-      resultsEl.innerHTML = "";
-      resultsEl.appendChild(result);
-
-      convertBtn.disabled = false;
-    } catch (err){
-      console.error(err);
-      statusEl.textContent = "Something went wrong converting this file.";
-      convertBtn.disabled = false;
     }
+  }
+
+  /* ===== conversion ===== each file decodes/encodes independently
+     (its own input format auto-detected at decode time) and converts
+     to the one shared Output format/Bitrate — downloaded and shown as
+     its own result card as soon as it's done, rather than waiting for
+     the whole batch. */
+  convertBtn.addEventListener("click", async () => {
+    if (loaded.length === 0) return;
+    convertBtn.disabled = true;
+    clearResultsContainer(resultsEl);
+
+    let successCount = 0;
+    for (let i = 0; i < loaded.length; i++){
+      const file = loaded[i].file;
+      const label = loaded.length > 1 ? ` (${i + 1}/${loaded.length})` : "";
+      statusEl.textContent = `Converting ${file.name}...${label}`;
+      try {
+        const { blob, ext } = await convertOneFile(file);
+        const outName = file.name.replace(/\.[^.]+$/, "") + "." + ext;
+        downloadBlob(blob, outName);
+
+        const url = URL.createObjectURL(blob);
+        const result = document.createElement("div");
+        result.className = "result";
+        result.innerHTML = `
+          <audio controls controlsList="nodownload" style="width:100%"></audio>
+          <div class="result-name">${outName}</div>
+          <div class="result-size">${formatKB(blob.size)}</div>
+        `;
+        result.querySelector("audio").src = url;
+        addResultRemoveButton(result);
+        resultsEl.appendChild(result);
+        successCount++;
+      } catch (err){
+        console.error(err);
+      }
+    }
+
+    statusEl.textContent = successCount === loaded.length
+      ? "Done."
+      : `Done — ${successCount} of ${loaded.length} converted successfully.`;
+    if (successCount > 0) bcDbClear(CD_DB_NAME, CD_DB_STORE);
+    convertBtn.disabled = false;
   });
 })();

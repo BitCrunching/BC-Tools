@@ -483,7 +483,7 @@
     el.style.top = (box.topPt * scale) + "px";
 
     const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle context-drag-dot";
+    handle.className = "context-text-drag-handle bc-obj-drag-handle";
     handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
     el.appendChild(handle);
 
@@ -512,7 +512,7 @@
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "context-text-remove";
+    removeBtn.className = "context-text-remove bc-obj-remove-btn";
     removeBtn.textContent = "×";
     removeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -582,7 +582,7 @@
        down/right grows the text, up/left shrinks it, 1:1 with the drag
        distance in PDF points so the box visibly tracks your finger. */
     const resizeHandle = document.createElement("span");
-    resizeHandle.className = "context-text-resize-handle bc-resize-handle";
+    resizeHandle.className = "context-text-resize-handle bc-obj-resize-handle";
     resizeHandle.setAttribute("aria-hidden", "true");
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);
@@ -629,13 +629,13 @@
     el.appendChild(img);
 
     const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle context-drag-dot";
+    handle.className = "context-text-drag-handle bc-obj-drag-handle";
     handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
     el.appendChild(handle);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
-    removeBtn.className = "context-text-remove";
+    removeBtn.className = "context-text-remove bc-obj-remove-btn";
     removeBtn.textContent = "×";
     removeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -689,7 +689,7 @@
     });
 
     const resizeHandle = document.createElement("span");
-    resizeHandle.className = "context-text-resize-handle bc-resize-handle";
+    resizeHandle.className = "context-text-resize-handle bc-obj-resize-handle";
     resizeHandle.setAttribute("aria-hidden", "true");
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);

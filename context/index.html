@@ -60,7 +60,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=49">
+<link rel="stylesheet" href="/shared/site.css?v=65">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -70,10 +70,23 @@
 
 /* Lively hover only while no PDF is loaded yet — :has() drops it the
    moment #ctEditor is revealed, so it never fights the toolbar/canvas
-   once there's real content to interact with. */
+   once there's real content to interact with. Same "jump" plays while
+   a file is being dragged over the banner (.active class, toggled by
+   shared/site.js's bcSetupBannerDropTarget) — not to be confused with
+   the :active pseudo-class just below, which is the separate
+   mouse-press-down effect. */
 #page-context .tool-app:has(#ctEditor[hidden]):hover{
   filter:brightness(1.06);
   transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.06 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+#page-context .tool-app:has(#ctEditor[hidden]).active{
+  filter:brightness(1.13);
+  transform:scale(1.03);
 }
 #page-context .tool-app:has(#ctEditor[hidden]):active{
   transform:scale(.99);
@@ -215,8 +228,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   transform:none;
 }
 #page-context .tool-app.active{
-  outline:3px dashed var(--context-yellow);
-  outline-offset:-10px;
   background:rgba(255,222,137,.08);
 }
 
@@ -308,9 +319,21 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   top:10px;
   right:10px;
   z-index:6;
-  width:28px;
-  height:28px;
-  font-size:15px;
+  width:30px;
+  height:30px;
+  font-size:19px;
+}
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position stay here, same split as
+   .context-remove-btn/.bc-remove-btn above. Sits just to the left of
+   Remove on the canvas. */
+.context-back-btn{
+  position:absolute;
+  top:10px;
+  right:48px;
+  z-index:6;
+  width:30px;
+  height:30px;
 }
 
 /* Fixed + full-viewport. openFullscreen moves this element (and the
@@ -736,47 +759,25 @@ html[data-theme="dark"] .context-tool-btn:hover{
    .gif-dropdown-dot had grown the exact same one independently).
    .context-color-dot itself now only exists as a JS-addressing hook. */
 
+/* Visual (background/padding/radius/dot+label row layout) now comes
+   from the shared .bc-color-menu/.bc-color-option (shared/site.css) —
+   added as a second class on the markup. What stays local: the
+   position:absolute/top/left/right/z-index positioning, since
+   Context's own .context-color-dropdown wrapper (position:relative)
+   isn't the generic .bc-dropdown component Congify's color pickers use
+   — and the class names themselves, kept as JS-addressing hooks since
+   this control's viewport-clamped open/close logic is hand-rolled
+   rather than bcRegisterDropdown. */
 .context-color-menu{
   position:absolute;
   top:calc(100% + 6px);
   left:0;
   right:0;
   z-index:5;
-  padding:6px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.16);
-  background:#1d2436;
-  display:flex;
-  flex-direction:column;
-  gap:2px;
 }
 
 .context-color-menu[hidden]{
   display:none;
-}
-
-.context-color-option{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  height:36px;
-  padding:0 10px;
-  border:none;
-  border-radius:9px;
-  background:transparent;
-  color:#fff;
-  font-size:14px;
-  text-align:left;
-  cursor:pointer;
-}
-
-.context-color-option:hover{
-  background:rgba(255,255,255,.1);
-}
-
-.context-color-option.active{
-  background:rgba(255,255,255,.14);
-  font-weight:700;
 }
 
 .context-page-nav{
@@ -916,23 +917,12 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 
 .context-text-drag-handle{
   flex-shrink:0;
-  width:14px;
-  text-align:center;
-  font-size:11px;
-  color:rgba(0,0,0,.45);
-  cursor:move;
-  user-select:none;
-  touch-action:none;
-  /* iOS Safari's long-press "Copy / Look Up" callout is governed by
-     this property specifically, separate from user-select — without
-     it, a slightly-too-long press-and-drag on the handle pops up that
-     system menu instead of moving the box. */
-  -webkit-touch-callout:none;
 }
 
 /* Circle geometry/color/border/touch-action is the shared
-   .bc-resize-handle (shared/site.css) — this originated that recipe;
-   Congify/Codify/Colorfy each copied it before it was extracted. What
+   .bc-obj-resize-handle (shared/site.css) — split from the canvas-level
+   .bc-resize-handle since this one resizes an object placed ON the
+   canvas (a text/signature box), not the canvas/frame itself. What
    stays local: the mobile-only show/hide state (hidden until the box
    is selected — .context-text-box handles that, see the media query
    above), position offset, and cursor direction. */
@@ -960,21 +950,8 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 }
 
 .context-text-remove{
-  position:absolute;
   top:-10px;
   right:-10px;
-  width:21px;
-  height:21px;
-  border-radius:50%;
-  border:2px solid #fff;
-  background:rgba(225,29,72,.9);
-  color:#fff;
-  font-size:11px;
-  line-height:1;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
 
 /* A signature placed on the page — same drag/resize/remove pattern as
@@ -983,6 +960,15 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   position:absolute;
   cursor:default;
   -webkit-touch-callout:none;
+  outline:1px dashed rgba(0,0,0,.35);
+}
+/* Same active state as a text box's own .context-text-box.selected
+   .context-text-inner (rounded blue outline) — signature has no
+   separate "inner" element to style, so it goes straight on the box. */
+.context-signature-box.selected{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
 }
 .context-signature-box img{
   display:block;
@@ -997,25 +983,10 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   left:-22px;
   transform:translateY(-50%);
 }
-/* Shared drag-handle look for both text and signature boxes — same
-   flat-circle shape as .context-text-resize-handle/.context-text-remove
-   (18px, solid color, white border), just yellow instead of blue/red. */
-.context-drag-dot{
-  width:21px;
-  height:21px;
-  border-radius:50%;
-  background:var(--context-yellow);
-  border:2px solid #fff;
-  box-sizing:border-box;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.context-drag-dot svg{
-  width:14px;
-  height:14px;
-  pointer-events:none;
-}
+/* Drag-handle look for both text and signature boxes is the shared
+   .bc-obj-drag-handle (shared/site.css) — same object-control family as
+   .bc-obj-resize-handle/.bc-obj-remove-btn above, just yellow + a move
+   cursor instead of blue/red. */
 .context-signature-box .context-text-resize-handle{
   /* Unlike text (which has a desktop font-size dropdown as its resize
      control, with the drag handle as the mobile-only stand-in), a
@@ -1553,7 +1524,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
       </div>
     </div>
     <div class="nav-exit-group">
-      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Show the help guide again" title="Show the help guide again">?</button>
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub" data-i18n-label="nav_back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -1612,20 +1583,20 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
             <span id="ctColorTriggerLabel">Black</span>
             <span class="context-color-chevron" aria-hidden="true"></span>
           </button>
-          <div class="context-color-menu" id="ctColorMenu" role="listbox" hidden>
-            <button type="button" class="context-color-option active" data-color="#000000" data-label="Black" role="option" aria-selected="true">
+          <div class="context-color-menu bc-color-menu" id="ctColorMenu" role="listbox" hidden>
+            <button type="button" class="context-color-option bc-color-option active" data-color="#000000" data-label="Black" role="option" aria-selected="true">
               <span class="context-color-dot bc-color-dot" style="background:#000000"></span><span class="ct-option-label"> Black</span>
             </button>
-            <button type="button" class="context-color-option" data-color="#ffffff" data-label="White" role="option" aria-selected="false">
+            <button type="button" class="context-color-option bc-color-option" data-color="#ffffff" data-label="White" role="option" aria-selected="false">
               <span class="context-color-dot bc-color-dot" style="background:#ffffff"></span><span class="ct-option-label"> White</span>
             </button>
-            <button type="button" class="context-color-option" data-color="#e11d48" data-label="Red" role="option" aria-selected="false">
+            <button type="button" class="context-color-option bc-color-option" data-color="#e11d48" data-label="Red" role="option" aria-selected="false">
               <span class="context-color-dot bc-color-dot" style="background:#e11d48"></span><span class="ct-option-label"> Red</span>
             </button>
-            <button type="button" class="context-color-option" data-color="#2563eb" data-label="Blue" role="option" aria-selected="false">
+            <button type="button" class="context-color-option bc-color-option" data-color="#2563eb" data-label="Blue" role="option" aria-selected="false">
               <span class="context-color-dot bc-color-dot" style="background:#2563eb"></span><span class="ct-option-label"> Blue</span>
             </button>
-            <button type="button" class="context-color-option" data-color="#eab308" data-label="Yellow" role="option" aria-selected="false">
+            <button type="button" class="context-color-option bc-color-option" data-color="#eab308" data-label="Yellow" role="option" aria-selected="false">
               <span class="context-color-dot bc-color-dot" style="background:#eab308"></span><span class="ct-option-label"> Yellow</span>
             </button>
           </div>
@@ -1680,7 +1651,13 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
       </div>
 
       <div class="context-preview-panel" id="ctPreviewPanel">
-        <button type="button" class="context-remove-btn bc-remove-btn" id="ctRemoveBtn">×</button>
+        <button type="button" class="context-back-btn bc-canvas-back-btn" id="ctBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5"></path>
+            <path d="M11 18l-6-6 6-6"></path>
+          </svg>
+        </button>
+        <button type="button" class="context-remove-btn bc-remove-btn bc-canvas-remove-btn" id="ctRemoveBtn">×</button>
         <div class="context-canvas-wrap" id="ctCanvasWrap">
           <canvas id="ctCanvas"></canvas>
           <div class="context-overlay" id="ctOverlay"></div>
@@ -1785,7 +1762,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
     </div>
     <h3>New to adding text to PDFs?</h3>
     <p>Adding text to a PDF looks like it should work like any text editor, but a PDF page has no built-in "blank space to type into" the way a Word document does — it's closer to a printed sheet. Here's what's actually happening when you drop a text box onto the page, and how to make it look intentional instead of pasted-on.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="context" href="/golden-rules/?tool=context">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -1835,7 +1812,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/context/context-tool.js?v=17" defer></script>
+<script src="/shared/site.js?v=28" defer></script>
+<script src="/context/context-tool.js?v=19" defer></script>
 </body>
 </html>

@@ -23,4 +23,13 @@ document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
   btn.addEventListener("click", () => selectGoldenRulesTool(btn.dataset.tool));
 });
 
-selectGoldenRulesTool("convert");
+/* Every tool page's own "Getting started with" footer links here with
+   ?tool=<id> (see shared/site.js's .go-to-golden-rules handler) so
+   arriving from, say, Coudio's page opens straight to Coudio's own
+   golden rules instead of always landing on Convert's. Falls back to
+   the default when the param's missing or doesn't match a real tab
+   (a stray/unknown value would otherwise leave every button
+   unselected — .golden-rules-tool-btn[data-tool] lists the valid ids). */
+const requestedTool = new URLSearchParams(location.search).get("tool");
+const validTools = [...document.querySelectorAll(".golden-rules-tool-btn")].map(btn => btn.dataset.tool);
+selectGoldenRulesTool(validTools.includes(requestedTool) ? requestedTool : "convert");
