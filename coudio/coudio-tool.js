@@ -14,6 +14,7 @@
   const fileListEl = document.getElementById("cdFileList");
   const addTile = document.getElementById("cdAddTile");
   const sourceAudio = document.getElementById("cdSourceAudio");
+  const fileNameEl = document.getElementById("cdFileName");
   const convertBtn = document.getElementById("cdConvertBtn");
   const statusEl = document.getElementById("cdStatus");
   const resultsEl = document.getElementById("cdResults");
@@ -38,11 +39,16 @@
     ["YOU_ARE_SET", "Hit Convert and each file downloads automatically. Close this with the red dot and we won't show it again."]
   ]);
 
-  /* Each entry: { file: File, objectUrl: string }. Every file decodes
-     and converts independently — its own input format is auto-detected
-     at decode time (decodeAudioData doesn't care what container it
-     came from), there's no per-file input-format choice to make. All
-     loaded files share the one Output format/Bitrate below. */
+  /* Each entry: { file: File, objectUrl: string, outputName: string }.
+     outputName defaults to file's own basename but is independently
+     editable per file (via #cdFileName, shown/edited whichever file is
+     currently selected) — File objects are immutable, so renaming
+     means tracking a separate name rather than touching file.name.
+     Every file decodes and converts independently — its own input
+     format is auto-detected at decode time (decodeAudioData doesn't
+     care what container it came from), there's no per-file
+     input-format choice to make. All loaded files share the one
+     Output format/Bitrate below. */
   let loaded = [];
   let outputFormat = "mp3"; // "mp3" | "wav"
   let bitrate = 192;
@@ -157,6 +163,7 @@
     if (!loaded[index]) return;
     selectedIndex = index;
     sourceAudio.src = loaded[index].objectUrl;
+    fileNameEl.value = loaded[index].outputName;
     fileListEl.querySelectorAll(".cd-file-card").forEach((card, i) => {
       card.classList.toggle("active", i === index);
     });
@@ -200,7 +207,11 @@
     if (accepted.length === 0) return;
     const hadNone = loaded.length === 0;
     accepted.forEach(file => {
-      loaded.push({ file, objectUrl: URL.createObjectURL(file) });
+      loaded.push({
+        file,
+        objectUrl: URL.createObjectURL(file),
+        outputName: file.name.replace(/\.[^.]+$/, "")
+      });
     });
     updateInputSummary();
     renderFileList();
@@ -236,6 +247,7 @@
     loaded = [];
     selectedIndex = -1;
     sourceAudio.removeAttribute("src");
+    fileNameEl.value = "";
     editor.hidden = true;
     drop.hidden = false;
     convertBtn.disabled = true;
@@ -276,7 +288,8 @@
       const files = await Promise.all(loaded.map(async entry => ({
         name: entry.file.name,
         type: entry.file.type,
-        bytes: await entry.file.arrayBuffer()
+        bytes: await entry.file.arrayBuffer(),
+        outputName: entry.outputName
       })));
       await bcDbPut(CD_DB_NAME, CD_DB_STORE, { files, outputFormat, bitrate });
     } catch (err){ /* storage unavailable — skip */
@@ -293,6 +306,13 @@
       try {
         const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
         addFiles(restored);
+        /* addFiles() just reset every outputName back to each file's
+           own basename — reapply the saved (possibly renamed) ones on
+           top, then refresh the visible field if it's the selected one. */
+        saved.files.forEach((f, i) => {
+          if (typeof f.outputName === "string" && loaded[i]) loaded[i].outputName = f.outputName;
+        });
+        if (loaded[selectedIndex]) fileNameEl.value = loaded[selectedIndex].outputName;
         if (saved.outputFormat){
           bcSetComboDisplay(formatMenu, formatInput, "format", saved.outputFormat);
           const formatOpt = formatMenu.querySelector(`[data-format="${saved.outputFormat}"]`);
@@ -315,6 +335,10 @@
   removeBtn.addEventListener("click", resetTool);
   input.addEventListener("change", (e) => addFiles(e.target.files));
   addTile.addEventListener("click", () => input.click());
+  fileNameEl.addEventListener("input", () => {
+    if (loaded[selectedIndex]) loaded[selectedIndex].outputName = fileNameEl.value;
+    schedulePersist();
+  });
 
   /* Whole-banner drop target as Convert/Congify's — before any file is
      loaded, #cdDrop is just the dashed visual cue, not the actual
@@ -714,6 +738,7 @@
     if (loaded.length === 0) return;
     convertBtn.disabled = true;
     clearResultsContainer(resultsEl);
+    startPrivacyCheck();
 
     let successCount = 0;
     for (let i = 0; i < loaded.length; i++){
@@ -722,7 +747,7 @@
       statusEl.textContent = `Converting ${file.name}...${label}`;
       try {
         const { blob, ext } = await convertOneFile(file);
-        const outName = file.name.replace(/\.[^.]+$/, "") + "." + ext;
+        const outName = (loaded[i].outputName.trim() || "converted") + "." + ext;
         downloadBlob(blob, outName);
 
         const url = URL.createObjectURL(blob);
@@ -747,5 +772,6 @@
       : `Done — ${successCount} of ${loaded.length} converted successfully.`;
     if (successCount > 0) bcDbClear(CD_DB_NAME, CD_DB_STORE);
     convertBtn.disabled = false;
+    finishPrivacyCheck(document.getElementById("cdPrivacyBadge"));
   });
 })();

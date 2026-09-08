@@ -281,6 +281,47 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   margin-top:20px;
 }
 
+/* Matches Congify's .gif-scrubber-label recipe exactly (the shared
+   text style this line's ">" prompt belongs to), right-aligned instead
+   of Congify's left-aligned original since it sits under the full-
+   width player here rather than a scrubber. */
+.cd-file-name-group{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  margin-top:8px;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.cd-file-name-tag{
+  flex-shrink:0;
+}
+.cd-file-name{
+  field-sizing:content;
+  max-width:220px;
+  min-width:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:right;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:inherit;
+  font:inherit;
+  cursor:text;
+}
+.cd-file-name:hover{
+  border-bottom-color:var(--border-strong);
+}
+.cd-file-name:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+
 /* Page-specific: the loaded-files list — one .result card per file
    (shared/site.css's .tool-results/.result, same component Convert's
    own loaded-file list uses), fixed to a 160x160 square. No individual
@@ -306,6 +347,9 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   width:30px;
   height:30px;
   flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border-radius:50%;
   border:1.5px solid rgba(255,255,255,.5);
   background:rgba(255,255,255,.15);
@@ -322,6 +366,15 @@ html[data-theme="dark"] .cd-file-dot{
 .cd-file-card.active .cd-file-dot{
   background:#2563eb;
   border:2px solid #fff;
+}
+/* A plain CSS border-triangle play icon, shown only once a file is
+   actually selected — the unselected dot stays a plain empty circle. */
+.cd-file-card.active .cd-file-dot::before{
+  content:"";
+  margin-left:2px;
+  border-style:solid;
+  border-width:5px 0 5px 8px;
+  border-color:transparent transparent transparent #fff;
 }
 .cd-file-card .result-name{
   overflow:hidden;
@@ -433,6 +486,16 @@ html[data-theme="dark"] .cd-input-btn:hover{
   #cdConvertBtn::before{
     content:"Download";
     font-size:20px;
+  }
+}
+/* Mobile shortens "File name:" to "File:" — same font-size:0 +
+   ::before swap as Congify's version of this line, so coudio-tool.js
+   never needs to know which text is on screen. */
+@media (max-width:768px){
+  .cd-file-name-tag-text{ font-size:0; }
+  .cd-file-name-tag-text::before{
+    content:"File:";
+    font-size:13px;
   }
 }
 </style>
@@ -572,6 +635,7 @@ html[data-theme="dark"] .cd-input-btn:hover{
         <span class="gfx-md icon-coudio" role="img" aria-label="Coudio icon"></span>
         <span>Coudio</span>
       </div>
+      <span class="privacy-check-badge" id="cdPrivacyBadge" aria-live="polite"></span>
     </div>
 
     <div class="tool-drop" id="cdDrop">Click or drop one or more audio or video files</div>
@@ -585,6 +649,15 @@ html[data-theme="dark"] .cd-input-btn:hover{
            selected via the file list below (defaults to the first file
            loaded). -->
       <audio id="cdSourceAudio" controls controlsList="nodownload"></audio>
+      <!-- Same editable "> File name:" line Congify uses
+           (.gif-scrubber-filename*) — renames the OUTPUT of whichever
+           file is currently selected above, not the source file itself
+           (File objects are immutable). Right-aligned, unlike
+           Congify's own left-aligned version, per this tool's layout. -->
+      <span class="cd-file-name-group">
+        <span class="cd-file-name-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cd-file-name-tag-text">File name:</span></span>
+        <input type="text" class="cd-file-name" id="cdFileName" aria-label="Output file name" spellcheck="false">
+      </span>
 
       <div class="cd-settings">
         <div class="cd-io-group">
@@ -724,7 +797,7 @@ html[data-theme="dark"] .cd-input-btn:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=28" defer></script>
-<script src="/coudio/coudio-tool.js?v=32" defer></script>
+<script src="/shared/site.js?v=30" defer></script>
+<script src="/coudio/coudio-tool.js?v=34" defer></script>
 </body>
 </html>
