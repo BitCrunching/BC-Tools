@@ -634,16 +634,30 @@ function startPrivacyCheck(){
   privacyCheckExternalHosts = [];
 }
 
-function finishPrivacyCheck(badgeEl){
+/* action defaults to "download" — pass "convert" for a tool with a
+   separate convert-then-download flow (Congify: converting produces
+   the result, a later, separate click actually downloads it), so the
+   badge reports whichever step just finished instead of always saying
+   "download" for a step that didn't download anything yet. */
+function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
   if (!badgeEl) return;
   const dict = translations[currentLang] || translations.en;
   if (privacyCheckExternalCount === 0){
-    const label = dict.privacy_check_ok || "download local & private";
+    const key = action === "convert" ? "convert_check_ok" : "privacy_check_ok";
+    const fallback = action === "convert" ? "convert local & private" : "download local & private";
+    const label = dict[key] || fallback;
     badgeEl.textContent = "> BC_Tools_bot: " + label;
   } else {
-    const template = dict.privacy_check_warn || "ATTENTION! - ({count}) privacy breach - {host}";
-    const text = template.replace("{count}", privacyCheckExternalCount).replace("{host}", privacyCheckExternalHosts.join(", "));
+    /* {action} names which step actually leaked, not just that one did
+       — a tool with a separate convert-then-download flow (Congify)
+       can have a breach happen during either, and just saying "privacy
+       breach" without saying which wouldn't tell you where to look. */
+    const actionKey = action === "convert" ? "privacy_check_action_convert" : "privacy_check_action_download";
+    const actionFallback = action === "convert" ? "convert" : "download";
+    const actionWord = dict[actionKey] || actionFallback;
+    const template = dict.privacy_check_warn || "ATTENTION! - ({count}) privacy breach during {action} - {host}";
+    const text = template.replace("{count}", privacyCheckExternalCount).replace("{action}", actionWord).replace("{host}", privacyCheckExternalHosts.join(", "));
     badgeEl.textContent = "> " + text;
   }
   badgeEl.classList.add("visible");
@@ -696,7 +710,10 @@ const translations = {
     cookie_banner_saved: "> preferences_saved",
     ck_settings_btn: "DEV_TOOLS_COOKIES:",
     privacy_check_ok: "download local & private",
-    privacy_check_warn: "ATTENTION! - ({count}) privacy breach - {host}"
+    convert_check_ok: "convert local & private",
+    privacy_check_warn: "ATTENTION! - ({count}) privacy breach during {action} - {host}",
+    privacy_check_action_convert: "convert",
+    privacy_check_action_download: "download"
   },
   cs: {
     nav_lang: "Změnit jazyk",
@@ -742,7 +759,10 @@ const translations = {
     cookie_banner_saved: "> předvolby_uloženy",
     ck_settings_btn: "DEV_TOOLS_COOKIES:",
     privacy_check_ok: "stažení lokální a soukromé",
-    privacy_check_warn: "POZOR! - ({count}) narušení soukromí - {host}"
+    convert_check_ok: "konverze lokální a soukromá",
+    privacy_check_warn: "POZOR! - ({count}) narušení soukromí během akce {action} - {host}",
+    privacy_check_action_convert: "konverze",
+    privacy_check_action_download: "stažení"
   },
   pl: {
     nav_lang: "Zmień język",
@@ -788,7 +808,10 @@ const translations = {
     cookie_banner_saved: "> preferencje_zapisane",
     ck_settings_btn: "DEV_TOOLS_COOKIES:",
     privacy_check_ok: "pobieranie lokalne i prywatne",
-    privacy_check_warn: "UWAGA! - ({count}) naruszenie prywatności - {host}"
+    convert_check_ok: "konwersja lokalna i prywatna",
+    privacy_check_warn: "UWAGA! - ({count}) naruszenie prywatności podczas {action} - {host}",
+    privacy_check_action_convert: "konwersji",
+    privacy_check_action_download: "pobierania"
   }
 };
 

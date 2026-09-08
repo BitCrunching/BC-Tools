@@ -241,8 +241,14 @@
      rather than needing the original blob in scope. */
   function downloadGifResult(){
     if (!lastResultBytes) return;
+    /* Its own start/finish pair, separate from convertBtn's — Congify
+       is a two-step convert-then-download flow, so the badge should
+       report whichever step just actually happened rather than always
+       saying "download" the moment conversion alone finishes. */
+    startPrivacyCheck();
     const outName = (scrubberFileName.value.trim() || "converted") + ".gif";
     downloadBlob(new Blob([lastResultBytes], { type: lastResultType || "image/gif" }), outName);
+    finishPrivacyCheck(document.getElementById("gifPrivacyBadge"));
   }
   downloadBtn.addEventListener("click", downloadGifResult);
   /* Same download, reachable from back in the editor too — clicking
@@ -1459,6 +1465,7 @@
     stopPreviewPlayback();
     convertBtn.disabled = true;
     statusEl.textContent = "Loading encoder...";
+    startPrivacyCheck();
 
     try {
       await loadGifJs();
@@ -1549,12 +1556,14 @@
 
         convertBtn.disabled = false;
         showDoneView();
+        finishPrivacyCheck(document.getElementById("gifPrivacyBadge"), "convert");
       });
 
       gif.render();
     } catch (err){
       statusEl.textContent = "Something went wrong converting this video.";
       convertBtn.disabled = false;
+      finishPrivacyCheck(document.getElementById("gifPrivacyBadge"), "convert");
     }
   });
 
