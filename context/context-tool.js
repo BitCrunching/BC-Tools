@@ -1307,6 +1307,7 @@
     if (!currentFile) return;
     downloadBtn.disabled = true;
     status.textContent = "Preparing your PDF...";
+    startPrivacyCheck();
 
     try {
       const { PDFDocument, StandardFonts, rgb } = PDFLib;
@@ -1425,6 +1426,7 @@
       status.textContent = "Something went wrong — please try again.";
     } finally {
       downloadBtn.disabled = false;
+      finishPrivacyCheck(document.getElementById("ctPrivacyBadge"));
     }
   });
 
