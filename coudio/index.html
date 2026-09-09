@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=65">
+<link rel="stylesheet" href="/shared/site.css?v=77">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -194,10 +194,13 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    whole .tool-app banner (not #cdDrop) since #cdDrop itself has a
    transparent background — brightening it alone produces no visible
    change, only the colored banner underneath actually shows it.
-   :has() drops it the moment a file is loaded and #cdDrop is hidden,
-   so it never fights the format/bitrate controls once there's real
-   content to interact with. */
-#page-coudio:has(#cdDrop:not([hidden])){
+   :has() drops it the moment a file is loaded and #cdDrop picks up
+   .tool-drop-revealed (see below — same pattern as Combine's #cbDrop,
+   it's never actually [hidden] once revealed, just restyled and left
+   in place as the "add more" affordance above the file list), so it
+   never fights the per-row controls once there's real content to
+   interact with. */
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)){
   min-height:322.5px;
   cursor:pointer;
   transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
@@ -206,10 +209,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    with no message in it, which pre-upload just pushes the fixed
    322.5px banner into overflow for no visible reason — nothing needs
    that space until a conversion is actually running. */
-#page-coudio:has(#cdDrop:not([hidden])) #cdStatus{
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)) #cdStatus{
   display:none;
 }
-#page-coudio:has(#cdDrop:not([hidden])):hover{
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
@@ -222,13 +225,21 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    Combine/Cleanly/Context/Congify's version of this same fix. Coudio
    missed it originally since it wasn't published yet when that fix
    went out. */
-#page-coudio:has(#cdDrop:not([hidden])).active{
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)).active{
   filter:brightness(1.15);
   transform:scale(1.03);
 }
-#page-coudio:has(#cdDrop:not([hidden])):active{
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)):active{
   transform:scale(.99);
   transition-duration:.1s;
+}
+
+/* Once loaded, real content (revealed drop banner + the compact 60px
+   rows) is shorter than the shared .tool-app default (min-height:402px)
+   would otherwise pad it out to — pinned to exactly 360px with one file
+   in, rather than leaving that extra dead space underneath. */
+#page-coudio:has(#cdEditor:not([hidden])){
+  min-height:360px;
 }
 
 /* Drag-over highlight on the whole banner, same idea as Convert's —
@@ -246,11 +257,39 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:transparent;
   background:transparent;
 }
-#cdDrop:not(.active):hover{
+#cdDrop:not(.tool-drop-revealed):not(.active):hover{
   border-color:transparent;
   transform:none;
 }
 #cdDrop.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+/* Restored once a file's been picked — same idea as Combine's
+   #cbDrop.tool-drop-revealed (still reading "Click or drop..." and
+   still the target adding more files drops onto), but shrunk down from
+   the full pre-load intro size — with the compact 60px file rows below
+   it now, keeping the banner at its original 56px-padding size left it
+   taking up more room than everything else in the tool combined. */
+#cdDrop.tool-drop-revealed{
+  border-color:var(--border-strong);
+  /* 16+16 padding + 22 line-height = 54px total — not an explicit
+     height, since transitioning height mixed with the base's own
+     auto-sized height produced a genuinely stuck mid-transition state
+     (confirmed live: computed height landed on neither the start nor
+     end value). Padding transitions cleanly from a real starting
+     value instead. */
+  padding:16px 24px;
+  font-size:16px;
+  line-height:22px;
+  /* Keeps the mobile "Drag" swap (.tool-drop-click-word::before,
+     shared/site.css) in sync with this revealed-state font-size —
+     without it "Drag" stayed frozen at the shared default (26px)
+     while the plain " or drop" text beside it correctly shrank to
+     16px, a visible size mismatch confirmed live post-upload. */
+  --tool-drop-font-size:16px;
+}
+#cdDrop.tool-drop-revealed.active{
   border-color:#18C98A;
   background:rgba(0,245,212,.1);
 }
@@ -273,45 +312,83 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 .tool-app.wobble .tool-logo .icon-coudio{ animation:icon-wobble .5s ease; }
 
-/* The single shared player — plays whichever file is currently
-   selected in the file list below (#cdFileList). */
-#cdSourceAudio{
-  width:100%;
-  display:block;
+/* ===== Vertical file list — one compact, full-width, single-line
+   panel per loaded file, same "stack of full-width rows" macro layout
+   as Combine's file list rather than a horizontal row of small square
+   tiles. Each row is cloned from #cdFileRowTemplate (coudio-tool.js) —
+   this only styles the shared shape, not any single instance. Every
+   file is fully independent — own player, own Input/Output/Bitrate,
+   own filename, own Convert/download button — no shared "selected
+   file" concept the way one global player/settings row used to
+   require. ===== */
+.cd-file-list-vertical{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
   margin-top:20px;
 }
-
-/* Matches Congify's .gif-scrubber-label recipe exactly (the shared
-   text style this line's ">" prompt belongs to), right-aligned instead
-   of Congify's left-aligned original since it sits under the full-
-   width player here rather than a scrubber. */
-.cd-file-name-group{
+/* One continuous compact bar spanning the full row width, its several
+   controls sitting inline rather than stacked, so the whole panel
+   reads as one connected unit instead of a card with internal
+   sections. */
+.cd-file-row{
+  position:relative;
   display:flex;
   align-items:center;
-  justify-content:flex-end;
-  gap:6px;
-  margin-top:8px;
-  font-size:13px;
-  font-weight:700;
-  color:var(--text);
+  gap:12px;
+  width:100%;
+  height:60px;
+  padding:0 16px;
+  box-sizing:border-box;
 }
-.cd-file-name-tag{
+/* Each row is a full control panel, not a hover-preview thumbnail —
+   its remove button stays visible always rather than only on hover
+   (.result-remove's shared default), the same reasoning Convert/
+   Coudio's other always-visible controls already follow. Repositioned
+   to the row's top-right corner (rather than the default top:6/right:6
+   meant for a much taller square card) since this row is only 60px
+   tall in total. */
+.cd-file-row .result-remove{
+  top:15px;
+  right:-30px;
+  opacity:1;
+}
+/* Flags a row that failed to convert (usually a decode failure — not a
+   real/supported audio file) — set/cleared per conversion attempt in
+   coudio-tool.js. Flat red regardless of theme, same reasoning as
+   .result's own per-tool border accents: reads fine against both the
+   light and dark .result background. Hover the row (title attribute,
+   set alongside this class) for the actual reason. */
+.cd-file-row-error,
+html[data-theme="dark"] .cd-file-row-error{
+  border-color:#ef4444;
+  background:rgba(239,68,68,.18);
+}
+
+/* Filename, in a fixed-width column at the row's left end — the
+   detected-format badge that used to sit under it was dropped as
+   redundant once Found Input (.cd-row-input-badge, below) moved to sit
+   right next to it, showing the same thing. */
+.cd-row-name{
+  display:flex;
+  align-items:center;
+  width:110px;
   flex-shrink:0;
+  overflow:hidden;
 }
 .cd-file-name{
-  field-sizing:content;
-  max-width:220px;
-  min-width:20px;
+  width:100%;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  text-align:right;
   border:none;
   border-bottom:1px solid transparent;
   background:none;
   padding:0;
   color:inherit;
   font:inherit;
+  font-weight:700;
+  font-size:14px;
   cursor:text;
 }
 .cd-file-name:hover{
@@ -322,73 +399,76 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-bottom-color:var(--text);
 }
 
-/* Page-specific: the loaded-files list — one .result card per file
-   (shared/site.css's .tool-results/.result, same component Convert's
-   own loaded-file list uses), fixed to a 160x160 square. No individual
-   audio element or play button per card — the whole card is clickable
-   and selects that file into the one shared player above, with a
-   small dot indicating which one is currently selected. Multiple
-   files share one Output format/Bitrate; there's no per-file
-   input-format picker since each file's own format is auto-detected
-   at decode time, not chosen. */
-.cd-file-card{
-  width:160px;
-  height:160px;
+/* Found input badge -> arrow -> Output combo -> Bitrate dropdown, one
+   compact inline cluster sitting right next to the filename rather
+   than off by the player. */
+.cd-row-io{
   display:flex;
-  flex-direction:column;
   align-items:center;
-  justify-content:flex-start;
-  padding-top:16px;
-  gap:14px;
-  text-align:center;
-  cursor:pointer;
-}
-.cd-file-dot{
-  width:30px;
-  height:30px;
+  gap:6px;
   flex-shrink:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.15);
-  transition:.2s;
 }
-html[data-theme="dark"] .cd-file-dot{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.15);
-}
-/* Selected state — same blue as .bc-resize-handle/.bc-obj-resize-handle
-   (shared/site.css), flat regardless of theme (same reasoning as
-   .result's own per-tool border accents: reads fine against both the
-   light and dark .result background). */
-.cd-file-card.active .cd-file-dot{
-  background:#2563eb;
-  border:2px solid #fff;
-}
-/* A plain CSS border-triangle play icon, shown only once a file is
-   actually selected — the unselected dot stays a plain empty circle. */
-.cd-file-card.active .cd-file-dot::before{
-  content:"";
-  margin-left:2px;
-  border-style:solid;
-  border-width:5px 0 5px 8px;
-  border-color:transparent transparent transparent #fff;
-}
-.cd-file-card .result-name{
-  overflow:hidden;
-  text-overflow:ellipsis;
+.cd-row-input-badge{
+  font-size:12px;
+  font-weight:800;
+  opacity:.85;
   white-space:nowrap;
-  max-width:100%;
+}
+.cd-row-io .tool-io-swap-arrow{
+  opacity:.6;
+  font-size:14px;
+}
+.cd-row-format-combo,
+.cd-row-bitrate-dropdown{
+  width:110px;
+  flex-shrink:0;
+}
+/* Bitrate only applies to the two lossy formats (MP3, OGG/Opus) —
+   hidden for every other (uncompressed) option, toggled in
+   coudio-tool.js alongside the Output combo. */
+.cd-row-bitrate-dropdown[hidden]{
+  display:none;
+}
+
+/* The inline player — takes up whatever's left after the name/Input-
+   Output cluster/Convert button claim their space; 800px is a hint,
+   not a hard floor, so it still shrinks gracefully on narrower
+   screens. */
+.cd-row-audio{
+  flex:1 1 800px;
+  min-width:0;
+  height:32px;
+}
+
+/* Source file size, sitting just left of the Convert button. */
+.cd-row-size{
+  flex-shrink:0;
+  font-size:12px;
+  font-weight:700;
+  opacity:.7;
+  white-space:nowrap;
+}
+
+/* This row's own Convert/download button — full row height, sized to
+   its own text rather than stretching (.tool-primary-btn normally
+   fills a grid column; here it's just one inline item among several). */
+.cd-row-convert-btn{
+  flex-shrink:0;
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.cd-row-convert-btn:disabled{
+  opacity:.5;
+  cursor:default;
 }
 
 /* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
    size/position stay here. */
 .cd-remove-btn{
   position:absolute;
-  top:-14px;
-  right:0;
+  top:-160px;
+  right:-25px;
   z-index:6;
   width:28px;
   height:28px;
@@ -399,103 +479,152 @@ html[data-theme="dark"] .cd-file-dot{
   margin-top:24px;
 }
 
-.cd-settings{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:flex-end;
-  gap:24px;
-  margin-top:24px;
-}
-.cd-setting-group{
-  width:200px;
-}
-.cd-setting-group label{
-  display:block;
-  margin-bottom:8px;
-}
-.cd-setting-group[hidden]{
-  display:none;
-}
-/* Bitrate isn't part of the Input → Output pairing the arrow implies —
-   pushed off to its own side of the row instead of sitting right next
-   to Output, and back down to the plain 40px trigger height (no
-   -lg class) since it's a small side setting, not one of the two main
-   pickers. */
-.cd-bitrate-group{
-  margin-left:auto;
-}
-
-/* Input → Output as one centered unit: flex:1 claims whatever width
-   Bitrate isn't using, and justify-content:center positions the pair
-   in the middle of that space, rather than each just sitting at its
-   natural position in the row. */
-.cd-io-group{
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  gap:24px;
-  flex:1;
-}
-.cd-io-setting{
-  flex:1 1 auto;
-  min-width:103.5px;
-  max-width:400px;
-}
-/* The 103.5px floor × 2 + the 36px arrow + gaps needs ~291px, which is
-   already tighter than the available content width on common phones
-   (Convert's equivalent row avoids this entirely by using min-width:0
-   instead of a hard floor). Dropping the floor only below 768px keeps
-   the desktop 103.5-400px range exactly as specified, while letting
-   mobile shrink further instead of overflowing. */
+/* Mobile: the row's several inline pieces (name, Input/Output/Bitrate
+   cluster, 800px-hinted player, Convert button) can't all fit on one
+   60px line at phone widths — wraps onto as many lines as needed
+   instead of forcing an overflow-scrolled row, same fallback every
+   other multi-setting tool on this site already uses. */
 @media (max-width:768px){
-  .cd-io-setting{
+  /* Desktop's top:15px/right:-30px sits fine on the compact single-row
+     60px card, but on mobile's taller multi-row stack that same offset
+     lands the × half on/half off the row's own rounded top-right
+     corner (confirmed live — it visibly overlapped the border rather
+     than reading as clearly inside or clearly outside). Moved fully
+     above the card instead, clear of its own top edge. */
+  /* left:50% + translateX(-50%) instead of a fixed right:<px> — a
+     pixel offset from one edge lands at a different spot relative to
+     center every time the row's own width changes across screen
+     sizes (confirmed: right:240px only centered it at one specific
+     width, drifting off-center at every other). This keeps it
+     genuinely centered on the row regardless of viewport. */
+  .cd-file-row .result-remove{
+    position:absolute;
+    top:-14px;
+    left:50%;
+    right:auto;
+    transform:translateX(-50%);
+  }
+  /* justify-content:center here handles the 3rd row's own centering —
+     Bitrate + the player + the size label are the only row that isn't
+     a full-width (flex:1 1 100%) item, so this is what centers that
+     trio as a group within the row instead of hugging the left edge. */
+  .cd-file-row{
+    flex-wrap:wrap;
+    justify-content:center;
+    height:auto;
+    padding:14px;
+    gap:8px;
+  }
+  /* Explicit stacked rows: filename, then Input->Output, then Bitrate
+     each get their own full-width row (same flex:1 1 100% logic
+     Convert's button uses below); the player shares its row with the
+     file size. .cd-row-bitrate-dropdown lives as a sibling of
+     .cd-row-io (not nested inside it) specifically so it's free to
+     land on its own row instead of being stuck wrapping inside the
+     Input/Output cluster. */
+  .cd-row-name{
+    width:auto;
+    flex:1 1 100%;
+  }
+  /* min-width:0 here is what was actually missing — .cd-row-io itself
+     (not just its children) is a flex item of .cd-file-row, and its
+     own default min-width:auto used its children's combined min-content
+     width as a floor, overflowing the row instead of shrinking to fit
+     (confirmed live: .cd-row-io measured wider than its own parent
+     .cd-file-row at 375px). Same gotcha as .cd-io-group/.cd-io-setting
+     elsewhere in this file, just one level higher this time. */
+  .cd-row-io{
+    flex:1 1 100%;
+    min-width:0;
+    justify-content:center;
+  }
+  /* Found Input is plain text (nothing to click — the type is only
+     ever auto-detected, never chosen), but on mobile it now gets the
+     exact same pill chrome as Output/Bitrate's real buttons
+     (shared/site.css's .bc-dropdown-trigger/.bc-combo-trigger flip
+     recipe from CLAUDE.md) so the row reads as one consistent set of
+     controls instead of one plain label next to two real buttons. */
+  .cd-row-input-badge{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:40px;
+    padding:0 14px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.35);
+  }
+  html[data-theme="dark"] .cd-row-input-badge{
+    border-color:rgba(0,0,0,.4);
+    background:rgba(0,0,0,.25);
+  }
+  /* Same actual rule .cd-row-convert-btn uses below (flex:1 1 100%) —
+     not a min/max range, a single flex-basis of 100%. On .cd-row-io's
+     own non-wrapping flex row, two 100%-basis siblings can't both
+     literally get the full width; flex-shrink divides the leftover
+     between them instead, so Found Input and Output Format end up
+     splitting row 2 evenly with no artificial width cap, the same
+     "claim everything, let flex resolve the rest" logic Convert's
+     button relies on. */
+  /* min-width:0 is load-bearing, not decorative — a flex item's default
+     min-width:auto is content-based, and .cd-row-format-combo's own
+     <input>+chevron content set a floor wide enough to stop it
+     shrinking down to match Found Input, so the two split unevenly
+     (confirmed live: WAV stayed narrow, MP3 claimed most of the row)
+     despite both sharing the same flex:1 1 100%. Same recurring gotcha
+     this file has already hit for .cd-io-group/.cd-io-setting above. */
+  .cd-row-input-badge,
+  .cd-row-format-combo{
+    flex:1 1 100%;
+    width:auto;
     min-width:0;
   }
-}
-
-/* Found input is a plain display, not a real control — .bc-dropdown-
-   trigger's default cursor:pointer would otherwise still suggest it's
-   clickable even with no click listener attached. */
-.cd-input-btn{
-  cursor:default;
-}
-/* Not a real control — cancels .bc-dropdown-trigger's hover darken/
-   lighten (shared/site.css), which otherwise still reacted to mouse
-   hover despite there being nothing to click here. */
-.cd-input-btn:hover{
-  background:rgba(255,255,255,.35);
-}
-html[data-theme="dark"] .cd-input-btn:hover{
-  background:rgba(0,0,0,.25);
-}
-
-/* The .bc-combo/.bc-dropdown component itself (shared/site.css) has no
-   opinion on width — it sizes to whatever wraps it. Coudio's own
-   setting-group column just needs to say "fill it". */
-.cd-setting-group .bc-combo,
-.cd-setting-group .bc-dropdown{
-  width:100%;
-}
-
-/* Mobile shows just "Download" on the primary action button — the
-   fuller desktop label ("Convert and download", "Strip metadata and
-   download", etc.) doesn't fit well at phone widths, and "Download" is
-   what actually happens from the user's side either way. */
-@media (max-width:768px){
-  #cdConvertBtn{ font-size:0; }
-  #cdConvertBtn::before{
-    content:"Download";
-    font-size:20px;
+  /* Bitrate gets the exact same treatment — but since it lives in
+     .cd-file-row's own flex-wrap:wrap context (not .cd-row-io's
+     non-wrapping one), a 100%-basis item there can never share a line
+     with anything else, so this also moves Bitrate onto a full-width
+     row of its own, same as Convert's button, rather than continuing
+     to squeeze in next to the player and file size. */
+  .cd-row-bitrate-dropdown{
+    order:1;
+    flex:1 1 100%;
+    width:auto;
   }
-}
-/* Mobile shortens "File name:" to "File:" — same font-size:0 +
-   ::before swap as Congify's version of this line, so coudio-tool.js
-   never needs to know which text is on screen. */
-@media (max-width:768px){
-  .cd-file-name-tag-text{ font-size:0; }
-  .cd-file-name-tag-text::before{
-    content:"File:";
-    font-size:13px;
+  .cd-row-size{
+    order:2;
+  }
+  .cd-row-audio{
+    order:3;
+  }
+  /* File size wasn't a pill at all before (bare text) — flexible
+     padding (scales with viewport via clamp rather than one fixed
+     value) gives it the same breathing room as its pill neighbors
+     without needing a fixed width of its own. */
+  .cd-row-size{
+    padding:0 clamp(6px, 2vw, 12px);
+  }
+  /* flex-basis:0 (not auto) is the actual fix — the wrap algorithm
+     decides whether an item fits its current line using its
+     hypothetical (pre-shrink) main size, and a native <audio controls>
+     element's own intrinsic content width there is easily 300px+, so
+     with basis:auto it never even got considered for sharing
+     Bitrate's line — confirmed live (min-width:0 alone did nothing
+     since the item was already being placed on its own line before
+     shrink math ever ran). Basis 0 makes it start from nothing and
+     grow to fill whatever's left after Bitrate + the size label.
+     min-width:140px is a real floor, not decorative — shrinking a
+     native <audio controls> element past that loses its play button
+     and scrubber entirely (confirmed live: only the volume icon and
+     overflow dots survived at true flex:1 1 0). Below that width it
+     wraps onto its own line instead of becoming unusable. */
+  .cd-row-audio{
+    flex:1 1 0;
+    min-width:140px;
+  }
+  .cd-row-convert-btn{
+    order:4;
+    flex:1 1 100%;
+    height:40px;
   }
 }
 </style>
@@ -638,62 +767,52 @@ html[data-theme="dark"] .cd-input-btn:hover{
       <span class="privacy-check-badge" id="cdPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="cdDrop">Click or drop one or more audio or video files</div>
+    <div class="tool-drop" id="cdDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">one or more audio or video files</span></div>
     <input type="file" id="cdInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.mp4,.m4v,.webm,.mov,.ogv" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cdContinueBtn" hidden>Continue where you left off</button>
 
     <div class="cd-editor" id="cdEditor" hidden>
       <button type="button" class="cd-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdRemoveBtn" aria-label="Remove all files">×</button>
 
-      <!-- One shared player — plays whichever loaded file is currently
-           selected via the file list below (defaults to the first file
-           loaded). -->
-      <audio id="cdSourceAudio" controls controlsList="nodownload"></audio>
-      <!-- Same editable "> File name:" line Congify uses
-           (.gif-scrubber-filename*) — renames the OUTPUT of whichever
-           file is currently selected above, not the source file itself
-           (File objects are immutable). Right-aligned, unlike
-           Congify's own left-aligned version, per this tool's layout. -->
-      <span class="cd-file-name-group">
-        <span class="cd-file-name-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cd-file-name-tag-text">File name:</span></span>
-        <input type="text" class="cd-file-name" id="cdFileName" aria-label="Output file name" spellcheck="false">
-      </span>
+      <!-- One fully independent row per loaded file — own player, own
+           detected Input, own Output format/Bitrate, own output
+           filename. coudio-tool.js clones this template per file; none
+           of its controls need ids since bcRegisterCombo/
+           bcRegisterDropdown (shared/site.js) both take elements
+           directly, so every clone wires up independently with no id
+           collisions to worry about. -->
+      <!-- One compact, full-width, single-line panel per loaded file —
+           filename+detected format on the left, an inline player taking
+           most of the row, an Input->Output(->Bitrate) cluster, and this
+           row's own Convert/download button at the right end. Fully
+           independent: no shared player, no shared Output/Bitrate, no
+           shared Convert button — each row converts and downloads on
+           its own. Cloned from this template in coudio-tool.js; none of
+           its controls need ids since bcRegisterCombo/bcRegisterDropdown
+           (shared/site.js) both take elements directly, so every clone
+           wires up independently with no id collisions to worry about. -->
+      <template id="cdFileRowTemplate">
+        <div class="result cd-file-row">
+          <button type="button" class="result-remove" aria-label="Remove file">×</button>
 
-      <div class="cd-settings">
-        <div class="cd-io-group">
-          <div class="cd-setting-group cd-io-setting">
-            <label class="bc-label" id="cdInputLabel">Found input</label>
-            <!-- Display only, no click behavior — there's nothing to
-                 select here (unlike Convert's real Expected Input
-                 dropdown, which has actual options and its own "I have
-                 this" presets); this just echoes the one loaded file's
-                 detected type. Kept the same classes/look as the other
-                 two triggers, just not a <button> and no listener.
-                 role="status" + aria-live so screen readers actually
-                 announce the detected type changing once a file loads
-                 (a plain div update alone is silent), and
-                 aria-labelledby stands in for the <label for> a real
-                 form control would get, since this isn't one. -->
-            <div class="cd-input-btn bc-dropdown-trigger bc-dropdown-trigger-lg" id="cdInputBtn" role="status" aria-live="polite" aria-labelledby="cdInputLabel">
-              <span class="bc-dropdown-trigger-label" id="cdInputBtnLabel">Choose file</span>
-            </div>
+          <div class="cd-row-name">
+            <!-- Renames this row's OUTPUT, not the source file itself
+                 (File objects are immutable). -->
+            <input type="text" class="cd-file-name" aria-label="Output file name" spellcheck="false">
           </div>
 
-          <span class="tool-io-swap" aria-hidden="true">
-            <span class="tool-io-swap-arrow">&rarr;</span>
-          </span>
-
-          <div class="cd-setting-group cd-io-setting">
-            <label class="bc-label">Output format</label>
-            <!-- 7 options — long enough that search helps, so this one
+          <div class="cd-row-io">
+            <span class="cd-row-input-badge" aria-hidden="true"></span>
+            <span class="tool-io-swap-arrow" aria-hidden="true">&rarr;</span>
+            <!-- 7 options — long enough that search helps — so this one
                  uses the shared searchable .bc-combo rather than the
                  plain .bc-dropdown Bitrate below uses. -->
-            <div class="bc-combo" id="cdFormatDropdown">
-              <div class="bc-combo-trigger bc-combo-trigger-lg" id="cdFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
-                <input class="bc-combo-input" id="cdFormatInput" value="MP3" readonly aria-label="Search output formats">
+            <div class="bc-combo cd-row-format-combo">
+              <div class="bc-combo-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Output format">
+                <input class="bc-combo-input" value="MP3" readonly aria-label="Search output formats">
                 <span class="bc-combo-chevron" aria-hidden="true"></span>
               </div>
-              <div class="bc-combo-menu" id="cdFormatMenu" role="listbox" hidden>
+              <div class="bc-combo-menu" role="listbox" hidden>
                 <button type="button" class="bc-combo-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true"><span>MP3</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
                 <button type="button" class="bc-combo-option" data-format="wav" data-label="WAV" role="option" aria-selected="false"><span>WAV</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
                 <button type="button" class="bc-combo-option" data-format="ogg" data-label="OGG (Opus)" role="option" aria-selected="false"><span>OGG (Opus)</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
@@ -701,42 +820,44 @@ html[data-theme="dark"] .cd-input-btn:hover{
                 <button type="button" class="bc-combo-option" data-format="au" data-label="AU" role="option" aria-selected="false"><span>AU</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
                 <button type="button" class="bc-combo-option" data-format="caf" data-label="CAF" role="option" aria-selected="false"><span>CAF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
                 <button type="button" class="bc-combo-option" data-format="voc" data-label="VOC" role="option" aria-selected="false"><span>VOC</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-                <div class="bc-combo-empty" id="cdFormatEmpty" hidden>No matches</div>
+                <div class="bc-combo-empty" hidden>No matches</div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="cd-setting-group cd-bitrate-group" id="cdBitrateGroup">
-          <label class="bc-label">Bitrate</label>
-          <div class="bc-dropdown" id="cdBitrateDropdown">
-            <button type="button" class="bc-dropdown-trigger" id="cdBitrateTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="bc-dropdown-trigger-label" id="cdBitrateTriggerLabel">192 kbps</span>
+
+          <!-- A sibling of .cd-row-io (not nested inside it) — on
+               desktop it still renders immediately after Output via
+               plain DOM order (no explicit order needed there), but
+               being a top-level row child lets mobile regroup it onto
+               the player's own line instead of being stuck wrapping
+               inside the Input/Output cluster. Only applies to the two
+               lossy formats (MP3, OGG/Opus) — hidden for every other
+               (uncompressed) option, toggled in coudio-tool.js
+               alongside the Output combo above. -->
+          <div class="bc-dropdown cd-row-bitrate-dropdown">
+            <button type="button" class="bc-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Bitrate">
+              <span class="bc-dropdown-trigger-label">320 kbps</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
-            <div class="bc-dropdown-menu" id="cdBitrateMenu" role="listbox" hidden>
+            <div class="bc-dropdown-menu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-bitrate="128" data-label="128 kbps" role="option" aria-selected="false">128 kbps</button>
-              <button type="button" class="bc-dropdown-option active" data-bitrate="192" data-label="192 kbps" role="option" aria-selected="true">192 kbps</button>
-              <button type="button" class="bc-dropdown-option" data-bitrate="320" data-label="320 kbps" role="option" aria-selected="false">320 kbps</button>
+              <button type="button" class="bc-dropdown-option" data-bitrate="192" data-label="192 kbps" role="option" aria-selected="false">192 kbps</button>
+              <button type="button" class="bc-dropdown-option active" data-bitrate="320" data-label="320 kbps" role="option" aria-selected="true">320 kbps</button>
             </div>
           </div>
+
+          <audio class="cd-row-audio" controls controlsList="nodownload"></audio>
+
+          <span class="cd-row-size" aria-hidden="true"></span>
+
+          <button type="button" class="tool-primary-btn cd-row-convert-btn">Convert</button>
         </div>
-      </div>
+      </template>
 
-      <div class="tool-controls" style="grid-template-columns:1fr;">
-        <button class="tool-primary-btn" id="cdConvertBtn" disabled>Convert and download</button>
-      </div>
+      <div class="cd-file-list-vertical" id="cdFileList"></div>
 
-      <!-- One .result card per loaded file (shared/site.css — same
-           component Convert's own loaded-file list uses), minus its
-           own audio element — a play button on each instead selects
-           that file into the single shared player above. -->
-      <div class="tool-results" id="cdFileList">
-        <button type="button" class="bc-add-tile" id="cdAddTile" aria-label="Add more files">+</button>
-      </div>
+      <div class="tool-status" id="cdStatus"></div>
     </div>
-
-    <div class="tool-status" id="cdStatus"></div>
-    <div class="tool-results" id="cdResults"></div>
   </div>
 </div>
 
@@ -798,6 +919,6 @@ html[data-theme="dark"] .cd-input-btn:hover{
 </div>
 
 <script src="/shared/site.js?v=30" defer></script>
-<script src="/coudio/coudio-tool.js?v=34" defer></script>
+<script src="/coudio/coudio-tool.js?v=49" defer></script>
 </body>
 </html>

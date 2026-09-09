@@ -61,7 +61,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=65">
+<link rel="stylesheet" href="/shared/site.css?v=77">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:250px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -122,11 +122,10 @@
 .tool-after-drop[hidden]{ display:none; }
 
 #cvDrop{
-  font-size:clamp(22px, 2.4vw, 26px);
   border-color:transparent;
   background:transparent;
 }
-#cvDrop:not(.tool-drop-revealed):not(.active):hover{
+#cvDrop:not(.active):hover{
   border-color:transparent;
   transform:none;
 }
@@ -134,17 +133,33 @@
   border-color:#7626f5;
   background:rgba(118,38,245,.1);
 }
-/* Restored once a file's been picked — from then on this compact
-   box (not the whole banner) is the target for adding more files. */
-#cvDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
-#cvDrop.tool-drop-revealed.active{
-  border-color:#7626f5;
-  background:rgba(118,38,245,.1);
-}
 .tool-app.active{
   background:rgba(118,38,245,.08);
+}
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Coudio's .cd-remove-btn. Sits
+   inside #cvAfterDrop (position:relative below) rather than directly on
+   .tool-app, so it only shows once a file's loaded and #cvAfterDrop is
+   revealed — same visibility-via-hidden-ancestor trick as Coudio's own
+   button inside #cdEditor, no separate hidden toggle needed here. The
+   negative top/right (rather than a plain 10px/10px inset) is
+   deliberate: it pulls the button up out of #cvAfterDrop's own box
+   (which starts below the header) so it lands at the true top-right
+   corner of the whole card next to the "Convert" logo — exactly the
+   same fix Coudio's .cd-remove-btn needed for the same reason (its
+   positioned ancestor, #cdEditor, also starts below the header). */
+.tool-after-drop{
+  position:relative;
+}
+.cv-remove-btn{
+  position:absolute;
+  top:-85px;
+  right:-25px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
 }
 
 .tool-io-row{
@@ -178,6 +193,22 @@
 .tool-io-group .tool-format-select{ display:block; }
 @media (max-width:768px){
   .tool-io-group .tool-format-select{ display:none !important; }
+}
+/* Mobile shortens both Input's and Output's placeholder — "Choose
+   format"/"Choose a format" don't fit as comfortably at phone widths
+   as they do on desktop — to just "Pick". Scoped to .is-placeholder
+   (toggled in convert-tool.js alongside the real textContent swap) so
+   this only applies before a format's actually chosen; once one is,
+   the label shows the real selection (e.g. "JPG") on mobile exactly
+   as it does on desktop. */
+@media (max-width:768px){
+  #cvInputTriggerLabel.is-placeholder,
+  #cvFormatTriggerLabel.is-placeholder{ font-size:0; }
+  #cvInputTriggerLabel.is-placeholder::before,
+  #cvFormatTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
 }
 
 /* Same treatment as the nav's "go back" button (.nav-close-btn) —
@@ -371,11 +402,12 @@
       <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="cvDrop">Click or drop images or a PDF</div>
+    <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images or a PDF</span></div>
     <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cvAfterDrop" hidden>
+      <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-io-row">
         <div class="tool-io-group">
           <span class="tool-io-label bc-label"><span class="io-label-full">Input</span><span class="io-label-short">IN</span></span>
@@ -389,7 +421,7 @@
                plain shared dropdown, not the searchable combo. -->
           <div class="bc-dropdown" id="cvInputDropdown">
             <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvInputTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="bc-dropdown-trigger-label" id="cvInputTriggerLabel">Choose format</span>
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvInputTriggerLabel">Choose format</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu" id="cvInputMenu" role="listbox" hidden>
@@ -418,7 +450,7 @@
           <span class="tool-io-label bc-label"><span class="io-label-full">Output</span><span class="io-label-short">OUT</span></span>
           <div class="bc-dropdown" id="cvFormatDropdown">
             <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="bc-dropdown-trigger-label" id="cvFormatTriggerLabel">Choose a format</span>
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvFormatTriggerLabel">Choose a format</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu" id="cvFormatMenu" role="listbox" hidden>
@@ -438,13 +470,17 @@
         </div>
       </div>
 
-      <div class="tool-controls">
-        <button class="tool-primary-btn" id="cvConvertBtn" disabled>Convert and download</button>
-      </div>
+    </div>
+
+    <div class="tool-results" id="cvResults">
+      <button type="button" class="bc-add-tile" id="cvAddTile" aria-label="Add images or a PDF" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cvControls" hidden>
+      <button class="tool-primary-btn" id="cvConvertBtn" disabled>Convert and download</button>
     </div>
 
     <div class="tool-status" id="cvStatus"></div>
-    <div class="tool-results" id="cvResults"></div>
   </div>
 </div>
 
@@ -584,6 +620,6 @@
 </div>
 
 <script src="/shared/site.js?v=30" defer></script>
-<script src="/convert/convert-tool.js?v=18" defer></script>
+<script src="/convert/convert-tool.js?v=25" defer></script>
 </body>
 </html>

@@ -138,6 +138,19 @@ Two distinct component families — don't blend them:
   has been reversed (see "On-banner controls flip with theme" below); this
   is now just the original example of the pattern every on-banner control
   follows, not a special case anymore.
+- **A tool with N independent per-item actions (not one global CTA) still
+  reuses this class, just smaller.** Coudio's redesign gave every loaded
+  file its own row with its own Convert/download button — genuinely N
+  buttons, not "the one CTA," so `height:74px` doesn't fit. Rather than
+  hand-rolling a new button family, it adds a second local class
+  (`class="tool-primary-btn cd-row-convert-btn"`) that only overrides
+  `height`/`padding`/`font-size` down to a compact 40px — still inheriting
+  `.tool-primary-btn`'s color/border/flip recipe as-is. This is the one
+  documented exception to "no ad-hoc height-only override" (see the
+  `-lg` variant rule further down): it applies specifically when the
+  *number* of primary-style buttons on screen has genuinely changed from
+  one to many, not when a single CTA just needs a different size — that
+  case still gets a real variant class, not a local override.
 
 ### Picking a dropdown widget: `.bc-combo` vs `.bc-dropdown`
 

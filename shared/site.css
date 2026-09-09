@@ -1017,9 +1017,45 @@ footer a{
   text-align:center;
   cursor:pointer;
   transition:.25s;
-  font-size:22px;
+  font-size:26px;
   font-weight:800;
   color:var(--text);
+  /* Mirrors this element's own font-size as a custom property so
+     .tool-drop-click-word::before (below) can track it — a plain
+     hardcoded font-size on that pseudo-element went stale the moment
+     a tool shrinks its own revealed-state font-size (Coudio's
+     #cdDrop.tool-drop-revealed, post-upload): "Drag" stayed frozen at
+     26px while the plain " or drop" text next to it correctly shrank
+     to 16px, a visible mismatch confirmed live. Any tool overriding
+     its own revealed-state font-size should set this same variable to
+     match. */
+  --tool-drop-font-size:26px;
+}
+
+/* Every tool's drop-zone text opens with the same "Click or drop..."
+   wording, then a tool-specific rest ("images or a PDF", "a video",
+   etc). Markup: <span class="tool-drop-click-word">Click</span><span
+   class="tool-drop-or-drop"> or drop </span><span
+   class="tool-drop-rest">...</span> — on mobile the click word swaps
+   to "Drop zone" (same font-size:0 + ::before content-swap already
+   used for "Pick"/"File:" shortenings elsewhere; ::before needs its
+   own explicit font-size since it would otherwise inherit the zeroed
+   value from the element it's attached to) and both the literal
+   "or drop" text and the tool-specific rest are hidden outright, so
+   every tool reads as the same plain "Drop zone" on mobile instead of
+   its own full sentence. */
+@media (max-width:768px){
+  .tool-drop-click-word{
+    font-size:0;
+  }
+  .tool-drop-click-word::before{
+    content:"Drop zone";
+    font-size:var(--tool-drop-font-size, 26px);
+  }
+  .tool-drop-or-drop,
+  .tool-drop-rest{
+    display:none;
+  }
 }
 
 .tool-drop:hover{
@@ -1075,6 +1111,16 @@ footer a{
   gap:20px;
   margin-top:24px;
   align-items:stretch;
+}
+/* Without this, [hidden] never actually took effect — .tool-controls'
+   own display:grid is author CSS, which beats the browser's default
+   [hidden]{display:none} regardless of the attribute being set (same
+   bug already hit on .gif-sliders and .bc-add-tile). Matters now that
+   Convert toggles it directly (moved below the results row, out from
+   inside #cvAfterDrop) rather than only ever being hidden as a side
+   effect of a hidden ancestor. */
+.tool-controls[hidden]{
+  display:none;
 }
 
 #page-convert .tool-controls{
@@ -1355,7 +1401,7 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
 .bc-add-tile{
   flex:0 0 160px;
   width:160px;
-  height:160px;
+  height:179px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1387,6 +1433,15 @@ html[data-theme="dark"] .bc-add-tile:hover{
 .bc-add-tile.active{
   border-color:#2563eb;
   background:rgba(37,99,235,.15);
+}
+/* Without this, [hidden] never actually took effect — .bc-add-tile's
+   own display:flex is author CSS, which beats the browser's default
+   [hidden]{display:none} regardless of the attribute being set (same
+   bug already hit on .gif-sliders and .gif-crop-free-icon). Matters
+   for a tool like Convert that keeps the tile hidden until the first
+   file's picked, rather than showing it from page load like Coudio. */
+.bc-add-tile[hidden]{
+  display:none;
 }
 
 /* The shared "loaded file" card core — every tool that lists files it
