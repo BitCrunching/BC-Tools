@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=65">
+<link rel="stylesheet" href="/shared/site.css?v=77">
 <script>window.Prism = { manual: true };</script>
 <script src="/vendor/prism.min.js?v=3"></script>
 <link rel="stylesheet" href="/vendor/prism-dracula.css" id="cfThemeLink">
@@ -211,6 +211,24 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 .tool-app.wobble .tool-logo .gfx-placeholder{ animation:icon-wobble .5s ease; }
 
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Convert's .cv-remove-btn/
+   Coudio's .cd-remove-btn. Positioned directly against .tool-app
+   (already position:relative) rather than a nested "after content"
+   box like those two — Codify's own after-content area starts well
+   below the header (below the whole editor+settings row), so anchoring
+   there would need a much larger, layout-dependent negative offset for
+   the same visual result this reaches directly. */
+.cf-remove-btn{
+  position:absolute;
+  top:36px;
+  right:36px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
+}
+
 /* Page-specific: the code input + the exportable "screenshot" preview —
    the only genuinely new components this tool introduces. Reuses the
    same translucent-black dropdown chrome as Congify/Coudio's controls
@@ -239,8 +257,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   font-family:"SF Mono", Consolas, Menlo, monospace;
   font-size:14px;
   line-height:1.6;
-  /* Starts shrunk — the visible handle below is the real resize
-     control now, not the browser's own barely-visible corner grip. */
+  /* Starts shrunk — height auto-fits to content as you type (see
+     autoFitCodeInput in codify-tool.js) rather than offering a manual
+     drag handle, so there's nothing here to resize by hand; the
+     browser's own barely-visible corner grip is turned off since it
+     would just sit there doing nothing. */
   resize:none;
   /* Height auto-fits the content as you type (see autoFitCodeInput in
      codify-tool.js), so the browser's own scrollbar track almost never
@@ -249,28 +270,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      past the 80vh cap above) via wheel/keyboard, the track visual is
      just hidden. */
 }
-/* Circle geometry is the shared .bc-resize-handle (shared/site.css) —
-   "drag to resize" reads as the same control wherever it shows up on
-   the site. Drag math lives in codify-tool.js; this is purely the
-   corner offset + cursor direction that stay tool-specific. */
-.cf-resize-handle{
-  right:-10px;
-  bottom:-10px;
-  cursor:ns-resize;
-}
-.cf-resize-handle::before{
-  content:"";
-  width:13px;
-  height:13px;
-  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
-}
-/* Mobile swaps the drag-to-resize handle (a fiddly, low-value gesture
-   on a touch screen — there's no mouse to drag with precision, and the
-   textarea's own scroll already gets you to any code that overflows
-   it) for a Paste button in the same corner: reads the clipboard
-   straight into the field, the way Coudio/Congify's URL Paste buttons
-   already work. Same blue-circle-with-white-border look as the resize
-   handle it replaces, just a wider pill to fit the label. */
+/* Reads the clipboard straight into the field, the way Coudio/Congify's
+   URL Paste buttons already work — mobile-only (see media query below),
+   same corner the tool's now-removed drag-to-resize handle used to sit
+   in. */
 .cf-paste-btn{
   display:none;
   position:absolute;
@@ -293,7 +296,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:#1d4fd1;
 }
 @media (max-width:768px){
-  .cf-resize-handle{ display:none; }
   .cf-paste-btn{ display:block; }
 }
 /* The scale/brightness "lift" lives on the whole banner now (below) —
@@ -344,10 +346,20 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   gap:24px;
   margin-top:20px;
 }
+/* Sized to its own text (flex-basis:auto, flex-grow:0) rather than
+   stretching evenly with its siblings — "Custom" and "HOD" stay narrow,
+   "Traffic lights" gets the room its longer label actually needs.
+   min-width:0 lets it shrink (down to ellipsis, .cf-toggle-label/
+   .bc-combo-input's own overflow rules) rather than overflowing if the
+   row gets too crowded to fit every label at full width; max-width:148px
+   caps how wide even the longest label is allowed to grow. Height stays
+   the fixed 40px every pill/toggle in this row already uses
+   (.bc-combo-trigger, .cf-toggle-switch), only width is flexible here. */
 .cf-setting-group{
-  flex:1 1 130px;
-  min-width:110px;
-  max-width:150px;
+  flex:0 1 auto;
+  min-width:0;
+  max-width:148px;
+  height:40px;
 }
 #page-codify .bc-combo-input{
   overflow:hidden;
@@ -394,13 +406,26 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    so everything that should appear in the exported PNG (gradient,
    window chrome, dots, code) has to actually be visible DOM here, not
    drawn separately for export. */
+/* Click-through prototype: the whole preview is one left/right split
+   (see codify-tool.js) — left opens Template, right opens Theme — so
+   cursor:pointer here is enough on its own; every child (window,
+   titlebar, code) inherits it rather than needing its own override,
+   since none of them are a separate click zone anymore. */
 .cf-preview-wrap{
   margin-top:24px;
   padding:56px;
   border-radius:20px;
-  background:#FF4FD8;
+  background:#E5E7EB;
   display:flex;
   justify-content:center;
+  cursor:pointer;
+  /* The whole preview is a click/double-click surface now (cycling
+     templates, themes, and background color) — without this, every one
+     of those clicks also does a normal browser text selection on
+     whatever word/line it happens to land on (worst with the rapid
+     double-click), which then just sits there highlighted for no
+     reason since nothing here is meant to be copied by dragging. */
+  user-select:none;
 }
 .cf-window{
   width:100%;
@@ -409,6 +434,14 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   overflow:hidden;
   background:#282a36;
   box-shadow:0 30px 60px rgba(0,0,0,.35);
+}
+/* Toggled off by the Shadow switch alongside Traffic lights — this is
+   the one deliberate exception to "no shadows" in CLAUDE.md (already
+   documented at .cf-window's own rule above): a real screenshot tool's
+   window drop-shadow, not site UI chrome, so it's fine to let it be
+   optional rather than exempt it from ever being questioned. */
+.cf-window.cf-no-shadow{
+  box-shadow:none;
 }
 /* Each Prism theme (see the Theme dropdown) carries its own background
    for the window itself — Prism's own CSS only styles the code text,
@@ -436,13 +469,148 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .cf-dot-red{ background:#ff5f56; }
 .cf-dot-yellow{ background:#ffbd2e; }
 .cf-dot-green{ background:#27c93f; }
+
+/* Hides the whole titlebar strip (not just the dots) when the switch
+   below is off — a plain top edge with no chrome, same "off" look
+   Carbon/Ray.so-style screenshot tools offer. */
+#cfWindow.cf-hide-titlebar .cf-titlebar{ display:none; }
+
+/* ===== .cf-toggle-switch — on/off pill switch for the traffic lights ===
+   Same 40px/12px-radius/border/background on-banner flip recipe every
+   other setting pill on this row uses (.bc-combo-trigger), just with a
+   real iOS-style track+knob switch inside instead of a dropdown —
+   genuinely a different control (binary on/off, not "pick one of
+   several"), so it earns its own class rather than being forced into
+   .bc-combo-trigger's dropdown-pill shape. */
+.cf-toggle-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  cursor:pointer;
+  user-select:none;
+}
+html[data-theme="dark"] .cf-toggle-switch{
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+.cf-toggle-switch input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+.cf-toggle-track{
+  position:relative;
+  flex-shrink:0;
+  width:34px;
+  height:18px;
+  border-radius:9px;
+  background:rgba(127,127,127,.4);
+  transition:.2s;
+}
+.cf-toggle-knob{
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s;
+}
+.cf-toggle-switch input:checked ~ .cf-toggle-track{
+  background:#2563eb;
+}
+.cf-toggle-switch input:checked ~ .cf-toggle-track .cf-toggle-knob{
+  transform:translateX(16px);
+}
+.cf-toggle-switch input:focus-visible ~ .cf-toggle-track{
+  outline:2px solid #2563eb;
+  outline-offset:2px;
+}
+.cf-toggle-label{
+  flex:1 1 auto;
+  min-width:0;
+  font-weight:700;
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ===== Output file name — same right-aligned "> File name:" tag +
+   inline-editable underline field Congify's #gifScrubberFileName uses,
+   under its own preview. Codify has no left-side counterpart (Congify's
+   timecode toggle) to space-between against, so this row just
+   right-aligns the one group on its own. */
+.cf-filename-row{
+  margin-top:10px;
+  display:flex;
+  justify-content:flex-end;
+}
+.cf-filename-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.cf-filename-tag{ flex-shrink:0; }
+.cf-filename-input{
+  /* Sized to its actual content instead of stretching — a 10-char name
+     shows a 10-char-wide underline, not one spanning the row. Same
+     Chrome-only field-sizing + max-width/ellipsis fallback Congify's
+     own filename field uses. */
+  field-sizing:content;
+  max-width:220px;
+  min-width:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:inherit;
+  font:inherit;
+  cursor:text;
+}
+.cf-filename-input:hover{
+  border-bottom-color:var(--border-strong);
+}
+.cf-filename-input:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
 /* No scrolling — this window is exactly what gets exported to a static
    PNG, so long lines wrap within the fixed 640px width instead of
    requiring a scrollbar that wouldn't exist in the image anyway. Height
    is left unconstrained (unlimited snippet length). */
+/* font-size set here too, not just on .cf-window code below — every
+   vendored Prism theme (vendor/prism-*.css) sets its own font-size on
+   pre[class*="language-"] itself (13px for VS Code Dark, 16px for
+   Dracula, 1em/inherited for the rest), and line-height:1.5-ish on that
+   same rule is a unitless multiplier resolved against THAT font-size,
+   not code's — so two themes with the exact same visible code still
+   produced different actual line-heights and window dimensions.
+   Pinning pre's own font-size here (same value as code's) makes every
+   theme's line-height resolve identically regardless of what its own
+   vendor file requested. */
 .cf-window pre{
   margin:0;
   padding:24px;
+  font-size:14px;
   white-space:pre-wrap;
   overflow-wrap:anywhere;
   background:none !important;
@@ -464,6 +632,99 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 #cfCodeOutput.cf-ghost{
   opacity:.35;
   user-select:none;
+}
+
+/* ===== Hover inspector overlay — DevTools-style "what am I about to
+   click" highlight over the preview's three zones (see codify-tool.js
+   for the mousemove math). Fixed to the viewport rather than nested
+   inside .cf-preview-wrap, so it paints above the window/titlebar/code
+   regardless of their own stacking, and pointer-events:none throughout
+   so it can never itself become the click target. Classic DevTools
+   content-box blue (rgba(111,168,220,...)) for the tint, since that's
+   the one color scheme this exact kind of overlay is already
+   recognizable by. */
+.cf-hover-overlay{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  pointer-events:none;
+}
+.cf-hover-overlay[hidden]{ display:none; }
+.cf-hover-band,
+.cf-hover-rect{
+  position:absolute;
+  background:rgba(111,168,220,.45);
+}
+.cf-hover-label{
+  position:absolute;
+  padding:4px 8px;
+  border-radius:6px;
+  background:#1a1a22;
+  color:#fff;
+  font-family:"Courier New", Courier, monospace;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+/* Terminal-style "> " prompt — CLAUDE.md's own convention for a line
+   that reads like a command result, same recipe the nav's copy-link
+   confirmation and every tool's status readout already use. */
+.cf-hover-label::before{
+  content:"> ";
+  opacity:.7;
+}
+
+/* ===== PNG/SVG format toggle — same connected-segment recipe as
+   Congify's .gif-mode-toggle (Basic/Advanced): two independently-styled
+   [aria-pressed] buttons, unselected as an outline-only pill matching
+   Compress's unselected .tool-format-btn, selected filled matching the
+   on-banner flip every other control here uses. Always visible (not
+   media-query gated like Congify's) since PNG-vs-SVG is a real choice
+   at every width, not two panels only worth collapsing on mobile. */
+.cf-format-toggle{
+  display:flex;
+  width:100%;
+  max-width:240px;
+  margin:16px auto 0;
+}
+.cf-format-toggle button{
+  flex:1;
+  height:40px;
+  padding:0 14px;
+  border-radius:0;
+  border:1px solid var(--border-strong);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.cf-format-toggle button:first-child{
+  border-top-left-radius:20px;
+  border-bottom-left-radius:20px;
+}
+.cf-format-toggle button:last-child{
+  border-top-right-radius:20px;
+  border-bottom-right-radius:20px;
+  border-left:none;
+}
+.cf-format-toggle button[aria-pressed="true"]{
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+}
+html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* border-color (not the border shorthand) on the selected state — same
+   fix Congify's own toggle needed — so :last-child's border-left:none
+   survives being selected instead of the shared divider doubling up. */
+.cf-format-toggle button:last-child[aria-pressed="true"]{
+  border-left:none;
 }
 
 @media (max-width:768px){
@@ -619,11 +880,14 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       </div>
     </div>
 
+    <button type="button" class="cf-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cfRemoveBtn" aria-label="Clear code" hidden>×</button>
+
     <div class="cf-code-input-wrap">
       <textarea class="cf-code-input bc-editor-input" id="cfCodeInput" spellcheck="false" placeholder="Paste or type your code here"></textarea>
-      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Editor height" tabindex="0"></span>
       <button type="button" class="cf-paste-btn" id="cfPasteBtn">Paste</button>
     </div>
+
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cfContinueBtn" hidden>Continue where you left off</button>
 
     <div id="cfAfterInput">
     <div class="cf-settings">
@@ -696,25 +960,53 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
       <div class="cf-setting-group">
         <label class="cf-color-trigger bc-dropdown-trigger" id="cfBgColorTrigger">
-          <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#FF4FD8;" aria-hidden="true"></span>
+          <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#E5E7EB;" aria-hidden="true"></span>
           <span>Background</span>
-          <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#FF4FD8" aria-label="Screenshot background color">
+          <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
         </label>
       </div>
 
       <div class="cf-setting-group">
         <div class="bc-combo" id="cfStyleDropdown">
           <div class="bc-combo-trigger" id="cfStyleTrigger" aria-haspopup="listbox" aria-expanded="false">
-            <input class="bc-combo-input" id="cfStyleInput" value="Custom" readonly aria-label="Search styles">
+            <input class="bc-combo-input" id="cfStyleInput" value="Presets" readonly aria-label="Search style presets">
             <span class="bc-combo-chevron" aria-hidden="true"></span>
           </div>
           <div class="bc-combo-menu" id="cfStyleMenu" role="listbox" hidden>
-            <button type="button" class="bc-combo-option active" data-style="custom" data-label="Custom" role="option" aria-selected="true"><span>Custom</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option active" data-style="custom" data-label="Presets" role="option" aria-selected="true"><span>Presets</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
             <button type="button" class="bc-combo-option" data-style="pinkSunset" data-label="Pink Sunset" role="option" aria-selected="false"><span>Pink Sunset</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
             <button type="button" class="bc-combo-option" data-style="nordDark" data-label="Nord Dark" role="option" aria-selected="false"><span>Nord Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="oceanBreeze" data-label="Ocean Breeze" role="option" aria-selected="false"><span>Ocean Breeze</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="forestGreen" data-label="Forest Green" role="option" aria-selected="false"><span>Forest Green</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="midnightPurple" data-label="Midnight Purple" role="option" aria-selected="false"><span>Midnight Purple</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="cottonCandy" data-label="Cotton Candy" role="option" aria-selected="false"><span>Cotton Candy</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
             <div class="bc-combo-empty" id="cfStyleEmpty" hidden>No matches</div>
           </div>
         </div>
+      </div>
+
+      <div class="cf-setting-group">
+        <label class="cf-toggle-switch">
+          <input type="checkbox" id="cfTrafficLightsToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">Mac nav</span>
+        </label>
+      </div>
+
+      <div class="cf-setting-group">
+        <label class="cf-toggle-switch">
+          <input type="checkbox" id="cfShadowToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">Shadow</span>
+        </label>
+      </div>
+
+      <div class="cf-setting-group">
+        <label class="cf-toggle-switch" title="Hover overlay display — the click-zone highlight over the preview">
+          <input type="checkbox" id="cfHodToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">HOD</span>
+        </label>
       </div>
     </div>
 
@@ -725,6 +1017,42 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
         </div>
         <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
       </div>
+    </div>
+
+    <!-- Hover inspector overlay (see codify-tool.js) — a DevTools-style
+         "what am I about to click" layer over the three zones the
+         preview splits into: background, left half (Template), right
+         half (Theme). Purely visual (pointer-events:none), positioned
+         with real coordinates on every mousemove rather than being part
+         of the preview's own DOM, so it can never end up inside the
+         exported PNG (html-to-image snapshots #cfPreviewWrap only) and
+         never intercepts the actual click underneath it. -->
+    <div class="cf-hover-overlay" id="cfHoverOverlay" hidden>
+      <div class="cf-hover-band" data-band="top"></div>
+      <div class="cf-hover-band" data-band="bottom"></div>
+      <div class="cf-hover-band" data-band="left"></div>
+      <div class="cf-hover-band" data-band="right"></div>
+      <div class="cf-hover-rect" id="cfHoverRect"></div>
+      <div class="cf-hover-label" id="cfHoverLabel"></div>
+    </div>
+
+    <div class="cf-filename-row">
+      <span class="cf-filename-group">
+        <span class="cf-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cf-filename-tag-text">File name:</span></span>
+        <input type="text" class="cf-filename-input" id="cfFileNameInput" aria-label="Output file name" spellcheck="false" value="codify-snippet">
+      </span>
+    </div>
+
+    <!-- Same connected-segment recipe as Congify's Basic/Advanced switch
+         (.gif-mode-toggle) — two independently-styled [aria-pressed]
+         buttons sharing one divider, rather than a sliding-highlight
+         toggle. Unlike Congify's (mobile-only, since desktop there has
+         room to show both panels at once), this one's relevant at every
+         width: PNG vs SVG is a real either/or choice for what Download
+         actually produces, not a space-saving collapse of two panels. -->
+    <div class="cf-format-toggle" id="cfFormatToggle">
+      <button type="button" id="cfFormatPngBtn" aria-pressed="true">PNG</button>
+      <button type="button" id="cfFormatSvgBtn" aria-pressed="false">SVG</button>
     </div>
 
     <div class="tool-controls" style="grid-template-columns:1fr;">
@@ -784,6 +1112,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 <script src="/shared/site.js?v=30" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=17" defer></script>
+<script src="/codify/codify-tool.js?v=43" defer></script>
 </body>
 </html>

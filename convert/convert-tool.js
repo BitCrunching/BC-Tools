@@ -1,5 +1,6 @@
 (function(){
   const drop = document.getElementById("cvDrop");
+  const addTile = document.getElementById("cvAddTile");
   const input = document.getElementById("cvInput");
   const formatSelect = document.getElementById("cvFormatSelect");
   const inputSelect = document.getElementById("cvInputSelect");
@@ -37,6 +38,11 @@
       o.setAttribute("aria-selected", String(o === opt));
     });
     cfg.label.textContent = opt ? opt.dataset.label : cfg.placeholder;
+    /* Drives the mobile-only "Pick" shortening for Input's placeholder
+       (CSS: #cvInputTriggerLabel.is-placeholder) — only while nothing's
+       been chosen yet; once it has, the label shows the real
+       selection on mobile exactly as it does on desktop. */
+    cfg.label.classList.toggle("is-placeholder", !opt);
   }
   bcRegisterDropdown(inputTrigger, inputMenu, (opt) => {
     inputSelect.value = opt.dataset.value;
@@ -60,6 +66,17 @@
   const whyP1 = document.getElementById("cvWhyP1");
   const whyP2 = document.getElementById("cvWhyP2");
   const afterDrop = document.getElementById("cvAfterDrop");
+  const controls = document.getElementById("cvControls");
+  const removeBtn = document.getElementById("cvRemoveBtn");
+
+  /* Clears only the .result cards, not #cvAddTile — that tile is a
+     permanent fixture of #cvResults (files load in beside it), not
+     something rebuilt on every render. Plain results.innerHTML=""
+     would delete it outright (it's a real DOM node, not recreated),
+     the same bug this exact pattern hit in Coudio first. */
+  function clearResultCards(){
+    results.querySelectorAll(".result").forEach(el => el.remove());
+  }
 
   /* "Convert and download" is the idle label everywhere except mobile,
      where it's shortened to just "Download" — screen width, not
@@ -91,18 +108,7 @@
   const inputInfoBtn = document.getElementById("cvInputInfoBtn");
   const inputInfoTooltip = document.getElementById("cvInputInfoTooltip");
   if (inputInfoBtn && inputInfoTooltip){
-    inputInfoBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      const willShow = inputInfoTooltip.hidden;
-      inputInfoTooltip.hidden = !willShow;
-      inputInfoBtn.setAttribute("aria-expanded", String(willShow));
-    });
-    document.addEventListener("click", e => {
-      if (!inputInfoTooltip.hidden && !inputInfoTooltip.contains(e.target) && e.target !== inputInfoBtn){
-        inputInfoTooltip.hidden = true;
-        inputInfoBtn.setAttribute("aria-expanded", "false");
-      }
-    });
+    bcRegisterInfoTooltip(inputInfoBtn, inputInfoTooltip);
   }
 
   /* Input/Output pickers and the Convert button stay hidden until a
@@ -111,7 +117,16 @@
      instead of three competing controls at once. */
   function revealAfterDropUI(){
     if (afterDrop) afterDrop.hidden = false;
-    drop.classList.add("tool-drop-revealed");
+    /* The original "Click or drop images or a PDF" intro stays exactly
+       as it always was for the empty state — this just hides it once
+       there's real content, since #cvAddTile (in #cvResults) takes
+       over as the "add more" target from here on, the same way
+       Coudio's own #cdDrop/#cdAddTile split works. addTile itself
+       starts hidden (in markup) precisely so it doesn't show up
+       alongside the intro before any file's been picked. */
+    drop.hidden = true;
+    addTile.hidden = false;
+    if (controls) controls.hidden = false;
   }
 
   /* ===== "Why convert X to Y?" article =====
@@ -328,22 +343,25 @@
     btn.addEventListener("click", () => pickFormat(formatSelect, btn.dataset.setOutput));
   });
 
-  /* Before a file is picked, the whole banner acts as the drop zone —
-     not just the (visually hidden) dashed box — so there's one big
-     obvious target instead of a small one lost inside a large card.
-     Once a file lands, the dashed box reappears and takes over as
-     the (now much smaller) target for adding more files, and the
-     rest of the banner goes back to just being a container for the
-     dropdowns/buttons. */
+  /* Before a file is picked, #cvDrop's original "Click or drop images
+     or a PDF" intro stays exactly as it always was, and the whole
+     banner acts as the drop zone behind it — one big obvious target
+     instead of a small one lost inside a large card. Once a file
+     lands, revealAfterDropUI() hides #cvDrop for good and #cvAddTile
+     (the shared .bc-add-tile, always present as the first item in
+     #cvResults — files load in to its right) takes over as the target
+     for adding more, same split Coudio's #cdDrop/#cdAddTile use.
+     addTile is a real <button>, so it's exempt from the generic click
+     handler below (which explicitly skips buttons) and gets its own
+     listener instead. */
+  addTile.addEventListener("click", () => input.click());
+
   const toolApp = document.querySelector(".tool-app");
   if (toolApp){
     toolApp.addEventListener("click", e => {
       if (e.target.closest("button, select, a, label, input")) return;
-      /* Pre-reveal, the whole banner opens the picker. Once files
-         and controls are showing, only the (now visible) drop box
-         still does — clicking elsewhere shouldn't hijack clicks
-         meant for the dropdowns/buttons around it. */
-      if (afterDrop.hidden || drop.contains(e.target)){
+      /* Pre-reveal, the whole banner opens the picker. */
+      if (afterDrop.hidden){
         input.click();
       }
     });
@@ -359,12 +377,12 @@
   }
 
   function isDragEventInScope(e){
-    return afterDrop.hidden || drop.contains(e.target);
+    return afterDrop.hidden || addTile.contains(e.target);
   }
   bcSetupBannerDropTarget(toolApp, {
     isInScope: isDragEventInScope,
-    getEnterTarget: e => (afterDrop.hidden ? toolApp : drop),
-    clearTargets: [toolApp, drop],
+    getEnterTarget: e => (afterDrop.hidden ? toolApp : addTile),
+    clearTargets: [toolApp, addTile],
     onDrop: e => applyPickedFiles([...e.dataTransfer.files].filter(isConvertibleFile))
   });
 
@@ -381,6 +399,32 @@
       status.textContent = "";
     }
   }
+
+  /* ===== "Remove all" reset — clears every loaded file and returns to
+     the pre-upload intro state. Mirrors Coudio's own #cdRemoveBtn/
+     resetTool(), adapted for Convert's own state shape (a flat files[]
+     array plus two format <select>s, rather than a single loaded[] +
+     selectedIndex). */
+  function resetTool(){
+    files = [];
+    selectedFormat = "";
+    inputSelect.value = "";
+    formatSelect.value = "";
+    syncDropdownTrigger(inputSelect);
+    syncDropdownTrigger(formatSelect);
+    syncFormatPickSelection();
+    updateWhyConvertArticle();
+    afterDrop.hidden = true;
+    drop.hidden = false;
+    addTile.hidden = true;
+    if (controls) controls.hidden = true;
+    clearResultCards();
+    renderStatus();
+    convertBtn.disabled = true;
+    convertBtn.textContent = convertBtnIdleLabel();
+    bcDbClear(CV_DB_NAME, CV_DB_STORE);
+  }
+  removeBtn.addEventListener("click", resetTool);
 
   /* Browsers that can't natively decode HEIC (everything but Safari)
      also don't recognize its MIME type — f.type comes back empty
@@ -479,12 +523,22 @@
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       files = files.filter(f => f !== file);
+      /* Removing the last file this way used to leave the tool
+         stranded in the "revealed" post-upload state — Input/Output
+         pickers, empty add-tile, disabled Convert button — with no way
+         back to the actual intro drop zone short of the red remove-all
+         button. Reuse the same resetTool() that button calls so
+         dropping to zero files always lands back at the intro,
+         whichever file was removed last. */
+      if (files.length === 0){
+        resetTool();
+        return;
+      }
       renderStatus();
       updateFormatButtonVisibility();
       showSelectedPreviews();
       convertBtn.disabled = files.length === 0;
-      if (files.length === 0) bcDbClear(CV_DB_NAME, CV_DB_STORE);
-      else schedulePersist();
+      schedulePersist();
     });
     card.appendChild(btn);
   }
@@ -504,8 +558,8 @@
   }
 
   function showSelectedPreviews(){
-    if (files.length === 0){ results.innerHTML = ""; return; }
-    results.innerHTML = "";
+    if (files.length === 0){ clearResultCards(); return; }
+    clearResultCards();
 
     /* HEIC and PDF thumbnails both need real decode/render work (WASM
        HEVC decode, or a pdf.js page render), so they queue up and run
@@ -769,7 +823,7 @@
     function clearResultsOnce(){
       if (resultsCleared) return;
       resultsCleared = true;
-      results.innerHTML = "";
+      clearResultCards();
     }
 
     startPrivacyCheck();
