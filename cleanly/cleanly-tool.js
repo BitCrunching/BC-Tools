@@ -30,6 +30,26 @@
     drop.classList.add("tool-drop-revealed");
   }
 
+  /* ===== "Remove all" reset — clears every loaded file and returns to
+     the pre-upload intro state. Called by the red #exRemoveBtn (the
+     canvas-corner "×", same as Convert/Compress) and also when the
+     per-file remove button below empties the list — without the latter,
+     removing the last file one-by-one left the tool stranded in the
+     "revealed" state (file list area, disabled Strip button) with no
+     way back to the actual intro drop zone. */
+  function resetTool(){
+    files = [];
+    fileList.innerHTML = "";
+    if (afterDrop) afterDrop.hidden = true;
+    drop.classList.remove("tool-drop-revealed");
+    stripBtn.disabled = true;
+    status.textContent = "";
+    bcDbClear(EX_DB_NAME, EX_DB_STORE);
+  }
+
+  const removeBtn = document.getElementById("exRemoveBtn");
+  if (removeBtn) removeBtn.addEventListener("click", resetTool);
+
   function isSvgFile(f){
     return f.type === "image/svg+xml" || /\.svg$/i.test(f.name);
   }
@@ -180,6 +200,10 @@
 
       el.querySelector(".exif-file-remove").addEventListener("click", () => {
         files.splice(i, 1);
+        if (files.length === 0){
+          resetTool();
+          return;
+        }
         renderList();
         stripBtn.disabled = files.length === 0;
       });

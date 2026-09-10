@@ -68,17 +68,20 @@
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #exAfterDrop is revealed, so it never fights the file list/
-   Strip button once there's real content to interact with. */
+   Strip button once there's real content to interact with. Same "jump"
+   plays while a file is being dragged over the banner (.active class,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
+   confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
 .tool-app:has(#exAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over gets a bolder, unmistakable reaction than plain hover —
-   this class is added by shared/site.js's bcSetupBannerDropTarget while
-   a file is being dragged over the banner. 1.012/1.08 reads fine when
-   you're stationary hovering, but during an actual drag your attention
-   is on the OS drag cursor, not the banner, so anything that subtle
-   goes unnoticed ("doesn't react to drag"). */
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
 .tool-app:has(#exAfterDrop[hidden]).active{
   filter:brightness(1.15);
   transform:scale(1.03);
@@ -215,8 +218,28 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Compress's .cp-remove-btn.
+   Unlike Convert/Compress (where the drop zone is hidden once a file
+   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
+   small negative offset reaches the card corner), Cleanly keeps its
+   drop zone visible in the revealed state — so #exAfterDrop starts far
+   down the card. The button is anchored to .tool-app itself instead and
+   shown only while files are loaded, via the same :has(#exAfterDrop…)
+   toggle the hover rules above already use. */
+.ex-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#exAfterDrop:not([hidden])) .ex-remove-btn{ display:flex; }
+
 #exDrop{
-  font-size:clamp(22px, 2.4vw, 26px);
   border-color:transparent;
   background:transparent;
 }
@@ -238,8 +261,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(74,222,128,.1);
 }
 .tool-app.active{
-  outline:3px dashed #4ade80;
-  outline-offset:-10px;
   background:rgba(74,222,128,.08);
 }
 /* Mobile shows just "Download" on the primary action button — the
@@ -393,7 +414,9 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="exDrop">Click or drop JPEG, PNG, or SVG images</div>
+    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
+
+    <div class="tool-drop" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
     <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
 
@@ -418,7 +441,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
     <h3>New to cleaning images?</h3>
     <p>Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif" href="/golden-rules/?tool=exif">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -468,6 +491,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=30" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=10" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=13" defer></script>
 </body>
 </html>
