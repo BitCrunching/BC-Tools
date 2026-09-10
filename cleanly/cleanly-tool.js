@@ -31,13 +31,12 @@
   }
 
   /* ===== "Remove all" reset — clears every loaded file and returns to
-     the pre-upload intro state. Cleanly never grew its own remove-all
-     button (unlike Convert/Coudio's #cvRemoveBtn/#cdRemoveBtn), so this
-     only exists to be called when the per-file remove button below
-     empties the list — without it, removing the last file one-by-one
-     left the tool stranded in the "revealed" state (file list area,
-     disabled Strip button) with no way back to the actual intro drop
-     zone. */
+     the pre-upload intro state. Called by the red #exRemoveBtn (the
+     canvas-corner "×", same as Convert/Compress) and also when the
+     per-file remove button below empties the list — without the latter,
+     removing the last file one-by-one left the tool stranded in the
+     "revealed" state (file list area, disabled Strip button) with no
+     way back to the actual intro drop zone. */
   function resetTool(){
     files = [];
     fileList.innerHTML = "";
@@ -47,6 +46,9 @@
     status.textContent = "";
     bcDbClear(EX_DB_NAME, EX_DB_STORE);
   }
+
+  const removeBtn = document.getElementById("exRemoveBtn");
+  if (removeBtn) removeBtn.addEventListener("click", resetTool);
 
   function isSvgFile(f){
     return f.type === "image/svg+xml" || /\.svg$/i.test(f.name);

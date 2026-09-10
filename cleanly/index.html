@@ -218,6 +218,27 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Compress's .cp-remove-btn.
+   Unlike Convert/Compress (where the drop zone is hidden once a file
+   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
+   small negative offset reaches the card corner), Cleanly keeps its
+   drop zone visible in the revealed state — so #exAfterDrop starts far
+   down the card. The button is anchored to .tool-app itself instead and
+   shown only while files are loaded, via the same :has(#exAfterDrop…)
+   toggle the hover rules above already use. */
+.ex-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#exAfterDrop:not([hidden])) .ex-remove-btn{ display:flex; }
+
 #exDrop{
   border-color:transparent;
   background:transparent;
@@ -393,6 +414,8 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
     <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
@@ -468,6 +491,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=30" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=12" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=13" defer></script>
 </body>
 </html>
