@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=78">
+<link rel="stylesheet" href="/shared/site.css?v=79">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -249,11 +249,12 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(0,245,212,.08);
 }
 
-/* Same as Convert's #cvDrop / Congify's #gifDrop — since the whole
-   banner is now the actual click/drop target, the dashed box just
-   blends into it (no border, no fill of its own) instead of reading
-   as a second, separate drop zone nested inside the first. */
-#cdDrop{
+/* Same as Convert's #cvDrop / Congify's #gifDrop — before a file is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
+   so it doesn't cancel the shared .tool-drop-addpill's own dashed
+   border once it collapses to the "＋ Add more files" pill. */
+#cdDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
 }
@@ -265,50 +266,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#18C98A;
   background:rgba(0,245,212,.1);
 }
-/* Once a file's been picked #cdDrop stops being the big full-width
-   intro zone and becomes a compact "＋ Add more files" pill, centred
-   above the file rows. Static — a gentle scale/tint on hover, no
-   expand animation. The whole .tool-app banner is still the real drop
-   target; this pill is just the visible affordance, and turns green
-   while a file is dragged over it. */
-#cdDrop.tool-drop-revealed{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  width:fit-content;
-  height:54px;
-  margin-left:auto;
-  margin-right:auto;
-  padding:0 22px;
-  line-height:1;
-  font-size:0;
-  white-space:nowrap;
-  border-color:var(--border-strong);
-  transition:background .18s, transform .18s, border-color .18s;
-}
-/* Hide the pre-load "Click / or drop / …" spans in this state — the
-   pseudo-elements below carry the pill's own content instead. */
-#cdDrop.tool-drop-revealed > *{ display:none; }
-#cdDrop.tool-drop-revealed::before{
-  content:"+";
-  flex:0 0 auto;
-  font-size:26px;
-  font-weight:800;
-  line-height:1;
-}
-#cdDrop.tool-drop-revealed::after{
-  content:"Add more files";
-  font-size:15px;
-  font-weight:800;
-}
-#cdDrop.tool-drop-revealed:hover{
-  background:rgba(255,255,255,.14);
-  transform:scale(1.03);
-}
-html[data-theme="dark"] #cdDrop.tool-drop-revealed:hover{
-  background:rgba(0,0,0,.2);
-}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cdDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
 #cdDrop.tool-drop-revealed.active{
   border-color:#18C98A;
   background:rgba(0,245,212,.1);
@@ -820,7 +781,7 @@ html[data-theme="dark"] .cd-file-row-error{
       <span class="privacy-check-badge" id="cdPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="cdDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">one or more audio or video files</span></div>
+    <div class="tool-drop tool-drop-addpill" id="cdDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">one or more audio or video files</span></div>
     <input type="file" id="cdInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.mp4,.m4v,.webm,.mov,.ogv" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cdContinueBtn" hidden>Continue where you left off</button>
 
