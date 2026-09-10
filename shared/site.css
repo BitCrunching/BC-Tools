@@ -1097,6 +1097,10 @@ footer a{
   font-size:0;
   white-space:nowrap;
   border-color:var(--border-strong);
+  /* padding-box clip so the hover fill stops at the inner edge of the
+     2px border instead of bleeding out under it (once the border goes
+     transparent on hover) past the solid inset ring. */
+  background-clip:padding-box;
   /* Hover joins the dashed border into a solid one — border-style
      itself can't transition, so the dashes fade to transparent while a
      solid inset ring (same 2px, follows the radius) fades in under
@@ -1124,10 +1128,10 @@ footer a{
   transform:none;
   border-color:transparent;
   box-shadow:inset 0 0 0 2px var(--border-strong);
-  background:rgba(255,255,255,.1);
+  background:rgba(255,255,255,.08);
 }
 html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
-  background:rgba(0,0,0,.18);
+  background:rgba(0,0,0,.1);
 }
 
 .tool-continue-btn{
