@@ -61,24 +61,27 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=46">
+<link rel="stylesheet" href="/shared/site.css?v=77">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #cvAfterDrop is revealed, so it never fights the dropdowns
-   or Convert button once there's real content to interact with. */
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
 .tool-app:has(#cvAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over gets a bolder, unmistakable reaction than plain hover —
-   this class is added by shared/site.js's bcSetupBannerDropTarget while
-   a file is being dragged over the banner. 1.012/1.08 reads fine when
-   you're stationary hovering, but during an actual drag your attention
-   is on the OS drag cursor, not the banner, so anything that subtle
-   goes unnoticed ("doesn't react to drag"). */
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
 .tool-app:has(#cvAfterDrop[hidden]).active{
   filter:brightness(1.15);
   transform:scale(1.03);
@@ -260,11 +263,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .tool-after-drop[hidden]{ display:none; }
 
 #cvDrop{
-  font-size:clamp(22px, 2.4vw, 26px);
   border-color:transparent;
   background:transparent;
 }
-#cvDrop:not(.tool-drop-revealed):not(.active):hover{
+#cvDrop:not(.active):hover{
   border-color:transparent;
   transform:none;
 }
@@ -272,19 +274,33 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#7626f5;
   background:rgba(118,38,245,.1);
 }
-/* Restored once a file's been picked — from then on this compact
-   box (not the whole banner) is the target for adding more files. */
-#cvDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
-#cvDrop.tool-drop-revealed.active{
-  border-color:#7626f5;
-  background:rgba(118,38,245,.1);
-}
 .tool-app.active{
-  outline:3px dashed #7626f5;
-  outline-offset:-10px;
   background:rgba(118,38,245,.08);
+}
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Coudio's .cd-remove-btn. Sits
+   inside #cvAfterDrop (position:relative below) rather than directly on
+   .tool-app, so it only shows once a file's loaded and #cvAfterDrop is
+   revealed — same visibility-via-hidden-ancestor trick as Coudio's own
+   button inside #cdEditor, no separate hidden toggle needed here. The
+   negative top/right (rather than a plain 10px/10px inset) is
+   deliberate: it pulls the button up out of #cvAfterDrop's own box
+   (which starts below the header) so it lands at the true top-right
+   corner of the whole card next to the "Convert" logo — exactly the
+   same fix Coudio's .cd-remove-btn needed for the same reason (its
+   positioned ancestor, #cdEditor, also starts below the header). */
+.tool-after-drop{
+  position:relative;
+}
+.cv-remove-btn{
+  position:absolute;
+  top:-85px;
+  right:-25px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
 }
 
 .tool-io-row{
@@ -310,79 +326,51 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 .io-label-short{ display:none; }
 
-.tool-io-info-btn{
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  border:1px solid var(--border-strong);
-  background:none;
-  color:var(--text);
-  font-size:11px;
-  font-weight:800;
-  font-style:italic;
-  line-height:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  cursor:pointer;
-  text-transform:none;
-  opacity:1;
-  transition:.2s;
-}
-.tool-io-info-btn:hover,
-.tool-io-info-btn[aria-expanded="true"]{
-  border-color:#7626f5;
-  color:#7626f5;
-}
-
-.tool-io-info-tooltip{
-  position:absolute;
-  top:calc(100% + 6px);
-  left:0;
-  z-index:5;
-  width:240px;
-  padding:12px 14px;
-  border-radius:12px;
-  border:1px solid var(--border-strong);
-  background:var(--bg);
-  color:var(--text);
-  font-size:13px;
-  font-weight:400;
-  line-height:1.5;
-  text-transform:none;
-  letter-spacing:normal;
-}
-.tool-io-info-tooltip[hidden]{ display:none; }
+/* Shape/color is the shared .bc-info-btn/.bc-info-tooltip
+   (shared/site.css) now — only the .tool-io-label flex layout above
+   stays local. Used to be this tool's own local .tool-io-info-btn/
+   -tooltip copy (the component's origin); Coudio's own use of the "i"
+   icon pointed at the shared version from the start, so Convert now
+   points at the same one instead of carrying a separate copy. */
 @media (max-width:640px){
   .io-label-full{ display:none; }
   .io-label-short{ display:inline; }
 }
 
-/* Input/Output pickers are always dropdowns on this page, not just
-   on mobile — overrides the desktop-pills/mobile-select split that
-   .tool-format-select normally follows. */
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
 .tool-io-group .tool-format-select{ display:block; }
 @media (max-width:768px){
   .tool-io-group .tool-format-select{ display:none !important; }
 }
+/* Mobile shortens both Input's and Output's placeholder — "Choose
+   format"/"Choose a format" don't fit as comfortably at phone widths
+   as they do on desktop — to just "Pick". Scoped to .is-placeholder
+   (toggled in convert-tool.js alongside the real textContent swap) so
+   this only applies before a format's actually chosen; once one is,
+   the label shows the real selection (e.g. "JPG") on mobile exactly
+   as it does on desktop. */
+@media (max-width:768px){
+  #cvInputTriggerLabel.is-placeholder,
+  #cvFormatTriggerLabel.is-placeholder{ font-size:0; }
+  #cvInputTriggerLabel.is-placeholder::before,
+  #cvFormatTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
+}
 
-/* Same treatment as the nav's "go back" button (.nav-close-btn) —
-   just centered against the 74px-tall selects on either side. */
-.tool-io-swap{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  height:36px;
-  margin-bottom:19px;
-  color:var(--text);
-}
-.tool-io-swap-arrow{
-  display:inline-block;
-  font-size:18px;
-}
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
 
 .format-pick-intro{
   max-width:680px;
@@ -589,18 +577,19 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="cvDrop">Click or drop images or a PDF</div>
+    <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images or a PDF</span></div>
     <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cvAfterDrop" hidden>
+      <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-io-row">
         <div class="tool-io-group">
           <span class="tool-io-label bc-label">
             <span class="io-label-full">Expected Input</span><span class="io-label-short">IN</span>
-            <button type="button" class="tool-io-info-btn" id="cvInputInfoBtn" aria-label="What does Expected Input mean?" aria-expanded="false">i</button>
+            <button type="button" class="bc-info-btn" id="cvInputInfoBtn" aria-label="What does Expected Input mean?" aria-expanded="false">i</button>
           </span>
-          <div class="tool-io-info-tooltip" id="cvInputInfoTooltip" hidden>Each file's real format is detected automatically, so mixing different file types together in one batch isn't an issue.</div>
+          <div class="bc-info-tooltip" id="cvInputInfoTooltip" hidden>Every uploaded file's format is recognized separately, making mixing different formats not an issue. Every file is converted to chosen format.</div>
           <!-- The real <select> below is the state/event backend every
                existing bit of format logic (mutual-exclusion, URL
                routing, auto-detect) already reads/writes — kept exactly
@@ -611,7 +600,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
                plain shared dropdown, not the searchable combo. -->
           <div class="bc-dropdown" id="cvInputDropdown">
             <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvInputTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="bc-dropdown-trigger-label" id="cvInputTriggerLabel">Choose format</span>
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvInputTriggerLabel">Choose format</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu" id="cvInputMenu" role="listbox" hidden>
@@ -640,7 +629,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
           <span class="tool-io-label bc-label"><span class="io-label-full">Output</span><span class="io-label-short">OUT</span></span>
           <div class="bc-dropdown" id="cvFormatDropdown">
             <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="bc-dropdown-trigger-label" id="cvFormatTriggerLabel">Choose a format</span>
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvFormatTriggerLabel">Choose a format</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu" id="cvFormatMenu" role="listbox" hidden>
@@ -660,13 +649,17 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
         </div>
       </div>
 
-      <div class="tool-controls">
-        <button class="tool-primary-btn" id="cvConvertBtn" disabled>Convert and download</button>
-      </div>
+    </div>
+
+    <div class="tool-results" id="cvResults">
+      <button type="button" class="bc-add-tile" id="cvAddTile" aria-label="Add images or a PDF" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cvControls" hidden>
+      <button class="tool-primary-btn" id="cvConvertBtn" disabled>Convert and download</button>
     </div>
 
     <div class="tool-status" id="cvStatus"></div>
-    <div class="tool-results" id="cvResults"></div>
   </div>
 </div>
 
@@ -690,7 +683,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="cs-shape cs-shape-2"></span>
     </div>
     <h3>Not sure which format to use?</h3>
-    <p class="format-pick-intro">Here's what each format is actually for. Use "I have this" to set it as your Input, or "I need this" to set it as your Output.</p>
+    <p class="format-pick-intro">Here's what each format is actually for. Pick format you already have and which format you need.</p>
     <div class="format-pick-groups">
       <div class="format-pick-group">
         <p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p>
@@ -756,7 +749,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
     <h3>New to converting images?</h3>
     <p>Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert" href="/golden-rules/?tool=convert">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -805,7 +798,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/convert/convert-tool.js?v=17" defer></script>
+<script src="/shared/site.js?v=30" defer></script>
+<script src="/convert/convert-tool.js?v=25" defer></script>
 </body>
 </html>

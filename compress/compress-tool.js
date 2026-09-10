@@ -1,5 +1,6 @@
 (function(){
   const drop = document.getElementById("cpDrop");
+  const addTile = document.getElementById("cpAddTile");
   const input = document.getElementById("cpInput");
   const levelButtons = document.querySelectorAll("#cpLevelButtons .tool-format-btn");
   const compressBtn = document.getElementById("cpCompressBtn");
@@ -7,7 +8,18 @@
   const results = document.getElementById("cpResults");
   const selectedCompression = document.getElementById("cpSelectedCompression");
   const afterDrop = document.getElementById("cpAfterDrop");
+  const controls = document.getElementById("cpControls");
+  const removeBtn = document.getElementById("cpRemoveBtn");
   const toolApp = document.querySelector(".tool-app");
+
+  /* Clears only the .result cards, not #cpAddTile — that tile is a
+     permanent fixture of #cpResults (files load in beside it), not
+     something rebuilt on every render. Plain results.innerHTML=""
+     would delete it outright (it's a real DOM node, not recreated) —
+     same pattern as Convert's clearResultCards(). */
+  function clearResultCards(){
+    results.querySelectorAll(".result").forEach(el => el.remove());
+  }
 
   let files = [];
   let selectedQuality = null;
@@ -40,19 +52,31 @@
   /* Level buttons + Compress button stay hidden until a file is
      picked — first-time visitors get one obvious step instead of
      competing controls at once. */
+  /* Before a file is picked, #cpDrop's original "Click or drop images"
+     intro stays exactly as it always was, and the whole banner acts as
+     the drop zone behind it. Once a file lands, revealAfterDropUI()
+     hides #cpDrop for good and #cpAddTile (the shared .bc-add-tile,
+     always present as the first item in #cpResults — files load in to
+     its right) takes over as the target for adding more, same split
+     Convert's #cvDrop/#cvAddTile use. */
   function revealAfterDropUI(){
     if (afterDrop) afterDrop.hidden = false;
-    drop.classList.add("tool-drop-revealed");
+    drop.hidden = true;
+    addTile.hidden = false;
+    if (controls) controls.hidden = false;
   }
 
+  /* addTile is a real <button>, so it's exempt from the generic click
+     handler below (which explicitly skips buttons) and gets its own
+     listener instead. */
+  addTile.addEventListener("click", () => input.click());
+
   /* Before a file is picked, the whole banner acts as the drop zone —
-     not just the (visually hidden) dashed box. Once a file lands, the
-     dashed box reappears and takes over as the target for adding
-     more files. */
+     not just the (visually hidden) dashed box. */
   if (toolApp){
     toolApp.addEventListener("click", e => {
       if (e.target.closest("button, select, a, label, input")) return;
-      if (afterDrop.hidden || drop.contains(e.target)){
+      if (afterDrop.hidden){
         input.click();
       }
     });
@@ -68,14 +92,36 @@
   }
 
   function isDragEventInScope(e){
-    return afterDrop.hidden || drop.contains(e.target);
+    return afterDrop.hidden || addTile.contains(e.target);
   }
   bcSetupBannerDropTarget(toolApp, {
     isInScope: isDragEventInScope,
-    getEnterTarget: e => (afterDrop.hidden ? toolApp : drop),
-    clearTargets: [toolApp, drop],
+    getEnterTarget: e => (afterDrop.hidden ? toolApp : addTile),
+    clearTargets: [toolApp, addTile],
     onDrop: e => setFiles(e.dataTransfer.files)
   });
+
+  /* ===== "Remove all" reset — clears every loaded file and returns to
+     the pre-upload intro state. Mirrors Convert's own #cvRemoveBtn/
+     resetTool(), adapted for Compress's own state shape (a flat files[]
+     array plus a single selectedQuality, rather than two format
+     <select>s). */
+  function resetTool(){
+    files = [];
+    selectedQuality = null;
+    levelButtons.forEach(b => b.classList.remove("active"));
+    selectedCompression.textContent = "";
+    afterDrop.hidden = true;
+    drop.hidden = false;
+    addTile.hidden = true;
+    if (controls) controls.hidden = true;
+    clearResultCards();
+    renderStatus();
+    compressBtn.disabled = true;
+    compressBtn.textContent = compressBtnIdleLabel();
+    bcDbClear(CP_DB_NAME, CP_DB_STORE);
+  }
+  removeBtn.addEventListener("click", resetTool);
 
   levelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
@@ -162,8 +208,8 @@
 
   function showSelectedPreviews(){
     previewEntries = [];
-    if (files.length === 0){ results.innerHTML = ""; return; }
-    results.innerHTML = "";
+    if (files.length === 0){ clearResultCards(); return; }
+    clearResultCards();
 
     files.forEach(file => {
       /* HEIC skips the automatic thumbnail — an <img> pointed at raw
@@ -214,11 +260,21 @@
       btn.textContent = "×";
       btn.addEventListener("click", () => {
         files = files.filter(f => f !== file);
+        /* Removing the last file this way used to leave the tool
+           stranded in the "revealed" post-upload state — level buttons,
+           empty add-tile, disabled Compress button — with no way back to
+           the actual intro drop zone short of the red remove-all button.
+           Reuse the same resetTool() the remove-all button calls so
+           dropping to zero files always lands back at the intro, however
+           the last file left. */
+        if (files.length === 0){
+          resetTool();
+          return;
+        }
         renderStatus();
         showSelectedPreviews();
         compressBtn.disabled = files.length === 0;
-        if (files.length === 0) bcDbClear(CP_DB_NAME, CP_DB_STORE);
-        else schedulePersist();
+        schedulePersist();
       });
       card.appendChild(btn);
 
@@ -272,12 +328,33 @@
      picking (or dropping) a second round of images adds to the first
      instead of wiping it out — matches Combine's "upload as many
      rounds as you like" behavior. */
+  /* GIF matches "image/*" like any other image, but Compress's pipeline
+     (compressImageFile, below) draws the file onto a <canvas> and
+     re-encodes it as a single JPG/WEBP frame — for an animated GIF that
+     silently throws away every frame but the first and hands back a
+     misleadingly-named static file. Excluded here (not just via the
+     input's accept attribute, which drag-and-drop bypasses entirely) so
+     a dropped GIF is rejected the same way a picked one is. */
+  function isGifFile(f){
+    return f.type === "image/gif" || /\.gif$/i.test(f.name);
+  }
+
   function setFiles(fileList){
-    const picked = [...fileList].filter(f => f.type.startsWith("image/") || isHeicFile(f));
-    if (picked.length === 0) return;
+    const incoming = [...fileList];
+    const gifRejected = incoming.some(isGifFile);
+    const picked = incoming.filter(f => (f.type.startsWith("image/") && !isGifFile(f)) || isHeicFile(f));
+    if (picked.length === 0){
+      if (gifRejected){
+        status.textContent = "GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.";
+      }
+      return;
+    }
     files = files.concat(picked);
     revealAfterDropUI();
     renderStatus();
+    if (gifRejected){
+      status.innerHTML += ` <span style="color:var(--text)">GIFs were skipped — animated images aren't supported here, try Congify instead.</span>`;
+    }
     showSelectedPreviews();
     compressBtn.disabled = files.length === 0;
     schedulePersist();
@@ -349,7 +426,7 @@
     function clearResultsOnce(){
       if (resultsCleared) return;
       resultsCleared = true;
-      results.innerHTML = "";
+      clearResultCards();
     }
 
     startPrivacyCheck();
