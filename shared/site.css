@@ -1068,6 +1068,60 @@ footer a{
   background:rgba(255,255,255,.06);
 }
 
+/* ===== .tool-drop-addpill — revealed-state "add more files" pill =====
+   Opt-in: put this class on a tool's drop element (the same element
+   the JS toggles .tool-drop-revealed on). Before a file is loaded the
+   element is the full-width intro drop zone as normal; once loaded it
+   collapses to this compact centred "＋ Add more files" pill sitting
+   above the file list, with a gentle scale/tint on hover. The whole
+   .tool-app banner stays the real drop target — this is just the
+   visible affordance. Combine keeps the full-width bar (no opt-in);
+   Coudio and Cleanly use this. A tool keeps its own
+   `#<drop>.tool-drop-revealed.active { border-color / background }`
+   local rule for the brand-coloured drag-over state — that's the one
+   piece that's genuinely per-tool. Also: a tool that blanks its dashed
+   box pre-load with `#<drop> { border-color:transparent }` must scope
+   that to `:not(.tool-drop-revealed)`, or its id selector cancels the
+   pill's own dashed border here. */
+.tool-drop-addpill.tool-drop-revealed{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:fit-content;
+  height:54px;
+  margin-left:auto;
+  margin-right:auto;
+  padding:0 22px;
+  line-height:1;
+  font-size:0;
+  white-space:nowrap;
+  border-color:var(--border-strong);
+  transition:background .18s, transform .18s, border-color .18s;
+}
+/* The pre-load "Click / or drop / …" spans are replaced by the two
+   pseudo-elements below in this state. */
+.tool-drop-addpill.tool-drop-revealed > *{ display:none; }
+.tool-drop-addpill.tool-drop-revealed::before{
+  content:"+";
+  flex:0 0 auto;
+  font-size:26px;
+  font-weight:800;
+  line-height:1;
+}
+.tool-drop-addpill.tool-drop-revealed::after{
+  content:"Add more files";
+  font-size:15px;
+  font-weight:800;
+}
+.tool-drop-addpill.tool-drop-revealed:hover{
+  background:rgba(255,255,255,.14);
+  transform:scale(1.03);
+}
+html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
+  background:rgba(0,0,0,.2);
+}
+
 .tool-continue-btn{
   display:block;
   width:100%;
