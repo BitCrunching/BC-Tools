@@ -411,11 +411,14 @@ surface so a second editor never has to re-derive them from scratch.
 
 ## Tool banner color + category texture
 
-- Every tool has one fixed, fully-saturated brand color, no two tools share
+- Every tool has one fixed, saturated brand color, no two tools share
   a hue: Convert `#B84CFF` Purple, Compress `#3FBFE8` Sky Blue, Combine
   `#FF6961` Coral Red, Cleanly `#7ED321` Lime Green, Context `#F6D44A`
   Yellow, Colorfy `#FF8A4C` Orange (Image); Congify `#22D3D0` Teal (Video);
-  Coudio `#18C98A` Emerald Green (Sound); Codify `#FF4FD8` Pink (Code). Set
+  Coudio `#18C98A` Emerald Green (Sound); Codify `#C81C86` Pink (Code —
+  a deep raspberry, deliberately pulled back from the original near-neon
+  `#FF4FD8` magenta, which read as a kids/toy tool at full brightness).
+  Set
   via `#page-<id>::before{ background:<hex>; }` in the tool's own page, and
   via the matching `#page-mainpage .card.<tool>::before` rule on the
   homepage.
