@@ -278,15 +278,17 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      auto-sized height produced a genuinely stuck mid-transition state
      (confirmed live: computed height landed on neither the start nor
      end value). Padding transitions cleanly from a real starting
-     value instead. */
+     value instead. On desktop the text stays 16px here: it's the full
+     "Click or drop one or more audio or video files" sentence, and at
+     26px that wraps to a box taller than everything below it combined.
+     Mobile only shows the single-line "Drop zone" swap, so it gets the
+     full shared 26px back (media query below). */
   padding:16px 24px;
   font-size:16px;
   line-height:22px;
-  /* Keeps the mobile "Drag" swap (.tool-drop-click-word::before,
-     shared/site.css) in sync with this revealed-state font-size —
-     without it "Drag" stayed frozen at the shared default (26px)
-     while the plain " or drop" text beside it correctly shrank to
-     16px, a visible size mismatch confirmed live post-upload. */
+  /* Keeps the mobile "Drop zone" swap (.tool-drop-click-word::before,
+     shared/site.css) in sync — mobile bumps both this var and
+     font-size back to 26px just below. */
   --tool-drop-font-size:16px;
 }
 #cdDrop.tool-drop-revealed.active{
@@ -485,6 +487,14 @@ html[data-theme="dark"] .cd-file-row-error{
    instead of forcing an overflow-scrolled row, same fallback every
    other multi-setting tool on this site already uses. */
 @media (max-width:768px){
+  /* Mobile shows only the single-line "Drop zone" swap in the revealed
+     drop banner (not the full sentence desktop keeps), so it takes the
+     shared 26px back — matching Convert/Compress/Combine/Cleanly. */
+  #cdDrop.tool-drop-revealed{
+    font-size:26px;
+    line-height:32px;
+    --tool-drop-font-size:26px;
+  }
   /* Desktop's top:15px/right:-30px sits fine on the compact single-row
      60px card, but on mobile's taller multi-row stack that same offset
      lands the × half on/half off the row's own rounded top-right
