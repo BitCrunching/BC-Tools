@@ -138,6 +138,19 @@ Two distinct component families — don't blend them:
   has been reversed (see "On-banner controls flip with theme" below); this
   is now just the original example of the pattern every on-banner control
   follows, not a special case anymore.
+- **A tool with N independent per-item actions (not one global CTA) still
+  reuses this class, just smaller.** Coudio's redesign gave every loaded
+  file its own row with its own Convert/download button — genuinely N
+  buttons, not "the one CTA," so `height:74px` doesn't fit. Rather than
+  hand-rolling a new button family, it adds a second local class
+  (`class="tool-primary-btn cd-row-convert-btn"`) that only overrides
+  `height`/`padding`/`font-size` down to a compact 40px — still inheriting
+  `.tool-primary-btn`'s color/border/flip recipe as-is. This is the one
+  documented exception to "no ad-hoc height-only override" (see the
+  `-lg` variant rule further down): it applies specifically when the
+  *number* of primary-style buttons on screen has genuinely changed from
+  one to many, not when a single CTA just needs a different size — that
+  case still gets a real variant class, not a local override.
 
 ### Picking a dropdown widget: `.bc-combo` vs `.bc-dropdown`
 
@@ -516,6 +529,42 @@ resize vs. text-box resize) that sharing only the visual is the right
 altitude. Originated in Context (`.context-text-resize-handle`); Congify,
 Codify, and Colorfy each independently copied it under their own prefix
 before this was shared — all four now point at the one component.
+
+**This is the canvas/frame-level handle only** (resizing the loaded file's
+own preview — Convert/Compress/Congify/Codify/Colorfy's own preview-size
+sliders). An in-canvas *object* (a text box, caption, or signature placed
+on top of the canvas) uses a separate family instead — see
+`.bc-obj-resize-handle` below — even though the visual recipe looks close;
+don't reach for `.bc-resize-handle` for a new object-level control.
+
+## In-canvas object controls: `.bc-obj-remove-btn` / `.bc-obj-resize-handle` / `.bc-obj-drag-handle`
+
+For a text box, caption, or signature placed ON a tool's canvas (not the
+canvas/frame itself), use this family (`shared/site.css`) rather than
+`.bc-remove-btn`/`.bc-resize-handle` above, which are reserved for the
+canvas/frame's own controls:
+
+- **`.bc-obj-remove-btn`** — 25×25px red circle, white 2px border,
+  `#e11d48` fill, centered "×".
+- **`.bc-obj-resize-handle`** — 25×25px blue (`#2563eb`) circle, white 2px
+  border; icon sized via `.bc-obj-resize-handle svg` (16×16) or a local
+  `::before` background-image, same either-technique rule as
+  `.bc-resize-handle`.
+- **`.bc-obj-drag-handle`** — 25×25px yellow (`var(--context-yellow)`)
+  circle, white 2px border, `cursor:move`; icon via
+  `.bc-obj-drag-handle svg` (16×16).
+
+All three cover only size/shape/color/border — position offsets
+(`top`/`right`/`bottom`/`left`) and any per-tool z-index stay local on the
+tool's own class alongside it (e.g. `class="context-text-remove
+bc-obj-remove-btn"`, `class="gif-caption-drag-handle bc-obj-drag-handle"`).
+Originated as near-duplicates — Context's `.context-text-remove`/
+`.context-text-resize-handle`/`.context-drag-dot` and Congify's
+`.gif-caption-remove`/`.gif-caption-resize-handle`/
+`.gif-caption-drag-handle` — split out into this shared family once both
+tools' object controls were resized to the same 25px and the duplication
+became obvious. Use these (not `.bc-remove-btn`/`.bc-resize-handle`) for
+any future in-canvas object control.
 
 ## Drag & drop
 

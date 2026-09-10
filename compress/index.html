@@ -59,24 +59,27 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=46">
+<link rel="stylesheet" href="/shared/site.css?v=77">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #cpAfterDrop is revealed, so it never fights the level
-   buttons/Compress button once there's real content to interact with. */
+   buttons/Compress button once there's real content to interact with.
+   Same "jump" plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
 .tool-app:has(#cpAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over gets a bolder, unmistakable reaction than plain hover —
-   this class is added by shared/site.js's bcSetupBannerDropTarget while
-   a file is being dragged over the banner. 1.012/1.08 reads fine when
-   you're stationary hovering, but during an actual drag your attention
-   is on the OS drag cursor, not the banner, so anything that subtle
-   goes unnoticed ("doesn't react to drag"). */
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
 .tool-app:has(#cpAfterDrop[hidden]).active{
   filter:brightness(1.15);
   transform:scale(1.03);
@@ -253,12 +256,49 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
+/* Shared/site.css's #page-compress .tool-controls{grid-template-columns:1fr;}
+   only fires inside the homepage SPA (id="page-compress" wrapper) — this
+   standalone page has no such ancestor, so .tool-controls was silently
+   falling back to the shared 2-column default (1fr 1.2fr) and squeezing
+   #cpControls' one child (the Compress button) into the first, narrower
+   column instead of stretching full width. Same local override Convert's
+   own index.html already carries for its own single-button #cvControls. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+
+/* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
+   .tool-format-select native dropdown (Convert's pattern, for a picker
+   with several options) — Compress never grew that select fallback for
+   its Low/Medium/High buttons, so they just vanished on mobile with
+   nothing standing in for them. Compress's own case doesn't need the
+   select swap: only 3 short one-word labels (their two-line "level-sub"
+   description is already hidden everywhere, not just mobile), so the
+   fix is to keep the real buttons and make the row flexible instead —
+   flex:1 1 100% is Convert's own mobile pill logic (see Coudio's
+   Input/Output/Bitrate row), which forces all 3 buttons to wrap onto
+   their own full-width rows in this row's wrapping flex context.
+   min-width:0 is the standard flex-child fix for the buttons not
+   actually shrinking to fit without it. */
+@media (max-width:768px){
+  .compress-level-buttons{
+    display:flex;
+    flex-wrap:wrap;
+  }
+  .compress-level-buttons .tool-format-btn{
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+    flex:1 1 100%;
+    min-width:0;
+  }
+}
+
 #cpDrop{
-  font-size:clamp(22px, 2.4vw, 26px);
   border-color:transparent;
   background:transparent;
 }
-#cpDrop:not(.tool-drop-revealed):not(.active):hover{
+#cpDrop:not(.active):hover{
   border-color:transparent;
   transform:none;
 }
@@ -266,19 +306,29 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#30c4ff;
   background:rgba(48,196,255,.1);
 }
-/* Restored once a file's been picked — from then on this compact
-   box (not the whole banner) is the target for adding more files. */
-#cpDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
-#cpDrop.tool-drop-revealed.active{
-  border-color:#30c4ff;
-  background:rgba(48,196,255,.1);
-}
 .tool-app.active{
-  outline:3px dashed #30c4ff;
-  outline-offset:-10px;
   background:rgba(48,196,255,.08);
+}
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Convert's .cv-remove-btn /
+   Coudio's .cd-remove-btn. Sits inside #cpAfterDrop (position:relative
+   below) rather than directly on .tool-app, so it only shows once a
+   file's loaded and #cpAfterDrop is revealed. Same negative top/right
+   trick as Convert/Coudio: pulls the button up out of #cpAfterDrop's own
+   box (which starts below the header) so it lands at the true top-right
+   corner of the whole card next to the "Compress" logo. */
+.tool-after-drop{
+  position:relative;
+}
+.cp-remove-btn{
+  position:absolute;
+  top:-85px;
+  right:-25px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
 }
 </style>
 </head>
@@ -420,11 +470,12 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="cpDrop">Click or drop images</div>
-    <input type="file" id="cpInput" accept="image/*,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <div class="tool-drop" id="cpDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images</span></div>
+    <input type="file" id="cpInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/svg+xml,image/tiff,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cpAfterDrop" hidden>
+      <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-controls" id="cpToolControls">
         <div class="compress-level-buttons" id="cpLevelButtons">
           <button type="button" class="tool-format-btn" data-quality="0.9" data-label="Low" data-level-key="low">
@@ -437,14 +488,20 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
             <span>High</span><span class="level-sub">Lowest quality</span>
           </button>
         </div>
-        <button class="tool-primary-btn" id="cpCompressBtn" disabled>Compress and download</button>
       </div>
 
       <div class="selected-compression" id="cpSelectedCompression"></div>
     </div>
 
+    <div class="tool-results" id="cpResults">
+      <button type="button" class="bc-add-tile" id="cpAddTile" aria-label="Add images" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cpControls" hidden>
+      <button class="tool-primary-btn" id="cpCompressBtn" disabled>Compress and download</button>
+    </div>
+
     <div class="tool-status" id="cpStatus"></div>
-    <div class="tool-results" id="cpResults"></div>
   </div>
 </div>
 
@@ -490,7 +547,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
     <h3>New to compressing images?</h3>
     <p>Compression looks like a single slider, but there are two genuinely different approaches doing the shrinking underneath, and knowing which one is at work explains almost every result you'll see. Here's what's actually happening when you compress, and how to pick the right level.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress" href="/golden-rules/?tool=compress">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -539,7 +596,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=24" defer></script>
-<script src="/compress/compress-tool.js?v=14" defer></script>
+<script src="/shared/site.js?v=30" defer></script>
+<script src="/compress/compress-tool.js?v=21" defer></script>
 </body>
 </html>
