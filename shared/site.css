@@ -1106,10 +1106,14 @@ footer a{
      solid outline fades in. outline-offset:-2px sits it exactly over
      the 2px border band (same place the dashes were), not inset like a
      box-shadow ring would be; only its colour interpolates. No
-     scale/shape change on hover. */
+     scale/shape change on hover. The solid outline leads slightly and
+     the dashes trail off (longer duration + delay) so the two never
+     sit at 50/50 looking muddy — it reads as the dashes filling in. */
   outline:2px solid transparent;
   outline-offset:-2px;
-  transition:background .18s, border-color .18s, outline-color .18s;
+  transition:background .2s ease,
+             outline-color .32s cubic-bezier(.4,0,.2,1),
+             border-color .26s cubic-bezier(.4,0,.2,1) .06s;
 }
 /* The pre-load "Click / or drop / …" spans are replaced by the two
    pseudo-elements below in this state. */
