@@ -222,6 +222,27 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Compress's .cp-remove-btn.
+   Unlike Convert/Compress (where the drop zone is hidden once a file
+   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
+   small negative offset reaches the card corner), Combine keeps its
+   drop zone visible in the revealed state — so #cbAfterDrop starts far
+   down the card. The button is anchored to .tool-app itself instead and
+   shown only while files are loaded, via the same :has(#cbAfterDrop…)
+   toggle the hover rules above already use. */
+.cb-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  width:28px;
+  height:28px;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cbAfterDrop:not([hidden])) .cb-remove-btn{ display:flex; }
+
 #cbDrop{
   border-color:transparent;
   background:transparent;
@@ -515,6 +536,8 @@ html[data-theme="dark"] .combine-file-index{
       <span class="privacy-check-badge" id="cbPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDF files</span></div>
     <input type="file" id="cbInput" accept="application/pdf,.pdf" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Continue where you left off</button>
@@ -588,6 +611,6 @@ html[data-theme="dark"] .combine-file-index{
 </div>
 
 <script src="/shared/site.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=13" defer></script>
+<script src="/combine/combine-tool.js?v=14" defer></script>
 </body>
 </html>

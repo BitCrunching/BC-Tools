@@ -37,13 +37,12 @@
   }
 
   /* ===== "Remove all" reset — clears every loaded file and returns to
-     the pre-upload intro state. Combine never grew its own remove-all
-     button (unlike Convert/Coudio's #cvRemoveBtn/#cdRemoveBtn), so this
-     only exists to be called when the per-file remove button below
-     empties the list — without it, removing the last file one-by-one
-     left the tool stranded in the "revealed" state (file list area,
-     disabled Combine button) with no way back to the actual intro drop
-     zone. */
+     the pre-upload intro state. Called by the red #cbRemoveBtn (the
+     canvas-corner "×", same as Convert/Compress) and also when the
+     per-file remove button below empties the list — without the latter,
+     removing the last file one-by-one left the tool stranded in the
+     "revealed" state (file list area, disabled Combine button) with no
+     way back to the actual intro drop zone. */
   function resetTool(){
     files = [];
     fileList.innerHTML = "";
@@ -53,6 +52,9 @@
     status.textContent = "";
     bcDbClear(CB_DB_NAME, CB_DB_STORE);
   }
+
+  const removeBtn = document.getElementById("cbRemoveBtn");
+  if (removeBtn) removeBtn.addEventListener("click", resetTool);
 
   /* Before a file is picked, the whole banner acts as the drop zone —
      not just the (visually hidden) dashed box. Once a file lands, the
