@@ -440,7 +440,14 @@ console.log(a.next.value);`
      helpful once they already know the three zones. */
   const hodToggle = document.getElementById("cfHodToggle");
   if (previewWrap && cfWindow && hoverOverlay && hoverRect && hoverLabel && hoverBands){
-    previewWrap.addEventListener("mousemove", (e) => {
+    /* Pulled out of the mousemove listener so the HOD toggle's own
+       "change" handler below can re-run the same positioning against
+       the last known cursor position — needed for the case where HOD
+       gets switched back on while the mouse is already resting over
+       the preview: without this, nothing highlighted again until the
+       cursor actually moved, which reads as "the toggle doesn't work"
+       since flipping it produced no visible effect. */
+    function updateHoverOverlay(clientX, clientY, target){
       if (hodToggle && !hodToggle.checked){
         hoverOverlay.hidden = true;
         return;
@@ -448,7 +455,7 @@ console.log(a.next.value);`
       const wrapRect = previewWrap.getBoundingClientRect();
       const winRect = cfWindow.getBoundingClientRect();
       hoverOverlay.hidden = false;
-      if (e.target === previewWrap){
+      if (target === previewWrap){
         /* The ring around the window — four bands rather than one box
            covering the whole wrap, so the highlight doesn't paint over
            the window itself while you're hovering its backdrop. */
@@ -462,7 +469,7 @@ console.log(a.next.value);`
         return;
       }
       Object.values(hoverBands).forEach(band => { band.style.width = "0px"; band.style.height = "0px"; });
-      const hoveredLeftHalf = (e.clientX - wrapRect.left) < wrapRect.width / 2;
+      const hoveredLeftHalf = (clientX - wrapRect.left) < wrapRect.width / 2;
       if (hoveredLeftHalf){
         positionBox(hoverRect, winRect.left, winRect.top, winRect.width / 2, winRect.height);
         positionLabel(winRect.left, winRect.top, "Left half — click to change template");
@@ -470,13 +477,26 @@ console.log(a.next.value);`
         positionBox(hoverRect, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
         positionLabel(winRect.left + winRect.width / 2, winRect.top, "Right half — click to change theme");
       }
+    }
+    let lastMoveX = null, lastMoveY = null;
+    previewWrap.addEventListener("mousemove", (e) => {
+      lastMoveX = e.clientX;
+      lastMoveY = e.clientY;
+      updateHoverOverlay(e.clientX, e.clientY, e.target);
     });
     previewWrap.addEventListener("mouseleave", () => {
       hoverOverlay.hidden = true;
+      lastMoveX = lastMoveY = null;
     });
     if (hodToggle){
       hodToggle.addEventListener("change", () => {
-        if (!hodToggle.checked) hoverOverlay.hidden = true;
+        if (!hodToggle.checked){
+          hoverOverlay.hidden = true;
+          return;
+        }
+        if (lastMoveX !== null && previewWrap.matches(":hover")){
+          updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
+        }
       });
     }
   }
@@ -518,6 +538,7 @@ console.log(a.next.value);`
       shadowToggle.checked = true;
       cfWindow.classList.remove("cf-no-shadow");
     }
+    if (hodToggle) hodToggle.checked = true;
     if (continueBtn) continueBtn.hidden = true;
     if (formatPngBtn && formatSvgBtn) setExportFormat("png");
     autoFitCodeInput();
