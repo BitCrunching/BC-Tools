@@ -439,6 +439,12 @@ console.log(a.next.value);`
      layer above off, for anyone who finds it more distracting than
      helpful once they already know the three zones. */
   const hodToggle = document.getElementById("cfHodToggle");
+  /* Reassigned below once the hover-overlay elements are confirmed to
+     exist; declared here (not just inside that block) so renderPreview()
+     further down — which is what actually causes the window to resize —
+     can call it too, without a real dependency on ResizeObserver timing.
+     Left as a no-op otherwise. */
+  let refreshHoverOverlay = () => {};
   if (previewWrap && cfWindow && hoverOverlay && hoverRect && hoverLabel && hoverBands){
     /* Pulled out of the mousemove listener so the HOD toggle's own
        "change" handler below can re-run the same positioning against
@@ -479,6 +485,21 @@ console.log(a.next.value);`
       }
     }
     let lastMoveX = null, lastMoveY = null;
+    /* The window auto-resizes (more code typed, a template/language swap,
+       font-size changes) whenever renderPreview() runs — but the overlay
+       only ever redrew on mousemove, so if the cursor was resting still
+       over the preview while any of that happened, the highlight stayed
+       frozen at the window's old size (confirmed live: window grew
+       155px -> 334px tall while the highlight rect stayed at 155px,
+       ending well short of the window's real bottom edge — reads as the
+       overlay being "stuck", exactly as reported). Assigned to the
+       outer refreshHoverOverlay so renderPreview() can call it directly
+       after every resize-causing change, not just react to one. */
+    refreshHoverOverlay = () => {
+      if (lastMoveX !== null && previewWrap.matches(":hover")){
+        updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
+      }
+    };
     previewWrap.addEventListener("mousemove", (e) => {
       lastMoveX = e.clientX;
       lastMoveY = e.clientY;
@@ -494,10 +515,15 @@ console.log(a.next.value);`
           hoverOverlay.hidden = true;
           return;
         }
-        if (lastMoveX !== null && previewWrap.matches(":hover")){
-          updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
-        }
+        refreshHoverOverlay();
       });
+    }
+    /* Belt-and-suspenders for any resize renderPreview() itself doesn't
+       cover (a browser window resize, a webfont finishing its swap) —
+       harmless if it never fires, since refreshHoverOverlay() is a no-op
+       whenever the cursor isn't actually over the preview. */
+    if (typeof ResizeObserver !== "undefined"){
+      new ResizeObserver(() => refreshHoverOverlay()).observe(cfWindow);
     }
   }
 
@@ -570,6 +596,14 @@ console.log(a.next.value);`
     codeOutput.classList.toggle("cf-ghost", isEmpty);
     codeOutput.textContent = isEmpty ? GHOST_CODE : codeInput.value;
     if (window.Prism) Prism.highlightElement(codeOutput);
+    /* #cfWindow sizes itself to codeOutput's content, so this line can
+       (and usually does) resize it — re-sync the hover-inspector overlay
+       against the now-current size immediately, synchronously, rather
+       than waiting on a mousemove that may not come (see
+       refreshHoverOverlay's own comment for the "stuck" bug this fixes).
+       getBoundingClientRect() inside it forces the reflow that makes the
+       new size available right here, not just eventually. */
+    refreshHoverOverlay();
   }
   codeInput.addEventListener("input", () => {
     markStarted();
