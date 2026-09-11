@@ -60,7 +60,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=84">
+<link rel="stylesheet" href="/shared/site.css?v=85">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#FF6961); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -243,7 +243,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 .tool-app:has(#cbAfterDrop:not([hidden])) .cb-remove-btn{ display:flex; }
 
-#cbDrop{
+/* Before a file is loaded the whole banner is the drop target, so the
+   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
+   doesn't cancel the shared .tool-drop-addpill's dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#cbDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
 }
@@ -255,11 +259,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#FF6961;
   background:rgba(236,111,99,.1);
 }
-/* Restored once a file's been picked — from then on this compact
-   box (not the whole banner) is the target for adding more files. */
-#cbDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cbDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
 #cbDrop.tool-drop-revealed.active{
   border-color:#FF6961;
   background:rgba(236,111,99,.1);
@@ -538,7 +541,7 @@ html[data-theme="dark"] .combine-file-index{
 
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Remove all files">×</button>
 
-    <div class="tool-drop" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDF files</span></div>
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDF files</span></div>
     <input type="file" id="cbInput" accept="application/pdf,.pdf" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Continue where you left off</button>
 
