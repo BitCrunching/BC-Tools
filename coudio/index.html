@@ -517,7 +517,22 @@ html[data-theme="dark"] .cd-file-row-error{
   .cd-row-io{
     flex:1 1 100%;
     min-width:0;
-    justify-content:center;
+    /* Equal-width Found-Input/Output-format split via CSS Grid
+       (1fr auto 1fr), not flex-grow. flex-grow's "equal split" only
+       holds when both items' flex-basis is genuinely
+       content-independent — every flex-basis/min-width combination
+       tried here still ended up favoring whichever side happened to
+       wrap its content in a real element over the other (confirmed
+       live, in complete isolation: two identically-styled/sized flex
+       items split 126px/96px purely because one held a nested <div>
+       and the other held a bare text node, even at flex-basis:0 +
+       min-width:0 on both — this exact page's "WAV"/"MP3" pairing hit
+       it because Found Input is bare text but Output format wraps its
+       label in .bc-combo-trigger). Grid's 1fr track sizing has no such
+       content-dependency. */
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    align-items:center;
   }
   /* Found Input is plain text (nothing to click — the type is only
      ever auto-detected, never chosen), but on mobile it now gets the
@@ -549,25 +564,15 @@ html[data-theme="dark"] .cd-file-row-error{
     text-align:center;
     padding-left:14px;
   }
-  /* Same actual rule .cd-row-convert-btn uses below (flex:1 1 100%) —
-     not a min/max range, a single flex-basis of 100%. On .cd-row-io's
-     own non-wrapping flex row, two 100%-basis siblings can't both
-     literally get the full width; flex-shrink divides the leftover
-     between them instead, so Found Input and Output Format end up
-     splitting row 2 evenly with no artificial width cap, the same
-     "claim everything, let flex resolve the rest" logic Convert's
-     button relies on. */
-  /* min-width:0 is load-bearing, not decorative — a flex item's default
-     min-width:auto is content-based, and .cd-row-format-combo's own
-     <input>+chevron content set a floor wide enough to stop it
-     shrinking down to match Found Input, so the two split unevenly
-     (confirmed live: WAV stayed narrow, MP3 claimed most of the row)
-     despite both sharing the same flex:1 1 100%. Same recurring gotcha
-     this file has already hit for .cd-io-group/.cd-io-setting above. */
+  /* .cd-row-io above is display:grid now (1fr auto 1fr) specifically
+     so these two split evenly regardless of content — see its own
+     comment. min-width:0 is still needed here: a grid item's default
+     min-width:auto is content-based same as a flex item's, and
+     .cd-row-format-combo's own <input>+chevron content would otherwise
+     set a floor wide enough to stop it shrinking to match Found
+     Input's own (bare-text, naturally narrower floor) column. */
   .cd-row-input-badge,
   .cd-row-format-combo{
-    flex:1 1 100%;
-    width:auto;
     min-width:0;
   }
   /* Bitrate gets the exact same treatment — but since it lives in
