@@ -525,6 +525,23 @@ console.log(a.next.value);`
     if (typeof ResizeObserver !== "undefined"){
       new ResizeObserver(() => refreshHoverOverlay()).observe(cfWindow);
     }
+    /* Scrolling moves the preview under a cursor that never itself
+       generates a "mousemove" (its viewport position hasn't changed,
+       only what's under it has) — so without this, scrolling the page
+       while HOD is showing leaves the highlight stuck at whatever
+       screen position it was drawn at, no longer over the window at
+       all. rAF-throttled since "scroll" can fire far more often than a
+       redraw is actually useful for. Capture + passive so it catches
+       scrolling on any ancestor (not just window) without blocking it. */
+    let scrollRefreshQueued = false;
+    window.addEventListener("scroll", () => {
+      if (scrollRefreshQueued) return;
+      scrollRefreshQueued = true;
+      requestAnimationFrame(() => {
+        scrollRefreshQueued = false;
+        refreshHoverOverlay();
+      });
+    }, { capture: true, passive: true });
   }
 
   /* ===== "started" state — sticky once reached =====
