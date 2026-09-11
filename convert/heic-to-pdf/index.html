@@ -77,6 +77,16 @@
   transform:scale(.99);
   transition-duration:.1s;
 }
+/* #cvResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cvAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Coudio already applies to #cdStatus for the same
+   reason; found via a 1100×322.5px banner-size audit (every other tool
+   renders exactly that pre-load, Convert/Compress were 354.5 — 32px of
+   dead space). */
+.tool-app:has(#cvAfterDrop[hidden]) #cvResults{
+  display:none;
+}
 
 /* Just a fun easter egg on double-click — not a functional cue, so it's
    fine that it's low priority and simple. */
