@@ -65,7 +65,12 @@
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
 
-.tool-app{ min-height:250px; }
+/* Every other tool's banner floor is 1100×322.5px (border-box: 250.5px
+   of content height + the shared 72px vertical padding) — this was
+   250px unconditionally, which is that same 322.5 figure with the
+   padding subtracted twice by mistake (content-height math applied to
+   a border-box property). Matched to the real standard. */
+.tool-app{ min-height:322.5px; }
 #page-context .tool-app:has(#ctEditor[hidden]){ cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while no PDF is loaded yet — :has() drops it the
