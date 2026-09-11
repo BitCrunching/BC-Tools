@@ -586,40 +586,32 @@ html[data-theme="dark"] .cd-file-row-error{
     flex:1 1 100%;
     width:auto;
   }
-  .cd-row-size{
+  /* Player gets its own full-width row now that the size label has
+     moved down to sit with Convert instead of sharing this line — flex-
+     basis:100% (same logic as Bitrate's own full-width row above)
+     rather than the old flex:1 1 0/min-width:140px pairing, which only
+     existed to squeeze the player down next to the size label without
+     losing its play button/scrubber (confirmed live at the time: a
+     native <audio controls> element drops those past ~140px). Alone on
+     its own row there's no squeeze to guard against. */
+  .cd-row-audio{
     order:2;
+    flex:1 1 100%;
   }
-  .cd-row-audio{
-    order:3;
-  }
-  /* File size wasn't a pill at all before (bare text) — flexible
-     padding (scales with viewport via clamp rather than one fixed
-     value) gives it the same breathing room as its pill neighbors
-     without needing a fixed width of its own. */
+  /* File size now sits directly left of Convert instead of next to the
+     player — flex:0 0 auto keeps it at its own natural (small) width so
+     Convert can claim the rest of the row via flex:1 1 auto just below,
+     the same "label + button share a line" pattern Coudio's file-size
+     badge never had room for while it lived next to the full-width
+     player. */
   .cd-row-size{
+    order:3;
+    flex:0 0 auto;
     padding:0 clamp(6px, 2vw, 12px);
-  }
-  /* flex-basis:0 (not auto) is the actual fix — the wrap algorithm
-     decides whether an item fits its current line using its
-     hypothetical (pre-shrink) main size, and a native <audio controls>
-     element's own intrinsic content width there is easily 300px+, so
-     with basis:auto it never even got considered for sharing
-     Bitrate's line — confirmed live (min-width:0 alone did nothing
-     since the item was already being placed on its own line before
-     shrink math ever ran). Basis 0 makes it start from nothing and
-     grow to fill whatever's left after Bitrate + the size label.
-     min-width:140px is a real floor, not decorative — shrinking a
-     native <audio controls> element past that loses its play button
-     and scrubber entirely (confirmed live: only the volume icon and
-     overflow dots survived at true flex:1 1 0). Below that width it
-     wraps onto its own line instead of becoming unusable. */
-  .cd-row-audio{
-    flex:1 1 0;
-    min-width:140px;
   }
   .cd-row-convert-btn{
     order:4;
-    flex:1 1 100%;
+    flex:1 1 auto;
     height:40px;
   }
 }
