@@ -891,40 +891,9 @@ html[data-theme="dark"] .gif-results-toggle:hover{
 /* #gifToolControls (the shared .tool-controls) brings its own 24px
    margin-top for sitting directly on a banner — inside the panel the
    flex gap already provides that spacing, so it would otherwise stack
-   on top of it. position:relative hosts the glow below, which is
-   positioned against this element (not the button directly) so it's
-   still centred correctly even though .tool-controls is a grid with
-   the button as its only cell. */
+   on top of it. */
 .gif-controls-panel #gifToolControls{
   margin-top:0;
-  position:relative;
-}
-/* A glow sitting right at the Convert button's own top edge, almost
-   touching it, rather than a divider line floating in the gap above —
-   reads as light escaping from a seam in the button itself instead of
-   a separator between two unrelated things. Tried half-behind/
-   half-above (z-index:-1, straddling the seam) first — it read as a
-   drop-shadow, not a glow, since only its darker theme-flip half ever
-   showed. Sitting fully above at z-index:1 instead, brighter and less
-   blurred, reads unambiguously as an accent. Centered and capped at
-   70% width so it doesn't reach past the button's own rounded corners
-   at the sides. Uses the same light/dark flip as every on-banner
-   control (CLAUDE.md) — dark accent on the light-tint card, bright
-   accent on the dark-tint one, so it stays visible in both. */
-.gif-controls-panel #gifToolControls::before{
-  content:"";
-  position:absolute;
-  top:-6px;
-  left:15%;
-  right:15%;
-  height:8px;
-  z-index:1;
-  background:radial-gradient(ellipse at center, rgba(0,0,0,.4), rgba(0,0,0,0) 75%);
-  filter:blur(1.5px);
-  pointer-events:none;
-}
-html[data-theme="dark"] .gif-controls-panel #gifToolControls::before{
-  background:radial-gradient(ellipse at center, rgba(255,255,255,.55), rgba(255,255,255,0) 75%);
 }
 
 /* Settings list: one row per control, all dropdown/button based now —
