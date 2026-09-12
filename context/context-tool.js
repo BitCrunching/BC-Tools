@@ -1202,6 +1202,7 @@
   bcRegisterKeyShortcut("b", boldBtn);
   bcRegisterKeyShortcut("i", italicBtn);
   bcRegisterKeyShortcut("u", underlineBtn);
+  bcRegisterKeyShortcut("r", filenameTrigger);
 
   document.addEventListener("click", (e) => {
     if (!colorDropdown.contains(e.target)){
