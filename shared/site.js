@@ -1257,3 +1257,23 @@ async function bcDbClear(dbName, storeName){
   } catch (e) { /* ignore */
   } finally { if (db) db.close(); }
 }
+
+/* Single-letter keyboard shortcut for an on-banner button (Context/Congify's
+   Add text/Bold/Italic/Underline pills) — just forwards to btn.click(), so
+   it automatically respects a disabled button and stays in sync with
+   whatever the click handler already does (no separate shortcut logic to
+   keep in sync with the button's own behavior). Skips while focus is in a
+   text input/textarea/contenteditable (typing a caption/text-box's actual
+   content shouldn't fire "b"/"i"/"u"/"t" as shortcuts) and while a
+   modifier key is held (so it doesn't fight browser/OS shortcuts). */
+function bcRegisterKeyShortcut(key, btn){
+  if (!btn) return;
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key.toLowerCase() !== key.toLowerCase()) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    e.preventDefault();
+    btn.click();
+  });
+}
