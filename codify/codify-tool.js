@@ -11,6 +11,7 @@
   const cfWindow = document.getElementById("cfWindow");
   const themeLink = document.getElementById("cfThemeLink");
   const downloadBtn = document.getElementById("cfDownloadBtn");
+  bcRegisterKeyShortcut("d", downloadBtn);
   const statusEl = document.getElementById("cfStatus");
   const pasteBtn = document.getElementById("cfPasteBtn");
   const bgColorInput = document.getElementById("cfBgColorInput");

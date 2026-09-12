@@ -5,6 +5,7 @@
   const formatSelect = document.getElementById("cvFormatSelect");
   const inputSelect = document.getElementById("cvInputSelect");
   const convertBtn = document.getElementById("cvConvertBtn");
+  bcRegisterKeyShortcut("d", convertBtn);
 
   /* ===== Input/Output format pickers =====
      The <select> elements above are the real state/event backend —

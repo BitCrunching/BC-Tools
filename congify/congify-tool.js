@@ -1048,6 +1048,7 @@
   bcRegisterKeyShortcut("b", captionBoldBtn);
   bcRegisterKeyShortcut("i", captionItalicBtn);
   bcRegisterKeyShortcut("u", captionUnderlineBtn);
+  bcRegisterKeyShortcut("d", downloadBtn);
 
   /* ===== Dropdowns (Font / Color & style / Crop / Playback) =====
      Same trigger+menu pattern as Context's color dropdown: one open at
