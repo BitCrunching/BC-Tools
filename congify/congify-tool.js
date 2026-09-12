@@ -1044,6 +1044,11 @@
   registerCaptionStyleToggle(captionUnderlineBtn, "underline");
   registerCaptionStyleToggle(captionStrokeBtn, "strokeEnabled");
 
+  bcRegisterKeyShortcut("t", addTextBtn);
+  bcRegisterKeyShortcut("b", captionBoldBtn);
+  bcRegisterKeyShortcut("i", captionItalicBtn);
+  bcRegisterKeyShortcut("u", captionUnderlineBtn);
+
   /* ===== Dropdowns (Font / Color & style / Crop / Playback) =====
      Same trigger+menu pattern as Context's color dropdown: one open at
      a time, closes on an outside click or after picking an option. */

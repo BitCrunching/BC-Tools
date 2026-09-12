@@ -1198,6 +1198,11 @@
   toggleStyleProp(italicBtn, "italic", "fontStyle", "italic", "normal");
   toggleStyleProp(underlineBtn, "underline", "textDecoration", "underline", "none");
 
+  bcRegisterKeyShortcut("t", addTextBtn);
+  bcRegisterKeyShortcut("b", boldBtn);
+  bcRegisterKeyShortcut("i", italicBtn);
+  bcRegisterKeyShortcut("u", underlineBtn);
+
   document.addEventListener("click", (e) => {
     if (!colorDropdown.contains(e.target)){
       colorMenu.hidden = true;
