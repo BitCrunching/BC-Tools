@@ -1203,6 +1203,7 @@
   bcRegisterKeyShortcut("i", italicBtn);
   bcRegisterKeyShortcut("u", underlineBtn);
   bcRegisterKeyShortcut("r", filenameTrigger);
+  bcRegisterKeyShortcut("d", downloadBtn);
 
   document.addEventListener("click", (e) => {
     if (!colorDropdown.contains(e.target)){
