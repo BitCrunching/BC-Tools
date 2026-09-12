@@ -78,6 +78,19 @@
     transparent 38px
   );
 }
+/* This ripple sizes itself to #page-coudio via inset:0, so it snaps
+   along with the banner's own min-height jump (322.5px empty ->
+   360px loaded, see the :has() rules below) — with no transition on
+   that jump, the whole banner (rings included) used to pop to its new
+   height in one frame instead of resizing smoothly. Declared here,
+   unconditionally, so it's in effect on both sides of that swap — the
+   pre-load :has() rule below still needs its own copy since it also
+   sets a `transition` shorthand for its hover reaction, and a second
+   `transition` declaration replaces this one rather than merging with
+   it (matching id+:has() specificity beats a plain id selector). */
+#page-coudio{
+  transition:min-height .35s cubic-bezier(.4,0,.2,1);
+}
 
 /* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
    .engine-status-row/.engine-status-value from shared/site.css — the
@@ -203,7 +216,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 #page-coudio:has(#cdDrop:not(.tool-drop-revealed)){
   min-height:322.5px;
   cursor:pointer;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease, min-height .35s cubic-bezier(.4,0,.2,1);
 }
 /* #cdStatus reserves 46px (22px margin-top + 24px min-height) even
    with no message in it, which pre-upload just pushes the fixed
