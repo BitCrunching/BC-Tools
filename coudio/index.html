@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=87">
+<link rel="stylesheet" href="/shared/site.css?v=88">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -281,27 +281,13 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
    so it doesn't cancel the shared .tool-drop-addpill's own dashed
    border once it collapses to the "＋ Add more files" pill. */
-/* transition redeclared (not left to the shared .tool-drop{transition:.25s}
-   catch-all) so border-color/background snap to transparent immediately
-   on remove instead of fading with the rest of the shape — .tool-drop's
-   blanket transition was animating every property alike, so on removal
-   the outgoing "＋ Add more files" pill's border visibly traced/shrank
-   down around the "Click here" text for .25s instead of just vanishing,
-   reported as a leftover line. Unconditional (all widths) since it's
-   just an instant snap either way. */
+/* transition (instant border/background snap + desktop-only geometry
+   smoothing) now comes from the shared .tool-drop-addpill:not(.tool-drop-revealed)
+   rule in shared/site.css — originated here, ported there once Combine
+   and Cleanly turned out to have the exact same leftover-outline bug. */
 #cdDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
-  transition:none;
-}
-/* The actual box-resize/"Click here" settling-into-center motion is
-   desktop only, same as the banner's own min-height smoothing above —
-   on mobile the drop zone just snaps straight to its final size like
-   every other tool's does. */
-@media (min-width:769px){
-  #cdDrop:not(.tool-drop-revealed){
-    transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
-  }
 }
 #cdDrop:not(.tool-drop-revealed):not(.active):hover{
   border-color:transparent;
