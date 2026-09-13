@@ -57,7 +57,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=77">
+<link rel="stylesheet" href="/shared/site.css?v=88">
 <style>
 #page-gif::before{
   background:#22D3D0;
@@ -204,8 +204,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over gets a bolder, unmistakable reaction than plain hover — see
-   Convert's version of this comment for why. */
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
 #page-gif:has(#gifDrop:not([hidden])).active{
   filter:brightness(1.15);
   transform:scale(1.03);
@@ -305,7 +308,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    size/position stay here. */
 .gif-remove-btn{
   position:absolute;
-  top:10px;
+  top:20px;
   right:10px;
   z-index:6;
   width:30px;
@@ -318,7 +321,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    Remove, same corner. */
 .gif-back-btn{
   position:absolute;
-  top:10px;
+  top:20px;
   right:48px;
   z-index:6;
   width:30px;
@@ -480,7 +483,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   margin:16px auto 0;
   padding:11px 0;
   border-radius:20px;
-  background:#1d2436;
 }
 .gif-preview-frame{
   position:relative;
@@ -674,12 +676,12 @@ html[data-theme="dark"] .gif-results-toggle:hover{
    corner still free. */
 #gifPreviewFrame .gif-crop-corner-btn{
   position:absolute;
-  /* -1px, not 10px: the remove button it's aligning with sits on
-     .gif-preview-panel (top:10px there), but this button is positioned
+  /* 9px, not 20px: the remove button it's aligning with sits on
+     .gif-preview-panel (top:20px there), but this button is positioned
      relative to .gif-preview-frame instead, which itself starts 11px
      further down (.gif-preview-panel's own padding-top) — this offsets
      for that gap so the two buttons' top edges land on the same line. */
-  top:-1px;
+  top:9px;
   left:10px;
   width:30px;
   height:30px;
@@ -874,6 +876,37 @@ html[data-theme="dark"] .gif-results-toggle:hover{
   margin:0 auto;
 }
 
+/* Wraps the Basic/Advanced toggle, both slider rows, and the Convert
+   button in the shared .result card (shared/site.css) — same dark
+   translucent panel every tool's loaded-file row already uses (Coudio's
+   .result.cd-file-row is the reference), just holding controls instead
+   of a file. Sized to content rather than .result's own tight 10px/16px
+   defaults, since this is a whole panel of pill rows, not a compact
+   card. margin-top separates it from the scrubber/filename row above,
+   matching the same spacing .gif-sliders already used on its own. */
+.gif-controls-panel{
+  margin-top:16px;
+  padding:20px;
+  border-radius:20px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+/* gap on the panel above already spaces every visible child — the
+   toggle/sliders' own margin-top (used when they sat directly on the
+   banner) would just double up with it now. */
+.gif-controls-panel .gif-mode-toggle,
+.gif-controls-panel .gif-sliders{
+  margin-top:0;
+}
+/* #gifToolControls (the shared .tool-controls) brings its own 24px
+   margin-top for sitting directly on a banner — inside the panel the
+   flex gap already provides that spacing, so it would otherwise stack
+   on top of it. */
+.gif-controls-panel #gifToolControls{
+  margin-top:0;
+}
+
 /* Settings list: one row per control, all dropdown/button based now —
    left-aligned, capped at 100px, aligned to the row's bottom edge. */
 .gif-sliders{
@@ -968,7 +1001,11 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
 .gif-slider-group > .bc-toggle-btn{
   min-width:100px;
   max-width:140px;
-  height:38px;
+  /* Was 38px, silently overriding .bc-toggle-btn's own shared 40px
+     default (shared/site.css) instead of matching it — this is the
+     actual desktop height for Stroke and every other plain toggle
+     button in this row. */
+  height:40px;
   padding:0 12px;
   white-space:nowrap;
 }
@@ -1189,6 +1226,12 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
   }
   #gifCaptionStrokeBtn{
     width:122px;
+    /* PC keeps .bc-toggle-btn's shared 40px default (no override
+       needed there) — mobile explicitly drops to 30px, since this was
+       the one toggle button in this row that never got a mobile
+       height override at all (every sibling here already has one, at
+       34px). */
+    height:30px;
   }
   /* Color/B/I/U/Thickness are each their own button now, sized to fit
      their own content within a 29-70px range instead of a single
@@ -1410,7 +1453,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
       <span class="privacy-check-badge" id="gifPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <div class="tool-drop" id="gifDrop">Click or drop a video</div>
+    <div class="tool-drop" id="gifDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">a video</span></div>
     <input type="file" id="gifInput" accept="video/*" hidden>
 
     <button type="button" class="tool-primary-btn tool-continue-btn" id="gifContinueBtn" hidden>Continue where you left off</button>
@@ -1464,6 +1507,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
            default since captions are this tool's primary editing task;
            Advanced's controls (resolution, fps, speed, playback) matter
            less often and used to sit visible at all times. -->
+      <div class="gif-controls-panel result">
       <div class="gif-mode-toggle" id="gifModeToggle">
         <button type="button" id="gifModeBasicBtn" aria-pressed="true">Basic</button>
         <button type="button" id="gifModeAdvancedBtn" aria-pressed="false">Advanced</button>
@@ -1471,7 +1515,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
 
       <div class="gif-sliders" id="gifCaptionSliders">
         <div class="gif-slider-group">
-          <button type="button" class="bc-toggle-btn" id="gifAddTextBtn">Add text</button>
+          <button type="button" class="bc-toggle-btn" id="gifAddTextBtn" title="Add text (T)">Add text</button>
         </div>
         <div class="gif-slider-group">
           <div class="bc-dropdown" id="gifCaptionFontDropdown">
@@ -1505,9 +1549,9 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
         </div>
         <div class="gif-slider-group">
           <div class="bc-toggle-btn-group">
-            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionBoldBtn" title="Bold" aria-pressed="false" aria-label="Bold"><b>B</b></button>
-            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionItalicBtn" title="Italic" aria-pressed="false" aria-label="Italic"><i>I</i></button>
-            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionUnderlineBtn" title="Underline" aria-pressed="false" aria-label="Underline"><u>U</u></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionBoldBtn" title="Bold (B)" aria-pressed="false" aria-label="Bold"><b>B</b></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionItalicBtn" title="Italic (I)" aria-pressed="false" aria-label="Italic"><i>I</i></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionUnderlineBtn" title="Underline (U)" aria-pressed="false" aria-label="Underline"><u>U</u></button>
           </div>
         </div>
         <div class="gif-row-break" aria-hidden="true"></div>
@@ -1590,8 +1634,10 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
         </div>
       </div>
 
+      <div class="gif-convert-fade" aria-hidden="true"></div>
       <div class="tool-controls" id="gifToolControls" style="grid-template-columns:1fr;">
         <button class="tool-primary-btn" id="gifConvertBtn" disabled>Convert to GIF</button>
+      </div>
       </div>
     </div>
 
@@ -1605,7 +1651,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
     <div class="tool-results" id="gifResults"></div>
     <div class="gif-done-actions" id="gifDoneActions" hidden>
       <button type="button" class="tool-primary-btn tool-continue-btn" id="gifDoneContinueBtn">Continue working</button>
-      <button type="button" class="tool-primary-btn" id="gifDownloadBtn">Download</button>
+      <button type="button" class="tool-primary-btn" id="gifDownloadBtn" title="Download (D)">Download</button>
     </div>
     <div class="tool-status" id="gifStatus"></div>
     </div>
@@ -1620,7 +1666,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
     </div>
     <h3>New to making GIFs?</h3>
     <p>A GIF isn't compressed video — it's a sequence of individual frames capped at 256 colors each, with no audio track at all, which is exactly why frame rate, trim length, and crop hit its file size so differently than they would for a video. Here's what's actually happening under the hood, and how to pick settings that hold up.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="gif" href="/golden-rules/?tool=gif">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
@@ -1669,7 +1715,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=30" defer></script>
-<script src="/congify/congify-tool.js?v=122" defer></script>
+<script src="/shared/site.js?v=32" defer></script>
+<script src="/congify/congify-tool.js?v=125" defer></script>
 </body>
 </html>

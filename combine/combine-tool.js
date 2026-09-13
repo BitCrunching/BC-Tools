@@ -4,6 +4,7 @@
   const input = document.getElementById("cbInput");
   const fileList = document.getElementById("cbFileList");
   const combineBtn = document.getElementById("cbCombineBtn");
+  bcRegisterKeyShortcut("d", combineBtn);
   const status = document.getElementById("cbStatus");
   const afterDrop = document.getElementById("cbAfterDrop");
   const toolApp = document.querySelector(".tool-app");

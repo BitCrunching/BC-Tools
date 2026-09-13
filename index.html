@@ -31,15 +31,22 @@
      applies the remembered position exactly once, on DOMContentLoaded —
      by which point the full DOM already exists (this page has no
      async-loaded content that would change height any later) — instead
-     of racing the browser's own opaque internal timing. Scoped to this
-     page only via sessionStorage's own per-origin/per-tab lifetime, not
-     a site-wide change to how any other page's reload behaves. -->
+     of racing the browser's own opaque internal timing. Keyed by
+     location.pathname, not a single flat "bc-scrollY" — sessionStorage
+     is per-origin/per-tab, not per-page, so one flat key was actually
+     shared by every page under this origin: leaving the homepage
+     scrolled deep down and clicking through to a tool page restored
+     that same deep offset there too, landing on the tool's own later
+     content (an article section, etc.) instead of its top. Namespacing
+     by path keeps this purely a same-page reload restore, which is all
+     it was ever meant to be. -->
 <script>
 (function(){
   try { history.scrollRestoration = "manual"; } catch(e){}
+  var scrollKey = "bc-scrollY:" + location.pathname;
   function restoreScroll(){
     try {
-      const y = sessionStorage.getItem("bc-scrollY");
+      const y = sessionStorage.getItem(scrollKey);
       /* window.scrollTo, not document.documentElement.scrollTop = ... —
          a direct scrollTop assignment gets silently reset back to 0 on
          this page (something else resets it before it sticks); scrollTo
@@ -58,7 +65,7 @@
      until layout finishes settling and this second pass corrects it. */
   window.addEventListener("load", restoreScroll);
   window.addEventListener("pagehide", () => {
-    try { sessionStorage.setItem("bc-scrollY", String(window.scrollY)); } catch(e){}
+    try { sessionStorage.setItem(scrollKey, String(window.scrollY)); } catch(e){}
   });
 })();
 </script>
@@ -143,7 +150,7 @@
   --bg:#ffffff;
   --border:rgba(0,0,0,.14);
   --border-strong:rgba(0,0,0,.4);
-  --text:#000000;
+  --text:#1a1a1a;
   --accent:#1e293b;
   --accent2:#475569;
 }
@@ -1479,7 +1486,15 @@ html[data-theme="light"] .tool-card-star{
 }
 
 @media (max-width:768px){
-  #page-mainpage .card{ min-height:0; }
+  /* Was min-height:0 — letting card height be purely content-driven
+     (icon + title + description), so a tool with a shorter description
+     ended up visibly shorter than one with a longer one (164px vs
+     188px, reported live). 188px matches the tallest naturally-sized
+     card, so every card floors out at the same height instead of the
+     grid looking uneven — flex-direction:column on .card (see the base
+     rule above) is what lets the shorter ones' content just have more
+     breathing room below it rather than stretching awkwardly. */
+  #page-mainpage .card{ min-height:188px; }
 }
 
 #page-mainpage .card::before{
@@ -1519,7 +1534,7 @@ html[data-theme="light"] .tool-card-star{
 }
 
 #page-mainpage .card.codify::before{
-  background:#FF4FD8;
+  background:#C81C86;
 }
 
 #page-mainpage .card.colorfy::before{
@@ -1711,11 +1726,14 @@ html[data-theme="light"] .tool-preview-modal{
 }
 
 .tool-preview-peek{
+  display:block;
   position:relative;
+  width:100%;
   aspect-ratio:1600/615;
   border-radius:16px;
   overflow:hidden;
-  background:#000 center/cover no-repeat;
+  background:#000;
+  object-fit:cover;
 }
 
 .tool-preview-title{
@@ -1895,12 +1913,7 @@ footer a{
 }
 
 /* ===== LANGUAGE DROPDOWN ===== */
-/* Hidden for now — staying English-only until translations are ready to
-   turn back on. Mirrors the same rule in shared/site.css (this page
-   doesn't load that stylesheet, keeps its own inline styles instead —
-   see the <link> at the top of <head>). Underlying i18n is untouched. */
 .nav-lang-wrap{
-  display:none;
   position:relative;
 }
 
@@ -2241,7 +2254,7 @@ footer a{
 
 /* .engine-status-card's own margin is top-only (32px) and the
    following .about-section-heading has no top margin either, so the
-   banner and "Our/his Beliefs" right after it were sitting almost
+   banner and "Our Beliefs" right after it were sitting almost
    flush together. Scoped bottom margin here rather than touching
    either shared rule, which are both reused elsewhere. */
 .backlog-coms-banner{
@@ -2383,7 +2396,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_convert_desc">Convert images between JPG, PNG, WEBP, and PDF. You can also upload HEIC/HEIF!</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/convert-dark.gif?v=6" data-preview-img-light="/shared/previews/convert-light.gif?v=5" data-preview-name="Convert" data-preview-desc="Turn any image or PDF into exactly the format you need — JPG, PNG, WEBP, PDF, even HEIC straight from an iPhone. Instant, right in your browser, nothing ever uploaded." data-preview-href="/convert/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/convert-dark.mp4?v=1" data-preview-img-light="/shared/previews/convert-light.mp4?v=1" data-preview-name="Convert" data-preview-desc="Turn any image or PDF into exactly the format you need — JPG, PNG, WEBP, PDF, even HEIC straight from an iPhone. Instant, right in your browser, nothing ever uploaded." data-preview-href="/convert/">Read more</button>
       </div>
 
       <div class="card compress" data-category="image" title="The color is: Sky Blue">
@@ -2394,7 +2407,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_compress_desc">Reduce image file size while keeping quality. Choose a compression level and download the compressed files as a ZIP.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/compress-dark.gif?v=4" data-preview-img-light="/shared/previews/compress-light.gif?v=4" data-preview-name="Compress" data-preview-desc="Shrink your photos without wrecking the quality. Pick Low, Medium, or High, and download — one file or a whole batch, done in seconds, no upload." data-preview-href="/compress/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/compress-dark.mp4?v=1" data-preview-img-light="/shared/previews/compress-light.mp4?v=1" data-preview-name="Compress" data-preview-desc="Shrink your photos without wrecking the quality. Pick Low, Medium, or High, and download — one file or a whole batch, done in seconds, no upload." data-preview-href="/compress/">Read more</button>
       </div>
 
       <div class="card combine" data-category="image" title="The color is: Coral Red">
@@ -2405,7 +2418,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_combine_desc">Merge multiple PDF files into a single document in any order you like.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/combine-dark.gif?v=3" data-preview-img-light="/shared/previews/combine-light.gif?v=3" data-preview-name="Combine" data-preview-desc="Merge two or more PDFs into one — drag them into any order you want, then download. Stitched together right in your browser, no upload." data-preview-href="/combine/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/combine-dark.mp4?v=1" data-preview-img-light="/shared/previews/combine-light.mp4?v=1" data-preview-name="Combine" data-preview-desc="Merge two or more PDFs into one — drag them into any order you want, then download. Stitched together right in your browser, no upload." data-preview-href="/combine/">Read more</button>
       </div>
 
       <div class="card exif" data-category="image" title="The color is: Lime Green">
@@ -2416,7 +2429,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_exif_desc">Remove hidden metadata like GPS location, camera model, or editor data in SVGs — before sharing.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/cleanly-dark.gif?v=3" data-preview-img-light="/shared/previews/cleanly-light.gif?v=3" data-preview-name="Cleanly" data-preview-desc="Wipe hidden GPS, camera, and timestamp data from your photos before you share them — scanned and cleaned instantly, right in your browser." data-preview-href="/cleanly/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/cleanly-dark.mp4?v=1" data-preview-img-light="/shared/previews/cleanly-light.mp4?v=1" data-preview-name="Cleanly" data-preview-desc="Wipe hidden GPS, camera, and timestamp data from your photos before you share them — scanned and cleaned instantly, right in your browser." data-preview-href="/cleanly/">Read more</button>
       </div>
 
       <div class="card context" data-category="image" title="The color is: Yellow">
@@ -2427,7 +2440,7 @@ footer a{
           </div>
           <p data-i18n="mp_card_context_desc">Add your own text directly onto a PDF — captions, notes, signatures.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/context-dark.gif?v=5" data-preview-img-light="/shared/previews/context-light.gif?v=5" data-preview-name="Context" data-preview-desc="Click anywhere on a PDF to drop in text or a signature, style it your way, and download — instantly, right in your browser, no upload." data-preview-href="/context/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/context-dark.mp4?v=1" data-preview-img-light="/shared/previews/context-light.mp4?v=1" data-preview-name="Context" data-preview-desc="Click anywhere on a PDF to drop in text or a signature, style it your way, and download — instantly, right in your browser, no upload." data-preview-href="/context/">Read more</button>
       </div>
 
       <div class="card gif" data-category="video" title="The color is: Teal">
@@ -2438,14 +2451,25 @@ footer a{
           </div>
           <p>Turn a video clip into a GIF — trim the range, pick fps and size.</p>
         </a>
-        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/congify-dark.gif?v=5" data-preview-img-light="/shared/previews/congify-light.gif?v=4" data-preview-name="Congify" data-preview-desc="Turn a video clip into a GIF — trim the range you want, add captions if you like, pick a frame rate and size, then download. Instantly, right in your browser, no upload." data-preview-href="/congify/">Read more</button>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/congify-dark.mp4?v=1" data-preview-img-light="/shared/previews/congify-light.mp4?v=1" data-preview-name="Congify" data-preview-desc="Turn a video clip into a GIF — trim the range you want, add captions if you like, pick a frame rate and size, then download. Instantly, right in your browser, no upload." data-preview-href="/congify/">Read more</button>
+      </div>
+
+      <div class="card coudio" data-category="sound" title="The color is: Emerald Green">
+        <a class="card-open" href="/coudio/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-coudio" role="img" aria-label="Coudio icon"></span>
+            <h2>Coudio</h2>
+          </div>
+          <p>Convert audio between MP3, WAV, OGG, and more — pick one or more files, choose a format.</p>
+        </a>
+        <button type="button" class="card-readmore" data-i18n="mp_card_readmore" data-preview-img-dark="/shared/previews/coudio-dark.mp4?v=1" data-preview-img-light="/shared/previews/coudio-light.mp4?v=1" data-preview-name="Coudio" data-preview-desc="Convert audio (or pull the audio track out of a video) between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — pick one or more files, choose a format and bitrate, then download. Instantly, right in your browser, no upload." data-preview-href="/coudio/">Read more</button>
       </div>
 
     </div>
 
     <div class="engine-status-card loading_tools_banner">
       <div class="engine-status-body">
-        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">no tools found (<span class="engine-status-eye" id="loadingToolsEyeL">・</span>_<span class="engine-status-eye" id="loadingToolsEyeR">・</span>;)</span></div>
+        <div class="engine-status-row" data-i18n="loading_tools_row1">&gt; Loading other tools... <span class="engine-status-error">no tools found (<span class="engine-status-eye" id="loadingToolsEyeL">•</span>_<span class="engine-status-eye" id="loadingToolsEyeR">•</span>;)</span></div>
         <div class="engine-status-row"><span data-i18n="loading_tools_row2">&gt; Preparing tools</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
       </div>
     </div>
@@ -2537,14 +2561,27 @@ footer a{
       <h3 data-i18n="footer_getting_started_heading">Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <a class="footer-dash-link" href="/golden-rules/">Convert</a>
-          <a class="footer-dash-link" href="/golden-rules/">Compress</a>
-          <a class="footer-dash-link" href="/golden-rules/">Combine</a>
-          <a class="footer-dash-link" href="/golden-rules/">Cleanly</a>
-          <a class="footer-dash-link" href="/golden-rules/">Context</a>
+          <!-- Each links straight to its own tab on the golden-rules
+               page via ?tool=<id> (the same ids golden-rules-tool.js's
+               selectGoldenRulesTool() and every other tool page's
+               go-to-golden-rules buttons use) — this page doesn't load
+               shared/site.js (SPA, own inline JS instead), so it can't
+               rely on that file's click delegate to add the query
+               param the way every standalone tool page does; these
+               plain hrefs just carry it directly. Previously all 8
+               pointed at the bare /golden-rules/ URL, so every one of
+               these silently landed on Convert's tab regardless of
+               which tool you clicked. -->
+          <a class="footer-dash-link" href="/golden-rules/?tool=convert">Convert</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=compress">Compress</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=combine">Combine</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=exif">Cleanly</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=context">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <a class="footer-dash-link" href="/golden-rules/">Congify</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=gif">Congify</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=coudio">Coudio</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=codify">Codify</a>
         </div>
       </div>
     </div>
@@ -2569,7 +2606,7 @@ footer a{
         <path d="M11 18l-6-6 6-6"></path>
       </svg>
     </button>
-    <div class="tool-preview-peek" id="toolPreviewPeek" role="img" aria-label=""></div>
+    <video class="tool-preview-peek" id="toolPreviewPeek" muted loop playsinline aria-label=""></video>
     <h3 class="tool-preview-title" id="toolPreviewTitle"></h3>
     <p class="tool-preview-desc" id="toolPreviewDesc"></p>
     <a class="tool-preview-open" id="toolPreviewOpen" href="#">Open tool</a>
@@ -2952,7 +2989,7 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   });
 })();
 
-/* Loading-tools face: eyes blink together, (・_・;) -> (-_-;) -> (・_・;).
+/* Loading-tools face: eyes blink together, (•_•;) -> (-_-;) -> (•_•;).
    Only the eye characters swap; punctuation stays static so nothing
    shifts. Re-queries each call since language switches replace innerHTML. */
 (function(){
@@ -2968,8 +3005,8 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
     setTimeout(() => {
       const eyeLNow = document.getElementById("loadingToolsEyeL");
       const eyeRNow = document.getElementById("loadingToolsEyeR");
-      if (eyeLNow) eyeLNow.textContent = "・";
-      if (eyeRNow) eyeRNow.textContent = "・";
+      if (eyeLNow) eyeLNow.textContent = "•";
+      if (eyeRNow) eyeRNow.textContent = "•";
     }, 180);
   }, 5000);
 })();
@@ -3293,7 +3330,7 @@ const translations = {
     engine_status_row2: "&gt; Nahrání na server: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">server nenalezen</span>",
     engine_status_row3: "&gt; Sledování uživatele: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">omezení cookies</span>",
     engine_status_row4: "&gt; Rušivá reklama: <span class=\"engine-status-error\">CHYBA...</span> <span class=\"engine-status-value\">vynuceno prostředí bez reklam</span>",
-    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">nenalezeny žádné nástroje (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Načítání dalších nástrojů... <span class=\"engine-status-error\">nenalezeny žádné nástroje (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">•</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">•</span>;)</span>",
     loading_tools_row2: "&gt; Připravujeme nástroje",
     next_tools_preview_text: "Vyvíjíme více nových nástrojů zároveň. Pro lidské použití jsou schváleny pouze ty, které přežijí naše drsné kosmické testování.",
     mp_colors_heading: "Využívání síly Slunce...",
@@ -3367,7 +3404,7 @@ const translations = {
     engine_status_row2: "&gt; Server upload: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">no server found</span>",
     engine_status_row3: "&gt; User tracking: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">cookies restrictions</span>",
     engine_status_row4: "&gt; Intrusive ad placement: <span class=\"engine-status-error\">ERROR...</span> <span class=\"engine-status-value\">clean-ad environment enforced</span>",
-    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">no tools found (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Loading other tools... <span class=\"engine-status-error\">no tools found (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">•</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">•</span>;)</span>",
     loading_tools_row2: "&gt; Preparing tools",
     next_tools_preview_text: "We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.<br><br>You can see the cosmos as we speak on the right. Look, there is a comet flying by! Capture it before it's gone and get our certificate of authenticity.",
     mp_colors_heading: "Harnessing the Power of Color...",
@@ -3438,7 +3475,7 @@ const translations = {
     engine_status_row2: "&gt; Przesyłanie na serwer: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">nie znaleziono serwera</span>",
     engine_status_row3: "&gt; Śledzenie użytkownika: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">ograniczenia plików cookie</span>",
     engine_status_row4: "&gt; Nachalne reklamy: <span class=\"engine-status-error\">BŁĄD...</span> <span class=\"engine-status-value\">wymuszone środowisko bez reklam</span>",
-    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">nie znaleziono narzędzi (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Ładowanie innych narzędzi... <span class=\"engine-status-error\">nie znaleziono narzędzi (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">•</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">•</span>;)</span>",
     loading_tools_row2: "&gt; Przygotowywanie narzędzi",
     next_tools_preview_text: "Pracujemy nad wieloma nowymi narzędziami jednocześnie. Do użytku przez ludzi dopuszczone są tylko te, które przetrwają nasze surowe testy kosmiczne.",
     mp_colors_heading: "Wykorzystując moc Słońca...",
@@ -3509,7 +3546,7 @@ const translations = {
     engine_status_row2: "&gt; Zzirrwirr uupfllaeazh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">xae zzirrwirr phaeuuxzh</span>",
     engine_status_row3: "&gt; Uuzzirr tkrrakqoixgh: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">kaeaeqoiizz rrizztkrroiktkoiaexzz</span>",
     engine_status_row4: "&gt; Oixtkrruuzzoiwi azh pfllakinnixtk: <span class=\"engine-status-error\">IRrRrAeRr...</span> <span class=\"engine-status-value\">klliax-azh ixwoirraexnnixtk ixphaerrkizh</span>",
-    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">xae tkaeaellzz phaeuuxzh (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">・</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">・</span>;)</span>",
+    loading_tools_row1: "&gt; Llaeazhoixgh aetkkhirr tkaeaellzz... <span class=\"engine-status-error\">xae tkaeaellzz phaeuuxzh (<span class=\"engine-status-eye\" id=\"loadingToolsEyeL\">•</span>_<span class=\"engine-status-eye\" id=\"loadingToolsEyeR\">•</span>;)</span>",
     loading_tools_row2: "&gt; Pfrripfarroixgh tkaeaellzz",
     next_tools_preview_text: "Vvi arri zhiwillaepfoixgh nnuulltkoipflli xivv tkaeaellzz azz vvi zzpfiaq. Aexllei tkkhaezzi tkkhatk zzuurrwoiwi aeuurr kharrzzkh kaezznnoik tkizztkoixgh arri klliarrizh phaerr khuunnax uuzzi.",
     mp_colors_heading: "Kharrxizzzzoixgh tkkhi Pfaevvirr aeph tkkhi Zzuux...",
@@ -3895,10 +3932,22 @@ if (VALID_PAGES.includes(startPage)) {
     return isLight ? activeBtn.dataset.previewImgLight : activeBtn.dataset.previewImgDark;
   }
 
+  /* Calling .play() in the same tick as setting .src races the load —
+     with nothing buffered yet (readyState HAVE_NOTHING) that play()
+     request can silently end up going nowhere instead of queuing, so
+     the clip loads but never actually starts. Waiting for "canplay"
+     guarantees play() only fires once there's actually a frame ready. */
+  function loadAndPlay(src){
+    peek.pause();
+    peek.src = src;
+    peek.addEventListener("canplay", () => peek.play().catch(() => {}), { once: true });
+    peek.load();
+  }
+
   function openPreview(btn){
     activeBtn = btn;
     const name = btn.dataset.previewName;
-    peek.style.backgroundImage = `url("${currentPreviewSrc()}")`;
+    loadAndPlay(currentPreviewSrc());
     peek.setAttribute("aria-label", `Preview of the ${name} tool`);
     title.textContent = name;
     desc.textContent = btn.dataset.previewDesc;
@@ -3912,11 +3961,44 @@ if (VALID_PAGES.includes(startPage)) {
   function closePreview(){
     overlay.hidden = true;
     document.body.style.overflow = "";
+    peek.pause();
     if (lastFocused) lastFocused.focus();
   }
 
+  /* Preload both the light and dark preview clip the moment a visitor
+     shows intent (hover, or focus from tabbing in) — by the time they
+     actually click, the request is usually already in flight or done,
+     instead of only starting once the modal opens. Preloading both
+     (not just the current theme's) covers a mid-hover theme toggle too.
+     A plain, never-inserted <video> with preload="auto" is enough to
+     warm the browser cache without playing anything; nothing needs to
+     hold a reference to it once loading has started. Guarded so the
+     same pair only ever gets requested once per button. */
   document.querySelectorAll(".card-readmore").forEach(btn => {
+    function preload(){
+      if (btn.dataset.preloaded) return;
+      btn.dataset.preloaded = "1";
+      [btn.dataset.previewImgLight, btn.dataset.previewImgDark].forEach(src => {
+        if (!src) return;
+        const v = document.createElement("video");
+        v.preload = "auto";
+        v.muted = true;
+        v.src = src;
+      });
+    }
+    btn.addEventListener("mouseenter", preload);
+    btn.addEventListener("focus", preload);
     btn.addEventListener("click", () => openPreview(btn));
+  });
+
+  /* Some browsers pause a looping muted <video> right at the loop
+     boundary instead of resuming (seen in testing: currentTime resets
+     to 0, loop's own "seek back to start" step runs, but the "resume
+     playback" step silently doesn't) — since this clip has no visible
+     controls, any pause while the modal is open is unintended, so just
+     resume it rather than leaving a frozen first frame on screen. */
+  peek.addEventListener("pause", () => {
+    if (!overlay.hidden) peek.play().catch(() => {});
   });
 
   closeBtn.addEventListener("click", closePreview);
@@ -3927,11 +4009,12 @@ if (VALID_PAGES.includes(startPage)) {
     if (e.key === "Escape" && !overlay.hidden) closePreview();
   });
 
-  /* Swaps to the matching light/dark screenshot if the user toggles
-     theme while the preview is open — the tool page itself repaints
-     live, so this should too rather than showing a stale screenshot. */
+  /* Swaps to the matching light/dark clip if the user toggles theme
+     while the preview is open — the tool page itself repaints live,
+     so this should too rather than showing a stale-theme clip. */
   new MutationObserver(() => {
-    if (!overlay.hidden) peek.style.backgroundImage = `url("${currentPreviewSrc()}")`;
+    if (overlay.hidden) return;
+    loadAndPlay(currentPreviewSrc());
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 })();
 

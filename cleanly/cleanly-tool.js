@@ -4,6 +4,7 @@
   const input = document.getElementById("exInput");
   const fileList = document.getElementById("exFileList");
   const stripBtn = document.getElementById("exStripBtn");
+  bcRegisterKeyShortcut("d", stripBtn);
   const status = document.getElementById("exStatus");
   const afterDrop = document.getElementById("exAfterDrop");
   const toolApp = document.querySelector(".tool-app");
