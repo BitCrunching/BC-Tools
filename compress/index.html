@@ -59,7 +59,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=77">
+<link rel="stylesheet" href="/shared/site.css?v=88">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -87,6 +87,15 @@
 .tool-app:has(#cpAfterDrop[hidden]):active{
   transform:scale(.99);
   transition-duration:.1s;
+}
+/* #cpResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cpAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Convert gets for the same reason; found via a
+   1100×322.5px banner-size audit (every other tool renders exactly
+   that pre-load, Convert/Compress were 354.5 — 32px of dead space). */
+.tool-app:has(#cpAfterDrop[hidden]) #cpResults{
+  display:none;
 }
 
 /* Just a fun easter egg on double-click — not a functional cue, so it's
@@ -516,7 +525,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
 
     <div class="tool-controls" id="cpControls" hidden>
-      <button class="tool-primary-btn" id="cpCompressBtn" disabled>Compress and download</button>
+      <button class="tool-primary-btn" id="cpCompressBtn" disabled title="Compress and download (D)">Compress and download</button>
     </div>
 
     <div class="tool-status" id="cpStatus"></div>
@@ -614,7 +623,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=30" defer></script>
-<script src="/compress/compress-tool.js?v=21" defer></script>
+<script src="/shared/site.js?v=32" defer></script>
+<script src="/compress/compress-tool.js?v=22" defer></script>
 </body>
 </html>

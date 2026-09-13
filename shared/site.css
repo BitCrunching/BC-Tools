@@ -41,7 +41,7 @@
   --bg:#ffffff;
   --border:rgba(0,0,0,.14);
   --border-strong:rgba(0,0,0,.4);
-  --text:#000000;
+  --text:#1a1a1a;
   --accent:#1e293b;
   --accent2:#475569;
 }
@@ -933,15 +933,7 @@ footer a{
 }
 
 /* ===== LANGUAGE DROPDOWN ===== */
-/* Hidden site-wide for now — staying English-only until translations are
-   ready to turn back on. The underlying i18n (data-i18n attrs, cs/pl
-   dictionaries, bcApplyLang etc. in shared/site.js) is untouched, so
-   flipping this back to visible is the only step needed to re-enable
-   language switching later. index.html doesn't load this stylesheet
-   (see the top of this file) so it carries the same rule in its own
-   inline <style>. */
 .nav-lang-wrap{
-  display:none;
   position:relative;
 }
 
@@ -1045,19 +1037,21 @@ footer a{
    etc). Markup: <span class="tool-drop-click-word">Click</span><span
    class="tool-drop-or-drop"> or drop </span><span
    class="tool-drop-rest">...</span> — on mobile the click word swaps
-   to "Drop zone" (same font-size:0 + ::before content-swap already
+   to "Click here" (same font-size:0 + ::before content-swap already
    used for "Pick"/"File:" shortenings elsewhere; ::before needs its
    own explicit font-size since it would otherwise inherit the zeroed
    value from the element it's attached to) and both the literal
    "or drop" text and the tool-specific rest are hidden outright, so
-   every tool reads as the same plain "Drop zone" on mobile instead of
-   its own full sentence. */
+   every tool reads as the same plain "Click here" on mobile instead of
+   its own full sentence — "drop" doesn't really describe a touch
+   interaction the way it does a mouse drag-and-drop, so this reads
+   truer to what a mobile visitor actually does here. */
 @media (max-width:768px){
   .tool-drop-click-word{
     font-size:0;
   }
   .tool-drop-click-word::before{
-    content:"Drop zone";
+    content:"Click here";
     font-size:var(--tool-drop-font-size, 26px);
   }
   .tool-drop-or-drop,
@@ -1074,6 +1068,112 @@ footer a{
 .tool-drop.active{
   border-color:var(--accent);
   background:rgba(255,255,255,.06);
+}
+
+/* ===== .tool-drop-addpill — revealed-state "add more files" pill =====
+   Opt-in: put this class on a tool's drop element (the same element
+   the JS toggles .tool-drop-revealed on). Before a file is loaded the
+   element is the full-width intro drop zone as normal; once loaded it
+   collapses to this compact centred "＋ Add more files" pill sitting
+   above the file list — dashed border joins into a solid one plus a
+   faint fill tint on hover. The whole .tool-app banner stays the real
+   drop target — this is just the visible affordance. Combine, Coudio,
+   and Cleanly all use this now. A tool keeps its own
+   `#<drop>.tool-drop-revealed.active { border-color / background }`
+   local rule for the brand-coloured drag-over state — that's the one
+   piece that's genuinely per-tool. Also: a tool that blanks its dashed
+   box pre-load with `#<drop> { border-color:transparent }` must scope
+   that to `:not(.tool-drop-revealed)`, or its id selector cancels the
+   pill's own dashed border here. */
+
+/* The transparent hover outline is declared here — on the base class,
+   not the .tool-drop-revealed rule — so its colour is already
+   `transparent` before the pill appears. Declared only on the revealed
+   rule, `outline-color` starts at its initial value (`currentColor` =
+   white on the banner) and the class-toggle transition would flash a
+   full white ring before settling. outline-offset:-2px lands the line
+   exactly over the 2px border band. */
+.tool-drop-addpill{
+  outline:2px solid transparent;
+  outline-offset:-2px;
+}
+/* Un-revealing (file removed, back to the full drop zone) used to just
+   inherit .tool-drop's own blanket `transition:.25s` for every property
+   alike — border-color and background faded out at the same rate as
+   width/height/padding, so the outgoing pill's border visibly traced
+   and shrank down around the drop text for .25s instead of just
+   vanishing (reported live on Coudio as a leftover line/outline).
+   Redeclaring `transition` here scopes it to just the geometry
+   properties, so border-color/background (each tool sets these to
+   transparent in its own #<drop>:not(.tool-drop-revealed) rule, which
+   doesn't touch `transition` and so doesn't fight this) snap instantly
+   while the box still smoothly grows back to the full drop zone — that
+   growth is also what makes the drop text look like it's settling into
+   center, since the text's own layout is already final the instant
+   display recomputes, it's just the box still catching up to it.
+   Desktop only, matching the banner-resize smoothing on tools that also
+   have one (Coudio's own min-height transition) — mobile just snaps
+   straight to its final size like every other tool's drop zone does. */
+.tool-drop-addpill:not(.tool-drop-revealed){
+  transition:none;
+}
+@media (min-width:769px){
+  .tool-drop-addpill:not(.tool-drop-revealed){
+    transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
+  }
+}
+.tool-drop-addpill.tool-drop-revealed{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:fit-content;
+  height:54px;
+  margin-left:auto;
+  margin-right:auto;
+  padding:0 22px;
+  line-height:1;
+  font-size:0;
+  white-space:nowrap;
+  border-color:var(--border-strong);
+  /* padding-box clip so the hover fill stops at the inner edge of the
+     2px border instead of bleeding out under it once the border goes
+     transparent on hover. */
+  background-clip:padding-box;
+  /* Hover joins the dashed border into a solid one — border-style
+     itself can't transition, so the dashes fade to transparent while
+     the (base-class) solid outline fades in. Only its colour
+     interpolates. No scale/shape change on hover. The solid outline
+     leads slightly and the dashes trail off (longer duration + delay)
+     so the two never sit at 50/50 looking muddy — it reads as the
+     dashes filling in. */
+  transition:background .2s ease,
+             outline-color .32s cubic-bezier(.4,0,.2,1),
+             border-color .26s cubic-bezier(.4,0,.2,1) .06s;
+}
+/* The pre-load "Click / or drop / …" spans are replaced by the two
+   pseudo-elements below in this state. */
+.tool-drop-addpill.tool-drop-revealed > *{ display:none; }
+.tool-drop-addpill.tool-drop-revealed::before{
+  content:"+";
+  flex:0 0 auto;
+  font-size:26px;
+  font-weight:800;
+  line-height:1;
+}
+.tool-drop-addpill.tool-drop-revealed::after{
+  content:"Add more files";
+  font-size:15px;
+  font-weight:800;
+}
+.tool-drop-addpill.tool-drop-revealed:hover{
+  transform:none;
+  border-color:transparent;
+  outline-color:var(--border-strong);
+  background:rgba(255,255,255,.08);
+}
+html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
+  background:rgba(0,0,0,.1);
 }
 
 .tool-continue-btn{
@@ -2252,6 +2352,10 @@ html[data-theme="dark"] .exif-tag-clean{
 .fmt-icon-svg::before{ content:"📐"; }
 .fmt-icon-heic::before{ content:"📱"; }
 .fmt-icon-pdf::before{ content:"📄"; }
+.fmt-icon-mp3::before{ content:"🎵"; }
+.fmt-icon-wav::before{ content:"🎚️"; }
+.fmt-icon-ogg::before{ content:"🌐"; }
+.fmt-icon-aiff::before{ content:"🍎"; }
 .fmt-icon-pros::before{ content:"👍"; }
 .fmt-icon-cons::before{ content:"⚠️"; }
 .fmt-icon-low::before{ content:"🔍"; }
