@@ -882,71 +882,6 @@ main{
   padding-bottom:8px;
 }
 
-/* Ambient decoration over the hero title — a terminal-styled
-   rectangle that floats over the actual title text, flanked by "!!!"
-   on both sides, slowly drifting up and down forever. Pure overlay,
-   not layout: .hff-wrap only exists to give the floating piece
-   something sized to the title to position against — the title
-   itself (.hff-wrap h1) keeps its normal box/margins completely
-   untouched, so the float never nudges real content around, it just
-   visually sits on top of it (positioned after the h1 in source order,
-   so it paints over it with no z-index needed). aria-hidden, pointer-
-   events:none — atmosphere, not a control. Borrows the site's one
-   "technical" terminal voice (green-on-dark, monospace — see
-   shared/site.css's .nav-terminal) for a one-off decorative use
-   rather than that voice's usual job of a transient confirmation;
-   deliberate exception, not a precedent to reuse elsewhere without
-   thinking about it again. */
-.hff-wrap{
-  position:relative;
-  display:inline-block;
-}
-
-.hero-float-frame{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  animation:hff-drift 3.9s ease-in-out infinite;
-}
-
-@keyframes hff-drift{
-  0%, 100%{ transform:translateY(0) rotate(-1deg); }
-  50%{ transform:translateY(-12px) rotate(-1deg); }
-}
-
-.hff-box{
-  position:absolute;
-  inset:0;
-  border:1.5px solid #4ade80;
-  background:rgba(74,222,128,.06);
-}
-
-.hff-bang{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  color:#4ade80;
-  font-family:Arial, Helvetica, sans-serif;
-  font-size:70px;
-  font-weight:400;
-  letter-spacing:.02em;
-  opacity:.85;
-  white-space:nowrap;
-}
-
-.hff-bang-left{ right:100%; margin-right:14px; }
-.hff-bang-right{ left:100%; margin-left:14px; }
-
-@media (max-width:768px){
-  /* Whole floating banner (box + "!!!" both) removed on mobile, not
-     just the flanking "!!!" — the title itself already drops to 31px
-     here (see the .hero-intro h1 mobile override just below), and the
-     decoration read as too much crowding a title already that small. */
-  .hero-float-frame{
-    display:none;
-  }
-}
-
 /* Just wide enough that the intro sentence stops wrapping to a second
    line on typical desktop widths, without touching the shared .hero p
    max-width every other page's hero also relies on. Selector is
@@ -2429,14 +2364,7 @@ footer a{
 <section class="page active" id="page-mainpage">
   <main>
     <div class="hero hero-intro">
-      <div class="hff-wrap">
-        <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
-        <div class="hero-float-frame" aria-hidden="true">
-          <span class="hff-box"></span>
-          <span class="hff-bang hff-bang-left">&gt;!!!</span>
-          <span class="hff-bang hff-bang-right">!!!</span>
-        </div>
-      </div>
+      <h1 data-i18n="mp_hero_title">Setting a new standard for creators!</h1>
       <p class="hero-p1-desktop" data-i18n="mp_hero_p1">Get working with Creative Hub... a place where creativity travels faster than the speed of light.</p>
       <p class="hero-p1-desktop" data-i18n="mp_hero_p1b">A growing collection of browser-based tools for images, video, audio, and code.</p>
       <p class="hero-p1-mobile" data-i18n="mp_hero_p1_mobile">Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.</p>
