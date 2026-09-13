@@ -62,21 +62,29 @@
 #page-coudio::before{
   background:#18C98A;
 }
-#page-coudio::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:-1;
-  border-radius:36px;
-  background:repeating-radial-gradient(
-    circle at 50% 58%,
-    transparent 0,
-    transparent 16px,
-    rgba(255,255,255,.22) 17px,
-    rgba(255,255,255,.22) 19px,
-    transparent 20px,
-    transparent 38px
-  );
+/* Desktop only — this "sound wave" ripple reads as a nice ambient
+   texture at banner width, but at mobile width the banner is narrow
+   enough that the rings just look like clutter behind the drop text,
+   so it's dropped there entirely rather than just losing its resize
+   transition (see the min-height rules below, which now only matter
+   on desktop for the same reason). */
+@media (min-width:769px){
+  #page-coudio::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    border-radius:36px;
+    background:repeating-radial-gradient(
+      circle at 50% 58%,
+      transparent 0,
+      transparent 16px,
+      rgba(255,255,255,.22) 17px,
+      rgba(255,255,255,.22) 19px,
+      transparent 20px,
+      transparent 38px
+    );
+  }
 }
 /* This ripple sizes itself to #page-coudio via inset:0, so it snaps
    along with the banner's own min-height jump (322.5px empty ->
