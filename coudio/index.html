@@ -287,15 +287,21 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    blanket transition was animating every property alike, so on removal
    the outgoing "＋ Add more files" pill's border visibly traced/shrank
    down around the "Click here" text for .25s instead of just vanishing,
-   reported as a leftover line. width/height/padding/border-radius stay
-   listed so the box itself still smoothly grows back to the full drop
-   zone (that's also what makes "Click here" look like it's settling
-   into center — the text's own layout is already final the instant
-   display recomputes, it's just the box still catching up to it). */
+   reported as a leftover line. Unconditional (all widths) since it's
+   just an instant snap either way. */
 #cdDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
-  transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
+  transition:none;
+}
+/* The actual box-resize/"Click here" settling-into-center motion is
+   desktop only, same as the banner's own min-height smoothing above —
+   on mobile the drop zone just snaps straight to its final size like
+   every other tool's does. */
+@media (min-width:769px){
+  #cdDrop:not(.tool-drop-revealed){
+    transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
+  }
 }
 #cdDrop:not(.tool-drop-revealed):not(.active):hover{
   border-color:transparent;
