@@ -60,7 +60,7 @@
 <script src="/vendor/exif.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=77">
+<link rel="stylesheet" href="/shared/site.css?v=88">
 <style>
 .tool-app::before{ background:#7ED321; }
 .cs-shape{ background:#4ade80; }
@@ -258,7 +258,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   .tool-app:has(#exAfterDrop:not([hidden])) .ex-back-btn{ display:flex; }
 }
 
-#exDrop{
+/* Before a file is loaded the whole banner is the drop target, so the
+   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
+   doesn't cancel the shared .tool-drop-addpill's dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#exDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
 }
@@ -270,11 +274,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#4ade80;
   background:rgba(74,222,128,.1);
 }
-/* Restored once a file's been picked — from then on this compact
-   box (not the whole banner) is the target for adding more files. */
-#exDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #exDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
 #exDrop.tool-drop-revealed.active{
   border-color:#4ade80;
   background:rgba(74,222,128,.1);
@@ -441,7 +444,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </button>
     <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
 
-    <div class="tool-drop" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
+    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
     <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
 
@@ -449,7 +452,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <div class="exif-file-list" id="exFileList"></div>
 
       <div class="exif-actions">
-        <button class="tool-primary-btn" id="exStripBtn" disabled>Strip metadata and download</button>
+        <button class="tool-primary-btn" id="exStripBtn" disabled title="Strip metadata and download (D)">Strip metadata and download</button>
       </div>
     </div>
 
@@ -515,7 +518,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=30" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=13" defer></script>
+<script src="/shared/site.js?v=32" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=14" defer></script>
 </body>
 </html>

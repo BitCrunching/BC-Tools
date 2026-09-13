@@ -48,10 +48,20 @@
    flicker in practice (existing saved sessions predate the flag and
    don't get it until their next save, so the old async-timing behavior
    was still what most real sessions hit) and worth re-approaching later
-   rather than keeping half-working. */
+   rather than keeping half-working.
+
+   Keyed by location.pathname, not a single flat "bc-scrollY" —
+   sessionStorage is per-origin/per-tab, not per-page, so every
+   standalone page sharing this one file was actually sharing the same
+   key too: leaving the homepage scrolled deep down and clicking
+   through to, say, Colorfy restored that same deep offset there,
+   landing on Colorfy's own "New to picking colors from images?"
+   article instead of its top. Namespacing by path keeps this purely a
+   same-page reload restore, which is all it was ever meant to be. */
+var bcScrollKey = "bc-scrollY:" + location.pathname;
 function bcRestoreScroll(){
   try {
-    const y = sessionStorage.getItem("bc-scrollY");
+    const y = sessionStorage.getItem(bcScrollKey);
     if (y) window.scrollTo({ top: parseInt(y, 10), behavior: "instant" });
   } catch(e){ /* unavailable */ }
 }
@@ -74,7 +84,7 @@ Promise.race([
   bcTimedOut
 ]).then(bcRestoreScroll);
 window.addEventListener("pagehide", () => {
-  try { sessionStorage.setItem("bc-scrollY", String(window.scrollY)); } catch(e){ /* unavailable */ }
+  try { sessionStorage.setItem(bcScrollKey, String(window.scrollY)); } catch(e){ /* unavailable */ }
 });
 
 /* ===== data-goto -> real navigation (no SPA gotoPage() here) ===== */
@@ -1256,4 +1266,24 @@ async function bcDbClear(dbName, storeName){
     });
   } catch (e) { /* ignore */
   } finally { if (db) db.close(); }
+}
+
+/* Single-letter keyboard shortcut for an on-banner button (Context/Congify's
+   Add text/Bold/Italic/Underline pills) — just forwards to btn.click(), so
+   it automatically respects a disabled button and stays in sync with
+   whatever the click handler already does (no separate shortcut logic to
+   keep in sync with the button's own behavior). Skips while focus is in a
+   text input/textarea/contenteditable (typing a caption/text-box's actual
+   content shouldn't fire "b"/"i"/"u"/"t" as shortcuts) and while a
+   modifier key is held (so it doesn't fight browser/OS shortcuts). */
+function bcRegisterKeyShortcut(key, btn){
+  if (!btn) return;
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key.toLowerCase() !== key.toLowerCase()) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    e.preventDefault();
+    btn.click();
+  });
 }

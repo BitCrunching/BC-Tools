@@ -4,6 +4,7 @@
   const input = document.getElementById("cpInput");
   const levelButtons = document.querySelectorAll("#cpLevelButtons .tool-format-btn");
   const compressBtn = document.getElementById("cpCompressBtn");
+  bcRegisterKeyShortcut("d", compressBtn);
   const status = document.getElementById("cpStatus");
   const results = document.getElementById("cpResults");
   const selectedCompression = document.getElementById("cpSelectedCompression");
