@@ -242,6 +242,30 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   display:none;
 }
 .tool-app:has(#cbAfterDrop:not([hidden])) .cb-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cb-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cb-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+  width:28px;
+  height:28px;
+}
+/* Both guarded to the same mobile breakpoint as .bc-canvas-back-btn's
+   own display:flex — the plain display:none here overrides that
+   unconditional mobile display:flex until a file's actually loaded
+   (matching Remove's own reveal timing), and the :has() rule's higher
+   specificity then overrides that back to flex once it is. Without the
+   media guard on the :has() rule specifically, its higher specificity
+   would win over .bc-canvas-back-btn's media-scoped flex and show the
+   button on desktop too. */
+@media (max-width:768px){
+  .cb-back-btn{ display:none; }
+  .tool-app:has(#cbAfterDrop:not([hidden])) .cb-back-btn{ display:flex; }
+}
 
 /* Before a file is loaded the whole banner is the drop target, so the
    dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
@@ -539,6 +563,12 @@ html[data-theme="dark"] .combine-file-index{
       <span class="privacy-check-badge" id="cbPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cb-back-btn bc-canvas-back-btn" id="cbBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Remove all files">×</button>
 
     <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDF files</span></div>
