@@ -31,15 +31,22 @@
      applies the remembered position exactly once, on DOMContentLoaded —
      by which point the full DOM already exists (this page has no
      async-loaded content that would change height any later) — instead
-     of racing the browser's own opaque internal timing. Scoped to this
-     page only via sessionStorage's own per-origin/per-tab lifetime, not
-     a site-wide change to how any other page's reload behaves. -->
+     of racing the browser's own opaque internal timing. Keyed by
+     location.pathname, not a single flat "bc-scrollY" — sessionStorage
+     is per-origin/per-tab, not per-page, so one flat key was actually
+     shared by every page under this origin: leaving the homepage
+     scrolled deep down and clicking through to a tool page restored
+     that same deep offset there too, landing on the tool's own later
+     content (an article section, etc.) instead of its top. Namespacing
+     by path keeps this purely a same-page reload restore, which is all
+     it was ever meant to be. -->
 <script>
 (function(){
   try { history.scrollRestoration = "manual"; } catch(e){}
+  var scrollKey = "bc-scrollY:" + location.pathname;
   function restoreScroll(){
     try {
-      const y = sessionStorage.getItem("bc-scrollY");
+      const y = sessionStorage.getItem(scrollKey);
       /* window.scrollTo, not document.documentElement.scrollTop = ... —
          a direct scrollTop assignment gets silently reset back to 0 on
          this page (something else resets it before it sticks); scrollTo
@@ -58,7 +65,7 @@
      until layout finishes settling and this second pass corrects it. */
   window.addEventListener("load", restoreScroll);
   window.addEventListener("pagehide", () => {
-    try { sessionStorage.setItem("bc-scrollY", String(window.scrollY)); } catch(e){}
+    try { sessionStorage.setItem(scrollKey, String(window.scrollY)); } catch(e){}
   });
 })();
 </script>
