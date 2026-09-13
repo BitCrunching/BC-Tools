@@ -281,9 +281,21 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
    so it doesn't cancel the shared .tool-drop-addpill's own dashed
    border once it collapses to the "＋ Add more files" pill. */
+/* transition redeclared (not left to the shared .tool-drop{transition:.25s}
+   catch-all) so border-color/background snap to transparent immediately
+   on remove instead of fading with the rest of the shape — .tool-drop's
+   blanket transition was animating every property alike, so on removal
+   the outgoing "＋ Add more files" pill's border visibly traced/shrank
+   down around the "Click here" text for .25s instead of just vanishing,
+   reported as a leftover line. width/height/padding/border-radius stay
+   listed so the box itself still smoothly grows back to the full drop
+   zone (that's also what makes "Click here" look like it's settling
+   into center — the text's own layout is already final the instant
+   display recomputes, it's just the box still catching up to it). */
 #cdDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
+  transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
 }
 #cdDrop:not(.tool-drop-revealed):not(.active):hover{
   border-color:transparent;
