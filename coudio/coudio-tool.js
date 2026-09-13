@@ -87,7 +87,9 @@
   }
 
   function formatKB(bytes){
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    const kb = Math.max(1, Math.round(bytes / 1024));
+    if (kb >= 1000) return `${(kb / 1024).toFixed(1)} MB`;
+    return `${kb} KB`;
   }
 
   /* Just a plain loaded-file count now that conversion itself is
