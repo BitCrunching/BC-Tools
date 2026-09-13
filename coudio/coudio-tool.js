@@ -181,6 +181,16 @@
   let pendingHeightCleanup = null;
 
   function withSmoothHeightChange(mutate){
+    // Desktop only — on mobile the banner should just snap to its new
+    // height like every other tool's does (see Convert's, which never
+    // animates this at all), not run the FLIP animation below. Checked
+    // live: matches the CSS breakpoint used everywhere else on this
+    // page (max-width:768px), so mobile and desktop always agree on
+    // which one they're getting.
+    if (window.innerWidth <= 768){
+      mutate();
+      return;
+    }
     // Snap any still-running flip to its natural state first, so this
     // call always measures a real, current height rather than a
     // mid-transition one.
