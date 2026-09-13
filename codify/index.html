@@ -427,6 +427,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    titlebar, code) inherits it rather than needing its own override,
    since none of them are a separate click zone anymore. */
 .cf-preview-wrap{
+  position:relative;
   margin-top:24px;
   padding:56px;
   border-radius:20px;
@@ -449,6 +450,24 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   overflow:hidden;
   background:#282a36;
   box-shadow:0 30px 60px rgba(0,0,0,.35);
+}
+/* Shape/color is the shared .bc-resize-handle (shared/site.css) — only
+   the corner offset and cursor stay local, same split as Colorfy's/
+   Congify's own copy. Anchored to #cfPreviewWrap's own corner (the
+   background panel), not #cfWindow's, since the panel is what visually
+   reads as "the frame" here — #cfWindow just floats centered inside it
+   and can be narrower than the panel at any width. Drag still resizes
+   #cfWindow itself (see codify-tool.js), not the panel. */
+.cf-resize-handle{
+  right:16px;
+  bottom:16px;
+  cursor:nwse-resize;
+}
+.cf-resize-handle::before{
+  content:"";
+  width:13px;
+  height:13px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
 }
 /* Toggled off by the Shadow switch alongside Traffic lights — this is
    the one deliberate exception to "no shadows" in CLAUDE.md (already
@@ -1038,6 +1057,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
         </div>
         <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
       </div>
+      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></span>
     </div>
 
     <!-- Hover inspector overlay (see codify-tool.js) — a DevTools-style
@@ -1133,6 +1153,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=32" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=46" defer></script>
+<script src="/codify/codify-tool.js?v=48" defer></script>
 </body>
 </html>

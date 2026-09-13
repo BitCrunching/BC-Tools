@@ -1000,4 +1000,70 @@ ${titlebarSvg}
       toolApp.classList.add("wobble");
     });
   }
+
+  /* ===== drag-to-resize #cfWindow (display size only) — same
+     incremental-delta pattern as Colorfy's/Congify's own handle: track
+     a virtual width across the whole drag rather than re-deriving it
+     from the window's current rendered width each move, so repeated
+     small movements don't drift from rounding. Handle itself sits on
+     #cfPreviewWrap's own corner (see the CSS), not #cfWindow's — but
+     the width it changes is #cfWindow's. */
+  const resizeHandle = document.getElementById("cfResizeHandle");
+  if (resizeHandle && toolApp){
+    const WINDOW_WIDTH_MIN = 320;
+    const WINDOW_WIDTH_MAX = 640;
+    let resizing = false;
+    let resizeLastX = 0;
+    let resizeVirtualWidth = 0;
+
+    function windowWidthMax(){
+      /* Measured against the banner itself (stable), not the window's
+         own current width — 36px is .tool-app's own padding on each
+         side, 56px is #cfPreviewWrap's own padding on each side. */
+      const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - (56 * 2);
+      return Math.min(WINDOW_WIDTH_MAX, containerMax);
+    }
+
+    /* previewWrap's own click handler (above) cycles the template/theme
+       based on which half of the preview a click landed on — pointerdown's
+       stopPropagation below doesn't stop that, since it's the browser's
+       own synthesized "click" event that fires after pointerup, a
+       separate event entirely. Without this, dragging (or even just
+       clicking) the handle also cycled the theme underneath it, since
+       the handle isn't previewWrap itself so it fell through to the
+       left/right-half cycling branch. */
+    resizeHandle.addEventListener("click", (e) => e.stopPropagation());
+    resizeHandle.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      resizing = true;
+      resizeLastX = e.clientX;
+      resizeVirtualWidth = cfWindow.getBoundingClientRect().width;
+      try { resizeHandle.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    resizeHandle.addEventListener("pointermove", (e) => {
+      if (!resizing) return;
+      resizeVirtualWidth = Math.min(windowWidthMax(), Math.max(WINDOW_WIDTH_MIN, resizeVirtualWidth + (e.clientX - resizeLastX)));
+      resizeLastX = e.clientX;
+      cfWindow.style.width = Math.round(resizeVirtualWidth) + "px";
+      refreshHoverOverlay();
+    });
+    function endResize(e){
+      resizing = false;
+      try { resizeHandle.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    resizeHandle.addEventListener("pointerup", endResize);
+    resizeHandle.addEventListener("pointercancel", endResize);
+
+    /* Keyboard equivalent — role="slider", left/right resize by 20px a
+       step (same convention as Colorfy's own handle). */
+    resizeHandle.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const current = cfWindow.getBoundingClientRect().width;
+      const next = e.key === "ArrowRight" ? current + 20 : current - 20;
+      cfWindow.style.width = Math.round(Math.min(windowWidthMax(), Math.max(WINDOW_WIDTH_MIN, next))) + "px";
+      refreshHoverOverlay();
+    });
+  }
 })();
