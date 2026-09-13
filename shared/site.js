@@ -685,7 +685,6 @@ function finishPrivacyCheck(badgeEl, action){
    Tool-specific strings live directly in each standalone page's markup. ===== */
 const translations = {
   en: {
-    nav_lang: "Change language",
     nav_theme: "Toggle light and dark mode",
     nav_share: "Share",
     nav_back: "Back to Creative Hub",
@@ -734,7 +733,6 @@ const translations = {
     privacy_check_action_download: "download"
   },
   cs: {
-    nav_lang: "Změnit jazyk",
     nav_theme: "Přepnout světlý a tmavý režim",
     nav_share: "Sdílet",
     nav_back: "Zpět na Creative Hub",
@@ -783,7 +781,6 @@ const translations = {
     privacy_check_action_download: "stažení"
   },
   pl: {
-    nav_lang: "Zmień język",
     nav_theme: "Przełącz tryb jasny i ciemny",
     nav_share: "Udostępnij",
     nav_back: "Powrót do Creative Hub",
@@ -854,10 +851,6 @@ function applyLanguage(lang){
 
   document.documentElement.lang = currentLang;
 
-  document.querySelectorAll("#navLangMenu button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.lang === currentLang);
-  });
-
   try { localStorage.setItem("bc-lang", currentLang); } catch (e) { /* storage unavailable */ }
 
   document.dispatchEvent(new CustomEvent("bc:langchange"));
@@ -916,28 +909,6 @@ function showNavTerminal(text){
   let savedLang = null;
   try { savedLang = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
   applyLanguage(savedLang && translations[savedLang] ? savedLang : "en");
-
-  const langBtn = document.getElementById("navLangBtn");
-  const langMenu = document.getElementById("navLangMenu");
-  if (langBtn && langMenu){
-    langBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("open");
-    });
-    langMenu.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn || !translations[btn.dataset.lang]) return;
-      applyLanguage(btn.dataset.lang);
-      langMenu.classList.remove("open");
-      const dict = translations[btn.dataset.lang] || translations.en;
-      const template = dict.nav_terminal_lang || translations.en.nav_terminal_lang;
-      showNavTerminal(template.replace("{lang}", btn.textContent));
-    });
-    document.addEventListener("click", (e) => {
-      if (!langBtn.contains(e.target) && !langMenu.contains(e.target)){
-        langMenu.classList.remove("open");
-      }
-    });
-  }
 })();
 
 /* ===== NAV SHARE BUTTON ===== */
