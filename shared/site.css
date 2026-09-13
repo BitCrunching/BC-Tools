@@ -1097,6 +1097,31 @@ footer a{
   outline:2px solid transparent;
   outline-offset:-2px;
 }
+/* Un-revealing (file removed, back to the full drop zone) used to just
+   inherit .tool-drop's own blanket `transition:.25s` for every property
+   alike — border-color and background faded out at the same rate as
+   width/height/padding, so the outgoing pill's border visibly traced
+   and shrank down around the drop text for .25s instead of just
+   vanishing (reported live on Coudio as a leftover line/outline).
+   Redeclaring `transition` here scopes it to just the geometry
+   properties, so border-color/background (each tool sets these to
+   transparent in its own #<drop>:not(.tool-drop-revealed) rule, which
+   doesn't touch `transition` and so doesn't fight this) snap instantly
+   while the box still smoothly grows back to the full drop zone — that
+   growth is also what makes the drop text look like it's settling into
+   center, since the text's own layout is already final the instant
+   display recomputes, it's just the box still catching up to it.
+   Desktop only, matching the banner-resize smoothing on tools that also
+   have one (Coudio's own min-height transition) — mobile just snaps
+   straight to its final size like every other tool's drop zone does. */
+.tool-drop-addpill:not(.tool-drop-revealed){
+  transition:none;
+}
+@media (min-width:769px){
+  .tool-drop-addpill:not(.tool-drop-revealed){
+    transition:width .25s, height .25s, padding .25s, border-radius .25s, margin .25s;
+  }
+}
 .tool-drop-addpill.tool-drop-revealed{
   display:flex;
   align-items:center;
