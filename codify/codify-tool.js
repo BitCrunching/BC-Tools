@@ -1014,6 +1014,16 @@ ${titlebarSvg}
     }
     downloadBtn.disabled = true;
     statusEl.textContent = "Rendering PNG...";
+    /* Both resize handles live inside #cfPreviewWrap (the window one
+       nested in #cfWindowWrap, the panel one a direct child) — exactly
+       what htmlToImage.toPng snapshots below — so without hiding them
+       first they get baked into the actual downloaded image as two
+       solid blue circles sitting on top of the code. Confirmed live: a
+       real PNG download had both handles rendered right into it.
+       Restored in `finally` so a thrown export error can't leave them
+       hidden in the live UI. */
+    if (windowResizeHandle) windowResizeHandle.style.visibility = "hidden";
+    if (resizeHandle) resizeHandle.style.visibility = "hidden";
     try {
       const dataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio: 2 });
       const res = await fetch(dataUrl);
@@ -1026,6 +1036,8 @@ ${titlebarSvg}
       statusEl.textContent = "Something went wrong generating the image.";
     } finally {
       downloadBtn.disabled = false;
+      if (windowResizeHandle) windowResizeHandle.style.visibility = "";
+      if (resizeHandle) resizeHandle.style.visibility = "";
     }
   });
 
@@ -1141,25 +1153,41 @@ ${titlebarSvg}
   if (toolApp){
     const WINDOW_WIDTH_MIN = 320;
     const WINDOW_WIDTH_MAX = 640;
+    /* #cfPreviewWrap's own horizontal padding is NOT a stable 56px the
+       way it reads at a glance — Style presets set it to 48px
+       (STYLE_PRESETS above), and the max-width:768px media query drops
+       it to 24px, both of which used to be silently ignored here (every
+       width calc below hardcoded "56 * 2"), overestimating how much
+       room the window actually has once a preset was active or the
+       viewport got narrow — confirmed live: with a preset applied
+       (48px padding), the panel would let the window grow slightly
+       wider than it could actually fit, right back into the same
+       overflow this whole resize-clamping exists to prevent. Reading
+       the real computed padding fixes it for presets, mobile, and any
+       future padding change at once instead of chasing each one. */
+    function previewWrapPaddingX(){
+      const cs = getComputedStyle(previewWrap);
+      return parseFloat(cs.paddingLeft || 0) + parseFloat(cs.paddingRight || 0);
+    }
     function windowWidthMax(){
       /* Measured against the banner itself (stable), not the window's
          own current width — 36px is .tool-app's own padding on each
-         side, 56px is #cfPreviewWrap's own padding on each side. */
-      const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - (56 * 2);
+         side. */
+      const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - previewWrapPaddingX();
       return Math.min(WINDOW_WIDTH_MAX, containerMax);
     }
     /* The background panel's own min/max: never smaller than the
-       window it's wrapping around plus its own 56px padding on each
-       side (recomputed live, not a fixed constant, so shrinking the
-       window first genuinely lowers how far the panel can shrink too),
-       never wider than the banner itself allows. Defined before the
-       window handle below, which also needs bgWidthMax/bgWidthMin to
-       keep the panel from stranding the window past its own edge. */
+       window it's wrapping around plus its own padding (recomputed
+       live, not a fixed constant, so shrinking the window first
+       genuinely lowers how far the panel can shrink too), never wider
+       than the banner itself allows. Defined before the window handle
+       below, which also needs bgWidthMax/bgWidthMin to keep the panel
+       from stranding the window past its own edge. */
     function bgWidthMax(){
       return toolApp.getBoundingClientRect().width - (36 * 2);
     }
     function bgWidthMin(){
-      return cfWindow.getBoundingClientRect().width + (56 * 2);
+      return cfWindow.getBoundingClientRect().width + previewWrapPaddingX();
     }
 
     if (windowResizeHandle && cfWindowWrap){
@@ -1189,7 +1217,7 @@ ${titlebarSvg}
              someone's actually resized it); otherwise it's still just
              filling the row and is already wide enough. */
           if (previewWrap.style.width){
-            const neededWrapWidth = px + (56 * 2);
+            const neededWrapWidth = px + previewWrapPaddingX();
             if (previewWrap.getBoundingClientRect().width < neededWrapWidth){
               previewWrap.style.width = Math.min(bgWidthMax(), neededWrapWidth) + "px";
             }
