@@ -1070,14 +1070,63 @@ ${titlebarSvg}
      small movements don't drift from rounding. Handle itself sits on
      #cfPreviewWrap's own corner (see the CSS), not #cfWindow's — but
      the width it changes is #cfWindow's. */
+  /* Shared drag/keyboard wiring for both panel-resize handles below —
+     they differ only in which element's width they read/write and
+     their own min/max, so one generic setup avoids maintaining two
+     near-identical copies of the same pointer-capture/virtual-width
+     dance. */
+  function setupPanelResizeHandle(handle, getWidth, setWidth, getMin, getMax){
+    let resizing = false;
+    let lastX = 0;
+    let virtualWidth = 0;
+    /* previewWrap's own click handler (above) cycles the template/theme
+       based on which half of the preview a click landed on — pointerdown's
+       stopPropagation below doesn't stop that, since it's the browser's
+       own synthesized "click" event that fires after pointerup, a
+       separate event entirely. Without this, dragging (or even just
+       clicking) either handle also cycled the theme underneath it, since
+       neither handle is previewWrap itself so it fell through to the
+       left/right-half cycling branch. */
+    handle.addEventListener("click", (e) => e.stopPropagation());
+    handle.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      resizing = true;
+      lastX = e.clientX;
+      virtualWidth = getWidth();
+      try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    handle.addEventListener("pointermove", (e) => {
+      if (!resizing) return;
+      virtualWidth = Math.min(getMax(), Math.max(getMin(), virtualWidth + (e.clientX - lastX)));
+      lastX = e.clientX;
+      setWidth(Math.round(virtualWidth));
+      refreshHoverOverlay();
+    });
+    function endResize(e){
+      resizing = false;
+      try { handle.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    handle.addEventListener("pointerup", endResize);
+    handle.addEventListener("pointercancel", endResize);
+
+    /* Keyboard equivalent — role="slider", left/right resize by 20px a
+       step (same convention as Colorfy's own handle). */
+    handle.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const current = getWidth();
+      const next = e.key === "ArrowRight" ? current + 20 : current - 20;
+      setWidth(Math.round(Math.min(getMax(), Math.max(getMin(), next))));
+      refreshHoverOverlay();
+    });
+  }
+
+  const windowResizeHandle = document.getElementById("cfWindowResizeHandle");
   const resizeHandle = document.getElementById("cfResizeHandle");
-  if (resizeHandle && toolApp){
+  if (toolApp){
     const WINDOW_WIDTH_MIN = 320;
     const WINDOW_WIDTH_MAX = 640;
-    let resizing = false;
-    let resizeLastX = 0;
-    let resizeVirtualWidth = 0;
-
     function windowWidthMax(){
       /* Measured against the banner itself (stable), not the window's
          own current width — 36px is .tool-app's own padding on each
@@ -1085,47 +1134,35 @@ ${titlebarSvg}
       const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - (56 * 2);
       return Math.min(WINDOW_WIDTH_MAX, containerMax);
     }
-
-    /* previewWrap's own click handler (above) cycles the template/theme
-       based on which half of the preview a click landed on — pointerdown's
-       stopPropagation below doesn't stop that, since it's the browser's
-       own synthesized "click" event that fires after pointerup, a
-       separate event entirely. Without this, dragging (or even just
-       clicking) the handle also cycled the theme underneath it, since
-       the handle isn't previewWrap itself so it fell through to the
-       left/right-half cycling branch. */
-    resizeHandle.addEventListener("click", (e) => e.stopPropagation());
-    resizeHandle.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      resizing = true;
-      resizeLastX = e.clientX;
-      resizeVirtualWidth = cfWindow.getBoundingClientRect().width;
-      try { resizeHandle.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-    resizeHandle.addEventListener("pointermove", (e) => {
-      if (!resizing) return;
-      resizeVirtualWidth = Math.min(windowWidthMax(), Math.max(WINDOW_WIDTH_MIN, resizeVirtualWidth + (e.clientX - resizeLastX)));
-      resizeLastX = e.clientX;
-      cfWindow.style.width = Math.round(resizeVirtualWidth) + "px";
-      refreshHoverOverlay();
-    });
-    function endResize(e){
-      resizing = false;
-      try { resizeHandle.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (windowResizeHandle){
+      setupPanelResizeHandle(
+        windowResizeHandle,
+        () => cfWindow.getBoundingClientRect().width,
+        (px) => { cfWindow.style.width = px + "px"; },
+        () => WINDOW_WIDTH_MIN,
+        windowWidthMax
+      );
     }
-    resizeHandle.addEventListener("pointerup", endResize);
-    resizeHandle.addEventListener("pointercancel", endResize);
 
-    /* Keyboard equivalent — role="slider", left/right resize by 20px a
-       step (same convention as Colorfy's own handle). */
-    resizeHandle.addEventListener("keydown", (e) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      e.preventDefault();
-      const current = cfWindow.getBoundingClientRect().width;
-      const next = e.key === "ArrowRight" ? current + 20 : current - 20;
-      cfWindow.style.width = Math.round(Math.min(windowWidthMax(), Math.max(WINDOW_WIDTH_MIN, next))) + "px";
-      refreshHoverOverlay();
-    });
+    /* The background panel's own min/max: never smaller than the
+       window it's wrapping around plus its own 56px padding on each
+       side (recomputed live, not a fixed constant, so shrinking the
+       window first genuinely lowers how far the panel can shrink too),
+       never wider than the banner itself allows. */
+    function bgWidthMax(){
+      return toolApp.getBoundingClientRect().width - (36 * 2);
+    }
+    function bgWidthMin(){
+      return cfWindow.getBoundingClientRect().width + (56 * 2);
+    }
+    if (resizeHandle){
+      setupPanelResizeHandle(
+        resizeHandle,
+        () => previewWrap.getBoundingClientRect().width,
+        (px) => { previewWrap.style.width = px + "px"; },
+        bgWidthMin,
+        bgWidthMax
+      );
+    }
   }
 })();

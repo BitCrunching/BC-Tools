@@ -424,7 +424,12 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    since none of them are a separate click zone anymore. */
 .cf-preview-wrap{
   position:relative;
-  margin-top:24px;
+  /* Explicit auto side-margins matter now that this panel is itself
+     resizable (see #cfResizeHandle in codify-tool.js) — at less than
+     its container's full width it needs to stay centered instead of
+     sitting flush left, same as it always already looked while its
+     width came only from filling the row. */
+  margin:24px auto 0;
   padding:56px;
   border-radius:20px;
   background:#E5E7EB;
@@ -439,9 +444,18 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      reason since nothing here is meant to be copied by dragging. */
   user-select:none;
 }
-.cf-window{
+/* The sizing that used to live directly on .cf-window now lives on this
+   wrapper instead — .cf-window itself just fills it (width:100%) — so
+   the wrapper (not clipped by .cf-window's own overflow:hidden) has
+   somewhere to anchor its own resize handle without the handle getting
+   cut off by the window's rounded corners. */
+.cf-window-wrap{
+  position:relative;
   width:100%;
   max-width:640px;
+}
+.cf-window{
+  width:100%;
   border-radius:12px;
   overflow:hidden;
   background:#282a36;
@@ -449,11 +463,18 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 }
 /* Shape/color is the shared .bc-resize-handle (shared/site.css) — only
    the corner offset and cursor stay local, same split as Colorfy's/
-   Congify's own copy. Anchored to #cfPreviewWrap's own corner (the
-   background panel), not #cfWindow's, since the panel is what visually
-   reads as "the frame" here — #cfWindow just floats centered inside it
-   and can be narrower than the panel at any width. Drag still resizes
-   #cfWindow itself (see codify-tool.js), not the panel. */
+   Congify's own copy. Two independent handles now, one per panel:
+   #cfWindowResizeHandle sits at #cfWindowWrap's own corner and drags
+   #cfWindow's width (the snippet itself); #cfResizeHandle stays
+   anchored to #cfPreviewWrap's corner (the background panel around it)
+   and drags the panel's own width instead — used to be the other way
+   around (this one moved the window), swapped so each handle now
+   actually sits on the panel it resizes. */
+.cf-window-resize-handle{
+  right:16px;
+  bottom:16px;
+  cursor:nwse-resize;
+}
 .cf-resize-handle{
   right:16px;
   bottom:16px;
@@ -1040,13 +1061,16 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     </div>
 
     <div class="cf-preview-wrap" id="cfPreviewWrap">
-      <div class="cf-window" id="cfWindow" data-theme="dracula">
-        <div class="cf-titlebar">
-          <span class="cf-dot cf-dot-red"></span><span class="cf-dot cf-dot-yellow"></span><span class="cf-dot cf-dot-green"></span>
+      <div class="cf-window-wrap" id="cfWindowWrap">
+        <div class="cf-window" id="cfWindow" data-theme="dracula">
+          <div class="cf-titlebar">
+            <span class="cf-dot cf-dot-red"></span><span class="cf-dot cf-dot-yellow"></span><span class="cf-dot cf-dot-green"></span>
+          </div>
+          <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
         </div>
-        <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
+        <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
       </div>
-      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></span>
+      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Background panel size" tabindex="0"></span>
     </div>
 
     <!-- Hover inspector overlay (see codify-tool.js) — a DevTools-style
@@ -1166,6 +1190,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=51" defer></script>
+<script src="/codify/codify-tool.js?v=52" defer></script>
 </body>
 </html>
