@@ -1148,6 +1148,20 @@ ${titlebarSvg}
       const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - (56 * 2);
       return Math.min(WINDOW_WIDTH_MAX, containerMax);
     }
+    /* The background panel's own min/max: never smaller than the
+       window it's wrapping around plus its own 56px padding on each
+       side (recomputed live, not a fixed constant, so shrinking the
+       window first genuinely lowers how far the panel can shrink too),
+       never wider than the banner itself allows. Defined before the
+       window handle below, which also needs bgWidthMax/bgWidthMin to
+       keep the panel from stranding the window past its own edge. */
+    function bgWidthMax(){
+      return toolApp.getBoundingClientRect().width - (36 * 2);
+    }
+    function bgWidthMin(){
+      return cfWindow.getBoundingClientRect().width + (56 * 2);
+    }
+
     if (windowResizeHandle && cfWindowWrap){
       /* Resizes #cfWindowWrap, not #cfWindow itself — #cfWindow is
          width:100% of the wrap (see .cf-window in index.html's own
@@ -1161,22 +1175,29 @@ ${titlebarSvg}
       setupPanelResizeHandle(
         windowResizeHandle,
         () => cfWindowWrap.getBoundingClientRect().width,
-        (px) => { cfWindowWrap.style.width = px + "px"; },
+        (px) => {
+          cfWindowWrap.style.width = px + "px";
+          /* #cfPreviewWrap has no overflow:hidden (its rounded corners
+             are meant to frame the window, not crop it), so growing the
+             window past a background panel that was previously shrunk
+             down (via #cfResizeHandle, below) would otherwise let the
+             window visibly spill past the panel's own edge onto the
+             page behind it — confirmed live: shrink the panel to its
+             minimum, then grow the window, and the code window pokes
+             out past the panel onto the pink banner. Only touches the
+             panel when it's already been given an explicit width (i.e.
+             someone's actually resized it); otherwise it's still just
+             filling the row and is already wide enough. */
+          if (previewWrap.style.width){
+            const neededWrapWidth = px + (56 * 2);
+            if (previewWrap.getBoundingClientRect().width < neededWrapWidth){
+              previewWrap.style.width = Math.min(bgWidthMax(), neededWrapWidth) + "px";
+            }
+          }
+        },
         () => WINDOW_WIDTH_MIN,
         windowWidthMax
       );
-    }
-
-    /* The background panel's own min/max: never smaller than the
-       window it's wrapping around plus its own 56px padding on each
-       side (recomputed live, not a fixed constant, so shrinking the
-       window first genuinely lowers how far the panel can shrink too),
-       never wider than the banner itself allows. */
-    function bgWidthMax(){
-      return toolApp.getBoundingClientRect().width - (36 * 2);
-    }
-    function bgWidthMin(){
-      return cfWindow.getBoundingClientRect().width + (56 * 2);
     }
     if (resizeHandle){
       setupPanelResizeHandle(
