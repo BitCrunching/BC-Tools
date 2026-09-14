@@ -108,6 +108,7 @@ document.addEventListener("click", (e) => {
   const gotoEl = e.target.closest("[data-goto]");
   if (gotoEl){
     e.preventDefault();
+    if (typeof gtag === "function") gtag("event", "nav_click", { destination: gotoEl.dataset.goto });
     const target = SITE_PATH_MAP[gotoEl.dataset.goto] || "/";
     location.href = target;
     return;
@@ -135,6 +136,10 @@ document.addEventListener("click", (e) => {
    gtag() itself is defined per-page (each page's own <head> snippet), so
    this only fires when it exists. */
 document.addEventListener("click", (e) => {
+  const footerLink = e.target.closest(".footer-dash-link");
+  if (footerLink && typeof gtag === "function"){
+    gtag("event", "footer_nav_click", { destination: footerLink.getAttribute("href") });
+  }
   const gaEl = e.target.closest("[data-ga-event]");
   if (!gaEl || typeof gtag !== "function") return;
   const params = {};
