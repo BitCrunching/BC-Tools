@@ -46,10 +46,7 @@
   const templateMenu = document.getElementById("cfTemplateMenu");
   const templateEmpty = document.getElementById("cfTemplateEmpty");
 
-  const styleInput = document.getElementById("cfStyleInput");
-  const styleTrigger = document.getElementById("cfStyleTrigger");
-  const styleMenu = document.getElementById("cfStyleMenu");
-  const styleEmpty = document.getElementById("cfStyleEmpty");
+  const styleBtn = document.getElementById("cfStyleBtn");
 
   /* Every template is deliberately exactly 10 lines (see the line-count
      assertion right below) — picking a different one from the preview's
@@ -194,7 +191,7 @@ console.log(a.next.value);`
        showing a preset name next to a theme that preset didn't choose. */
     if (currentStyle !== "custom"){
       currentStyle = "custom";
-      setComboDisplay(styleMenu, styleInput, "style", "custom");
+      if (styleControl) styleControl.setIndex(0);
     }
   });
 
@@ -279,9 +276,25 @@ console.log(a.next.value);`
     bgColorSwatch.style.background = preset.background;
   }
 
-  registerCombo(styleTrigger, styleInput, styleMenu, styleEmpty, (opt) => {
-    applyStyle(opt.dataset.style);
-  });
+  /* Presets used to be a .bc-combo dropdown; now a plain click-to-cycle
+     .option-change-btn (see CLAUDE.md's dropdown-vs-option-change note)
+     — 7 options is short enough that a menu's search box wasn't earning
+     its keep, and a single button matches Congify's own FPS/Playback
+     controls. styleControl.setIndex(0) below is how the Theme-combo and
+     Background-color handlers already reset the display back to
+     "Presets" when a hand-picked value overrides the active preset. */
+  const STYLE_OPTIONS = [
+    { value: "custom", label: "Presets" },
+    { value: "pinkSunset", label: "Pink Sunset" },
+    { value: "nordDark", label: "Nord Dark" },
+    { value: "oceanBreeze", label: "Ocean Breeze" },
+    { value: "forestGreen", label: "Forest Green" },
+    { value: "midnightPurple", label: "Midnight Purple" },
+    { value: "cottonCandy", label: "Cotton Candy" }
+  ];
+  const styleControl = styleBtn ? bcRegisterOptionChangeBtn(styleBtn, STYLE_OPTIONS, (opt) => {
+    applyStyle(opt.value);
+  }) : null;
 
   /* ===== Traffic lights on/off ===== */
   const trafficLightsToggle = document.getElementById("cfTrafficLightsToggle");
@@ -1040,7 +1053,7 @@ ${titlebarSvg}
       if (currentStyle !== "custom"){
         currentStyle = "custom";
         previewWrap.style.padding = "";
-        setComboDisplay(styleMenu, styleInput, "style", "custom");
+        if (styleControl) styleControl.setIndex(0);
       }
     });
   }

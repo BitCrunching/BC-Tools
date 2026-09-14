@@ -471,9 +471,22 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    around (this one moved the window), swapped so each handle now
    actually sits on the panel it resizes. */
 .cf-window-resize-handle{
+  width:25px;
+  height:25px;
   right:16px;
   bottom:16px;
   cursor:nwse-resize;
+}
+/* Smaller than .bc-resize-handle's 30px default (sits right on the
+   snippet's own corner, next to real code, so a slightly smaller circle
+   than the background-panel handle's reads as the less dominant of the
+   two) — content:"" still needed locally even though the actual icon
+   (background) comes from the shared .bc-resize-handle::before rule,
+   same reasoning as Colorfy's own smaller handle in shared/site.css. */
+.cf-window-resize-handle::before{
+  content:"";
+  width:15px;
+  height:15px;
 }
 .cf-resize-handle{
   right:16px;
@@ -557,8 +570,11 @@ html[data-theme="dark"] .cf-toggle-switch{
 }
 /* Presets moved here from .cf-settings, right next to HOD — same
    fixed-cap idea as .cf-hod-toggle just above, sized to its own
-   longest option ("Midnight Purple") rather than the 120px HOD uses. */
-.cf-preset-combo{
+   longest option ("Midnight Purple") rather than the 120px HOD uses.
+   Was a .bc-combo dropdown; now a plain .option-change-btn (click
+   cycles straight to the next preset, no menu to open) — renamed from
+   .cf-preset-combo to match, cap itself unchanged. */
+.cf-preset-btn{
   width:150px;
   max-width:150px;
   flex:none;
@@ -1097,22 +1113,10 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
           <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
           <span class="cf-toggle-label">HOD</span>
         </label>
-        <div class="bc-combo cf-preset-combo" id="cfStyleDropdown">
-          <div class="bc-combo-trigger" id="cfStyleTrigger" aria-haspopup="listbox" aria-expanded="false">
-            <input class="bc-combo-input" id="cfStyleInput" value="Presets" readonly aria-label="Search style presets">
-            <span class="bc-combo-chevron" aria-hidden="true"></span>
-          </div>
-          <div class="bc-combo-menu" id="cfStyleMenu" role="listbox" hidden>
-            <button type="button" class="bc-combo-option active" data-style="custom" data-label="Presets" role="option" aria-selected="true"><span>Presets</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="pinkSunset" data-label="Pink Sunset" role="option" aria-selected="false"><span>Pink Sunset</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="nordDark" data-label="Nord Dark" role="option" aria-selected="false"><span>Nord Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="oceanBreeze" data-label="Ocean Breeze" role="option" aria-selected="false"><span>Ocean Breeze</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="forestGreen" data-label="Forest Green" role="option" aria-selected="false"><span>Forest Green</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="midnightPurple" data-label="Midnight Purple" role="option" aria-selected="false"><span>Midnight Purple</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="cottonCandy" data-label="Cotton Candy" role="option" aria-selected="false"><span>Cotton Candy</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <div class="bc-combo-empty" id="cfStyleEmpty" hidden>No matches</div>
-          </div>
-        </div>
+        <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
+          <span class="option-change-btn-label" id="cfStyleBtnLabel">Presets</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
       </div>
       <span class="cf-filename-group">
         <span class="cf-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cf-filename-tag-text">File name:</span></span>
@@ -1190,6 +1194,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=52" defer></script>
+<script src="/codify/codify-tool.js?v=53" defer></script>
 </body>
 </html>
