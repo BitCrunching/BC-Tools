@@ -350,6 +350,8 @@
       const text = formatColor(p.rgb);
       codeBtn.textContent = text;
       codeBtn.dataset.value = text;
+      codeBtn.dataset.gaEvent = "tool_primary_action";
+      codeBtn.dataset.gaTool = "colorfy";
       codeBtn.addEventListener("click", () => copyCode(codeBtn));
       row.appendChild(codeBtn);
 
