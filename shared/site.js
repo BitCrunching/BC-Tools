@@ -127,6 +127,24 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ===== GA4 click tracking ===== */
+/* Any element (anywhere on the site) can opt into GA4 click tracking by
+   adding data-ga-event="<event_name>" — optionally data-ga-<param>="value"
+   for extra event params (e.g. data-ga-tool="convert"). One delegated
+   listener covers every current and future button; no per-tool JS needed.
+   gtag() itself is defined per-page (each page's own <head> snippet), so
+   this only fires when it exists. */
+document.addEventListener("click", (e) => {
+  const gaEl = e.target.closest("[data-ga-event]");
+  if (!gaEl || typeof gtag !== "function") return;
+  const params = {};
+  for (const key in gaEl.dataset){
+    if (key === "gaEvent") continue;
+    if (key.startsWith("ga")) params[key.slice(2).replace(/^./, c => c.toLowerCase())] = gaEl.dataset[key];
+  }
+  gtag("event", gaEl.dataset.gaEvent, params);
+});
+
 /* ===== downloadBlob ===== */
 function downloadBlob(blob, fileName){
   const url = URL.createObjectURL(blob);
