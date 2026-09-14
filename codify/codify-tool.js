@@ -332,11 +332,12 @@ console.log(a.next.value);`
      both handlers gate on e.target === previewWrap: a click lands there
      directly only when it hits the bare padding ring, not when it
      bubbles up from something inside .cf-window. The backdrop itself
-     then splits again: left/right/top of the window still cycle the
-     background color, but the strip directly below the window (the
-     snippet's own drop-shadow lands there) toggles Shadow instead — a
-     more discoverable, "click the thing you're looking at" way to
-     reach the same setting the pill above already exposes. */
+     splits three ways: the strip above the window toggles Mac nav (the
+     titlebar dots that live right below it), the strip directly below
+     toggles Shadow (its own drop-shadow lands there), and left/right
+     are what's left for cycling the background color — each one a
+     "click the thing you're looking at" shortcut to a setting the
+     pills above already expose. */
   const BG_SWATCHES = ["#E5E7EB", "#7C3AED", "#2563EB", "#22C55E", "#F97316", "#1E1E1E"];
   function pickBgColor(hex){
     /* Sets the real <input type=color> and fires its own "input" event
@@ -367,6 +368,13 @@ console.log(a.next.value);`
     shadowToggle.checked = !shadowToggle.checked;
     shadowToggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
+  /* Same delegation pattern as toggleShadowClick, for the strip above
+     the window instead of below it. */
+  function toggleMacNavClick(){
+    if (!trafficLightsToggle) return;
+    trafficLightsToggle.checked = !trafficLightsToggle.checked;
+    trafficLightsToggle.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 
   /* A "double-click" here means two clicks under 100ms apart — much
      tighter than the browser's own native dblclick threshold (which
@@ -393,6 +401,10 @@ console.log(a.next.value);`
         const winRect = cfWindow.getBoundingClientRect();
         if (e.clientY >= winRect.bottom){
           toggleShadowClick();
+          return;
+        }
+        if (e.clientY < winRect.top){
+          toggleMacNavClick();
           return;
         }
         const now = performance.now();
@@ -495,11 +507,11 @@ console.log(a.next.value);`
       const winRect = cfWindow.getBoundingClientRect();
       hoverOverlay.hidden = false;
       if (target === previewWrap){
-        /* The ring around the window splits into two independent zones
-           now, not one: the strip below the window is Shadow's own
-           (matching the click handler above), everything else around
-           it is still Background. Only the bands for whichever zone
-           the cursor is actually in get drawn — the other zone's bands
+        /* The ring around the window splits into three independent
+           zones now: above is Mac nav's own, below is Shadow's
+           (matching the click handler above), left/right are what's
+           left for Background. Only the bands for whichever zone the
+           cursor is actually in get drawn — the other zones' bands
            collapse to 0×0 the same way the left/right-half branch below
            already clears hoverRect when it's not in play. */
         hoverRect.style.width = "0px";
@@ -510,12 +522,18 @@ console.log(a.next.value);`
           positionBox(hoverBands.right, 0, 0, 0, 0);
           positionBox(hoverBands.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
           positionLabel(wrapRect.left, winRect.bottom, "Shadow — click to toggle");
+        } else if (clientY < winRect.top){
+          positionBox(hoverBands.bottom, 0, 0, 0, 0);
+          positionBox(hoverBands.left, 0, 0, 0, 0);
+          positionBox(hoverBands.right, 0, 0, 0, 0);
+          positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+          positionLabel(wrapRect.left, wrapRect.top, "Mac nav — click to toggle");
         } else {
           positionBox(hoverBands.bottom, 0, 0, 0, 0);
-          positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+          positionBox(hoverBands.top, 0, 0, 0, 0);
           positionBox(hoverBands.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
           positionBox(hoverBands.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
-          positionLabel(wrapRect.left, wrapRect.top, "Background — click to change color");
+          positionLabel(wrapRect.left, winRect.top, "Background — click to change color");
         }
         return;
       }
