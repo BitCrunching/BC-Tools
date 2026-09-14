@@ -2646,6 +2646,26 @@ footer a{
   } catch (e) { /* sessionStorage unavailable */ }
 })();
 
+/* GA4 click tracking — this page doesn't load shared/site.js (own inline
+   JS instead, see the note near the footer's getting-started links above),
+   so it keeps its own copy of the same data-ga-event delegate pattern
+   rather than sharing the one in site.js. Card open/read-more clicks derive
+   their tool slug from the card's own second class (e.g. "card convert" ->
+   "convert") instead of hand-tagging all 9 cards individually. */
+document.addEventListener("click", (e) => {
+  const cardOpen = e.target.closest(".card-open, .card-readmore");
+  if (cardOpen){
+    const card = cardOpen.closest(".card");
+    const tool = card ? card.classList[1] : undefined;
+    gtag("event", cardOpen.classList.contains("card-readmore") ? "homepage_card_readmore" : "homepage_card_open", { tool });
+    return;
+  }
+  const footerLink = e.target.closest(".footer-dash-link");
+  if (footerLink){
+    gtag("event", "footer_nav_click", { destination: footerLink.getAttribute("href") });
+  }
+});
+
 /* Intro terminal glitch lines: each character sits in a fixed-width slot
    so text never reflows. Two lines animate independently. Not started on
    load — kicks in once the visitor clicks reveal (see below). */
