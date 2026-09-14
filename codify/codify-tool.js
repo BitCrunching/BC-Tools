@@ -440,6 +440,20 @@ console.log(a.next.value);`
      layer above off, for anyone who finds it more distracting than
      helpful once they already know the three zones. */
   const hodToggle = document.getElementById("cfHodToggle");
+  /* Remembers the on/off state across visits, same pattern as the
+     background color's own localStorage save just below in this file
+     (BG_COLOR_STORAGE_KEY). Defaults to on (the checkbox's own HTML
+     "checked" attribute) when nothing's been saved yet. */
+  const HOD_STORAGE_KEY = "bc-codify-hod";
+  if (hodToggle){
+    try {
+      const savedHod = localStorage.getItem(HOD_STORAGE_KEY);
+      if (savedHod !== null) hodToggle.checked = savedHod === "1";
+    } catch(e){ /* storage unavailable */ }
+    hodToggle.addEventListener("change", () => {
+      try { localStorage.setItem(HOD_STORAGE_KEY, hodToggle.checked ? "1" : "0"); } catch(e){ /* storage unavailable */ }
+    });
+  }
   /* Reassigned below once the hover-overlay elements are confirmed to
      exist; declared here (not just inside that block) so renderPreview()
      further down — which is what actually causes the window to resize —
