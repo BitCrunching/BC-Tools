@@ -331,7 +331,12 @@ console.log(a.next.value);`
      right-half cycling above, the backdrop below for its color — so
      both handlers gate on e.target === previewWrap: a click lands there
      directly only when it hits the bare padding ring, not when it
-     bubbles up from something inside .cf-window. */
+     bubbles up from something inside .cf-window. The backdrop itself
+     then splits again: left/right/top of the window still cycle the
+     background color, but the strip directly below the window (the
+     snippet's own drop-shadow lands there) toggles Shadow instead — a
+     more discoverable, "click the thing you're looking at" way to
+     reach the same setting the pill above already exposes. */
   const BG_SWATCHES = ["#E5E7EB", "#7C3AED", "#2563EB", "#22C55E", "#F97316", "#1E1E1E"];
   function pickBgColor(hex){
     /* Sets the real <input type=color> and fires its own "input" event
@@ -353,6 +358,14 @@ console.log(a.next.value);`
     const currentIndex = BG_SWATCHES.indexOf(current);
     const next = BG_SWATCHES[(currentIndex + 1) % BG_SWATCHES.length];
     pickBgColor(next);
+  }
+  /* Sets the real checkbox and fires its own "change" event rather than
+     duplicating the cf-no-shadow class toggle here — same delegation
+     pattern pickBgColor uses for the real <input type=color>. */
+  function toggleShadowClick(){
+    if (!shadowToggle) return;
+    shadowToggle.checked = !shadowToggle.checked;
+    shadowToggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   /* A "double-click" here means two clicks under 100ms apart — much
@@ -377,6 +390,11 @@ console.log(a.next.value);`
     let lastBgClickTime = 0;
     previewWrap.addEventListener("click", (e) => {
       if (e.target === previewWrap){
+        const winRect = cfWindow.getBoundingClientRect();
+        if (e.clientY >= winRect.bottom){
+          toggleShadowClick();
+          return;
+        }
         const now = performance.now();
         if (now - lastBgClickTime < BG_DOUBLE_CLICK_MS){
           if (bgColorBeforeClick !== null) pickBgColor(bgColorBeforeClick);
@@ -477,16 +495,28 @@ console.log(a.next.value);`
       const winRect = cfWindow.getBoundingClientRect();
       hoverOverlay.hidden = false;
       if (target === previewWrap){
-        /* The ring around the window — four bands rather than one box
-           covering the whole wrap, so the highlight doesn't paint over
-           the window itself while you're hovering its backdrop. */
+        /* The ring around the window splits into two independent zones
+           now, not one: the strip below the window is Shadow's own
+           (matching the click handler above), everything else around
+           it is still Background. Only the bands for whichever zone
+           the cursor is actually in get drawn — the other zone's bands
+           collapse to 0×0 the same way the left/right-half branch below
+           already clears hoverRect when it's not in play. */
         hoverRect.style.width = "0px";
         hoverRect.style.height = "0px";
-        positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
-        positionBox(hoverBands.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
-        positionBox(hoverBands.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
-        positionBox(hoverBands.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
-        positionLabel(wrapRect.left, wrapRect.top, "Background — click to change color");
+        if (clientY >= winRect.bottom){
+          positionBox(hoverBands.top, 0, 0, 0, 0);
+          positionBox(hoverBands.left, 0, 0, 0, 0);
+          positionBox(hoverBands.right, 0, 0, 0, 0);
+          positionBox(hoverBands.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
+          positionLabel(wrapRect.left, winRect.bottom, "Shadow — click to toggle");
+        } else {
+          positionBox(hoverBands.bottom, 0, 0, 0, 0);
+          positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+          positionBox(hoverBands.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
+          positionBox(hoverBands.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
+          positionLabel(wrapRect.left, wrapRect.top, "Background — click to change color");
+        }
         return;
       }
       Object.values(hoverBands).forEach(band => { band.style.width = "0px"; band.style.height = "0px"; });
