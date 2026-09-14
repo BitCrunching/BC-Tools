@@ -9,6 +9,7 @@
   const afterInput = document.getElementById("cfAfterInput");
   const previewWrap = document.getElementById("cfPreviewWrap");
   const cfWindow = document.getElementById("cfWindow");
+  const cfWindowWrap = document.getElementById("cfWindowWrap");
   const themeLink = document.getElementById("cfThemeLink");
   const downloadBtn = document.getElementById("cfDownloadBtn");
   bcRegisterKeyShortcut("d", downloadBtn);
@@ -1147,11 +1148,20 @@ ${titlebarSvg}
       const containerMax = toolApp.getBoundingClientRect().width - (36 * 2) - (56 * 2);
       return Math.min(WINDOW_WIDTH_MAX, containerMax);
     }
-    if (windowResizeHandle){
+    if (windowResizeHandle && cfWindowWrap){
+      /* Resizes #cfWindowWrap, not #cfWindow itself — #cfWindow is
+         width:100% of the wrap (see .cf-window in index.html's own
+         <style>), and the handle is anchored to the wrap's corner, not
+         the window's. Setting the width on #cfWindow directly left the
+         wrap (and the handle sitting on its corner) at its old size
+         while only the window inside it visibly shrank, so the handle
+         stayed put instead of tracking the corner it's supposed to be
+         on — confirmed live: dragging it narrowed the code window but
+         the handle itself never moved. */
       setupPanelResizeHandle(
         windowResizeHandle,
-        () => cfWindow.getBoundingClientRect().width,
-        (px) => { cfWindow.style.width = px + "px"; },
+        () => cfWindowWrap.getBoundingClientRect().width,
+        (px) => { cfWindowWrap.style.width = px + "px"; },
         () => WINDOW_WIDTH_MIN,
         windowWidthMax
       );
