@@ -534,6 +534,14 @@ html[data-theme="dark"] .cf-toggle-switch{
   height:40px;
   flex:none;
 }
+/* Presets moved here from .cf-settings, right next to HOD — same
+   fixed-cap idea as .cf-hod-toggle just above, sized to its own
+   longest option ("Midnight Purple") rather than the 120px HOD uses. */
+.cf-preset-combo{
+  width:150px;
+  max-width:150px;
+  flex:none;
+}
 .cf-toggle-switch input{
   position:absolute;
   width:1px;
@@ -591,6 +599,11 @@ html[data-theme="dark"] .cf-toggle-switch{
   display:flex;
   align-items:center;
   justify-content:space-between;
+}
+.cf-filename-row-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
 .cf-filename-group{
   display:flex;
@@ -1009,25 +1022,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
       </div>
 
       <div class="cf-setting-group">
-        <div class="bc-combo" id="cfStyleDropdown">
-          <div class="bc-combo-trigger" id="cfStyleTrigger" aria-haspopup="listbox" aria-expanded="false">
-            <input class="bc-combo-input" id="cfStyleInput" value="Presets" readonly aria-label="Search style presets">
-            <span class="bc-combo-chevron" aria-hidden="true"></span>
-          </div>
-          <div class="bc-combo-menu" id="cfStyleMenu" role="listbox" hidden>
-            <button type="button" class="bc-combo-option active" data-style="custom" data-label="Presets" role="option" aria-selected="true"><span>Presets</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="pinkSunset" data-label="Pink Sunset" role="option" aria-selected="false"><span>Pink Sunset</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="nordDark" data-label="Nord Dark" role="option" aria-selected="false"><span>Nord Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="oceanBreeze" data-label="Ocean Breeze" role="option" aria-selected="false"><span>Ocean Breeze</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="forestGreen" data-label="Forest Green" role="option" aria-selected="false"><span>Forest Green</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="midnightPurple" data-label="Midnight Purple" role="option" aria-selected="false"><span>Midnight Purple</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <button type="button" class="bc-combo-option" data-style="cottonCandy" data-label="Cotton Candy" role="option" aria-selected="false"><span>Cotton Candy</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
-            <div class="bc-combo-empty" id="cfStyleEmpty" hidden>No matches</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="cf-setting-group">
         <label class="cf-toggle-switch">
           <input type="checkbox" id="cfTrafficLightsToggle" checked>
           <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
@@ -1073,11 +1067,29 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     </div>
 
     <div class="cf-filename-row">
-      <label class="cf-toggle-switch cf-hod-toggle" title="Hover overlay display — the click-zone highlight over the preview">
-        <input type="checkbox" id="cfHodToggle" checked>
-        <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-        <span class="cf-toggle-label">HOD</span>
-      </label>
+      <div class="cf-filename-row-left">
+        <label class="cf-toggle-switch cf-hod-toggle" title="Hover overlay display — the click-zone highlight over the preview">
+          <input type="checkbox" id="cfHodToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">HOD</span>
+        </label>
+        <div class="bc-combo cf-preset-combo" id="cfStyleDropdown">
+          <div class="bc-combo-trigger" id="cfStyleTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <input class="bc-combo-input" id="cfStyleInput" value="Presets" readonly aria-label="Search style presets">
+            <span class="bc-combo-chevron" aria-hidden="true"></span>
+          </div>
+          <div class="bc-combo-menu" id="cfStyleMenu" role="listbox" hidden>
+            <button type="button" class="bc-combo-option active" data-style="custom" data-label="Presets" role="option" aria-selected="true"><span>Presets</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="pinkSunset" data-label="Pink Sunset" role="option" aria-selected="false"><span>Pink Sunset</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="nordDark" data-label="Nord Dark" role="option" aria-selected="false"><span>Nord Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="oceanBreeze" data-label="Ocean Breeze" role="option" aria-selected="false"><span>Ocean Breeze</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="forestGreen" data-label="Forest Green" role="option" aria-selected="false"><span>Forest Green</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="midnightPurple" data-label="Midnight Purple" role="option" aria-selected="false"><span>Midnight Purple</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-style="cottonCandy" data-label="Cotton Candy" role="option" aria-selected="false"><span>Cotton Candy</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <div class="bc-combo-empty" id="cfStyleEmpty" hidden>No matches</div>
+          </div>
+        </div>
+      </div>
       <span class="cf-filename-group">
         <span class="cf-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cf-filename-tag-text">File name:</span></span>
         <input type="text" class="cf-filename-input" id="cfFileNameInput" aria-label="Output file name" spellcheck="false" value="codify-snippet">
