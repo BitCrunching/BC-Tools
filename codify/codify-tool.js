@@ -569,7 +569,14 @@ console.log(a.next.value);`
              native color-picker dialog straight off the backdrop — now
              opens the same custom panel the Background pill's trigger
              does, since the native input is just hidden internal state
-             these days (see the Background control's own comment). */
+             these days (see the Background control's own comment).
+             stopPropagation matters here exactly like the Shadow branch
+             above: without it this same click bubbles up to the
+             document-level outside-click listener that closes
+             #cfBgPanel (registered near openBgPanel/closeBgPanel further
+             down), which sees previewWrap as "outside" the panel and
+             closes it in the same tick it just opened. */
+          e.stopPropagation();
           openBgPanel();
           lastBgClickTime = 0;
           return;
