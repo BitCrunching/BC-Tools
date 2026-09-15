@@ -226,6 +226,19 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   z-index:6;
   font-size:18px;
 }
+/* .bc-remove-btn (shared/site.css) sets display:flex unconditionally,
+   which as an author rule beats the browser's own [hidden]{display:none}
+   UA-stylesheet rule regardless of specificity — the button stayed
+   visibly rendered even with the hidden attribute set, confirmed live
+   (the "×" showed up on the banner before any code was typed, despite
+   codify-tool.js only ever un-hiding it via markStarted()). Convert/
+   Coudio's own .bc-remove-btn usage never hits this because theirs is
+   never actually toggled with the hidden attribute in the first place;
+   Codify is the one tool that starts hidden, so the override belongs
+   here rather than in the shared class. */
+.cf-remove-btn[hidden]{
+  display:none;
+}
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
    (shared/site.css) — only size/position stay here, same split as
    .cf-remove-btn/.bc-remove-btn above. Sits just to the left of
