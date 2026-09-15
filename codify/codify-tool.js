@@ -1266,6 +1266,9 @@ ${titlebarSvg}
   const bgPanel = document.getElementById("cfBgPanel");
   const bgSwatchEls = [...document.querySelectorAll(".cf-bg-swatch")];
   const bgHexInput = document.getElementById("cfBgHexInput");
+  const bgSv = document.getElementById("cfBgSv");
+  const bgSvThumb = document.getElementById("cfBgSvThumb");
+  const bgHueInput = document.getElementById("cfBgHue");
 
   function closeBgPanel(){
     if (!bgPanel || !bgTrigger) return;
@@ -1295,6 +1298,84 @@ ${titlebarSvg}
     });
   }
 
+  /* ===== Free-form SV square + hue slider =====
+     The 6 swatches only ever offer 6 exact colors — this is what lets a
+     visitor land on anything else without already knowing a hex code.
+     Plain HSV math (no canvas): the square's x/y maps to saturation/value
+     at a fixed hue, the slider picks that hue. Both ends funnel through
+     bgColorInput's own "input" event same as swatches/hex do, so
+     applyBgColor/localStorage/preset-reset stay the single source of
+     truth — this only ever produces a hex and hands it off. */
+  function hsvToHex(h, s, v){
+    const i = Math.floor(h / 60) % 6;
+    const f = h / 60 - Math.floor(h / 60);
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+    const table = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]];
+    const [r, g, b] = table[i].map(x => Math.round(x * 255));
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+  }
+  function hexToHsv(hex){
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0){
+      if (max === r) h = ((g - b) / d) % 6;
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+    }
+    return [h, max === 0 ? 0 : d / max, max];
+  }
+  let currentHue = 0, currentSat = 0, currentVal = 0;
+  function updateSvBackground(){
+    if (bgSv) bgSv.style.backgroundColor = hsvToHex(currentHue, 1, 1);
+  }
+  function setSvThumbVisual(s, v){
+    if (!bgSvThumb) return;
+    bgSvThumb.style.left = (s * 100) + "%";
+    bgSvThumb.style.top = ((1 - v) * 100) + "%";
+  }
+  function pickFromSv(clientX, clientY){
+    const rect = bgSv.getBoundingClientRect();
+    currentSat = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    currentVal = Math.min(1, Math.max(0, 1 - (clientY - rect.top) / rect.height));
+    setSvThumbVisual(currentSat, currentVal);
+    bgColorInput.value = hsvToHex(currentHue, currentSat, currentVal);
+    bgColorInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  if (bgSv){
+    let svDragging = false;
+    bgSv.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      svDragging = true;
+      try { bgSv.setPointerCapture(e.pointerId); } catch (err) {}
+      pickFromSv(e.clientX, e.clientY);
+    });
+    bgSv.addEventListener("pointermove", (e) => {
+      if (svDragging) pickFromSv(e.clientX, e.clientY);
+    });
+    function endSvDrag(e){
+      svDragging = false;
+      try { bgSv.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    bgSv.addEventListener("pointerup", endSvDrag);
+    bgSv.addEventListener("pointercancel", endSvDrag);
+  }
+  if (bgHueInput){
+    bgHueInput.addEventListener("input", () => {
+      currentHue = Number(bgHueInput.value);
+      updateSvBackground();
+      bgColorInput.value = hsvToHex(currentHue, currentSat, currentVal);
+      bgColorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+
   function applyBgColor(hex){
     previewWrap.style.background = hex;
     bgColorSwatch.style.background = hex;
@@ -1302,6 +1383,18 @@ ${titlebarSvg}
     if (bgHexInput && document.activeElement !== bgHexInput) bgHexInput.value = hex.toUpperCase();
     const upper = hex.toUpperCase();
     bgSwatchEls.forEach(el => el.classList.toggle("active", el.dataset.color.toUpperCase() === upper));
+    /* Keep the SV square/hue slider in sync with whatever set the color
+       (a swatch click, a typed hex, this same picker) — hue is left
+       alone when saturation is near zero (grays/white/black), since hue
+       is meaningless there and re-deriving it would otherwise snap the
+       slider back to red every time a near-gray gets applied. */
+    const [h, s, v] = hexToHsv(hex);
+    if (s > 0.02) currentHue = h;
+    currentSat = s;
+    currentVal = v;
+    if (bgHueInput) bgHueInput.value = Math.round(currentHue);
+    updateSvBackground();
+    setSvThumbVisual(currentSat, currentVal);
   }
 
   let savedBgColor = null;

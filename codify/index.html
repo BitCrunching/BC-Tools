@@ -456,6 +456,66 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#2563eb;
   box-shadow:0 0 0 2px rgba(37,99,235,.35);
 }
+/* Free-form picker — the 6 swatches are quick presets, this is what
+   actually lets a visitor land on any color, not just those six (the
+   swatches-only panel this replaces had no way to do that short of the
+   hex field, which needs already knowing the hex you want). A plain
+   saturation/value square + hue strip, not the OS-native color dialog —
+   same reasoning as the rest of this panel (see cfBgColorInput's own
+   comment): a real in-page control instead of a browser popup. Hue
+   drives the square's own base background-color (JS, see
+   updateSvBackground); saturation runs left(0)->right(1), value runs
+   top(1)->bottom(0) via the two overlaid gradients below. */
+.cf-bg-sv{
+  position:relative;
+  width:100%;
+  height:120px;
+  border-radius:10px;
+  border:1px solid rgba(127,127,127,.35);
+  cursor:crosshair;
+  background-image:
+    linear-gradient(to top, #000, rgba(0,0,0,0)),
+    linear-gradient(to right, #fff, rgba(255,255,255,0));
+  touch-action:none;
+}
+.cf-bg-sv-thumb{
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.cf-bg-hue{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:14px;
+  border-radius:7px;
+  background:linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor:pointer;
+}
+.cf-bg-hue::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+  cursor:pointer;
+}
+.cf-bg-hue::-moz-range-thumb{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+  cursor:pointer;
+}
 .cf-bg-hex-row{
   display:flex;
   align-items:center;
@@ -1207,6 +1267,10 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
               <button type="button" class="cf-bg-swatch" data-color="#F97316" style="background:#F97316;" aria-label="#F97316"></button>
               <button type="button" class="cf-bg-swatch" data-color="#1E1E1E" style="background:#1E1E1E;" aria-label="#1E1E1E"></button>
             </div>
+            <div class="cf-bg-sv" id="cfBgSv" role="slider" tabindex="0" aria-label="Saturation and brightness">
+              <div class="cf-bg-sv-thumb" id="cfBgSvThumb"></div>
+            </div>
+            <input type="range" class="cf-bg-hue" id="cfBgHue" min="0" max="359" step="1" value="0" aria-label="Hue">
             <label class="cf-bg-hex-row">
               <span class="cf-bg-hex-label">Hex</span>
               <input type="text" id="cfBgHexInput" class="cf-bg-hex-input" value="#E5E7EB" maxlength="7" spellcheck="false" aria-label="Custom hex color">
@@ -1379,6 +1443,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=68" defer></script>
+<script src="/codify/codify-tool.js?v=69" defer></script>
 </body>
 </html>
