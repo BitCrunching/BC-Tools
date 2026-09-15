@@ -5,6 +5,7 @@
    actually on screen is what gets exported). */
 (function(){
   const codeInput = document.getElementById("cfCodeInput");
+  const codeGhost = document.getElementById("cfCodeGhost");
   const codeOutput = document.getElementById("cfCodeOutput");
   const afterInput = document.getElementById("cfAfterInput");
   const previewWrap = document.getElementById("cfPreviewWrap");
@@ -758,8 +759,37 @@ console.log(a.next.value);`
     if (codeInput.value.length > 0){
       afterInput.classList.add("cf-started");
       if (removeBtn) removeBtn.hidden = false;
+      hideCodeGhost();
     }
   }
+
+  /* ===== Ghost preview for a first-time visitor's empty editor =====
+     Used to silently pre-fill codeInput.value with the Hello-world
+     template so the tool opened showing a real screenshot — but that
+     meant "the editor" was never actually empty for a first-time
+     visitor, just pre-typed on their behalf. This shows the same idea
+     visually instead (an overlay, see .cf-code-ghost in index.html)
+     without putting anything in the real value — the editor stays
+     genuinely empty until the visitor types themselves, and the ghost
+     disappears the moment they click into it. */
+  /* Just the opening lines of TEMPLATES.hello, not the whole thing —
+     the editor's own default height (120px, before autoFitCodeInput
+     ever runs against real content) only has room for about 4 lines at
+     this font/line-height; the full 10-line template past that point
+     just got hard-clipped mid-line by the ghost's own overflow:hidden,
+     confirmed live. */
+  const GHOST_SNIPPET = `function greet(name) {
+  return \`Hello, \${name}!\`;
+}`;
+  function showCodeGhost(){
+    if (!codeGhost) return;
+    codeGhost.textContent = GHOST_SNIPPET;
+    codeGhost.hidden = false;
+  }
+  function hideCodeGhost(){
+    if (codeGhost) codeGhost.hidden = true;
+  }
+  codeInput.addEventListener("focus", hideCodeGhost);
 
   /* ===== "Remove all" reset — clears the editor and returns to the
      pre-typing intro state. Mirrors Convert/Coudio/Cleanly/Combine's
@@ -774,6 +804,9 @@ console.log(a.next.value);`
     codeInput.value = "";
     afterInput.classList.remove("cf-started");
     if (removeBtn) removeBtn.hidden = true;
+    /* Back to the same empty-with-a-ghost-preview state a first-time
+       visitor sees, rather than a genuinely blank box. */
+    showCodeGhost();
     currentLang = "javascript";
     setComboDisplay(languageMenu, languageInput, "lang", "javascript");
     fileNameInput.value = "codify-snippet";
@@ -883,7 +916,8 @@ console.log(a.next.value);`
         opacity: shadowOpacityInput ? shadowOpacityInput.value : 35,
         distance: shadowDistanceInput ? shadowDistanceInput.value : 30,
         direction: shadowDirectionInput ? shadowDirectionInput.value : 0
-      }
+      },
+      bgImage: currentBgImageDataUrl
     });
   }
   fileNameInput.addEventListener("input", schedulePersist);
@@ -926,6 +960,9 @@ console.log(a.next.value);`
       renderShadowReadouts();
       applyShadow();
     }
+    /* Same immediate-restore treatment as shadow just above — a custom
+       background image is a visual preference, not session content. */
+    if (saved && saved.bgImage) applyBgImage(saved.bgImage);
     if (saved && saved.code){
       if (codeInput.value.length) return;
       continueBtn.hidden = false;
@@ -943,19 +980,15 @@ console.log(a.next.value);`
       });
       return;
     }
-    /* No saved session — a genuinely first-time visitor. Pre-fill the
-       Hello world template (already the default active Template/Theme/
-       Language/Traffic-lights everywhere else on the page) so the tool
-       opens showing a real screenshot instead of an empty box, rather
-       than making that first impression wait on someone picking a
-       template themselves. Never overwrites real typed content — only
-       runs while the editor is still genuinely empty. */
-    if (codeInput.value.length === 0){
-      codeInput.value = TEMPLATES.hello;
-      markStarted();
-      autoFitCodeInput();
-      renderPreview();
-    }
+    /* No saved session — a genuinely first-time visitor. Used to
+       silently pre-fill the editor with the Hello-world template so
+       the tool opened showing a real screenshot instead of an empty
+       box — now shows that same snippet as a ghost overlay instead
+       (see showCodeGhost above), leaving the actual editor genuinely
+       empty rather than quietly typing on the visitor's behalf. Never
+       overwrites real typed content — only runs while the editor is
+       still genuinely empty. */
+    if (codeInput.value.length === 0) showCodeGhost();
   })();
 
   /* Mobile-only (see .cf-paste-btn CSS). Reads the clipboard straight
@@ -1067,8 +1100,23 @@ console.log(a.next.value);`
        render corner-to-corner regardless of what it actually asked for. */
     const bgValue = (previewWrap.style.background || getComputedStyle(previewWrap).backgroundColor).trim();
     const gradientMatch = /^linear-gradient\(\s*135deg\s*,(.+)\)$/i.exec(bgValue);
-    let bgFill, defs = "";
-    if (gradientMatch){
+    /* A custom background image (see cfBgImageInput below) sets
+       previewWrap.style.background to url("data:...") ... — matched
+       here the same way the gradient case already is, rather than the
+       export silently falling back to whatever flat color happens to
+       be in bgFill and dropping the image entirely. */
+    const bgImageMatch = /^url\("?(data:[^")]+)"?\)/i.exec(bgValue);
+    let bgFill, bgImageSvg = "", defs = "";
+    if (bgImageMatch){
+      /* preserveAspectRatio="xMidYMid slice" is SVG's own equivalent of
+         CSS background-size:cover — fills the whole W×H box, cropping
+         whichever axis overflows, centered — matching how the same
+         image actually renders live (see the CSS `cover` value set
+         alongside this url() below). */
+      defs += `<clipPath id="cfBgImageClip"><rect width="${W}" height="${H}" rx="20"/></clipPath>`;
+      bgImageSvg = `<image href="${bgImageMatch[1]}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cfBgImageClip)"/>`;
+      bgFill = "none";
+    } else if (gradientMatch){
       const stops = gradientMatch[1].split(",").map(s => s.trim()).map(stop => {
         const [, color, offset] = /^(\S+)\s+([\d.]+%)$/.exec(stop) || [, stop, null];
         return { color, offset };
@@ -1148,6 +1196,7 @@ console.log(a.next.value);`
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
 <defs>${defs}</defs>
 <rect width="${W}" height="${H}" rx="20" fill="${bgFill}"/>
+${bgImageSvg}
 <g filter="${shadowVisible ? "url(#cfWinShadow)" : "none"}">
 <rect x="${winX}" y="${winY}" width="${winW}" height="${winH}" rx="12" fill="${winBg}"/>
 </g>
@@ -1235,6 +1284,47 @@ ${titlebarSvg}
         previewWrap.style.padding = "";
         if (styleControl) styleControl.setIndex(0);
       }
+    });
+  }
+
+  /* ===== Custom background image =====
+     Sits between Background and Mac nav in the settings row — a plain
+     file picker (hidden <input type=file>, triggered by a visible
+     button, same pattern every other tool's upload zone uses) rather
+     than a drag target, since this is one small accent image, not the
+     tool's primary input. Reads the file as a data URL and sets it as
+     previewWrap's own CSS background — same property Background/Presets
+     already write to (applyBgColor, applyStyle above), so whichever one
+     was picked last simply wins; no separate "clear image" control
+     needed since picking a solid color or a Style preset overwrites it
+     the same way switching between those two already does today. */
+  const bgImageTrigger = document.getElementById("cfBgImageTrigger");
+  const bgImageInput = document.getElementById("cfBgImageInput");
+  let currentBgImageDataUrl = null;
+  function applyBgImage(dataUrl){
+    currentBgImageDataUrl = dataUrl;
+    previewWrap.style.background = `url("${dataUrl}") center / cover no-repeat`;
+    bgColorSwatch.style.background = `url("${dataUrl}") center / cover no-repeat`;
+    if (currentStyle !== "custom"){
+      currentStyle = "custom";
+      previewWrap.style.padding = "";
+      if (styleControl) styleControl.setIndex(0);
+    }
+    schedulePersist();
+  }
+  if (bgImageTrigger && bgImageInput){
+    bgImageTrigger.addEventListener("click", () => bgImageInput.click());
+    bgImageInput.addEventListener("change", () => {
+      const file = bgImageInput.files && bgImageInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => applyBgImage(reader.result);
+      reader.readAsDataURL(file);
+      /* Lets picking the exact same file again re-fire "change" (it
+         wouldn't otherwise, since the input's value hasn't changed) —
+         minor, but matches every other file-input pattern on this
+         site. */
+      bgImageInput.value = "";
     });
   }
 
