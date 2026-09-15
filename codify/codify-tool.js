@@ -4,6 +4,12 @@
    live preview DOM (gradient, window chrome, dots, code — whatever's
    actually on screen is what gets exported). */
 (function(){
+  /* escapeXml/hsvToHex/hexToHsv live in codify-pure.js now (loaded right
+     before this file) — pulled out because they're the one part of
+     Codify that's pure, DOM-free logic, so they're the part actually
+     worth unit-testing (see codify-pure.test.js) instead of only ever
+     being checked by reloading the page. */
+  const { escapeXml, hsvToHex, hexToHsv } = window.CodifyPure;
   const codeInput = document.getElementById("cfCodeInput");
   const codeOutput = document.getElementById("cfCodeOutput");
   const afterInput = document.getElementById("cfAfterInput");
@@ -992,10 +998,6 @@ console.log(a.next.value);`
     formatSvgBtn.addEventListener("click", () => setExportFormat("svg"));
   }
 
-  function escapeXml(str){
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-
   /* ===== True vector SVG export =====
      Not a snapshot-wrapped-in-SVG-tags trick (the kind html-to-image's
      own toSvg() produces, embedding the live HTML/CSS in a
@@ -1277,33 +1279,9 @@ ${titlebarSvg}
      at a fixed hue, the slider picks that hue. Both ends funnel through
      bgColorInput's own "input" event same as swatches/hex do, so
      applyBgColor/localStorage/preset-reset stay the single source of
-     truth — this only ever produces a hex and hands it off. */
-  function hsvToHex(h, s, v){
-    const i = Math.floor(h / 60) % 6;
-    const f = h / 60 - Math.floor(h / 60);
-    const p = v * (1 - s);
-    const q = v * (1 - f * s);
-    const t = v * (1 - (1 - f) * s);
-    const table = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]];
-    const [r, g, b] = table[i].map(x => Math.round(x * 255));
-    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
-  }
-  function hexToHsv(hex){
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const d = max - min;
-    let h = 0;
-    if (d !== 0){
-      if (max === r) h = ((g - b) / d) % 6;
-      else if (max === g) h = (b - r) / d + 2;
-      else h = (r - g) / d + 4;
-      h *= 60;
-      if (h < 0) h += 360;
-    }
-    return [h, max === 0 ? 0 : d / max, max];
-  }
+     truth — this only ever produces a hex and hands it off.
+     hsvToHex/hexToHsv themselves live in codify-pure.js (destructured at
+     the top of this file) — see that file's own comment. */
   let currentHue = 0, currentSat = 0, currentVal = 0;
   function updateSvBackground(){
     if (bgSv) bgSv.style.backgroundColor = hsvToHex(currentHue, 1, 1);
