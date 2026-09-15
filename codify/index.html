@@ -438,14 +438,18 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   position:relative;
 }
 
-/* Background + Import BG, connected into one pill (same "shared divider,
+/* Background + Imp(ort), connected into one pill (same "shared divider,
    rounded only at the true ends" recipe .cf-format-toggle uses for
    PNG/SVG below) instead of two separate settings-row pills — these
    aren't mutually-exclusive states like PNG/SVG, just two actions that
    both change the same thing (the panel's background), so reads as one
    grouped control rather than a toggle. Wider max-width than the
    148px .cf-setting-group default, since it's now carrying two labels'
-   worth of text instead of one. */
+   worth of text instead of one. Split unevenly (2:1), not the plain
+   equal flex:1 an even split of .cf-format-toggle's own two-state
+   toggle uses — "Background" (plus its color dot) genuinely needs more
+   room than "Imp"; an even split let it overflow into the second half,
+   overlapping the two labels, confirmed live. */
 .cf-bg-setting-group{
   max-width:220px;
 }
@@ -461,6 +465,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-radius:0;
 }
 .cf-bg-group .cf-bg-group-btn:first-child{
+  flex:2;
   border-top-left-radius:12px;
   border-bottom-left-radius:12px;
 }
@@ -1192,7 +1197,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
             <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
           </label>
           <button type="button" class="cf-bg-image-trigger bc-dropdown-trigger cf-bg-group-btn" id="cfBgImageTrigger" title="Import a custom background image">
-            <span>Import BG</span>
+            <span>Imp</span>
           </button>
         </div>
         <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
