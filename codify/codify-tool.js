@@ -5,7 +5,6 @@
    actually on screen is what gets exported). */
 (function(){
   const codeInput = document.getElementById("cfCodeInput");
-  const codeGhost = document.getElementById("cfCodeGhost");
   const codeOutput = document.getElementById("cfCodeOutput");
   const afterInput = document.getElementById("cfAfterInput");
   const previewWrap = document.getElementById("cfPreviewWrap");
@@ -764,43 +763,8 @@ console.log(a.next.value);`
     if (codeInput.value.length > 0){
       afterInput.classList.add("cf-started");
       if (removeBtn) removeBtn.hidden = false;
-      hideCodeGhost();
     }
   }
-
-  /* ===== Ghost preview for a first-time visitor's empty editor =====
-     Used to silently pre-fill codeInput.value with the Hello-world
-     template so the tool opened showing a real screenshot — but that
-     meant "the editor" was never actually empty for a first-time
-     visitor, just pre-typed on their behalf. This shows the same idea
-     visually instead (an overlay, see .cf-code-ghost in index.html)
-     without putting anything in the real value — the editor stays
-     genuinely empty until the visitor types themselves, and the ghost
-     disappears the moment they click into it. */
-  /* Just the opening lines of TEMPLATES.hello, not the whole thing —
-     the editor's own default height (120px, before autoFitCodeInput
-     ever runs against real content) only has room for about 4 lines at
-     this font/line-height; the full 10-line template past that point
-     just got hard-clipped mid-line by the ghost's own overflow:hidden,
-     confirmed live. */
-  const GHOST_SNIPPET = `function greet(name) {
-  return \`Hello, \${name}!\`;
-}`;
-  function showCodeGhost(){
-    if (!codeGhost) return;
-    codeGhost.textContent = GHOST_SNIPPET;
-    codeGhost.hidden = false;
-    /* Reveal the settings/preview/download section alongside the ghost
-       too, not just once real code is typed — a first-time visitor
-       should see right away what the tool actually offers (language,
-       theme, background, etc.) instead of discovering it only after
-       typing something. */
-    afterInput.classList.add("cf-started");
-  }
-  function hideCodeGhost(){
-    if (codeGhost) codeGhost.hidden = true;
-  }
-  codeInput.addEventListener("focus", hideCodeGhost);
 
   /* ===== "Remove all" reset — clears the editor and returns to the
      pre-typing intro state. Mirrors Convert/Coudio/Cleanly/Combine's
@@ -813,11 +777,10 @@ console.log(a.next.value);`
      content tied to what's currently typed. */
   function resetTool(){
     codeInput.value = "";
-    afterInput.classList.remove("cf-started");
+    /* Tool options stay revealed (see the init call below) rather than
+       reverting to the pre-typing hidden state — only the editor itself
+       goes back to genuinely empty. */
     if (removeBtn) removeBtn.hidden = true;
-    /* Back to the same empty-with-a-ghost-preview state a first-time
-       visitor sees, rather than a genuinely blank box. */
-    showCodeGhost();
     currentLang = "javascript";
     setComboDisplay(languageMenu, languageInput, "lang", "javascript");
     fileNameInput.value = "codify-snippet";
@@ -994,12 +957,11 @@ console.log(a.next.value);`
     /* No saved session — a genuinely first-time visitor. Used to
        silently pre-fill the editor with the Hello-world template so
        the tool opened showing a real screenshot instead of an empty
-       box — now shows that same snippet as a ghost overlay instead
-       (see showCodeGhost above), leaving the actual editor genuinely
-       empty rather than quietly typing on the visitor's behalf. Never
-       overwrites real typed content — only runs while the editor is
-       still genuinely empty. */
-    if (codeInput.value.length === 0) showCodeGhost();
+       box — now the editor stays genuinely empty (native placeholder
+       text only) while the settings/preview/download section still
+       reveals right away, so a first-time visitor sees what the tool
+       offers without having to type anything first. */
+    if (codeInput.value.length === 0) afterInput.classList.add("cf-started");
   })();
 
   /* Mobile-only (see .cf-paste-btn CSS). Reads the clipboard straight
