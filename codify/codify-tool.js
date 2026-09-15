@@ -355,14 +355,28 @@ console.log(a.next.value);`
     if (shadowDistanceValue && shadowDistanceInput) shadowDistanceValue.textContent = shadowDistanceInput.value + "px";
     if (shadowDirectionValue && shadowDirectionInput) shadowDirectionValue.textContent = shadowDirectionInput.value + "°";
   }
+  /* Persisted as part of the same IndexedDB session record "Continue
+     where you left off" already writes (see CF_DB_NAME/CF_DB_STORE
+     further down — schedulePersist/persistNow are function declarations,
+     hoisted, so calling them from up here is fine) rather than a second
+     separate localStorage key: one write covers code+lang+fileName+shadow
+     together instead of two independent storage round-trips on every
+     change. Unlike code/lang/fileName, though, shadow settings apply the
+     moment the page loads regardless of whether there's a saved session
+     to "Continue" — see the restore IIFE below, which reads saved.shadow
+     unconditionally instead of gating it behind that button. */
   renderShadowReadouts();
   applyShadow();
-  if (shadowToggle) shadowToggle.addEventListener("change", applyShadow);
+  if (shadowToggle) shadowToggle.addEventListener("change", () => {
+    applyShadow();
+    schedulePersist();
+  });
   [shadowOpacityInput, shadowDistanceInput, shadowDirectionInput].forEach(input => {
     if (!input) return;
     input.addEventListener("input", () => {
       renderShadowReadouts();
       applyShadow();
+      schedulePersist();
     });
   });
   /* Declared here (not inside the `if` below) so the double-click zone
@@ -511,6 +525,7 @@ console.log(a.next.value);`
           if (now - lastShadowClickTime < PANEL_DOUBLE_CLICK_MS){
             if (shadowOnBeforeClick !== null && shadowToggle) shadowToggle.checked = shadowOnBeforeClick;
             applyShadow();
+            schedulePersist();
             /* Without this, the same click event goes on to bubble up
                to document's own outside-click listener (registered
                separately, below, to close the panel on an outside
@@ -851,11 +866,25 @@ console.log(a.next.value);`
   }
 
   async function persistNow(){
-    if (codeInput.value.length === 0){
-      bcDbClear(CF_DB_NAME, CF_DB_STORE);
-      return;
-    }
-    await bcDbPut(CF_DB_NAME, CF_DB_STORE, { code: codeInput.value, lang: currentLang, fileName: fileNameInput.value });
+    /* Shadow settings ride along in this same record (see the Shadow
+       control setup above) rather than clearing it out when there's no
+       code — bcDbPut always writes the whole object (it's a plain
+       IndexedDB put, not a partial merge), so wiping the record on
+       empty code would also throw away the shadow prefs a visitor set
+       before ever typing anything. "Continue where you left off"
+       staying hidden for an empty saved.code (checked below) already
+       covers the one thing clearing used to be for. */
+    await bcDbPut(CF_DB_NAME, CF_DB_STORE, {
+      code: codeInput.value,
+      lang: currentLang,
+      fileName: fileNameInput.value,
+      shadow: {
+        on: shadowToggle ? shadowToggle.checked : true,
+        opacity: shadowOpacityInput ? shadowOpacityInput.value : 35,
+        distance: shadowDistanceInput ? shadowDistanceInput.value : 30,
+        direction: shadowDirectionInput ? shadowDirectionInput.value : 0
+      }
+    });
   }
   fileNameInput.addEventListener("input", schedulePersist);
 
@@ -881,6 +910,22 @@ console.log(a.next.value);`
        fires exactly once regardless of which branch runs. Same pattern
        as Convert/Compress/Combine/Cleanly's own restore IIFEs. */
     document.dispatchEvent(new Event("bc:session-check-done"));
+    /* Applied immediately, unlike code/lang/fileName just below — those
+       only take effect once the visitor explicitly clicks "Continue
+       where you left off" (typed content shouldn't reappear without
+       asking), but a shadow preference isn't "session data" someone
+       needs to opt back into, it's closer to HOD/Background's own
+       always-on restore. Runs regardless of which branch (Continue
+       button shown, or the first-time Hello-world fallback) follows. */
+    if (saved && saved.shadow){
+      const sh = saved.shadow;
+      if (shadowToggle && typeof sh.on === "boolean") shadowToggle.checked = sh.on;
+      if (shadowOpacityInput && sh.opacity != null) shadowOpacityInput.value = sh.opacity;
+      if (shadowDistanceInput && sh.distance != null) shadowDistanceInput.value = sh.distance;
+      if (shadowDirectionInput && sh.direction != null) shadowDirectionInput.value = sh.direction;
+      renderShadowReadouts();
+      applyShadow();
+    }
     if (saved && saved.code){
       if (codeInput.value.length) return;
       continueBtn.hidden = false;
