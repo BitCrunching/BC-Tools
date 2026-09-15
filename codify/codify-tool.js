@@ -503,87 +503,52 @@ console.log(a.next.value);`
     trafficLightsToggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  /* A "double-click" here means two clicks under 200ms apart — much
-     tighter than the browser's own native dblclick threshold (which
-     runs 300-500ms depending on OS/browser, tuned for double-clicking
-     small icons, not this). Tracked by hand off each click's own
-     timestamp instead of listening for "dblclick" at all, so the two
-     definitions don't fight each other or leave a dead zone between
-     them. Shared by both the background-color zone (below) and the
-     Shadow zone — single click on either does its quick "cycle/toggle"
-     action, a fast second click undoes that and opens the fuller
-     control (the native color picker / the Shadow options panel)
-     instead, same gesture either way. */
-  const PANEL_DOUBLE_CLICK_MS = 200;
+  /* Background-color and Shadow zones share one gesture: a single click
+     cycles the value instantly, a fast second click (under 200ms — much
+     tighter than the browser's own native dblclick threshold, tuned for
+     double-clicking small icons, not this) undoes that and opens the
+     fuller control instead (the custom color panel / the Shadow options
+     panel). bcCreateQuickCycleGesture (shared/site.js) is the one real
+     implementation of that dance — this used to be two hand-copied
+     near-duplicates, each tracking its own lastClickTime/valueBeforeClick
+     pair, which is exactly how the background-color copy ended up
+     missing the e.stopPropagation() call the Shadow copy already had
+     (the shared helper now calls it on every caller's behalf, so that
+     particular bug can't recur per-zone). */
+  const shadowZoneGesture = bcCreateQuickCycleGesture({
+    getState: () => shadowToggle ? shadowToggle.checked : null,
+    cycle: () => toggleShadowClick(),
+    revert: (wasOn) => {
+      if (wasOn !== null && shadowToggle) shadowToggle.checked = wasOn;
+      applyShadow();
+      schedulePersist();
+    },
+    open: () => openShadowPanel()
+  });
+  const bgZoneGesture = bcCreateQuickCycleGesture({
+    getState: () => bgColorInput.value,
+    cycle: () => cycleBgColor(),
+    revert: (prevColor) => pickBgColor(prevColor),
+    /* Used to be bgColorInput.click(), which opened the OS's own native
+       color-picker dialog straight off the backdrop — now opens the same
+       custom panel the Background pill's trigger does, since the native
+       input is just hidden internal state these days (see the
+       Background control's own comment). */
+    open: () => openBgPanel()
+  });
   if (previewWrap && templateMenu && themeMenu && bgColorInput){
-    /* Cycles the instant the click happens — no held-back timer waiting
-       to see if a second click follows, which used to add a visible
-       delay to every single click (the common case) just to leave room
-       for the rare double-click. Resolved the other way around instead:
-       a second click landing inside the window just undoes the first
-       click's color change (back to whatever it was a moment ago)
-       before opening the full picker — a one-frame revert nobody
-       notices, in exchange for a single click that's genuinely
-       instant. */
-    let bgColorBeforeClick = null;
-    let lastBgClickTime = 0;
-    /* Same undo-then-open dance, for Shadow's on/off toggle instead of
-       the background color. */
-    let shadowOnBeforeClick = null;
-    let lastShadowClickTime = 0;
     previewWrap.addEventListener("click", (e) => {
       if (e.target === previewWrap){
         const winRect = cfWindow.getBoundingClientRect();
         if (e.clientY >= winRect.bottom){
-          const now = performance.now();
-          if (now - lastShadowClickTime < PANEL_DOUBLE_CLICK_MS){
-            if (shadowOnBeforeClick !== null && shadowToggle) shadowToggle.checked = shadowOnBeforeClick;
-            applyShadow();
-            schedulePersist();
-            /* Without this, the same click event goes on to bubble up
-               to document's own outside-click listener (registered
-               separately, below, to close the panel on an outside
-               click) — which sees e.target as previewWrap, decides
-               that's "outside" the panel, and closes the very panel
-               this branch just opened, all within the one click.
-               Confirmed live: the panel would open and instantly
-               re-close before ever painting. */
-            e.stopPropagation();
-            openShadowPanel();
-            lastShadowClickTime = 0;
-            return;
-          }
-          lastShadowClickTime = now;
-          shadowOnBeforeClick = shadowToggle ? shadowToggle.checked : null;
-          toggleShadowClick();
+          shadowZoneGesture(e);
           return;
         }
         if (e.clientY < winRect.top){
           toggleMacNavClick();
           return;
         }
-        const now = performance.now();
-        if (now - lastBgClickTime < PANEL_DOUBLE_CLICK_MS){
-          if (bgColorBeforeClick !== null) pickBgColor(bgColorBeforeClick);
-          /* Used to be bgColorInput.click(), which opened the OS's own
-             native color-picker dialog straight off the backdrop — now
-             opens the same custom panel the Background pill's trigger
-             does, since the native input is just hidden internal state
-             these days (see the Background control's own comment).
-             stopPropagation matters here exactly like the Shadow branch
-             above: without it this same click bubbles up to the
-             document-level outside-click listener that closes
-             #cfBgPanel (registered near openBgPanel/closeBgPanel further
-             down), which sees previewWrap as "outside" the panel and
-             closes it in the same tick it just opened. */
-          e.stopPropagation();
-          openBgPanel();
-          lastBgClickTime = 0;
-          return;
-        }
-        lastBgClickTime = now;
-        bgColorBeforeClick = bgColorInput.value;
-        cycleBgColor();
+        bgZoneGesture(e);
         return;
       }
       const rect = previewWrap.getBoundingClientRect();

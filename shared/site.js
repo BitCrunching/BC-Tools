@@ -1310,3 +1310,56 @@ function bcRegisterKeyShortcut(key, btn){
     btn.click();
   });
 }
+
+/* Shared "click cycles a value instantly, a fast second click undoes that
+   and opens the fuller control instead" gesture — originated as two
+   hand-copied near-duplicates in Codify's click handler (the background-
+   color zone and the Shadow zone each tracked their own
+   lastClickTime/valueBeforeClick pair and ran the same undo-then-open
+   branch). Pulled out once both were doing the exact same thing on
+   different state, same reasoning as every other shared bcRegister-/
+   bcCreate-prefixed helper in this file: one real implementation instead
+   of a copy that can drift.
+
+   `thresholdMs` — how close together (ms) two clicks need to land to
+   count as the "double" gesture; much tighter than the browser's own
+   native dblclick threshold (300-500ms, tuned for double-clicking small
+   icons) is deliberate here, so a quick single click never feels delayed
+   waiting to see if a second one follows.
+   `getState()` — reads the current value, called right before `cycle()`
+   so the gesture can hand it back to `revert()` if a second click follows.
+   `cycle(e)` — runs on every single click (the common case): advance to
+   the next value.
+   `revert(prevState, e)` — runs only on the double-click: undo whatever
+   `cycle` just did, putting the value back to what `getState()` last saw.
+   `open(e)` — runs right after `revert`, on the double-click only: hand
+   off to the fuller control (a color panel, an options panel, ...).
+   `e.stopPropagation()` is called here, before `open()`, on every
+   consumer's behalf — without it, this same click bubbles up to whatever
+   outside-click listener closes that fuller control (a common pattern
+   site-wide for dropdown/panel components), which sees the click as
+   "outside" the panel `open()` just opened and closes it in the same
+   tick. This is exactly the bug Codify's own background-color zone had
+   (missing this one line, while the Shadow zone next to it already had
+   it) — folding it into the shared helper means no future caller of this
+   gesture can reintroduce that same bug by forgetting it once more.
+
+   Returns a click-event handler — attach it directly:
+   `zone.addEventListener("click", bcCreateQuickCycleGesture({...}))`. */
+function bcCreateQuickCycleGesture({ thresholdMs = 200, getState, cycle, revert, open }){
+  let lastClickTime = 0;
+  let stateBeforeClick = null;
+  return function(e){
+    const now = performance.now();
+    if (now - lastClickTime < thresholdMs){
+      if (stateBeforeClick !== null) revert(stateBeforeClick, e);
+      e.stopPropagation();
+      open(e);
+      lastClickTime = 0;
+      return;
+    }
+    lastClickTime = now;
+    stateBeforeClick = getState();
+    cycle(e);
+  };
+}
