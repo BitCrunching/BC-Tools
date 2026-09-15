@@ -552,7 +552,12 @@ console.log(a.next.value);`
         const now = performance.now();
         if (now - lastBgClickTime < PANEL_DOUBLE_CLICK_MS){
           if (bgColorBeforeClick !== null) pickBgColor(bgColorBeforeClick);
-          bgColorInput.click();
+          /* Used to be bgColorInput.click(), which opened the OS's own
+             native color-picker dialog straight off the backdrop — now
+             opens the same custom panel the Background pill's trigger
+             does, since the native input is just hidden internal state
+             these days (see the Background control's own comment). */
+          openBgPanel();
           lastBgClickTime = 0;
           return;
         }
@@ -785,6 +790,12 @@ console.log(a.next.value);`
     if (!codeGhost) return;
     codeGhost.textContent = GHOST_SNIPPET;
     codeGhost.hidden = false;
+    /* Reveal the settings/preview/download section alongside the ghost
+       too, not just once real code is typed — a first-time visitor
+       should see right away what the tool actually offers (language,
+       theme, background, etc.) instead of discovering it only after
+       typing something. */
+    afterInput.classList.add("cf-started");
   }
   function hideCodeGhost(){
     if (codeGhost) codeGhost.hidden = true;
@@ -1257,14 +1268,61 @@ ${titlebarSvg}
     }
   });
 
-  /* ===== Screenshot background color ===== */
+  /* ===== Screenshot background color =====
+     Trigger + custom popover panel (swatches, a hex field, Import
+     image) — same shape as the Shadow control. The real
+     <input type=color> (#cfBgColorInput) still exists as internal
+     state (cycleBgColor/pickBgColor elsewhere in this file read/write
+     its .value the same way they always have), it's just hidden now
+     and never the thing a click opens — used to be a <label> wrapping
+     a full-size invisible version of this same input, which popped
+     open the browser/OS's own native color-picker dialog on click.
+     That collided visually with the pill next to it (confirmed live)
+     and looked inconsistent with every other control on the page,
+     which is what this custom panel replaces it with. */
   const BG_COLOR_STORAGE_KEY = "bc-codify-bg-color";
   const DEFAULT_BG_COLOR = "#E5E7EB";
+  const bgControl = document.getElementById("cfBgControl");
+  const bgTrigger = document.getElementById("cfBgTrigger");
+  const bgPanel = document.getElementById("cfBgPanel");
+  const bgSwatchEls = [...document.querySelectorAll(".cf-bg-swatch")];
+  const bgHexInput = document.getElementById("cfBgHexInput");
+
+  function closeBgPanel(){
+    if (!bgPanel || !bgTrigger) return;
+    bgPanel.hidden = true;
+    bgTrigger.setAttribute("aria-expanded", "false");
+  }
+  function openBgPanel(){
+    if (!bgPanel || !bgTrigger) return;
+    bgPanel.hidden = false;
+    bgTrigger.setAttribute("aria-expanded", "true");
+  }
+  if (bgTrigger && bgPanel && bgControl){
+    bgTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = !bgPanel.hidden;
+      closeBgPanel();
+      if (!isOpen) openBgPanel();
+    });
+    document.addEventListener("click", (e) => {
+      if (!bgPanel.hidden && !bgControl.contains(e.target)) closeBgPanel();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !bgPanel.hidden){
+        closeBgPanel();
+        bgTrigger.focus();
+      }
+    });
+  }
 
   function applyBgColor(hex){
     previewWrap.style.background = hex;
     bgColorSwatch.style.background = hex;
     bgColorInput.value = hex;
+    if (bgHexInput && document.activeElement !== bgHexInput) bgHexInput.value = hex.toUpperCase();
+    const upper = hex.toUpperCase();
+    bgSwatchEls.forEach(el => el.classList.toggle("active", el.dataset.color.toUpperCase() === upper));
   }
 
   let savedBgColor = null;
@@ -1287,17 +1345,45 @@ ${titlebarSvg}
     });
   }
 
+  /* Swatches and the hex field both just drive the same real
+     <input type=color> + its "input" event, same delegation pattern
+     pickBgColor already uses elsewhere in this file — applyBgColor,
+     the localStorage save, and the "picking overrides a preset" reset
+     above all then happen automatically from that one listener. */
+  bgSwatchEls.forEach(el => {
+    el.addEventListener("click", () => {
+      bgColorInput.value = el.dataset.color;
+      bgColorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+  if (bgHexInput){
+    function commitBgHex(){
+      const val = bgHexInput.value.trim();
+      if (!/^#[0-9a-f]{6}$/i.test(val)){
+        bgHexInput.value = bgColorInput.value.toUpperCase();
+        return;
+      }
+      bgColorInput.value = val;
+      bgColorInput.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    bgHexInput.addEventListener("change", commitBgHex);
+    bgHexInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") commitBgHex();
+    });
+  }
+
   /* ===== Custom background image =====
-     Sits between Background and Mac nav in the settings row — a plain
-     file picker (hidden <input type=file>, triggered by a visible
-     button, same pattern every other tool's upload zone uses) rather
-     than a drag target, since this is one small accent image, not the
-     tool's primary input. Reads the file as a data URL and sets it as
-     previewWrap's own CSS background — same property Background/Presets
-     already write to (applyBgColor, applyStyle above), so whichever one
-     was picked last simply wins; no separate "clear image" control
-     needed since picking a solid color or a Style preset overwrites it
-     the same way switching between those two already does today. */
+     Sits inside the Background panel above, next to the swatches/hex
+     field — a plain file picker (hidden <input type=file>, triggered
+     by a visible button, same pattern every other tool's upload zone
+     uses) rather than a drag target, since this is one small accent
+     image, not the tool's primary input. Reads the file as a data URL
+     and sets it as previewWrap's own CSS background — same property
+     Background/Presets already write to (applyBgColor, applyStyle
+     above), so whichever one was picked last simply wins; no separate
+     "clear image" control needed since picking a solid color or a
+     Style preset overwrites it the same way switching between those
+     two already does today. */
   const bgImageTrigger = document.getElementById("cfBgImageTrigger");
   const bgImageInput = document.getElementById("cfBgImageInput");
   let currentBgImageDataUrl = null;
@@ -1305,6 +1391,7 @@ ${titlebarSvg}
     currentBgImageDataUrl = dataUrl;
     previewWrap.style.background = `url("${dataUrl}") center / cover no-repeat`;
     bgColorSwatch.style.background = `url("${dataUrl}") center / cover no-repeat`;
+    bgSwatchEls.forEach(el => el.classList.remove("active"));
     if (currentStyle !== "custom"){
       currentStyle = "custom";
       previewWrap.style.padding = "";
@@ -1318,7 +1405,10 @@ ${titlebarSvg}
       const file = bgImageInput.files && bgImageInput.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => applyBgImage(reader.result);
+      reader.onload = () => {
+        applyBgImage(reader.result);
+        closeBgPanel();
+      };
       reader.readAsDataURL(file);
       /* Lets picking the exact same file again re-fire "change" (it
          wouldn't otherwise, since the input's value hasn't changed) —

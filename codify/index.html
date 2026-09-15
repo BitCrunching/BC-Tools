@@ -416,63 +416,84 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    being stuck with the tool's own brand pink — the backdrop IS the
    exported PNG's background (see .cf-preview-wrap below), so this is
    the one setting that changes what actually ends up in the download.
-   Reuses .bc-combo-trigger's pill look for visual consistency with the
-   other three dropdowns. Built like Context's color trigger: a plain
-   CSS dot for the visible swatch (.bc-color-dot, shared/site.css) plus
-   a real <input type="color"> — but unlike Context's fixed presets,
-   this needs to open the OS picker for any custom color, so the input
-   is a full-size, fully invisible overlay (.bc-color-picker-input,
-   shared/site.css) covering the whole pill rather than a dropdown menu;
-   its "input" event repaints the dot. See that class's own comment for
-   why this replaced an earlier attempt at scaling the native input down
-   and clipping it into a small visible swatch — that approach was
-   fundamentally unreliable (a real writeup lives there now). */
-/* Chrome (border/background/theme-flip/font) now comes from shared
-   .bc-dropdown-trigger (shared/site.css) — added as a second class
-   on the markup (class="cf-color-trigger bc-dropdown-trigger"). This
-   was a byte-for-byte duplicate of that recipe kept as its own copy;
-   .cf-color-trigger itself now only exists as a JS-listener/layout
-   addressing hook — plus position:relative here, so the invisible
-   full-cover <input> below has something to size itself against. */
-.cf-color-trigger{
-  position:relative;
-}
+   Used to be a <label> wrapping a full-size invisible <input type=color>
+   (opening the OS's own native picker on click) — replaced with a real
+   custom trigger+panel (.cf-bg-control below) once that native picker
+   started visually colliding with the Background/Imp pill sitting next
+   to it. The real <input type=color> still exists, just hidden — see
+   .cf-bg-control's own comment further down. */
 
-/* Background + Imp(ort), connected into one pill (same "shared divider,
-   rounded only at the true ends" recipe .cf-format-toggle uses for
-   PNG/SVG below) instead of two separate settings-row pills — these
-   aren't mutually-exclusive states like PNG/SVG, just two actions that
-   both change the same thing (the panel's background), so reads as one
-   grouped control rather than a toggle. Wider max-width than the
-   148px .cf-setting-group default, since it's now carrying two labels'
-   worth of text instead of one. Split unevenly (2:1), not the plain
-   equal flex:1 an even split of .cf-format-toggle's own two-state
-   toggle uses — "Background" (plus its color dot) genuinely needs more
-   room than "Imp"; an even split let it overflow into the second half,
-   overlapping the two labels, confirmed live. */
-.cf-bg-setting-group{
-  max-width:220px;
-}
-.cf-bg-group{
-  display:flex;
+/* Background control — trigger + custom popover panel (swatches, a hex
+   field, Import image), same shape as the Shadow control elsewhere in
+   this row. Replaces a plain <label> wrapping a real <input type=color>
+   as the trigger, which opened the browser/OS's own native color-picker
+   dialog on click — inconsistent with every other control on the page,
+   and it visually collided with the Background/Imp pill sitting right
+   next to it (confirmed live, screenshot showed the OS picker's own
+   swatch panel overlapping the "Imp" label). The real <input type=color>
+   still exists (see #cfBgColorInput in the panel below) purely as
+   internal state codify-tool.js already reads/writes — just hidden and
+   never the thing a click opens directly anymore. */
+.cf-bg-control{
+  position:relative;
   width:100%;
-  height:40px;
 }
-.cf-bg-group .cf-bg-group-btn{
+.cf-bg-panel{
+  width:200px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cf-bg-swatches{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:6px;
+}
+.cf-bg-swatch{
+  width:100%;
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid rgba(127,127,127,.35);
+  padding:0;
+  cursor:pointer;
+  transition:.15s;
+}
+.cf-bg-swatch:hover{
+  transform:scale(1.1);
+}
+.cf-bg-swatch.active{
+  border-color:#2563eb;
+  box-shadow:0 0 0 2px rgba(37,99,235,.35);
+}
+.cf-bg-hex-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.cf-bg-hex-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  opacity:.8;
+  flex-shrink:0;
+}
+.cf-bg-hex-input{
   flex:1;
   min-width:0;
-  width:auto;
-  border-radius:0;
+  height:32px;
+  padding:0 10px;
+  border-radius:8px;
+  border:1px solid rgba(127,127,127,.35);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
 }
-.cf-bg-group .cf-bg-group-btn:first-child{
-  flex:2;
-  border-top-left-radius:12px;
-  border-bottom-left-radius:12px;
-}
-.cf-bg-group .cf-bg-group-btn:last-child{
-  border-top-right-radius:12px;
-  border-bottom-right-radius:12px;
-  border-left:none;
+.cf-bg-hex-input:focus{
+  outline:none;
+  border-color:#2563eb;
 }
 
 /* The exportable "screenshot" — a gradient backdrop with the code
@@ -1189,18 +1210,39 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
         </div>
       </div>
 
-      <div class="cf-setting-group cf-bg-setting-group">
-        <div class="cf-bg-group">
-          <label class="cf-color-trigger bc-dropdown-trigger cf-bg-group-btn" id="cfBgColorTrigger">
+      <div class="cf-setting-group">
+        <div class="cf-bg-control" id="cfBgControl">
+          <button type="button" class="cf-bg-trigger bc-dropdown-trigger" id="cfBgTrigger" aria-haspopup="true" aria-expanded="false">
             <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#E5E7EB;" aria-hidden="true"></span>
             <span>Background</span>
-            <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
-          </label>
-          <button type="button" class="cf-bg-image-trigger bc-dropdown-trigger cf-bg-group-btn" id="cfBgImageTrigger" title="Import a custom background image">
-            <span>Imp</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
           </button>
+          <!-- Custom panel, not the OS-native color picker a plain
+               <input type=color> would pop open (that's still here —
+               see cfBgColorInput below — but now hidden and driven
+               programmatically, never the thing a click actually
+               opens). Same trigger+panel shape as Shadow's own control
+               just above/below this one in the row. -->
+          <div class="cf-bg-panel bc-dropdown-menu" id="cfBgPanel" hidden>
+            <div class="cf-bg-swatches" id="cfBgSwatches" role="listbox" aria-label="Background color">
+              <button type="button" class="cf-bg-swatch" data-color="#E5E7EB" style="background:#E5E7EB;" aria-label="#E5E7EB"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#7C3AED" style="background:#7C3AED;" aria-label="#7C3AED"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#2563EB" style="background:#2563EB;" aria-label="#2563EB"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#22C55E" style="background:#22C55E;" aria-label="#22C55E"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#F97316" style="background:#F97316;" aria-label="#F97316"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#1E1E1E" style="background:#1E1E1E;" aria-label="#1E1E1E"></button>
+            </div>
+            <label class="cf-bg-hex-row">
+              <span class="cf-bg-hex-label">Hex</span>
+              <input type="text" id="cfBgHexInput" class="cf-bg-hex-input" value="#E5E7EB" maxlength="7" spellcheck="false" aria-label="Custom hex color">
+            </label>
+            <input type="color" id="cfBgColorInput" value="#E5E7EB" aria-hidden="true" tabindex="-1" hidden>
+            <button type="button" class="cf-bg-image-trigger option-change-btn" id="cfBgImageTrigger" title="Import a custom background image">
+              <span class="option-change-btn-label">Import image</span>
+            </button>
+            <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
+          </div>
         </div>
-        <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
       </div>
 
       <div class="cf-setting-group">
@@ -1362,6 +1404,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=64" defer></script>
+<script src="/codify/codify-tool.js?v=66" defer></script>
 </body>
 </html>
