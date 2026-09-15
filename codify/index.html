@@ -438,6 +438,38 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   position:relative;
 }
 
+/* Background + Import BG, connected into one pill (same "shared divider,
+   rounded only at the true ends" recipe .cf-format-toggle uses for
+   PNG/SVG below) instead of two separate settings-row pills — these
+   aren't mutually-exclusive states like PNG/SVG, just two actions that
+   both change the same thing (the panel's background), so reads as one
+   grouped control rather than a toggle. Wider max-width than the
+   148px .cf-setting-group default, since it's now carrying two labels'
+   worth of text instead of one. */
+.cf-bg-setting-group{
+  max-width:220px;
+}
+.cf-bg-group{
+  display:flex;
+  width:100%;
+  height:40px;
+}
+.cf-bg-group .cf-bg-group-btn{
+  flex:1;
+  min-width:0;
+  width:auto;
+  border-radius:0;
+}
+.cf-bg-group .cf-bg-group-btn:first-child{
+  border-top-left-radius:12px;
+  border-bottom-left-radius:12px;
+}
+.cf-bg-group .cf-bg-group-btn:last-child{
+  border-top-right-radius:12px;
+  border-bottom-right-radius:12px;
+  border-left:none;
+}
+
 /* The exportable "screenshot" — a gradient backdrop with the code
    window centered on it. html-to-image snapshots exactly this element,
    so everything that should appear in the exported PNG (gradient,
@@ -1152,18 +1184,17 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
         </div>
       </div>
 
-      <div class="cf-setting-group">
-        <label class="cf-color-trigger bc-dropdown-trigger" id="cfBgColorTrigger">
-          <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#E5E7EB;" aria-hidden="true"></span>
-          <span>Background</span>
-          <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
-        </label>
-      </div>
-
-      <div class="cf-setting-group">
-        <button type="button" class="cf-bg-image-trigger bc-dropdown-trigger" id="cfBgImageTrigger" title="Use an image as the background">
-          <span>Custom BG</span>
-        </button>
+      <div class="cf-setting-group cf-bg-setting-group">
+        <div class="cf-bg-group">
+          <label class="cf-color-trigger bc-dropdown-trigger cf-bg-group-btn" id="cfBgColorTrigger">
+            <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#E5E7EB;" aria-hidden="true"></span>
+            <span>Background</span>
+            <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
+          </label>
+          <button type="button" class="cf-bg-image-trigger bc-dropdown-trigger cf-bg-group-btn" id="cfBgImageTrigger" title="Import a custom background image">
+            <span>Import BG</span>
+          </button>
+        </div>
         <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
       </div>
 
