@@ -1,4 +1,4 @@
-# BitCrunching ⚡
+# BitCrunching
 
 > Instant, privacy-first file utilities right in your browser.
 
@@ -6,7 +6,7 @@ BitCrunching is a modern alternative tool suite — a lightweight, serverless we
 
 ---
 
-## 🛠️ Features Today
+## 🛠️ Features Today (July 2026)
 
 * **Image Tools:**
   * **Convert:** Change image formats (PNG, JPG, WEBP, SVG, PDF) instantly.
