@@ -160,13 +160,19 @@ console.log(a.next.value);`
   };
 
   /* Shown in the preview window (styled with .cf-ghost — dimmed,
-     unselectable) whenever the editor is empty, so the window never
-     renders as a blank rectangle. Not one of the real TEMPLATES —
-     picking a template or typing anything real replaces it immediately
-     via renderPreview(), same as the textarea's own placeholder. */
+     unselectable) whenever the editor is empty and no template preview
+     is active, so the window never renders as a blank rectangle. */
   const GHOST_CODE = `function example() {
   return "your code here";
 }`;
+  /* Picking a template no longer types its code into the real editor
+     (that used to silently overwrite anything the visitor had already
+     started, and made "the editor" and "what you're about to screenshot"
+     the same thing even when you just wanted to preview a template) —
+     instead it drives the preview panel only, same slot GHOST_CODE fills
+     otherwise. Cleared back to null the moment the visitor types for
+     real, so the editor's own content takes back over. */
+  let templatePreviewCode = null;
 
   let currentLang = "javascript";
 
@@ -204,11 +210,19 @@ console.log(a.next.value);`
   registerCombo(templateTrigger, templateInput, templateMenu, templateEmpty, (opt) => {
     const code = TEMPLATES[opt.dataset.template];
     if (code == null) return;
-    codeInput.value = code;
-    markStarted();
+    /* Preview-only, not a real editor fill-in — picking a template
+       clears out whatever's currently typed instead of inserting the
+       template's own code over it, so "editor" and "template preview"
+       never get conflated. Only the code text resets here (language,
+       filename, theme, etc. are untouched — this isn't the full
+       "Remove all" reset). */
+    codeInput.value = "";
+    templatePreviewCode = code;
+    if (removeBtn) removeBtn.hidden = true;
     autoFitCodeInput();
     renderPreview();
     schedulePersist();
+    if (continueBtn) continueBtn.hidden = true;
   });
 
   /* ===== Style presets ===== bundle a theme + a gradient backdrop +
@@ -777,6 +791,8 @@ console.log(a.next.value);`
      content tied to what's currently typed. */
   function resetTool(){
     codeInput.value = "";
+    templatePreviewCode = null;
+    setComboDisplay(templateMenu, templateInput, "template", "hello");
     /* Tool options stay revealed (see the init call below) rather than
        reverting to the pre-typing hidden state — only the editor itself
        goes back to genuinely empty. */
@@ -826,7 +842,7 @@ console.log(a.next.value);`
     const isEmpty = codeInput.value.length === 0;
     codeOutput.className = "language-" + currentLang;
     codeOutput.classList.toggle("cf-ghost", isEmpty);
-    codeOutput.textContent = isEmpty ? GHOST_CODE : codeInput.value;
+    codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
     if (window.Prism) Prism.highlightElement(codeOutput);
     /* #cfWindow sizes itself to codeOutput's content, so this line can
        (and usually does) resize it — re-sync the hover-inspector overlay
@@ -838,6 +854,7 @@ console.log(a.next.value);`
     refreshHoverOverlay();
   }
   codeInput.addEventListener("input", () => {
+    templatePreviewCode = null;
     markStarted();
     autoFitCodeInput();
     renderPreview();
