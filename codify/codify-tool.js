@@ -305,11 +305,96 @@ console.log(a.next.value);`
     });
   }
 
-  /* ===== Shadow on/off ===== */
+  /* ===== Shadow control (opacity/distance/direction/on-off) =====
+     Used to be a plain on/off .cf-toggle-switch — now a trigger button
+     that opens a small popover panel (.cf-shadow-panel) with three
+     sliders plus the same on/off switch inside it. getShadowValues()
+     is the one place distance+direction get turned into an actual
+     dx/dy/blur — both applyShadow() (live CSS box-shadow) and
+     buildSvgString()'s SVG export feDropShadow read from it, so the
+     download always matches what's on screen instead of the export
+     hardcoding the shadow separately (which is exactly what it used to
+     do, back when there was only ever one fixed shadow to hardcode). */
+  const shadowControl = document.getElementById("cfShadowControl");
+  const shadowTrigger = document.getElementById("cfShadowTrigger");
+  const shadowPanel = document.getElementById("cfShadowPanel");
   const shadowToggle = document.getElementById("cfShadowToggle");
-  if (shadowToggle){
-    shadowToggle.addEventListener("change", () => {
-      cfWindow.classList.toggle("cf-no-shadow", !shadowToggle.checked);
+  const shadowOpacityInput = document.getElementById("cfShadowOpacity");
+  const shadowDistanceInput = document.getElementById("cfShadowDistance");
+  const shadowDirectionInput = document.getElementById("cfShadowDirection");
+  const shadowOpacityValue = document.getElementById("cfShadowOpacityValue");
+  const shadowDistanceValue = document.getElementById("cfShadowDistanceValue");
+  const shadowDirectionValue = document.getElementById("cfShadowDirectionValue");
+
+  /* Direction 0° = straight down (matches the shadow's original fixed
+     dx:0/dy:30 look), increasing clockwise like a clock face. Blur
+     stays proportional to distance at the same 30:60 ratio the fixed
+     shadow always used, rather than exposing a 4th slider for it. */
+  function getShadowValues(){
+    const opacity = shadowOpacityInput ? shadowOpacityInput.value / 100 : 0.35;
+    const distance = shadowDistanceInput ? Number(shadowDistanceInput.value) : 30;
+    const angle = shadowDirectionInput ? Number(shadowDirectionInput.value) : 0;
+    const rad = angle * Math.PI / 180;
+    const dx = Math.round(distance * Math.sin(rad));
+    const dy = Math.round(distance * Math.cos(rad));
+    const blur = Math.round(distance * 2);
+    return { dx, dy, blur, opacity };
+  }
+  function applyShadow(){
+    const on = !shadowToggle || shadowToggle.checked;
+    cfWindow.classList.toggle("cf-no-shadow", !on);
+    if (!on){
+      cfWindow.style.boxShadow = "none";
+      return;
+    }
+    const { dx, dy, blur, opacity } = getShadowValues();
+    cfWindow.style.boxShadow = `${dx}px ${dy}px ${blur}px rgba(0,0,0,${opacity})`;
+  }
+  function renderShadowReadouts(){
+    if (shadowOpacityValue && shadowOpacityInput) shadowOpacityValue.textContent = shadowOpacityInput.value + "%";
+    if (shadowDistanceValue && shadowDistanceInput) shadowDistanceValue.textContent = shadowDistanceInput.value + "px";
+    if (shadowDirectionValue && shadowDirectionInput) shadowDirectionValue.textContent = shadowDirectionInput.value + "°";
+  }
+  renderShadowReadouts();
+  applyShadow();
+  if (shadowToggle) shadowToggle.addEventListener("change", applyShadow);
+  [shadowOpacityInput, shadowDistanceInput, shadowDirectionInput].forEach(input => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      renderShadowReadouts();
+      applyShadow();
+    });
+  });
+  /* Declared here (not inside the `if` below) so the double-click zone
+     on the preview's bottom strip, further down, can open the same
+     panel the trigger button does — same reasoning as refreshHoverOverlay
+     being hoisted out of its own `if` earlier in this file. No-ops when
+     the panel doesn't exist. */
+  function closeShadowPanel(){
+    if (!shadowPanel || !shadowTrigger) return;
+    shadowPanel.hidden = true;
+    shadowTrigger.setAttribute("aria-expanded", "false");
+  }
+  function openShadowPanel(){
+    if (!shadowPanel || !shadowTrigger) return;
+    shadowPanel.hidden = false;
+    shadowTrigger.setAttribute("aria-expanded", "true");
+  }
+  if (shadowTrigger && shadowPanel && shadowControl){
+    shadowTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = !shadowPanel.hidden;
+      closeShadowPanel();
+      if (!isOpen) openShadowPanel();
+    });
+    document.addEventListener("click", (e) => {
+      if (!shadowPanel.hidden && !shadowControl.contains(e.target)) closeShadowPanel();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !shadowPanel.hidden){
+        closeShadowPanel();
+        shadowTrigger.focus();
+      }
     });
   }
 
@@ -390,30 +475,57 @@ console.log(a.next.value);`
     trafficLightsToggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  /* A "double-click" here means two clicks under 100ms apart — much
+  /* A "double-click" here means two clicks under 200ms apart — much
      tighter than the browser's own native dblclick threshold (which
      runs 300-500ms depending on OS/browser, tuned for double-clicking
      small icons, not this). Tracked by hand off each click's own
      timestamp instead of listening for "dblclick" at all, so the two
      definitions don't fight each other or leave a dead zone between
-     them. */
-  const BG_DOUBLE_CLICK_MS = 200;
+     them. Shared by both the background-color zone (below) and the
+     Shadow zone — single click on either does its quick "cycle/toggle"
+     action, a fast second click undoes that and opens the fuller
+     control (the native color picker / the Shadow options panel)
+     instead, same gesture either way. */
+  const PANEL_DOUBLE_CLICK_MS = 200;
   if (previewWrap && templateMenu && themeMenu && bgColorInput){
     /* Cycles the instant the click happens — no held-back timer waiting
        to see if a second click follows, which used to add a visible
        delay to every single click (the common case) just to leave room
        for the rare double-click. Resolved the other way around instead:
-       a second click landing inside the 100ms window just undoes the
-       first click's color change (back to whatever it was a moment ago)
+       a second click landing inside the window just undoes the first
+       click's color change (back to whatever it was a moment ago)
        before opening the full picker — a one-frame revert nobody
        notices, in exchange for a single click that's genuinely
        instant. */
     let bgColorBeforeClick = null;
     let lastBgClickTime = 0;
+    /* Same undo-then-open dance, for Shadow's on/off toggle instead of
+       the background color. */
+    let shadowOnBeforeClick = null;
+    let lastShadowClickTime = 0;
     previewWrap.addEventListener("click", (e) => {
       if (e.target === previewWrap){
         const winRect = cfWindow.getBoundingClientRect();
         if (e.clientY >= winRect.bottom){
+          const now = performance.now();
+          if (now - lastShadowClickTime < PANEL_DOUBLE_CLICK_MS){
+            if (shadowOnBeforeClick !== null && shadowToggle) shadowToggle.checked = shadowOnBeforeClick;
+            applyShadow();
+            /* Without this, the same click event goes on to bubble up
+               to document's own outside-click listener (registered
+               separately, below, to close the panel on an outside
+               click) — which sees e.target as previewWrap, decides
+               that's "outside" the panel, and closes the very panel
+               this branch just opened, all within the one click.
+               Confirmed live: the panel would open and instantly
+               re-close before ever painting. */
+            e.stopPropagation();
+            openShadowPanel();
+            lastShadowClickTime = 0;
+            return;
+          }
+          lastShadowClickTime = now;
+          shadowOnBeforeClick = shadowToggle ? shadowToggle.checked : null;
           toggleShadowClick();
           return;
         }
@@ -422,7 +534,7 @@ console.log(a.next.value);`
           return;
         }
         const now = performance.now();
-        if (now - lastBgClickTime < BG_DOUBLE_CLICK_MS){
+        if (now - lastBgClickTime < PANEL_DOUBLE_CLICK_MS){
           if (bgColorBeforeClick !== null) pickBgColor(bgColorBeforeClick);
           bgColorInput.click();
           lastBgClickTime = 0;
@@ -656,7 +768,11 @@ console.log(a.next.value);`
     }
     if (shadowToggle){
       shadowToggle.checked = true;
-      cfWindow.classList.remove("cf-no-shadow");
+      if (shadowOpacityInput) shadowOpacityInput.value = 35;
+      if (shadowDistanceInput) shadowDistanceInput.value = 30;
+      if (shadowDirectionInput) shadowDirectionInput.value = 0;
+      renderShadowReadouts();
+      applyShadow();
     }
     if (hodToggle) hodToggle.checked = true;
     if (continueBtn) continueBtn.hidden = true;
@@ -925,8 +1041,14 @@ console.log(a.next.value);`
     const winBg = getComputedStyle(cfWindow).backgroundColor;
 
     if (shadowVisible){
+      /* stdDeviation isn't the same unit as a CSS blur radius — keeping
+         the same ~1:3 ratio the original fixed shadow used (blur 60,
+         stdDeviation 20) rather than passing the blur value straight
+         through, so the exported SVG's shadow still reads as roughly
+         the same softness as the live CSS one at any distance. */
+      const { dx, dy, blur, opacity } = getShadowValues();
       defs += `<filter id="cfWinShadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="30" stdDeviation="20" flood-color="#000000" flood-opacity="0.35"/>
+        <feDropShadow dx="${dx}" dy="${dy}" stdDeviation="${Math.round(blur / 3)}" flood-color="#000000" flood-opacity="${opacity}"/>
       </filter>`;
     }
     defs += `<clipPath id="cfWinClip"><rect x="${winX}" y="${winY}" width="${winW}" height="${winH}" rx="12"/></clipPath>`;

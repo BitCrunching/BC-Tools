@@ -628,6 +628,67 @@ html[data-theme="dark"] .cf-toggle-switch{
   text-overflow:ellipsis;
 }
 
+/* ===== Shadow control — trigger + popover (opacity/distance/direction/
+   on-off) ===== Was a plain .cf-toggle-switch (on/off only); the trigger
+   button reuses .bc-dropdown-trigger's own pill exactly like Background
+   does, and the panel reuses .bc-dropdown-menu's chrome (border/radius/
+   background/flip) as a second class, only adding its own padding/gap
+   for the slider rows — same shared+local split every other control on
+   this page already follows. */
+.cf-shadow-control{
+  position:relative;
+  width:100%;
+}
+.cf-shadow-trigger{
+  justify-content:space-between;
+}
+.cf-shadow-panel{
+  width:220px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cf-shadow-panel-toggle{
+  width:auto;
+  align-self:flex-start;
+  height:32px;
+  padding:0 10px 0 4px;
+  border:none;
+  background:none;
+}
+.cf-shadow-slider-row{
+  display:grid;
+  grid-template-columns:64px 1fr 40px;
+  align-items:center;
+  gap:8px;
+}
+.cf-shadow-slider-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  opacity:.8;
+}
+.cf-shadow-slider-value{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+/* Native range, minimally themed — accent-color alone (not a full
+   custom track/thumb rebuild) picks up the OS/browser's own light/dark
+   rendering for free, which already matches this panel's flip since
+   the panel's own background is the only piece that needs one. */
+.cf-shadow-slider{
+  width:100%;
+  accent-color:#2563eb;
+}
+/* This panel's own content is never dark-mode-fixed the way an
+   always-dark surface is (see CLAUDE.md) — .bc-dropdown-menu already
+   flips light/dark on its own, this only needs the slider labels/values
+   to follow var(--text) as they already do above. */
+
 /* ===== Output file name — same right-aligned "> File name:" tag +
    inline-editable underline field Congify's #gifScrubberFileName uses,
    under its own preview. The HOD toggle (formerly just another entry
@@ -1070,11 +1131,34 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
       </div>
 
       <div class="cf-setting-group">
-        <label class="cf-toggle-switch">
-          <input type="checkbox" id="cfShadowToggle" checked>
-          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-          <span class="cf-toggle-label">Shadow</span>
-        </label>
+        <div class="cf-shadow-control" id="cfShadowControl">
+          <button type="button" class="cf-shadow-trigger bc-dropdown-trigger" id="cfShadowTrigger" aria-haspopup="true" aria-expanded="false">
+            <span>Shadow</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="cf-shadow-panel bc-dropdown-menu" id="cfShadowPanel" hidden>
+            <label class="cf-toggle-switch cf-shadow-panel-toggle">
+              <input type="checkbox" id="cfShadowToggle" checked>
+              <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+              <span class="cf-toggle-label">On</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Opacity</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowOpacity" min="0" max="100" value="35" aria-label="Shadow opacity">
+              <span class="cf-shadow-slider-value" id="cfShadowOpacityValue">35%</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Distance</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowDistance" min="0" max="60" value="30" aria-label="Shadow distance">
+              <span class="cf-shadow-slider-value" id="cfShadowDistanceValue">30px</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Direction</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowDirection" min="0" max="360" value="0" aria-label="Shadow direction">
+              <span class="cf-shadow-slider-value" id="cfShadowDirectionValue">0°</span>
+            </label>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -1197,6 +1281,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=57" defer></script>
+<script src="/codify/codify-tool.js?v=60" defer></script>
 </body>
 </html>
