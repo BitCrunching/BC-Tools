@@ -281,6 +281,29 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      past the 80vh cap above) via wheel/keyboard, the track visual is
      just hidden. */
 }
+/* Ghost preview text for a first-time visitor's still-empty editor —
+   same box/font/padding recipe as .cf-code-input itself so the ghost
+   text lines up exactly where real typed text would land, just faded
+   and non-interactive. See the <pre> markup's own comment for why this
+   is a separate overlay instead of the textarea's plain placeholder
+   attribute (which only ever supports one flat line of dim text, not a
+   whole multi-line "here's what a real screenshot could look like"
+   preview). */
+.cf-code-ghost{
+  position:absolute;
+  inset:0;
+  margin:0;
+  padding:16px 18px;
+  border-radius:16px;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  line-height:1.6;
+  color:var(--text);
+  opacity:.4;
+  white-space:pre-wrap;
+  overflow:hidden;
+  pointer-events:none;
+}
 /* Reads the clipboard straight into the field, the way Coudio/Congify's
    URL Paste buttons already work — mobile-only (see media query below),
    same corner the tool's now-removed drag-to-resize handle used to sit
@@ -1039,7 +1062,22 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     <button type="button" class="cf-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cfRemoveBtn" aria-label="Clear code" hidden>×</button>
 
     <div class="cf-code-input-wrap">
-      <textarea class="cf-code-input bc-editor-input" id="cfCodeInput" spellcheck="false" placeholder="Paste or type your code here"></textarea>
+      <!-- No visible placeholder attribute here on purpose — the ghost
+           overlay just below is what an empty editor actually shows
+           now (native placeholder text painted underneath it just
+           doubled up into garbled overlapping text, confirmed live).
+           aria-label keeps the same wording available to screen readers,
+           which don't see the aria-hidden ghost. -->
+      <textarea class="cf-code-input bc-editor-input" id="cfCodeInput" spellcheck="false" aria-label="Paste or type your code here"></textarea>
+      <!-- A first-time visitor's editor now stays genuinely empty (see
+           codify-tool.js) instead of getting silently pre-filled with the
+           Hello-world template — this sits on top of the textarea instead,
+           showing what a filled-in editor would look like without it being
+           real content. pointer-events:none so a click always lands on the
+           actual textarea underneath, which focuses it and (via that focus
+           listener, in codify-tool.js) hides this — "disappears when user
+           clicks on it". -->
+      <pre class="cf-code-ghost" id="cfCodeGhost" aria-hidden="true" hidden></pre>
       <button type="button" class="cf-paste-btn" id="cfPasteBtn">Paste</button>
     </div>
 
@@ -1120,6 +1158,13 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
           <span>Background</span>
           <input type="color" id="cfBgColorInput" class="bc-color-picker-input" value="#E5E7EB" aria-label="Screenshot background color">
         </label>
+      </div>
+
+      <div class="cf-setting-group">
+        <button type="button" class="cf-bg-image-trigger bc-dropdown-trigger" id="cfBgImageTrigger" title="Use an image as the background">
+          <span>Custom BG</span>
+        </button>
+        <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
       </div>
 
       <div class="cf-setting-group">
@@ -1281,6 +1326,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 <script src="/shared/site.js?v=34" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-tool.js?v=61" defer></script>
+<script src="/codify/codify-tool.js?v=64" defer></script>
 </body>
 </html>
