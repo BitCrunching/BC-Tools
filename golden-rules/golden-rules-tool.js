@@ -48,10 +48,11 @@ grToolBtns.forEach(btn => {
    ignores further wheel input until the current step's smooth-scroll
    is mostly settled, so one fast scroll gesture can't blow past the
    very next tool — the "resistance" that makes it hard to overshoot.
-   Kept deliberately short (down from an initial 350ms): a trackpad
-   swipe fires many wheel events in quick succession, and the original
-   350ms lock silently dropped most of them, reading as laggy/
-   unresponsive rather than "magnetic." Native touch-drag scrolling (no
+   Kept short (350ms initially felt laggy — a trackpad swipe fires many
+   wheel events in quick succession, and that lock silently dropped
+   most of them; 200ms is the current middle ground between that and
+   120ms, which held up fine against a same-tick overshoot burst but
+   left room to tune). Native touch-drag scrolling (no
    wheel event) is untouched here; that's handled by
    scroll-snap-stop:always in golden-rules/index.html instead, since
    hijacking touch the same way would fight the platform's own
@@ -72,7 +73,7 @@ if (grSwitcher){
     selectGoldenRulesTool(nextBtn.dataset.tool);
     scrollToolIntoView(nextBtn.dataset.tool, "smooth");
     clearTimeout(wheelUnlockTimer);
-    wheelUnlockTimer = setTimeout(() => { wheelLocked = false; }, 120);
+    wheelUnlockTimer = setTimeout(() => { wheelLocked = false; }, 200);
   }, { passive: false });
 }
 
