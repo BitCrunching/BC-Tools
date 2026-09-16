@@ -1222,18 +1222,6 @@
     filenameTriggerLabel.textContent = "Rename file";
   }
 
-  /* The trigger's own visible label is plain JS-set text (not
-     data-i18n — that would blindly reset it to whatever the "Black"
-     default option translates to, discarding the user's actual
-     selection). data-i18n-cell-label on each option already refreshes
-     option.dataset.label to the new language by the time bc:langchange
-     fires below it just needs re-reading for the CURRENTLY selected
-     color. */
-  document.addEventListener("bc:langchange", () => {
-    const opt = colorMenu.querySelector('[data-color="' + activeColor + '"]');
-    if (opt) colorTriggerLabel.textContent = opt.dataset.label;
-  });
-
   /* The popup defaults to right:0 on its dropdown container, which only
      sits flush with the viewport's right edge on wide screens. On
      narrow viewports the container can be anywhere in the flex-wrapped
