@@ -283,6 +283,7 @@ console.log(a.next.value);`
 
   function applyStyle(styleKey){
     currentStyle = styleKey;
+    if (!bgEnabled) updateBgEnableUi(true);
     if (styleKey === "custom"){
       previewWrap.style.background = bgColorInput.value;
       previewWrap.style.padding = "";
@@ -889,7 +890,8 @@ console.log(a.next.value);`
         distance: shadowDistanceInput ? shadowDistanceInput.value : 30,
         direction: shadowDirectionInput ? shadowDirectionInput.value : 0
       },
-      bgImage: currentBgImageDataUrl
+      bgImage: currentBgImageDataUrl,
+      bgEnabled
     });
   }
   fileNameInput.addEventListener("input", schedulePersist);
@@ -935,6 +937,15 @@ console.log(a.next.value);`
     /* Same immediate-restore treatment as shadow just above — a custom
        background image is a visual preference, not session content. */
     if (saved && saved.bgImage) applyBgImage(saved.bgImage);
+    /* Same immediate-restore treatment as shadow/bgImage above. Reads
+       the already-restored background (color or image, whichever just
+       ran) as what to bring back on a later ON click, then turns it
+       off — same two steps the button's own click handler runs. */
+    if (saved && saved.bgEnabled === false){
+      lastBgValue = previewWrap.style.background || DEFAULT_BG_COLOR;
+      previewWrap.style.background = "transparent";
+      updateBgEnableUi(false);
+    }
     if (saved && saved.code){
       if (codeInput.value.length) return;
       continueBtn.hidden = false;
@@ -1085,7 +1096,11 @@ console.log(a.next.value);`
       bgImageSvg = `<image href="${bgImageMatch[1]}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cfBgImageClip)"/>`;
       bgFill = "none";
     } else if (gradientMatch){
-      const stops = gradientMatch[1].split(",").map(s => s.trim()).map(stop => {
+      /* Paren-aware split — same fix as paintPreviewBackground's PNG
+         path below: a hex color round-trips through .style.background
+         as rgb(r, g, b), and a plain split(",") breaks on that color's
+         own internal commas. */
+      const stops = gradientMatch[1].split(/,(?![^(]*\))/).map(s => s.trim()).map(stop => {
         const [, color, offset] = /^(\S+)\s+([\d.]+%)$/.exec(stop) || [, stop, null];
         return { color, offset };
       });
@@ -1492,8 +1507,43 @@ ${titlebarSvg}
     });
   }
 
+  /* ===== Background on/off =====
+     "OFF" doesn't clear the chosen color/image — it just stops it from
+     rendering (previewWrap.style.background → "transparent", which the
+     PNG export's paintPreviewBackground and the SVG export's bgFill
+     fallback both already read directly, so a transparent export falls
+     straight out of that with no separate export-side flag needed).
+     lastBgValue remembers what to restore turning back ON — captured at
+     the moment OFF is pressed, not tracked continuously, since
+     applyBgColor/applyBgImage below already re-enable on their own
+     (picking a color/image obviously means wanting it visible again). */
+  const bgEnableBtn = document.getElementById("cfBgEnableBtn");
+  const bgEnableBtnLabel = document.getElementById("cfBgEnableBtnLabel");
+  let bgEnabled = true;
+  let lastBgValue = null;
+  function updateBgEnableUi(enabled){
+    bgEnabled = enabled;
+    if (bgEnableBtn) bgEnableBtn.setAttribute("aria-pressed", String(enabled));
+    if (bgEnableBtnLabel) bgEnableBtnLabel.textContent = enabled ? "ON" : "OFF";
+    previewWrap.classList.toggle("cf-bg-transparent", !enabled);
+  }
+  if (bgEnableBtn){
+    bgEnableBtn.addEventListener("click", () => {
+      if (bgEnabled){
+        lastBgValue = previewWrap.style.background || DEFAULT_BG_COLOR;
+        previewWrap.style.background = "transparent";
+        updateBgEnableUi(false);
+      } else {
+        previewWrap.style.background = lastBgValue || DEFAULT_BG_COLOR;
+        updateBgEnableUi(true);
+      }
+      schedulePersist();
+    });
+  }
+
   function applyBgColor(hex){
     previewWrap.style.background = hex;
+    if (!bgEnabled) updateBgEnableUi(true);
     bgColorSwatch.style.background = hex;
     bgColorInput.value = hex;
     if (bgHexInput && document.activeElement !== bgHexInput) bgHexInput.value = hex.toUpperCase();
@@ -1579,6 +1629,7 @@ ${titlebarSvg}
     currentBgImageDataUrl = dataUrl;
     previewWrap.style.background = `url("${dataUrl}") center / cover no-repeat`;
     bgColorSwatch.style.background = `url("${dataUrl}") center / cover no-repeat`;
+    if (!bgEnabled) updateBgEnableUi(true);
     bgSwatchEls.forEach(el => el.classList.remove("active"));
     if (currentStyle !== "custom"){
       currentStyle = "custom";

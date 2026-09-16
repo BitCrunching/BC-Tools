@@ -558,6 +558,59 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#2563eb;
 }
 
+/* Import sits next to the ON/OFF background toggle, not stacked above
+   it — .option-change-btn is width:100% by default (meant to fill a
+   settings row on its own), so both need width:auto here and their own
+   sizing instead: Import keeps most of the row, ON/OFF is just wide
+   enough for its own three/four-letter label. */
+.cf-bg-toggle-row{
+  display:flex;
+  gap:8px;
+}
+.cf-bg-toggle-row .option-change-btn{
+  width:auto;
+}
+#cfBgImageTrigger{
+  flex:1;
+  min-width:0;
+}
+#cfBgEnableBtn{
+  flex:0 0 auto;
+  width:60px;
+}
+/* OFF reads as visually "off" the same way a disabled control does
+   elsewhere on this site — dimmer, not just a different label — rather
+   than looking identical to the ON state but for three letters of text. */
+.cf-bg-enable-btn[aria-pressed="false"]{
+  opacity:.55;
+}
+
+/* Purely a live-preview affordance — a checkerboard behind the window
+   so "background off" reads as "transparent," not "did this break,"
+   the same convention every image editor uses for it. Doesn't touch
+   what actually exports: the export paints straight from
+   previewWrap.style.background (set to "transparent" alongside this
+   class in codify-tool.js), never from this pseudo-element, so the
+   real PNG/SVG output stays genuinely transparent regardless. A ::before
+   (not a background on .cf-preview-wrap itself) because the wrap's own
+   background is the literal inline style the export reads — layering
+   the checkerboard there instead of fighting that with specificity. */
+.cf-preview-wrap.cf-bg-transparent::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background-color:#fff;
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0px;
+  pointer-events:none;
+}
+
 /* The exportable "screenshot" — a gradient backdrop with the code
    window centered on it. html-to-image snapshots exactly this element,
    so everything that should appear in the exported PNG (gradient,
@@ -1312,9 +1365,14 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
               <input type="text" id="cfBgHexInput" class="cf-bg-hex-input" value="#E5E7EB" maxlength="7" spellcheck="false" aria-label="Custom hex color">
             </label>
             <input type="color" id="cfBgColorInput" value="#E5E7EB" aria-hidden="true" tabindex="-1" hidden>
-            <button type="button" class="cf-bg-image-trigger option-change-btn" id="cfBgImageTrigger" title="Import a custom background image">
-              <span class="option-change-btn-label">Import image</span>
-            </button>
+            <div class="cf-bg-toggle-row">
+              <button type="button" class="cf-bg-image-trigger option-change-btn" id="cfBgImageTrigger" title="Import a custom background image">
+                <span class="option-change-btn-label">Import</span>
+              </button>
+              <button type="button" class="cf-bg-enable-btn option-change-btn" id="cfBgEnableBtn" title="Turn the background off (transparent export)" aria-pressed="true">
+                <span class="option-change-btn-label" id="cfBgEnableBtnLabel">ON</span>
+              </button>
+            </div>
             <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
           </div>
         </div>
@@ -1484,6 +1542,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=79" defer></script>
+<script src="/codify/codify-tool.js?v=80" defer></script>
 </body>
 </html>
