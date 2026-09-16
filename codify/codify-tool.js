@@ -1318,12 +1318,40 @@ ${titlebarSvg}
        bigger image by exactly `bleed` px, so drawImage below shifts the
        draw position back by the same amount to land it at the correct
        spot again — net effect on the final composite is zero, it's
-       purely a capture-time accommodation. */
+       purely a capture-time accommodation.
+
+       #cfWindowWrap is box-sizing:border-box with max-width:640px, so
+       padding alone doesn't grow the box the way it would with the
+       default content-box — border-box means max-width caps the
+       padding-INCLUSIVE box, so adding padding without also widening it
+       just shrinks the content (the window itself) to make room for
+       the padding inside the same unchanged 640px total. Reported and
+       confirmed live: the actual rendered window came out narrower than
+       the real one, and — since drawImage below still assumed the
+       original (now wrong) width when positioning it — visibly
+       off-center in the final composite, not just wrong-sized. Setting
+       an explicit `width` alongside the padding compensates: border-box
+       makes `width` the total box size, so width = (original content
+       width) + 2*bleed leaves exactly the original width for the
+       content once the bleed padding is carved out of it, the same
+       result padding-only gives on a content-box element. */
     const bleed = 100;
     const origPadding = cfWindowWrap.style.padding;
+    const origWidth = cfWindowWrap.style.width;
+    const origMaxWidth = cfWindowWrap.style.maxWidth;
+    /* max-width:640px (from the stylesheet, not overridden by the
+       inline width below on its own) still clamps an explicit inline
+       width to 640 regardless — max-width always wins over width,
+       that's its entire job — so the widened `width` above alone
+       silently did nothing and this exact bug reproduced again with
+       the fix in place. Has to be raised too. */
+    cfWindowWrap.style.maxWidth = "none";
+    cfWindowWrap.style.width = (winRect.width + bleed * 2) + "px";
     cfWindowWrap.style.padding = bleed + "px";
     const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
     cfWindowWrap.style.padding = origPadding;
+    cfWindowWrap.style.width = origWidth;
+    cfWindowWrap.style.maxWidth = origMaxWidth;
     const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
