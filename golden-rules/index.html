@@ -80,7 +80,7 @@
   display:flex;
   align-items:center;
   width:100%;
-  max-width:480px;
+  max-width:400px;
   margin:32px auto 48px;
   padding:6px 0;
   border-radius:20px;
@@ -91,9 +91,12 @@
   scrollbar-width:none;
   /* Fades whatever pill currently sits at the scrollable edge, instead
      of a hard clip — reads as "more this way" regardless of which tool
-     that happens to be as the row scrolls. */
-  -webkit-mask-image:linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
-  mask-image:linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
 }
 .golden-rules-switcher::-webkit-scrollbar{ display:none; }
 
