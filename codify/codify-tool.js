@@ -675,15 +675,6 @@ console.log(a.next.value);`
           positionBox(hoverBands.right, 0, 0, 0, 0);
           positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
           positionLabel(wrapRect.left, wrapRect.top, "Mac nav — click to toggle");
-        } else if (!bgEnabled){
-          /* Matches the click handler's own guard above — no highlight,
-             no label, since a click here currently does nothing while
-             the Background toggle is off. */
-          positionBox(hoverBands.bottom, 0, 0, 0, 0);
-          positionBox(hoverBands.top, 0, 0, 0, 0);
-          positionBox(hoverBands.left, 0, 0, 0, 0);
-          positionBox(hoverBands.right, 0, 0, 0, 0);
-          hoverLabel.textContent = "";
         } else {
           positionBox(hoverBands.bottom, 0, 0, 0, 0);
           positionBox(hoverBands.top, 0, 0, 0, 0);
