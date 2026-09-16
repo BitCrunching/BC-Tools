@@ -46,12 +46,16 @@ grToolBtns.forEach(btn => {
    the user scrolled. preventDefault stops the browser's own native
    scroll from running alongside this and fighting it. A short lock
    ignores further wheel input until the current step's smooth-scroll
-   settles, so one fast scroll gesture can't blow past the very next
-   tool — the "resistance" that makes it hard to overshoot. Native
-   touch-drag scrolling (no wheel event) is untouched here; that's
-   handled by scroll-snap-stop:always in golden-rules/index.html
-   instead, since hijacking touch the same way would fight the
-   platform's own momentum/rubber-banding feel. */
+   is mostly settled, so one fast scroll gesture can't blow past the
+   very next tool — the "resistance" that makes it hard to overshoot.
+   Kept deliberately short (down from an initial 350ms): a trackpad
+   swipe fires many wheel events in quick succession, and the original
+   350ms lock silently dropped most of them, reading as laggy/
+   unresponsive rather than "magnetic." Native touch-drag scrolling (no
+   wheel event) is untouched here; that's handled by
+   scroll-snap-stop:always in golden-rules/index.html instead, since
+   hijacking touch the same way would fight the platform's own
+   momentum/rubber-banding feel. */
 if (grSwitcher){
   let wheelLocked = false;
   let wheelUnlockTimer = null;
@@ -68,7 +72,7 @@ if (grSwitcher){
     selectGoldenRulesTool(nextBtn.dataset.tool);
     scrollToolIntoView(nextBtn.dataset.tool, "smooth");
     clearTimeout(wheelUnlockTimer);
-    wheelUnlockTimer = setTimeout(() => { wheelLocked = false; }, 350);
+    wheelUnlockTimer = setTimeout(() => { wheelLocked = false; }, 120);
   }, { passive: false });
 }
 
