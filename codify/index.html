@@ -1047,11 +1047,25 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 .cf-download-wrap{
   position:relative;
 }
+/* #cfDownloadBtn used to be the direct grid item inside .tool-controls,
+   which stretches a direct child to fill the column by default — now
+   that .cf-download-wrap sits between them (a button can't contain
+   another button, so Copy needs its own positioning parent), the
+   button itself is back to being a plain inline-block sized to its own
+   text unless told otherwise. Pin it back to filling the wrapper so it
+   stays the exact same 100%-width size Copy's addition shouldn't have
+   touched at all. */
+#cfDownloadBtn{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+}
 .cf-copy-btn{
   position:absolute;
   top:-20px;
   left:50%;
-  transform:translateX(-50%);
+  transform:translateX(-50%) scale(1);
+  transform-origin:center bottom;
   z-index:2;
   width:70px;
   height:40px;
@@ -1063,7 +1077,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   font-size:13px;
   font-family:inherit;
   cursor:pointer;
-  transition:.2s;
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1), opacity .2s, background .2s, border-color .2s;
 }
 .cf-copy-btn:hover{
   border-color:rgba(255,255,255,.65);
@@ -1073,9 +1087,16 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   outline:2px solid rgba(255,255,255,.5);
   outline-offset:2px;
 }
+/* Copy has no reason to exist until there's something to copy — while
+   disabled (no code yet) it's scaled to nothing with its anchor point
+   pinned to Download's top edge (transform-origin above), then grows
+   out of Download the moment code appears and it becomes usable,
+   instead of sitting there pre-formed from the start. */
 .cf-copy-btn:disabled{
   cursor:not-allowed;
-  background:rgba(255,255,255,.2);
+  opacity:0;
+  transform:translateX(-50%) scale(0);
+  pointer-events:none;
 }
 html[data-theme="dark"] .cf-copy-btn{
   border-color:rgba(0,0,0,.4);
@@ -1084,9 +1105,6 @@ html[data-theme="dark"] .cf-copy-btn{
 html[data-theme="dark"] .cf-copy-btn:hover{
   border-color:rgba(0,0,0,.5);
   background:rgba(0,0,0,.35);
-}
-html[data-theme="dark"] .cf-copy-btn:disabled{
-  background:rgba(0,0,0,.14);
 }
 
 /* Copy is the lighter, instant, reversible sibling of Download (which
