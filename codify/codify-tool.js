@@ -1181,40 +1181,68 @@ ${titlebarSvg}
      result differs: Download saves the blob to disk, Copy puts it (or,
      for SVG, its markup as text — see the click handler below for why)
      on the clipboard instead. */
-  /* htmlToImage.toPng renders #cfPreviewWrap's rounded corners correctly
-     at the TOP but not the bottom — confirmed by sampling the raw pixel
-     alpha of an export: the top two corners fade to fully transparent
-     outside the curve as expected, the bottom two stay fully opaque
-     background color all the way into the square corner, no matter
-     what combination of explicit width/height, overflow:hidden, or a
-     style override was passed to it. Root cause not pinned down (isn't
-     the box-shadow on .cf-window — reproduces with it removed too) and
-     not worth more time chasing inside a third-party rasterizer; instead
-     this re-clips the *rendered* PNG to a rounded rect on our own canvas
-     after the fact, using #cfPreviewWrap's own actual border-radius —
-     symmetric on all four corners by construction, independent of
-     whatever html-to-image did internally. */
-  async function clipToRoundedRect(dataUrl, cssWidth, cssHeight, cssRadius, pixelRatio){
-    const img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
+  function loadImage(src){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("image-load-failed"));
-      img.src = dataUrl;
+      img.src = src;
     });
+  }
+
+  /* htmlToImage.toPng, asked to capture #cfPreviewWrap whole (background
+     + the window sitting inside it via flex-centering + padding),
+     doesn't reproduce that centering — confirmed live: the window comes
+     out pinned near the top with barely any of the real ~56px padding
+     above it, while a roughly-correct gap survives below, and the same
+     thing happens whether #cfPreviewWrap is flex or a plain block with
+     margin:auto centering, so it isn't specifically a flex bug. Tried
+     explicit width/height, overflow:hidden, and a style override first
+     (see the corner-rounding fix below, which hit the same "third-party
+     rasterizer being weird about this element" wall) — not worth more
+     time chasing inside html-to-image itself.
+
+     Sidesteps it instead by never asking html-to-image to render the
+     background and the window *together*: capture #cfPreviewWrap with
+     the window hidden (a plain padded box, no positioned child — this
+     renders correctly, confirmed live) for the background layer, and
+     #cfWindowWrap alone (a plain block box with no surrounding flex
+     parent to mis-center it) for the window layer, then composite them
+     onto one canvas ourselves using the window's *actual* live position
+     within the wrap (getBoundingClientRect on both) — real DOM layout
+     numbers, not anything html-to-image had to infer. */
+  async function renderPreviewPng(pixelRatio){
+    const rect = previewWrap.getBoundingClientRect();
+    const winRect = cfWindowWrap.getBoundingClientRect();
+    const radius = parseFloat(getComputedStyle(previewWrap).borderRadius) || 0;
+
+    const origVisibility = cfWindowWrap.style.visibility;
+    cfWindowWrap.style.visibility = "hidden";
+    const bgDataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio });
+    cfWindowWrap.style.visibility = origVisibility;
+
+    const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
+
+    const [bgImg, winImg] = await Promise.all([loadImage(bgDataUrl), loadImage(winDataUrl)]);
+
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(cssWidth * pixelRatio);
-    canvas.height = Math.round(cssHeight * pixelRatio);
+    canvas.width = Math.round(rect.width * pixelRatio);
+    canvas.height = Math.round(rect.height * pixelRatio);
     const ctx = canvas.getContext("2d");
-    const radius = Math.min(cssRadius * pixelRatio, canvas.width / 2, canvas.height / 2);
+    const clipRadius = Math.min(radius * pixelRatio, canvas.width / 2, canvas.height / 2);
     ctx.beginPath();
-    ctx.moveTo(radius, 0);
-    ctx.arcTo(canvas.width, 0, canvas.width, canvas.height, radius);
-    ctx.arcTo(canvas.width, canvas.height, 0, canvas.height, radius);
-    ctx.arcTo(0, canvas.height, 0, 0, radius);
-    ctx.arcTo(0, 0, canvas.width, 0, radius);
+    ctx.moveTo(clipRadius, 0);
+    ctx.arcTo(canvas.width, 0, canvas.width, canvas.height, clipRadius);
+    ctx.arcTo(canvas.width, canvas.height, 0, canvas.height, clipRadius);
+    ctx.arcTo(0, canvas.height, 0, 0, clipRadius);
+    ctx.arcTo(0, 0, canvas.width, 0, clipRadius);
     ctx.closePath();
     ctx.clip();
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    const winX = Math.round((winRect.left - rect.left) * pixelRatio);
+    const winY = Math.round((winRect.top - rect.top) * pixelRatio);
+    ctx.drawImage(winImg, winX, winY, winImg.naturalWidth, winImg.naturalHeight);
+
     return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
   }
 
@@ -1229,7 +1257,7 @@ ${titlebarSvg}
     }
     /* Both resize handles live inside #cfPreviewWrap (the window one
        nested in #cfWindowWrap, the panel one a direct child) — exactly
-       what htmlToImage.toPng snapshots below — so without hiding them
+       what renderPreviewPng snapshots below — so without hiding them
        first they get baked into the actual exported image as two
        solid blue circles sitting on top of the code. Confirmed live: a
        real PNG download had both handles rendered right into it.
@@ -1238,11 +1266,7 @@ ${titlebarSvg}
     if (windowResizeHandle) windowResizeHandle.style.visibility = "hidden";
     if (resizeHandle) resizeHandle.style.visibility = "hidden";
     try {
-      const pixelRatio = 2;
-      const rect = previewWrap.getBoundingClientRect();
-      const radius = parseFloat(getComputedStyle(previewWrap).borderRadius) || 0;
-      const dataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio });
-      const blob = await clipToRoundedRect(dataUrl, rect.width, rect.height, radius, pixelRatio);
+      const blob = await renderPreviewPng(2);
       return { blob, svgString: null, ext: "png" };
     } finally {
       if (windowResizeHandle) windowResizeHandle.style.visibility = "";
