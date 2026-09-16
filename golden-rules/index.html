@@ -133,26 +133,23 @@ html[data-theme="dark"] .golden-rules-switcher{
   color:#020617;
 }
 
-/* The "more tools" hint sits after the active pill while collapsed and
-   fades/collapses away the same way an inactive pill does, once expanded. */
-.golden-rules-switcher::after{
-  content:"more tools \203A";
-  flex:0 0 auto;
-  max-width:120px;
-  padding-left:6px;
-  font-size:12px;
-  font-weight:700;
-  color:var(--text);
-  opacity:.45;
-  white-space:nowrap;
-  transition:max-width .3s, opacity .2s, padding .3s;
+/* Instead of a text hint, the tool on each side of the active one stays
+   collapsed to a thin clipped sliver — a visible fragment of the next
+   pill peeking out — so the row reads as "more tools" without a label.
+   :has() picks out the button immediately before the active one (no
+   "previous sibling" combinator exists in CSS); the button immediately
+   after is just a normal adjacent-sibling selector. Either side is
+   naturally absent when the active tool is first/last in the row. */
+.golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn:has(+ .golden-rules-tool-btn.active),
+.golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn.active + .golden-rules-tool-btn{
+  max-width:16px;
+  padding:12px 4px;
+  opacity:.4;
+  background:rgba(0,0,0,.05);
 }
-.golden-rules-switcher:hover::after,
-.golden-rules-switcher:focus-within::after,
-.golden-rules-switcher.expanded::after{
-  max-width:0;
-  padding-left:0;
-  opacity:0;
+html[data-theme="dark"] .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn:has(+ .golden-rules-tool-btn.active),
+html[data-theme="dark"] .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn.active + .golden-rules-tool-btn{
+  background:rgba(255,255,255,.05);
 }
 
 .ad-slot-incontent{
