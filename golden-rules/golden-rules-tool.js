@@ -40,6 +40,38 @@ grToolBtns.forEach(btn => {
   });
 });
 
+/* Magnetic wheel/trackpad stepping: a mouse wheel or trackpad gesture
+   over the switcher moves exactly one tool at a time toward the fixed
+   center slot, instead of free-scrolling proportionally to how hard
+   the user scrolled. preventDefault stops the browser's own native
+   scroll from running alongside this and fighting it. A short lock
+   ignores further wheel input until the current step's smooth-scroll
+   settles, so one fast scroll gesture can't blow past the very next
+   tool — the "resistance" that makes it hard to overshoot. Native
+   touch-drag scrolling (no wheel event) is untouched here; that's
+   handled by scroll-snap-stop:always in golden-rules/index.html
+   instead, since hijacking touch the same way would fight the
+   platform's own momentum/rubber-banding feel. */
+if (grSwitcher){
+  let wheelLocked = false;
+  let wheelUnlockTimer = null;
+  grSwitcher.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (wheelLocked) return;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 4) return;
+    const currentIndex = grToolBtns.findIndex(b => b.dataset.tool === currentGoldenRulesTool);
+    const nextIndex = currentIndex + (delta > 0 ? 1 : -1);
+    if (nextIndex < 0 || nextIndex >= grToolBtns.length) return;
+    const nextBtn = grToolBtns[nextIndex];
+    wheelLocked = true;
+    selectGoldenRulesTool(nextBtn.dataset.tool);
+    scrollToolIntoView(nextBtn.dataset.tool, "smooth");
+    clearTimeout(wheelUnlockTimer);
+    wheelUnlockTimer = setTimeout(() => { wheelLocked = false; }, 350);
+  }, { passive: false });
+}
+
 /* Wheel-picker behavior: the "chosen" slot is a fixed position — dead
    center of the switcher — and scrolling (drag, wheel, trackpad, or
    the smooth scroll a click above triggers) brings a different pill
