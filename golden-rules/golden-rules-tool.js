@@ -9,6 +9,18 @@ let currentGoldenRulesTool = "convert";
    reserved dead space, visible as a much bigger gap between article 3
    and 4 than the uniform 16px every other pair gets. Re-add only
    alongside the actual script tag if/when ads are wired up here. */
+const grSwitcher = document.querySelector(".golden-rules-switcher");
+
+/* Centers the active pill in the (always-narrower-than-its-content)
+   scrollable switcher — called on every selection and once on load, so
+   the row always opens already scrolled to show the current tool with
+   real neighbors peeking at both edges, not stuck wherever the browser
+   happened to leave it (top-left, i.e. "Convert", by default). */
+function scrollActiveIntoView(behavior){
+  const activeBtn = grSwitcher && grSwitcher.querySelector(".golden-rules-tool-btn.active");
+  if (activeBtn) activeBtn.scrollIntoView({ behavior, inline: "center", block: "nearest" });
+}
+
 function selectGoldenRulesTool(tool){
   if (tool) currentGoldenRulesTool = tool;
   document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
@@ -19,34 +31,12 @@ function selectGoldenRulesTool(tool){
   });
 }
 
-/* The switcher only shows the active tool's pill until hovered/focused
-   (pure CSS — see .golden-rules-switcher in golden-rules/index.html).
-   :hover never fires on tap, so touch needs its own reveal step: a tap
-   on the already-active pill while collapsed just expands the row
-   instead of re-selecting the same tool (which would be a no-op anyway);
-   a tap on any other visible pill selects normally and re-collapses. */
-const grSwitcher = document.querySelector(".golden-rules-switcher");
 document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    const collapsed = grSwitcher && !grSwitcher.classList.contains("expanded");
-    if (collapsed && btn.classList.contains("active")) {
-      e.preventDefault();
-      grSwitcher.classList.add("expanded");
-      return;
-    }
+  btn.addEventListener("click", () => {
     selectGoldenRulesTool(btn.dataset.tool);
-    if (grSwitcher) grSwitcher.classList.remove("expanded");
-    // A clicked button keeps focus by default, which would hold the row
-    // open via :focus-within even after the mouse leaves — blur it so
-    // the row actually collapses back down to just the chosen tool.
-    btn.blur();
+    scrollActiveIntoView("smooth");
   });
 });
-if (grSwitcher) {
-  document.addEventListener("click", (e) => {
-    if (!grSwitcher.contains(e.target)) grSwitcher.classList.remove("expanded");
-  });
-}
 
 /* Every tool page's own "Getting started with" footer links here with
    ?tool=<id> (see shared/site.js's .go-to-golden-rules handler) so
@@ -58,3 +48,4 @@ if (grSwitcher) {
 const requestedTool = new URLSearchParams(location.search).get("tool");
 const validTools = [...document.querySelectorAll(".golden-rules-tool-btn")].map(btn => btn.dataset.tool);
 selectGoldenRulesTool(validTools.includes(requestedTool) ? requestedTool : "convert");
+scrollActiveIntoView("auto");
