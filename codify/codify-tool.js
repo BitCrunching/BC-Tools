@@ -556,6 +556,16 @@ console.log(a.next.value);`
           toggleMacNavClick();
           return;
         }
+        /* Background color-cycling is disabled while Shadow is off —
+           reported live: with no shadow rendering below the window, the
+           side zones (this one) read as plain, undifferentiated
+           background, and clicking there to cycle its color while
+           there's nothing shadow-related to see reads as an unrelated,
+           confusing interaction. Re-enabled the instant Shadow is
+           toggled back on — no separate state to track, just gated on
+           shadowToggle's own checked value here and in the hover
+           overlay below. */
+        if (shadowToggle && !shadowToggle.checked) return;
         bgZoneGesture(e);
         return;
       }
@@ -668,6 +678,15 @@ console.log(a.next.value);`
           positionBox(hoverBands.right, 0, 0, 0, 0);
           positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
           positionLabel(wrapRect.left, wrapRect.top, "Mac nav — click to toggle");
+        } else if (shadowToggle && !shadowToggle.checked){
+          /* Matches the click handler's own guard above — no highlight,
+             no label, since a click here currently does nothing while
+             Shadow is off. */
+          positionBox(hoverBands.bottom, 0, 0, 0, 0);
+          positionBox(hoverBands.top, 0, 0, 0, 0);
+          positionBox(hoverBands.left, 0, 0, 0, 0);
+          positionBox(hoverBands.right, 0, 0, 0, 0);
+          hoverLabel.textContent = "";
         } else {
           positionBox(hoverBands.bottom, 0, 0, 0, 0);
           positionBox(hoverBands.top, 0, 0, 0, 0);
