@@ -1002,6 +1002,12 @@ html[data-theme="dark"] .cf-toggle-switch{
 .cf-format-toggle button:last-child{
   border-top-right-radius:20px;
   border-bottom-right-radius:20px;
+}
+/* Every button after the first shares its left edge with the one
+   before it — was just :last-child (PNG/SVG only) before Copy joined
+   as a third, middle segment; broadened so Copy's own left border
+   doesn't double up against PNG's right border either. */
+.cf-format-toggle button:not(:first-child){
   border-left:none;
 }
 .cf-format-toggle button[aria-pressed="true"]{
@@ -1014,10 +1020,27 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   background:rgba(0,0,0,.25);
 }
 /* border-color (not the border shorthand) on the selected state — same
-   fix Congify's own toggle needed — so :last-child's border-left:none
+   fix Congify's own toggle needed — so the border-left:none above
    survives being selected instead of the shared divider doubling up. */
-.cf-format-toggle button:last-child[aria-pressed="true"]{
+.cf-format-toggle button:not(:first-child)[aria-pressed="true"]{
   border-left:none;
+}
+/* Copy (the middle segment, #cfCopyBtn) is an action, not a third
+   format choice, so it never carries [aria-pressed] — just a plain
+   segment that disables (matching Download) once there's nothing to
+   copy yet, and pops on a successful copy for a bit of personality the
+   two format choices either side of it don't need. */
+.cf-format-toggle button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+@keyframes cf-copy-pop{
+  0%{ transform:scale(1); }
+  45%{ transform:scale(1.15); }
+  100%{ transform:scale(1); }
+}
+#cfCopyBtn.copied{
+  animation:cf-copy-pop .45s cubic-bezier(.34,1.56,.64,1);
 }
 
 @media (max-width:768px){
@@ -1035,96 +1058,11 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   }
 }
 
-/* Copy sits as a small "head" attached to the top of Download, not a
-   second full-size button beside it — a 70x40 pill centered on
-   Download's top edge, overlapping down into it so the two read as one
-   connected shape. .cf-download-wrap is the positioning context (plain
-   buttons can't contain another button, so this can't just nest
-   inside #cfDownloadBtn itself). Manually carries the same on-banner
-   flip recipe every other control here uses (CLAUDE.md) rather than
-   reusing .tool-primary-btn, since that class' fixed 74px height/26px
-   radius don't fit a deliberately small badge-sized control. */
-.cf-download-wrap{
-  position:relative;
-}
-/* #cfDownloadBtn used to be the direct grid item inside .tool-controls,
-   which stretches a direct child to fill the column by default — now
-   that .cf-download-wrap sits between them (a button can't contain
-   another button, so Copy needs its own positioning parent), the
-   button itself is back to being a plain inline-block sized to its own
-   text unless told otherwise. Pin it back to filling the wrapper so it
-   stays the exact same 100%-width size Copy's addition shouldn't have
-   touched at all. */
-#cfDownloadBtn{
-  display:block;
-  width:100%;
-  box-sizing:border-box;
-}
-.cf-copy-btn{
-  position:absolute;
-  top:-20px;
-  left:50%;
-  transform:translateX(-50%) scale(1);
-  transform-origin:center bottom;
-  z-index:2;
-  width:70px;
-  height:40px;
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-  font-weight:900;
-  font-size:13px;
-  font-family:inherit;
-  cursor:pointer;
-  transition:transform .32s cubic-bezier(.34,1.56,.64,1), opacity .2s, background .2s, border-color .2s;
-}
-.cf-copy-btn:hover{
-  border-color:rgba(255,255,255,.65);
-  background:rgba(255,255,255,.45);
-}
-.cf-copy-btn:focus-visible{
-  outline:2px solid rgba(255,255,255,.5);
-  outline-offset:2px;
-}
-/* Copy has no reason to exist until there's something to copy — while
-   disabled (no code yet) it's scaled to nothing with its anchor point
-   pinned to Download's top edge (transform-origin above), then grows
-   out of Download the moment code appears and it becomes usable,
-   instead of sitting there pre-formed from the start. */
-.cf-copy-btn:disabled{
-  cursor:not-allowed;
-  opacity:0;
-  transform:translateX(-50%) scale(0);
-  pointer-events:none;
-}
-html[data-theme="dark"] .cf-copy-btn{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .cf-copy-btn:hover{
-  border-color:rgba(0,0,0,.5);
-  background:rgba(0,0,0,.35);
-}
-
-/* Copy is the lighter, instant, reversible sibling of Download (which
-   has a real side effect — a file actually saved) — a little personality
-   fits it in a way it wouldn't fit Download. The `transition:.2s` above
-   already covers transform, so the press-scale below just rides that;
-   the success pop is its own keyframe since a plain transition can't
-   overshoot past 1 the way this bounce does. translateX(-50%) is baked
-   into both keyframe endpoints so the pop scales in place instead of
-   fighting the centering transform. */
-.cf-copy-btn:active:not(:disabled){
-  transform:translateX(-50%) scale(.96);
-}
-@keyframes cf-copy-pop{
-  0%{ transform:translateX(-50%) scale(1); }
-  45%{ transform:translateX(-50%) scale(1.15); }
-  100%{ transform:translateX(-50%) scale(1); }
-}
-.cf-copy-btn.copied{
-  animation:cf-copy-pop .45s cubic-bezier(.34,1.56,.64,1);
+/* Copy's own press feedback — matches the plain segment look of PNG/SVG
+   either side of it (no bespoke geometry/positioning now that it's a
+   normal third segment in the toggle, not a floating badge). */
+#cfCopyBtn:active:not(:disabled){
+  transform:scale(.96);
 }
 </style>
 </head>
@@ -1463,22 +1401,23 @@ html[data-theme="dark"] .cf-copy-btn:hover{
     </div>
 
     <!-- Same connected-segment recipe as Congify's Basic/Advanced switch
-         (.gif-mode-toggle) — two independently-styled [aria-pressed]
-         buttons sharing one divider, rather than a sliding-highlight
-         toggle. Unlike Congify's (mobile-only, since desktop there has
-         room to show both panels at once), this one's relevant at every
-         width: PNG vs SVG is a real either/or choice for what Download
-         actually produces, not a space-saving collapse of two panels. -->
+         (.gif-mode-toggle) — independently-styled buttons sharing
+         dividers, rather than a sliding-highlight toggle. Unlike
+         Congify's (mobile-only, since desktop there has room to show
+         both panels at once), this one's relevant at every width: PNG
+         vs SVG is a real either/or choice for what Download/Copy
+         actually produce, not a space-saving collapse of two panels.
+         Copy sits as a third, middle segment — [aria-pressed] only ever
+         goes on PNG/SVG (the actual either/or choice), not Copy (an
+         action, not a format pick). -->
     <div class="cf-format-toggle" id="cfFormatToggle">
       <button type="button" id="cfFormatPngBtn" aria-pressed="true">PNG</button>
+      <button type="button" id="cfCopyBtn" title="Copy PNG to clipboard" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Copy</button>
       <button type="button" id="cfFormatSvgBtn" aria-pressed="false">SVG</button>
     </div>
 
     <div class="tool-controls" style="grid-template-columns:1fr;">
-      <div class="cf-download-wrap">
-        <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
-        <button class="cf-copy-btn" id="cfCopyBtn" title="Copy PNG to clipboard" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Copy</button>
-      </div>
+      <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
     </div>
 
     <div class="tool-status" id="cfStatus"></div>
