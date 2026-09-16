@@ -1293,7 +1293,30 @@ ${titlebarSvg}
     const winRect = cfWindowWrap.getBoundingClientRect();
     const radius = parseFloat(getComputedStyle(previewWrap).borderRadius) || 0;
 
+    /* .cf-window's own box-shadow (0 30px 60px, so up to ~90px of bleed
+       below it, ~60px on the other three sides) doesn't affect layout
+       size, so capturing #cfWindowWrap at its own natural
+       getBoundingClientRect bounds gives html-to-image a canvas sized
+       to exactly the window's box and nothing more — the shadow still
+       tries to paint into that same canvas, but anything past the
+       window's own edge has nowhere to go and gets hard-clipped right
+       at the box boundary. Confirmed live/reported: a small dark smudge
+       sitting right at the window's corner in the export, instead of
+       the soft blurred shadow the live preview shows fading gradually
+       into the background around it — that smudge is the one sliver of
+       blur that happened to still be inside the tight capture box.
+       Padding #cfWindowWrap out by more than the shadow's max reach
+       before capturing gives it room to render in full; the extra
+       padding shifts the window's own content inward within that
+       bigger image by exactly `bleed` px, so drawImage below shifts the
+       draw position back by the same amount to land it at the correct
+       spot again — net effect on the final composite is zero, it's
+       purely a capture-time accommodation. */
+    const bleed = 100;
+    const origPadding = cfWindowWrap.style.padding;
+    cfWindowWrap.style.padding = bleed + "px";
     const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
+    cfWindowWrap.style.padding = origPadding;
     const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
@@ -1310,8 +1333,8 @@ ${titlebarSvg}
     ctx.closePath();
     ctx.clip();
     await paintPreviewBackground(ctx, canvas.width, canvas.height);
-    const winX = Math.round((winRect.left - rect.left) * pixelRatio);
-    const winY = Math.round((winRect.top - rect.top) * pixelRatio);
+    const winX = Math.round((winRect.left - rect.left - bleed) * pixelRatio);
+    const winY = Math.round((winRect.top - rect.top - bleed) * pixelRatio);
     ctx.drawImage(winImg, winX, winY, winImg.naturalWidth, winImg.naturalHeight);
 
     return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
