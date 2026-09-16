@@ -339,10 +339,6 @@
     }
   });
 
-  document.addEventListener("bc:langchange", () => {
-    renderList();
-  });
-
   /* ===== "Continue where you left off" persistence =====
      Same "list stays after a successful run" behavior as Combine —
      persistence only clears when the list itself is emptied (handled

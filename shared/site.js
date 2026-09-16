@@ -1,15 +1,16 @@
-/* shared/site.js — theme toggle, language switch, cookie consent, nav
-   share menu, privacy-check helpers, and downloadBlob(), shared by every
-   standalone (MPA) page. Ported from index.html's inline scripts — same
-   localStorage keys ("bc-theme", "bc-lang", "bc-cookie-consent") so
-   choices made here stay in sync with the SPA pages. Load with `defer`
-   so the DOM (nav/footer/cookie markup) exists before this runs.
+/* shared/site.js — theme toggle, cookie consent, nav share menu,
+   privacy-check helpers, and downloadBlob(), shared by every standalone
+   (MPA) page. Ported from index.html's inline scripts — same
+   localStorage keys ("bc-theme", "bc-cookie-consent") so choices made
+   here stay in sync with the SPA pages. Load with `defer` so the DOM
+   (nav/footer/cookie markup) exists before this runs.
 
    Not a 1:1 copy of the SPA's version: the Cookies-page "docked" panel
    variant and its mobile-reopen button are dropped (that page still
-   lives in the SPA), and only nav/footer/cookie copy is translated here
-   — tool-specific copy is written directly in each standalone page's
-   markup, in English only for now. */
+   lives in the SPA). The language switcher (translations object,
+   applyLanguage, the nav-lang button/menu) was removed from the live
+   site on request — see the comment further down where it used to
+   live, and shared/i18n-archive.js for the archived version. */
 
 /* ===== Custom scroll-position restore on reload, replacing the
    browser's own native one entirely (history.scrollRestoration stays
@@ -313,12 +314,9 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
       toggle.setAttribute("aria-expanded", "true");
       banner.hidden = false;
       render();
-      /* Same central nav confirmation the theme/language/share buttons
-         already use (#navTerminal) — not yet in the i18n dict (see
-         CLAUDE.md's translation-timing rule: English first, cs/pl only
-         once this line is confirmed final), so it's a plain literal
-         for now rather than a translations[currentLang] lookup that
-         would silently render "undefined" for non-English visitors. */
+      /* Same central nav confirmation the theme/share buttons already
+         use (#navTerminal) — a plain literal, same as every other
+         nav-terminal string since the i18n system was removed. */
       showNavTerminal("Guide panel ready — at your service.");
     });
   }
@@ -683,113 +681,28 @@ function startPrivacyCheck(){
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
   if (!badgeEl) return;
-  const dict = translations[currentLang] || translations.en;
   if (privacyCheckExternalCount === 0){
-    const key = action === "convert" ? "convert_check_ok" : "privacy_check_ok";
-    const fallback = action === "convert" ? "convert local & private" : "download local & private";
-    const label = dict[key] || fallback;
+    const label = action === "convert" ? "convert local & private" : "download local & private";
     badgeEl.textContent = "> BC_Tools_bot: " + label;
   } else {
     /* {action} names which step actually leaked, not just that one did
        — a tool with a separate convert-then-download flow (Congify)
        can have a breach happen during either, and just saying "privacy
        breach" without saying which wouldn't tell you where to look. */
-    const actionKey = action === "convert" ? "privacy_check_action_convert" : "privacy_check_action_download";
-    const actionFallback = action === "convert" ? "convert" : "download";
-    const actionWord = dict[actionKey] || actionFallback;
-    const template = dict.privacy_check_warn || "ATTENTION! - ({count}) privacy breach during {action} - {host}";
+    const actionWord = action === "convert" ? "convert" : "download";
+    const template = "ATTENTION! - ({count}) privacy breach during {action} - {host}";
     const text = template.replace("{count}", privacyCheckExternalCount).replace("{action}", actionWord).replace("{host}", privacyCheckExternalHosts.join(", "));
     badgeEl.textContent = "> " + text;
   }
   badgeEl.classList.add("visible");
 }
 
-/* ===== Minimal translations — nav/footer/cookie/share copy only.
-   Tool-specific strings live directly in each standalone page's markup. ===== */
-const translations = {
-  en: {
-    nav_lang: "Change language",
-    nav_theme: "Toggle light and dark mode",
-    nav_share: "Share",
-    nav_back: "Back to Creative Hub",
-    nav_terminal_dark: "Dark mode set",
-    nav_terminal_light: "Light mode set",
-    nav_terminal_lang: "Language set to {lang}",
-    share_copy: "Copy link / URL",
-    share_copied: "URL copied to clipboard",
-    share_more: "More options",
-    share_email: "Email",
-    footer_company_heading: "Serious matters",
-    footer_getting_started_heading: "Getting started with",
-    footer_contact_heading: "Get in touch with us",
-    footer_contact_email: "<a href=\"mailto:contact@bitcrunching.com\">contact@bitcrunching.com</a>",
-    footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Join our discord</a>",
-    nav_about: "Our Universe",
-    nav_about_title: "About Us",
-    nav_faq: "Already Answered",
-    nav_faq_title: "FAQ",
-    mp_footer_terms: "Galactic Handbook",
-    mp_footer_terms_title: "Terms of Use",
-    mp_footer_privacy: "Alien Privacy Protocol",
-    mp_footer_privacy_title: "Privacy Policy",
-    mp_footer_cookies: "Cookie Registry",
-    mp_footer_cookies_title: "Cookie Policy",
-    cookie_banner_text: "We use cookies. Choose which categories to allow below — see our <a data-goto=\"cookies\">Cookie Registry</a> for details.",
-    cookie_banner_text_docked: "Choose which cookies to allow",
-    cookie_banner_text_mobile: "Choose which cookies to allow",
-    cookie_cat_necessary: "Necessary (always on)",
-    cookie_cat_necessary_detail: "These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.",
-    cookie_cat_analytics: "Analytics (Google Analytics)",
-    cookie_cat_analytics_detail: "Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.",
-    cookie_cat_advertising: "Advertising (Google AdSense)",
-    cookie_cat_advertising_detail: "Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.",
-    cookie_status_allowed: "...allowed",
-    cookie_status_disabled: "...disabled",
-    cookie_banner_accept_all: "Accept All",
-    cookie_banner_disable_all: "Disable all",
-    cookie_banner_save: "Confirm choices",
-    cookie_banner_saved: "> preferences_saved",
-    ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    privacy_check_ok: "download local & private",
-    convert_check_ok: "convert local & private",
-    privacy_check_warn: "ATTENTION! - ({count}) privacy breach during {action} - {host}",
-    privacy_check_action_convert: "convert",
-    privacy_check_action_download: "download"
-  }
-  /* cs/pl removed from the live site on request — archived in full,
-     not deleted, at shared/i18n-archive-cs-pl.js
-     (SITE_JS_I18N_ARCHIVE.cs/.pl) along with re-enable steps. */
-};
-
-let currentLang = "en";
-
-function applyLanguage(lang){
-  const dict = translations[lang] || translations.en;
-  currentLang = translations[lang] ? lang : "en";
-
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.dataset.i18n;
-    if (dict[key] !== undefined) el.innerHTML = dict[key];
-  });
-
-  document.querySelectorAll("[data-i18n-label]").forEach(el => {
-    const key = el.dataset.i18nLabel;
-    if (dict[key] !== undefined){
-      el.setAttribute("aria-label", dict[key]);
-      el.setAttribute("title", dict[key]);
-    }
-  });
-
-  document.documentElement.lang = currentLang;
-
-  document.querySelectorAll("#navLangMenu button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.lang === currentLang);
-  });
-
-  try { localStorage.setItem("bc-lang", currentLang); } catch (e) { /* storage unavailable */ }
-
-  document.dispatchEvent(new CustomEvent("bc:langchange"));
-}
+/* i18n system (translations object, applyLanguage, the language-switcher
+   nav button/menu) removed from the live site on request — archived in
+   full, not deleted, at shared/i18n-archive.js along with re-enable
+   steps. Every string that used to be looked up in translations.en is
+   now a plain literal at its own call site (nav terminal confirmations,
+   the cookie-consent banner's status/button text, etc). */
 
 /* ===== Central nav confirmation display ===== */
 function showNavTerminal(text){
@@ -833,37 +746,7 @@ function showNavTerminal(text){
       const next = isLight ? "dark" : "light";
       applyTheme(next);
       try { localStorage.setItem("bc-theme", next); } catch (e) { /* storage unavailable */ }
-      const dict = translations[currentLang] || translations.en;
-      showNavTerminal(next === "dark" ? dict.nav_terminal_dark : dict.nav_terminal_light);
-    });
-  }
-})();
-
-/* ===== LANGUAGE SWITCHER ===== */
-(function(){
-  let savedLang = null;
-  try { savedLang = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
-  applyLanguage(savedLang && translations[savedLang] ? savedLang : "en");
-
-  const langBtn = document.getElementById("navLangBtn");
-  const langMenu = document.getElementById("navLangMenu");
-  if (langBtn && langMenu){
-    langBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("open");
-    });
-    langMenu.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn || !translations[btn.dataset.lang]) return;
-      applyLanguage(btn.dataset.lang);
-      langMenu.classList.remove("open");
-      const dict = translations[btn.dataset.lang] || translations.en;
-      const template = dict.nav_terminal_lang || translations.en.nav_terminal_lang;
-      showNavTerminal(template.replace("{lang}", btn.textContent));
-    });
-    document.addEventListener("click", (e) => {
-      if (!langBtn.contains(e.target) && !langMenu.contains(e.target)){
-        langMenu.classList.remove("open");
-      }
+      showNavTerminal(next === "dark" ? "Dark mode set" : "Light mode set");
     });
   }
 })();
@@ -907,8 +790,7 @@ function showNavTerminal(text){
       if (btn.dataset.share === "copy"){
         try {
           await navigator.clipboard.writeText(window.location.href);
-          const dict = translations[currentLang] || translations.en;
-          showNavTerminal(dict.share_copied);
+          showNavTerminal("URL copied to clipboard");
         }
         catch { /* clipboard unavailable */ }
       }
@@ -1061,18 +943,12 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    const dict = translations[currentLang] || translations.en;
-    const key = allowed ? "cookie_status_allowed" : "cookie_status_disabled";
-    const fallback = allowed ? "...allowed" : "...disabled";
-    return dict[key] || fallback;
+    return allowed ? "...allowed" : "...disabled";
   }
 
   function renderActionButton(){
     const allOn = analyticsToggle.checked && advertisingToggle.checked;
-    const dict = translations[currentLang] || translations.en;
-    const key = allOn ? "cookie_banner_disable_all" : "cookie_banner_accept_all";
-    const fallback = allOn ? "Disable all" : "Accept All";
-    acceptAllBtn.textContent = dict[key] || fallback;
+    acceptAllBtn.textContent = allOn ? "Disable all" : "Accept All";
     acceptAllBtn.classList.toggle("is-disable-all", allOn);
   }
 
@@ -1102,8 +978,6 @@ function showNavTerminal(text){
   renderStatuses();
   refreshConsentState();
   syncDockPlacement(true);
-
-  document.addEventListener("bc:langchange", renderStatuses);
 
   acceptAllBtn.addEventListener("click", () => {
     const turnOn = !(analyticsToggle.checked && advertisingToggle.checked);
