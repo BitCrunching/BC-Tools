@@ -556,6 +556,15 @@ console.log(a.next.value);`
           toggleMacNavClick();
           return;
         }
+        /* Background color-cycling is disabled while the Background
+           ON/OFF toggle itself is off — with the background transparent
+           (see bgEnabled/updateBgEnableUi further down), cycling its
+           color underneath wouldn't render anything different anyway,
+           so treat the click zone as inert rather than silently
+           updating a color nothing shows. Re-enabled the instant the
+           toggle is switched back ON, same as updateBgEnableUi already
+           does for the panel's own swatches/hex field. */
+        if (!bgEnabled) return;
         bgZoneGesture(e);
         return;
       }
@@ -668,6 +677,15 @@ console.log(a.next.value);`
           positionBox(hoverBands.right, 0, 0, 0, 0);
           positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
           positionLabel(wrapRect.left, wrapRect.top, "Mac nav — click to toggle");
+        } else if (!bgEnabled){
+          /* Matches the click handler's own guard above — no highlight,
+             no label, since a click here currently does nothing while
+             the Background toggle is off. */
+          positionBox(hoverBands.bottom, 0, 0, 0, 0);
+          positionBox(hoverBands.top, 0, 0, 0, 0);
+          positionBox(hoverBands.left, 0, 0, 0, 0);
+          positionBox(hoverBands.right, 0, 0, 0, 0);
+          hoverLabel.textContent = "";
         } else {
           positionBox(hoverBands.bottom, 0, 0, 0, 0);
           positionBox(hoverBands.top, 0, 0, 0, 0);
