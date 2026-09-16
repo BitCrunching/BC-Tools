@@ -18,6 +18,7 @@
   const cfWindowWrap = document.getElementById("cfWindowWrap");
   const themeLink = document.getElementById("cfThemeLink");
   const downloadBtn = document.getElementById("cfDownloadBtn");
+  const copyBtn = document.getElementById("cfCopyBtn");
   bcRegisterKeyShortcut("d", downloadBtn);
   const statusEl = document.getElementById("cfStatus");
   const pasteBtn = document.getElementById("cfPasteBtn");
@@ -819,6 +820,7 @@ console.log(a.next.value);`
   function renderPreview(){
     const isEmpty = codeInput.value.length === 0;
     downloadBtn.disabled = isEmpty;
+    if (copyBtn) copyBtn.disabled = isEmpty;
     codeOutput.className = "language-" + currentLang;
     codeOutput.classList.toggle("cf-ghost", isEmpty);
     codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
@@ -993,6 +995,7 @@ console.log(a.next.value);`
     formatPngBtn.setAttribute("aria-pressed", String(fmt === "png"));
     formatSvgBtn.setAttribute("aria-pressed", String(fmt === "svg"));
     downloadBtn.textContent = fmt === "png" ? "Download PNG" : "Download SVG";
+    if (copyBtn) copyBtn.title = fmt === "png" ? "Copy PNG to clipboard" : "Copy SVG to clipboard";
   }
   if (formatPngBtn && formatSvgBtn){
     formatPngBtn.addEventListener("click", () => setExportFormat("png"));
@@ -1170,38 +1173,27 @@ ${titlebarSvg}
 </svg>`;
   }
 
-  /* ===== PNG/SVG export ===== */
-  downloadBtn.addEventListener("click", async () => {
+  /* ===== PNG/SVG export =====
+     One shared renderer behind both Download and Copy, so "Copy" is
+     genuinely connected to the download button — same PNG/SVG choice
+     (the format toggle above), same rendered output, not a second,
+     independently-drifting export path. Only what happens to the
+     result differs: Download saves the blob to disk, Copy puts it (or,
+     for SVG, its markup as text — see the click handler below for why)
+     on the clipboard instead. */
+  async function renderCodifyExport(){
     if (exportFormat === "svg"){
-      downloadBtn.disabled = true;
-      statusEl.textContent = "Rendering SVG...";
-      startPrivacyCheck();
-      try {
-        const svgString = buildSvgString();
-        const blob = new Blob([svgString], { type: "image/svg+xml" });
-        const outName = (fileNameInput.value.trim() || "codify-snippet") + ".svg";
-        downloadBlob(blob, outName);
-        statusEl.textContent = "Done.";
-      } catch (err){
-        console.error(err);
-        statusEl.textContent = "Something went wrong generating the SVG.";
-      } finally {
-        downloadBtn.disabled = codeInput.value.length === 0;
-        finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
-      }
-      return;
+      const svgString = buildSvgString();
+      const blob = new Blob([svgString], { type: "image/svg+xml" });
+      return { blob, svgString, ext: "svg" };
     }
     if (!window.htmlToImage){
-      statusEl.textContent = "Export isn't ready yet — try again in a moment.";
-      return;
+      throw new Error("not-ready");
     }
-    downloadBtn.disabled = true;
-    statusEl.textContent = "Rendering PNG...";
-    startPrivacyCheck();
     /* Both resize handles live inside #cfPreviewWrap (the window one
        nested in #cfWindowWrap, the panel one a direct child) — exactly
        what htmlToImage.toPng snapshots below — so without hiding them
-       first they get baked into the actual downloaded image as two
+       first they get baked into the actual exported image as two
        solid blue circles sitting on top of the code. Confirmed live: a
        real PNG download had both handles rendered right into it.
        Restored in `finally` so a thrown export error can't leave them
@@ -1212,19 +1204,76 @@ ${titlebarSvg}
       const dataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio: 2 });
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const outName = (fileNameInput.value.trim() || "codify-snippet") + ".png";
+      return { blob, svgString: null, ext: "png" };
+    } finally {
+      if (windowResizeHandle) windowResizeHandle.style.visibility = "";
+      if (resizeHandle) resizeHandle.style.visibility = "";
+    }
+  }
+
+  function setExportBtnsDisabled(disabled){
+    downloadBtn.disabled = disabled;
+    if (copyBtn) copyBtn.disabled = disabled;
+  }
+
+  downloadBtn.addEventListener("click", async () => {
+    setExportBtnsDisabled(true);
+    statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+    startPrivacyCheck();
+    try {
+      const { blob, ext } = await renderCodifyExport();
+      const outName = (fileNameInput.value.trim() || "codify-snippet") + "." + ext;
       downloadBlob(blob, outName);
       statusEl.textContent = "Done.";
     } catch (err){
       console.error(err);
-      statusEl.textContent = "Something went wrong generating the image.";
+      statusEl.textContent = err && err.message === "not-ready"
+        ? "Export isn't ready yet — try again in a moment."
+        : "Something went wrong generating the " + (exportFormat === "svg" ? "SVG" : "image") + ".";
     } finally {
-      downloadBtn.disabled = codeInput.value.length === 0;
-      if (windowResizeHandle) windowResizeHandle.style.visibility = "";
-      if (resizeHandle) resizeHandle.style.visibility = "";
+      setExportBtnsDisabled(codeInput.value.length === 0);
       finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
     }
   });
+
+  /* ===== Copy to clipboard =====
+     PNG copies as a real image (navigator.clipboard.write + an
+     image/png ClipboardItem — pasteable straight into Slack, Docs, an
+     image editor, wherever). SVG can't do that the same way: the
+     Async Clipboard API's ClipboardItem support for arbitrary image
+     MIME types like image/svg+xml is inconsistent across browsers, so
+     instead it copies the raw SVG markup as text — pasteable into code,
+     which is the actually-useful thing to do with an SVG anyway. */
+  if (copyBtn){
+    copyBtn.addEventListener("click", async () => {
+      setExportBtnsDisabled(true);
+      const originalLabel = copyBtn.textContent;
+      statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+      try {
+        const { blob, svgString, ext } = await renderCodifyExport();
+        if (ext === "svg"){
+          await navigator.clipboard.writeText(svgString);
+          statusEl.textContent = "SVG markup copied to clipboard.";
+        } else {
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          statusEl.textContent = "PNG copied to clipboard.";
+        }
+        copyBtn.classList.add("copied");
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyBtn.classList.remove("copied");
+          copyBtn.textContent = originalLabel;
+        }, 1200);
+      } catch (err){
+        console.error(err);
+        statusEl.textContent = err && err.message === "not-ready"
+          ? "Export isn't ready yet — try again in a moment."
+          : "Couldn't copy — your browser may not allow clipboard access here.";
+      } finally {
+        setExportBtnsDisabled(codeInput.value.length === 0);
+      }
+    });
+  }
 
   /* ===== Screenshot background color =====
      Trigger + custom popover panel (swatches, a hex field, Import

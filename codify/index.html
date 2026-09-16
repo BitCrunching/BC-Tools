@@ -1034,6 +1034,80 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     font-size:20px;
   }
 }
+
+/* Copy sits as a small "head" attached to the top of Download, not a
+   second full-size button beside it — a 70x40 pill centered on
+   Download's top edge, overlapping down into it so the two read as one
+   connected shape. .cf-download-wrap is the positioning context (plain
+   buttons can't contain another button, so this can't just nest
+   inside #cfDownloadBtn itself). Manually carries the same on-banner
+   flip recipe every other control here uses (CLAUDE.md) rather than
+   reusing .tool-primary-btn, since that class' fixed 74px height/26px
+   radius don't fit a deliberately small badge-sized control. */
+.cf-download-wrap{
+  position:relative;
+}
+.cf-copy-btn{
+  position:absolute;
+  top:-20px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:2;
+  width:70px;
+  height:40px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-weight:900;
+  font-size:13px;
+  font-family:inherit;
+  cursor:pointer;
+  transition:.2s;
+}
+.cf-copy-btn:hover{
+  border-color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.45);
+}
+.cf-copy-btn:focus-visible{
+  outline:2px solid rgba(255,255,255,.5);
+  outline-offset:2px;
+}
+.cf-copy-btn:disabled{
+  cursor:not-allowed;
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="dark"] .cf-copy-btn{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .cf-copy-btn:hover{
+  border-color:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.35);
+}
+html[data-theme="dark"] .cf-copy-btn:disabled{
+  background:rgba(0,0,0,.14);
+}
+
+/* Copy is the lighter, instant, reversible sibling of Download (which
+   has a real side effect — a file actually saved) — a little personality
+   fits it in a way it wouldn't fit Download. The `transition:.2s` above
+   already covers transform, so the press-scale below just rides that;
+   the success pop is its own keyframe since a plain transition can't
+   overshoot past 1 the way this bounce does. translateX(-50%) is baked
+   into both keyframe endpoints so the pop scales in place instead of
+   fighting the centering transform. */
+.cf-copy-btn:active:not(:disabled){
+  transform:translateX(-50%) scale(.96);
+}
+@keyframes cf-copy-pop{
+  0%{ transform:translateX(-50%) scale(1); }
+  45%{ transform:translateX(-50%) scale(1.15); }
+  100%{ transform:translateX(-50%) scale(1); }
+}
+.cf-copy-btn.copied{
+  animation:cf-copy-pop .45s cubic-bezier(.34,1.56,.64,1);
+}
 </style>
 </head>
 <body>
@@ -1383,7 +1457,10 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     </div>
 
     <div class="tool-controls" style="grid-template-columns:1fr;">
-      <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
+      <div class="cf-download-wrap">
+        <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
+        <button class="cf-copy-btn" id="cfCopyBtn" title="Copy PNG to clipboard" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Copy</button>
+      </div>
     </div>
 
     <div class="tool-status" id="cfStatus"></div>
@@ -1441,6 +1518,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=73" defer></script>
+<script src="/codify/codify-tool.js?v=74" defer></script>
 </body>
 </html>
