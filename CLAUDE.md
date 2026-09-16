@@ -64,9 +64,9 @@ why). Bump `icons.css`'s own `?v=N` (on `index.html`'s `<link>`) and
 icons.css's new content through the same cache-busted request) whenever
 `icons.css` changes.
 
-**7 tools have a real icon today: Convert, Compress, Combine, Cleanly,
-Context, Congify, Coudio.** Codify and Colorfy still fall back to
-`.gfx-placeholder` (a plain text label) until their `--icon-X` token and
+**8 tools have a real icon today: Convert, Compress, Combine, Cleanly,
+Context, Congify, Coudio, Codify.** Colorfy still falls back to
+`.gfx-placeholder` (a plain text label) until its `--icon-X` token and
 `.icon-X` rule get added here.
 
 ## Buttons & pills
