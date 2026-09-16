@@ -1181,6 +1181,43 @@ ${titlebarSvg}
      result differs: Download saves the blob to disk, Copy puts it (or,
      for SVG, its markup as text — see the click handler below for why)
      on the clipboard instead. */
+  /* htmlToImage.toPng renders #cfPreviewWrap's rounded corners correctly
+     at the TOP but not the bottom — confirmed by sampling the raw pixel
+     alpha of an export: the top two corners fade to fully transparent
+     outside the curve as expected, the bottom two stay fully opaque
+     background color all the way into the square corner, no matter
+     what combination of explicit width/height, overflow:hidden, or a
+     style override was passed to it. Root cause not pinned down (isn't
+     the box-shadow on .cf-window — reproduces with it removed too) and
+     not worth more time chasing inside a third-party rasterizer; instead
+     this re-clips the *rendered* PNG to a rounded rect on our own canvas
+     after the fact, using #cfPreviewWrap's own actual border-radius —
+     symmetric on all four corners by construction, independent of
+     whatever html-to-image did internally. */
+  async function clipToRoundedRect(dataUrl, cssWidth, cssHeight, cssRadius, pixelRatio){
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error("image-load-failed"));
+      img.src = dataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(cssWidth * pixelRatio);
+    canvas.height = Math.round(cssHeight * pixelRatio);
+    const ctx = canvas.getContext("2d");
+    const radius = Math.min(cssRadius * pixelRatio, canvas.width / 2, canvas.height / 2);
+    ctx.beginPath();
+    ctx.moveTo(radius, 0);
+    ctx.arcTo(canvas.width, 0, canvas.width, canvas.height, radius);
+    ctx.arcTo(canvas.width, canvas.height, 0, canvas.height, radius);
+    ctx.arcTo(0, canvas.height, 0, 0, radius);
+    ctx.arcTo(0, 0, canvas.width, 0, radius);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  }
+
   async function renderCodifyExport(){
     if (exportFormat === "svg"){
       const svgString = buildSvgString();
@@ -1201,9 +1238,11 @@ ${titlebarSvg}
     if (windowResizeHandle) windowResizeHandle.style.visibility = "hidden";
     if (resizeHandle) resizeHandle.style.visibility = "hidden";
     try {
-      const dataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio: 2 });
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
+      const pixelRatio = 2;
+      const rect = previewWrap.getBoundingClientRect();
+      const radius = parseFloat(getComputedStyle(previewWrap).borderRadius) || 0;
+      const dataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio });
+      const blob = await clipToRoundedRect(dataUrl, rect.width, rect.height, radius, pixelRatio);
       return { blob, svgString: null, ext: "png" };
     } finally {
       if (windowResizeHandle) windowResizeHandle.style.visibility = "";
