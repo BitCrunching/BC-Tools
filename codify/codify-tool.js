@@ -1190,6 +1190,68 @@ ${titlebarSvg}
     });
   }
 
+  /* Paints #cfPreviewWrap's own background directly, instead of asking
+     html-to-image to rasterize it — confirmed live (sampling raw pixel
+     alpha down the vertical center of a background-only capture, well
+     away from any corner) that html-to-image leaves a solid transparent
+     band across the *entire* top of this element, roughly 10% of its
+     height, background color or not, gradient or not. Not corner
+     rounding (that's a separate, narrower effect right at the edges,
+     fixed by the canvas clip in renderPreviewPng below) and not
+     specific to one background type — a plain solid fill on this exact
+     box reproduces it too. Whatever's actually causing it lives inside
+     html-to-image itself; every background this tool can ever produce
+     is one of exactly three CSS values codify-tool.js itself sets
+     (a solid color, `url(...) center / cover no-repeat`, or one of the
+     presets' `linear-gradient(Adeg, stop, stop, ...)`), so painting all
+     three ourselves is a short, fully-covered list — not the kind of
+     "reimplement half of CSS" shortcut that's usually a bad trade. */
+  async function paintPreviewBackground(ctx, canvasWidth, canvasHeight){
+    const bg = (previewWrap.style.background || getComputedStyle(previewWrap).backgroundColor || "#E5E7EB").trim();
+
+    const gradientMatch = /^linear-gradient\(\s*([\d.]+)deg\s*,\s*(.+)\)$/i.exec(bg);
+    if (gradientMatch){
+      const angleDeg = parseFloat(gradientMatch[1]);
+      /* Not a plain split(",") — the browser normalizes hex colors in
+         a gradient string to rgb(r, g, b) the moment it round-trips
+         through .style.background, and those commas would otherwise
+         get split too (confirmed live: "rgb(255" alone reached
+         addColorStop and threw). Only split on a comma that isn't
+         still inside an open paren. */
+      const stops = gradientMatch[2].split(/,(?![^(]*\))/).map(s => s.trim()).map(s => {
+        const m = /^(.+?)\s+([\d.]+)%$/.exec(s);
+        return m ? { color: m[1], pos: parseFloat(m[2]) / 100 } : { color: s, pos: 0 };
+      });
+      /* Standard CSS-angle-to-canvas-gradient-line conversion: the
+         gradient line's length is whatever makes it span corner-to-
+         corner of the box at this angle, centered on the box. */
+      const angleRad = (angleDeg * Math.PI) / 180;
+      const length = Math.abs(canvasWidth * Math.sin(angleRad)) + Math.abs(canvasHeight * Math.cos(angleRad));
+      const half = length / 2;
+      const cx = canvasWidth / 2, cy = canvasHeight / 2;
+      const dx = Math.sin(angleRad) * half, dy = -Math.cos(angleRad) * half;
+      const grad = ctx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
+      stops.forEach(s => grad.addColorStop(Math.min(1, Math.max(0, s.pos)), s.color));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      return;
+    }
+
+    const urlMatch = /^url\((["']?)(.*?)\1\)/i.exec(bg);
+    if (urlMatch){
+      const img = await loadImage(urlMatch[2]);
+      /* `cover` fit — matches this tool's own `center / cover no-repeat`
+         background shorthand for an imported image. */
+      const scale = Math.max(canvasWidth / img.naturalWidth, canvasHeight / img.naturalHeight);
+      const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+      ctx.drawImage(img, (canvasWidth - w) / 2, (canvasHeight - h) / 2, w, h);
+      return;
+    }
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+
   /* htmlToImage.toPng, asked to capture #cfPreviewWrap whole (background
      + the window sitting inside it via flex-centering + padding),
      doesn't reproduce that centering — confirmed live: the window comes
@@ -1202,28 +1264,22 @@ ${titlebarSvg}
      rasterizer being weird about this element" wall) — not worth more
      time chasing inside html-to-image itself.
 
-     Sidesteps it instead by never asking html-to-image to render the
-     background and the window *together*: capture #cfPreviewWrap with
-     the window hidden (a plain padded box, no positioned child — this
-     renders correctly, confirmed live) for the background layer, and
-     #cfWindowWrap alone (a plain block box with no surrounding flex
-     parent to mis-center it) for the window layer, then composite them
-     onto one canvas ourselves using the window's *actual* live position
-     within the wrap (getBoundingClientRect on both) — real DOM layout
-     numbers, not anything html-to-image had to infer. */
+     Sidesteps it by never asking html-to-image to render the background
+     at all (see paintPreviewBackground above) or the window *together*
+     with it: the background is painted ourselves, and #cfWindowWrap is
+     captured alone (a plain block box with no surrounding flex parent
+     to mis-center it — renders correctly on its own) for the window
+     layer, then composited onto the painted background using the
+     window's *actual* live position within the wrap
+     (getBoundingClientRect on both) — real DOM layout numbers, not
+     anything html-to-image had to infer. */
   async function renderPreviewPng(pixelRatio){
     const rect = previewWrap.getBoundingClientRect();
     const winRect = cfWindowWrap.getBoundingClientRect();
     const radius = parseFloat(getComputedStyle(previewWrap).borderRadius) || 0;
 
-    const origVisibility = cfWindowWrap.style.visibility;
-    cfWindowWrap.style.visibility = "hidden";
-    const bgDataUrl = await htmlToImage.toPng(previewWrap, { pixelRatio });
-    cfWindowWrap.style.visibility = origVisibility;
-
     const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
-
-    const [bgImg, winImg] = await Promise.all([loadImage(bgDataUrl), loadImage(winDataUrl)]);
+    const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(rect.width * pixelRatio);
@@ -1238,7 +1294,7 @@ ${titlebarSvg}
     ctx.arcTo(0, 0, canvas.width, 0, clipRadius);
     ctx.closePath();
     ctx.clip();
-    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    await paintPreviewBackground(ctx, canvas.width, canvas.height);
     const winX = Math.round((winRect.left - rect.left) * pixelRatio);
     const winY = Math.round((winRect.top - rect.top) * pixelRatio);
     ctx.drawImage(winImg, winX, winY, winImg.naturalWidth, winImg.naturalHeight);
