@@ -61,30 +61,33 @@
 <link rel="stylesheet" href="/shared/site.css?v=92">
 <style>
 /* ===== GOLDEN RULES ===== */
-/* Scrollable switcher: every pill is always full-size (no hover/tap
-   expand state to manage) — the row is just narrower than its content,
-   so only ~3 pills show at once, and the user scrolls it (mouse wheel,
-   trackpad, touch drag) to reach the rest. The active pill is centered
-   into view on load and on every selection (golden-rules-tool.js), so
-   the row always opens showing the current tool with real neighbors
-   peeking at both edges — no separate "peek" styling needed, since
-   whatever's actually scrolled to the container's edge already reads
-   that way once the edge-fade mask below is applied. Simpler than the
-   earlier hover-to-expand version: no collapsed/expanded states, no
-   touch fallback, nothing to keep in sync with :hover/:focus-within. */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
 .golden-rules-switcher{
   display:flex;
   align-items:center;
-  gap:6px;
   width:100%;
   max-width:480px;
   margin:32px auto 48px;
-  padding:6px;
+  padding:6px 0;
   border-radius:20px;
   border:1px solid var(--border);
   background:rgba(0,0,0,.05);
   overflow-x:auto;
-  scroll-snap-type:x proximity;
+  scroll-snap-type:x mandatory;
   scrollbar-width:none;
   /* Fades whatever pill currently sits at the scrollable edge, instead
      of a hard clip — reads as "more this way" regardless of which tool
@@ -98,10 +101,17 @@ html[data-theme="dark"] .golden-rules-switcher{
   background:rgba(255,255,255,.05);
 }
 
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
 .golden-rules-tool-btn{
   flex:0 0 auto;
+  width:160px;
   scroll-snap-align:center;
-  padding:12px 28px;
+  padding:12px 8px;
   border-radius:14px;
   border:1px solid transparent;
   background:transparent;
@@ -109,7 +119,10 @@ html[data-theme="dark"] .golden-rules-switcher{
   font-weight:800;
   font-size:16px;
   font-family:inherit;
+  text-align:center;
   white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
   cursor:pointer;
   transition:background .2s, border-color .2s;
 }
@@ -335,6 +348,7 @@ html[data-theme="dark"] .golden-rules-switcher{
     </div>
 
     <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
       <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
@@ -343,6 +357,7 @@ html[data-theme="dark"] .golden-rules-switcher{
       <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
     <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
@@ -1331,6 +1346,6 @@ html[data-theme="dark"] .golden-rules-switcher{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/golden-rules/golden-rules-tool.js?v=5" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=6" defer></script>
 </body>
 </html>

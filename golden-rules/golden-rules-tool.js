@@ -10,20 +10,22 @@ let currentGoldenRulesTool = "convert";
    and 4 than the uniform 16px every other pair gets. Re-add only
    alongside the actual script tag if/when ads are wired up here. */
 const grSwitcher = document.querySelector(".golden-rules-switcher");
+const grToolBtns = [...document.querySelectorAll(".golden-rules-tool-btn")];
 
-/* Centers the active pill in the (always-narrower-than-its-content)
-   scrollable switcher — called on every selection and once on load, so
-   the row always opens already scrolled to show the current tool with
-   real neighbors peeking at both edges, not stuck wherever the browser
-   happened to leave it (top-left, i.e. "Convert", by default). */
-function scrollActiveIntoView(behavior){
-  const activeBtn = grSwitcher && grSwitcher.querySelector(".golden-rules-tool-btn.active");
-  if (activeBtn) activeBtn.scrollIntoView({ behavior, inline: "center", block: "nearest" });
+/* Centers a given pill in the switcher — called on click (so a tap on
+   an off-center pill animates itself into the fixed center slot) and
+   once on load. Not called from the scroll handler below: while the
+   user is actively scrolling, the center slot itself is what's fixed,
+   not any particular pill, so re-centering there would fight the
+   user's own scroll. */
+function scrollToolIntoView(tool, behavior){
+  const btn = grToolBtns.find(b => b.dataset.tool === tool);
+  if (btn) btn.scrollIntoView({ behavior, inline: "center", block: "nearest" });
 }
 
 function selectGoldenRulesTool(tool){
   if (tool) currentGoldenRulesTool = tool;
-  document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
+  grToolBtns.forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tool === currentGoldenRulesTool);
   });
   document.querySelectorAll(".golden-rules-articles").forEach(el => {
@@ -31,12 +33,46 @@ function selectGoldenRulesTool(tool){
   });
 }
 
-document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
+grToolBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     selectGoldenRulesTool(btn.dataset.tool);
-    scrollActiveIntoView("smooth");
+    scrollToolIntoView(btn.dataset.tool, "smooth");
   });
 });
+
+/* Wheel-picker behavior: the "chosen" slot is a fixed position — dead
+   center of the switcher — and scrolling (drag, wheel, trackpad, or
+   the smooth scroll a click above triggers) brings a different pill
+   into that slot rather than moving a highlight to wherever a pill
+   ends up. On every scroll frame, find whichever pill's own center is
+   closest to the container's center and make that one active — cheap
+   enough at 8 buttons to just measure directly rather than reach for
+   an IntersectionObserver. rAF-throttled so a fast drag/momentum
+   scroll doesn't run this on every single scroll event. */
+if (grSwitcher){
+  let scrollRaf = null;
+  function updateActiveFromScrollPosition(){
+    scrollRaf = null;
+    const containerCenter = grSwitcher.getBoundingClientRect().left + grSwitcher.clientWidth / 2;
+    let closest = null;
+    let closestDist = Infinity;
+    grToolBtns.forEach(btn => {
+      const rect = btn.getBoundingClientRect();
+      const dist = Math.abs((rect.left + rect.width / 2) - containerCenter);
+      if (dist < closestDist){
+        closestDist = dist;
+        closest = btn;
+      }
+    });
+    if (closest && closest.dataset.tool !== currentGoldenRulesTool){
+      selectGoldenRulesTool(closest.dataset.tool);
+    }
+  }
+  grSwitcher.addEventListener("scroll", () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(updateActiveFromScrollPosition);
+  }, { passive: true });
+}
 
 /* Every tool page's own "Getting started with" footer links here with
    ?tool=<id> (see shared/site.js's .go-to-golden-rules handler) so
@@ -46,6 +82,7 @@ document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
    (a stray/unknown value would otherwise leave every button
    unselected — .golden-rules-tool-btn[data-tool] lists the valid ids). */
 const requestedTool = new URLSearchParams(location.search).get("tool");
-const validTools = [...document.querySelectorAll(".golden-rules-tool-btn")].map(btn => btn.dataset.tool);
-selectGoldenRulesTool(validTools.includes(requestedTool) ? requestedTool : "convert");
-scrollActiveIntoView("auto");
+const validTools = grToolBtns.map(btn => btn.dataset.tool);
+const startTool = validTools.includes(requestedTool) ? requestedTool : "convert";
+selectGoldenRulesTool(startTool);
+scrollToolIntoView(startTool, "auto");
