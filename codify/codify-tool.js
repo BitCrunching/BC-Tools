@@ -1247,7 +1247,6 @@ ${titlebarSvg}
   if (copyBtn){
     copyBtn.addEventListener("click", async () => {
       setExportBtnsDisabled(true);
-      const originalLabel = copyBtn.textContent;
       statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
       try {
         const { blob, svgString, ext } = await renderCodifyExport();
@@ -1258,12 +1257,6 @@ ${titlebarSvg}
           await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
           statusEl.textContent = "PNG copied to clipboard.";
         }
-        copyBtn.classList.add("copied");
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => {
-          copyBtn.classList.remove("copied");
-          copyBtn.textContent = originalLabel;
-        }, 1200);
       } catch (err){
         console.error(err);
         statusEl.textContent = err && err.message === "not-ready"

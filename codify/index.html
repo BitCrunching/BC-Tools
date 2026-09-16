@@ -1028,19 +1028,10 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 /* Copy (the middle segment, #cfCopyBtn) is an action, not a third
    format choice, so it never carries [aria-pressed] — just a plain
    segment that disables (matching Download) once there's nothing to
-   copy yet, and pops on a successful copy for a bit of personality the
-   two format choices either side of it don't need. */
+   copy yet. */
 .cf-format-toggle button:disabled{
   opacity:.4;
   cursor:not-allowed;
-}
-@keyframes cf-copy-pop{
-  0%{ transform:scale(1); }
-  45%{ transform:scale(1.15); }
-  100%{ transform:scale(1); }
-}
-#cfCopyBtn.copied{
-  animation:cf-copy-pop .45s cubic-bezier(.34,1.56,.64,1);
 }
 
 @media (max-width:768px){
@@ -1058,11 +1049,29 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   }
 }
 
-/* Copy's own press feedback — matches the plain segment look of PNG/SVG
-   either side of it (no bespoke geometry/positioning now that it's a
-   normal third segment in the toggle, not a floating badge). */
+/* Copy never carries [aria-pressed] (see above), so without its own
+   rule it never got any fill/color feedback on click — just the plain
+   border-hover every segment gets. Gives it real color feedback using
+   the exact same shared on-banner flip recipe (CLAUDE.md) every other
+   control on this site already uses, rather than a bespoke one-off:
+   light rgba(255,255,255,.35)/.45, dark rgba(0,0,0,.25)/.35 for
+   hover/active respectively — the same numbers PNG/SVG's own
+   [aria-pressed="true"] state already uses two rules up. */
+#cfCopyBtn:hover:not(:disabled){
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+}
 #cfCopyBtn:active:not(:disabled){
-  transform:scale(.96);
+  border-color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.45);
+}
+html[data-theme="dark"] #cfCopyBtn:hover:not(:disabled){
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
+  border-color:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.36);
 }
 </style>
 </head>
@@ -1475,6 +1484,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=74" defer></script>
+<script src="/codify/codify-tool.js?v=75" defer></script>
 </body>
 </html>
