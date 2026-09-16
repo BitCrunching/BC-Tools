@@ -283,9 +283,8 @@ console.log(a.next.value);`
 
   function applyStyle(styleKey){
     currentStyle = styleKey;
-    if (!bgEnabled) updateBgEnableUi(true);
     if (styleKey === "custom"){
-      previewWrap.style.background = bgColorInput.value;
+      setPreviewBackground(bgColorInput.value);
       previewWrap.style.padding = "";
       return;
     }
@@ -294,7 +293,7 @@ console.log(a.next.value);`
     themeLink.href = preset.themeHref;
     cfWindow.dataset.theme = preset.theme;
     setComboDisplay(themeMenu, themeInput, "theme", preset.theme);
-    previewWrap.style.background = preset.background;
+    setPreviewBackground(preset.background);
     previewWrap.style.padding = preset.padding;
     bgColorSwatch.style.background = preset.background;
   }
@@ -556,15 +555,14 @@ console.log(a.next.value);`
           toggleMacNavClick();
           return;
         }
-        /* Background color-cycling is disabled while the Background
-           ON/OFF toggle itself is off — with the background transparent
-           (see bgEnabled/updateBgEnableUi further down), cycling its
-           color underneath wouldn't render anything different anyway,
-           so treat the click zone as inert rather than silently
-           updating a color nothing shows. Re-enabled the instant the
-           toggle is switched back ON, same as updateBgEnableUi already
-           does for the panel's own swatches/hex field. */
-        if (!bgEnabled) return;
+        /* The click-to-cycle gesture itself still runs while the
+           Background ON/OFF toggle is off — it still updates
+           pendingBgValue (see setPreviewBackground further down),
+           just doesn't touch the live preview until ON is pressed
+           again. Only the hover tooltip below is suppressed while off,
+           so there's no visible cue for an interaction that currently
+           has no visible effect — the click keeps working underneath
+           it regardless. */
         bgZoneGesture(e);
         return;
       }
@@ -955,12 +953,12 @@ console.log(a.next.value);`
     /* Same immediate-restore treatment as shadow just above — a custom
        background image is a visual preference, not session content. */
     if (saved && saved.bgImage) applyBgImage(saved.bgImage);
-    /* Same immediate-restore treatment as shadow/bgImage above. Reads
-       the already-restored background (color or image, whichever just
-       ran) as what to bring back on a later ON click, then turns it
-       off — same two steps the button's own click handler runs. */
+    /* Same immediate-restore treatment as shadow/bgImage above.
+       pendingBgValue is already correct from whichever applier just
+       ran (color restore or bgImage restore, above) — just needs the
+       live preview switched to transparent and the button's own state
+       brought back in sync. */
     if (saved && saved.bgEnabled === false){
-      lastBgValue = previewWrap.style.background || DEFAULT_BG_COLOR;
       previewWrap.style.background = "transparent";
       updateBgEnableUi(false);
     }
@@ -1549,33 +1547,44 @@ ${titlebarSvg}
   }
 
   /* ===== Background on/off =====
-     "OFF" doesn't clear the chosen color/image — it just stops it from
-     rendering (previewWrap.style.background → "transparent", which the
-     PNG export's paintPreviewBackground and the SVG export's bgFill
-     fallback both already read directly, so a transparent export falls
-     straight out of that with no separate export-side flag needed).
-     lastBgValue remembers what to restore turning back ON — captured at
-     the moment OFF is pressed, not tracked continuously, since
-     applyBgColor/applyBgImage below already re-enable on their own
-     (picking a color/image obviously means wanting it visible again). */
+     "OFF" doesn't stop the color/image from being picked, just from
+     rendering: previewWrap.style.background stays "transparent" (which
+     the PNG export's paintPreviewBackground and the SVG export's
+     bgFill fallback both already read directly, so a transparent
+     export falls straight out of that with no separate export-side
+     flag needed) no matter what gets picked while off — a swatch click,
+     the preview's own click-to-cycle zone, typing a hex, all of it
+     keeps working and keeps updating pendingBgValue, it just doesn't
+     touch the live preview until ON is pressed again. pendingBgValue is
+     the one thing every "set the background" path below (applyBgColor,
+     applyBgImage, applyStyle) writes to, and the only thing ON reads
+     from — so whichever was picked most recently, even while off, is
+     what shows up the moment it's re-enabled. */
   const bgEnableBtn = document.getElementById("cfBgEnableBtn");
   const bgEnableBtnLabel = document.getElementById("cfBgEnableBtnLabel");
   let bgEnabled = true;
-  let lastBgValue = null;
+  let pendingBgValue = DEFAULT_BG_COLOR;
   function updateBgEnableUi(enabled){
     bgEnabled = enabled;
     if (bgEnableBtn) bgEnableBtn.setAttribute("aria-pressed", String(enabled));
     if (bgEnableBtnLabel) bgEnableBtnLabel.textContent = enabled ? "ON" : "OFF";
     previewWrap.classList.toggle("cf-bg-transparent", !enabled);
   }
+  /* The only place that writes previewWrap.style.background for a real
+     (non-"transparent") value — every applier below calls this instead
+     of setting it directly, so "only render when enabled" only has to
+     be handled in one spot. */
+  function setPreviewBackground(value){
+    pendingBgValue = value;
+    if (bgEnabled) previewWrap.style.background = value;
+  }
   if (bgEnableBtn){
     bgEnableBtn.addEventListener("click", () => {
       if (bgEnabled){
-        lastBgValue = previewWrap.style.background || DEFAULT_BG_COLOR;
         previewWrap.style.background = "transparent";
         updateBgEnableUi(false);
       } else {
-        previewWrap.style.background = lastBgValue || DEFAULT_BG_COLOR;
+        previewWrap.style.background = pendingBgValue || DEFAULT_BG_COLOR;
         updateBgEnableUi(true);
       }
       schedulePersist();
@@ -1583,8 +1592,7 @@ ${titlebarSvg}
   }
 
   function applyBgColor(hex){
-    previewWrap.style.background = hex;
-    if (!bgEnabled) updateBgEnableUi(true);
+    setPreviewBackground(hex);
     bgColorSwatch.style.background = hex;
     bgColorInput.value = hex;
     if (bgHexInput && document.activeElement !== bgHexInput) bgHexInput.value = hex.toUpperCase();
@@ -1668,9 +1676,8 @@ ${titlebarSvg}
   let currentBgImageDataUrl = null;
   function applyBgImage(dataUrl){
     currentBgImageDataUrl = dataUrl;
-    previewWrap.style.background = `url("${dataUrl}") center / cover no-repeat`;
+    setPreviewBackground(`url("${dataUrl}") center / cover no-repeat`);
     bgColorSwatch.style.background = `url("${dataUrl}") center / cover no-repeat`;
-    if (!bgEnabled) updateBgEnableUi(true);
     bgSwatchEls.forEach(el => el.classList.remove("active"));
     if (currentStyle !== "custom"){
       currentStyle = "custom";
