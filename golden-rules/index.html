@@ -134,22 +134,33 @@ html[data-theme="dark"] .golden-rules-switcher{
 }
 
 /* Instead of a text hint, the tool on each side of the active one stays
-   collapsed to a thin clipped sliver — a visible fragment of the next
-   pill peeking out — so the row reads as "more tools" without a label.
-   :has() picks out the button immediately before the active one (no
-   "previous sibling" combinator exists in CSS); the button immediately
-   after is just a normal adjacent-sibling selector. Either side is
-   naturally absent when the active tool is first/last in the row. */
+   collapsed to roughly half its normal width — most of its name is
+   readable, not just a sliver — and fades out toward its own outer edge
+   (a mask-image gradient, not a hard clip) so it reads as "cut off",
+   not just truncated. The edge touching the active pill stays sharp;
+   only the far edge fades. :has() picks out the button immediately
+   before the active one (CSS has no "previous sibling" combinator); the
+   one immediately after is a plain adjacent-sibling selector. Either
+   side is naturally absent when the active tool is first/last in the
+   row. */
 .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn:has(+ .golden-rules-tool-btn.active),
 .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn.active + .golden-rules-tool-btn{
-  max-width:16px;
-  padding:12px 4px;
-  opacity:.4;
+  max-width:110px;
+  padding:12px 18px;
+  opacity:.65;
   background:rgba(0,0,0,.05);
 }
 html[data-theme="dark"] .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn:has(+ .golden-rules-tool-btn.active),
 html[data-theme="dark"] .golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn.active + .golden-rules-tool-btn{
   background:rgba(255,255,255,.05);
+}
+.golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn:has(+ .golden-rules-tool-btn.active){
+  -webkit-mask-image:linear-gradient(to left, #000 45%, transparent 92%);
+  mask-image:linear-gradient(to left, #000 45%, transparent 92%);
+}
+.golden-rules-switcher:not(:hover):not(:focus-within):not(.expanded) .golden-rules-tool-btn.active + .golden-rules-tool-btn{
+  -webkit-mask-image:linear-gradient(to right, #000 45%, transparent 92%);
+  mask-image:linear-gradient(to right, #000 45%, transparent 92%);
 }
 
 .ad-slot-incontent{
