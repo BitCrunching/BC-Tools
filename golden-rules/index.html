@@ -136,17 +136,21 @@ html[data-theme="dark"] .golden-rules-switcher{
 
 /* Each tool's active pill uses its own site-wide brand color (see
    CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
-   Text defaults to the same near-black every other brand color reads
-   fine with; Codify's deep raspberry pink is the one color here dark
-   enough that black text fails contrast, so it gets white instead. */
-.golden-rules-tool-btn.active{
-  color:#020617;
-}
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
 .golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
 .golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
 .golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
 .golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
-.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
 .golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
 .golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 .golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
