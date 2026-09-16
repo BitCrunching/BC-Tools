@@ -818,6 +818,7 @@ console.log(a.next.value);`
   /* ===== live highlight ===== */
   function renderPreview(){
     const isEmpty = codeInput.value.length === 0;
+    downloadBtn.disabled = isEmpty;
     codeOutput.className = "language-" + currentLang;
     codeOutput.classList.toggle("cf-ghost", isEmpty);
     codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
@@ -1174,6 +1175,7 @@ ${titlebarSvg}
     if (exportFormat === "svg"){
       downloadBtn.disabled = true;
       statusEl.textContent = "Rendering SVG...";
+      startPrivacyCheck();
       try {
         const svgString = buildSvgString();
         const blob = new Blob([svgString], { type: "image/svg+xml" });
@@ -1184,7 +1186,8 @@ ${titlebarSvg}
         console.error(err);
         statusEl.textContent = "Something went wrong generating the SVG.";
       } finally {
-        downloadBtn.disabled = false;
+        downloadBtn.disabled = codeInput.value.length === 0;
+        finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
       }
       return;
     }
@@ -1194,6 +1197,7 @@ ${titlebarSvg}
     }
     downloadBtn.disabled = true;
     statusEl.textContent = "Rendering PNG...";
+    startPrivacyCheck();
     /* Both resize handles live inside #cfPreviewWrap (the window one
        nested in #cfWindowWrap, the panel one a direct child) — exactly
        what htmlToImage.toPng snapshots below — so without hiding them
@@ -1215,9 +1219,10 @@ ${titlebarSvg}
       console.error(err);
       statusEl.textContent = "Something went wrong generating the image.";
     } finally {
-      downloadBtn.disabled = false;
+      downloadBtn.disabled = codeInput.value.length === 0;
       if (windowResizeHandle) windowResizeHandle.style.visibility = "";
       if (resizeHandle) resizeHandle.style.visibility = "";
+      finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
     }
   });
 

@@ -637,6 +637,15 @@ function privacyCheckExternalHost(rawUrl){
   try {
     const url = new URL(rawUrl, location.href);
     if (url.protocol === "blob:" || url.protocol === "data:") return null;
+    /* Same-origin requests aren't a privacy concern — they're the page
+       fetching its own already-public static assets, not sending
+       anything to a third party. Caught live: Codify's PNG export (via
+       html-to-image, which fetches+inlines a snapshotted element's
+       stylesheets so cross-origin fonts/CSS render in the exported
+       image) requests shared/icons.css and shared/textures.css on a
+       tool's first export, which without this check registered as a
+       false "privacy breach" against the page's own domain. */
+    if (url.hostname === location.hostname) return null;
     if (PRIVACY_CHECK_ALLOWLIST.some(host => url.hostname === host || url.hostname.endsWith("." + host))) return null;
     return url.hostname;
   } catch (err) {

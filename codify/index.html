@@ -227,6 +227,17 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   z-index:6;
   font-size:18px;
 }
+/* .privacy-check-badge (shared/site.css) sits in the same top-right
+   corner as .cf-remove-btn above, which — unlike Convert/Coudio's own
+   remove buttons — is anchored directly against .tool-app rather than
+   a lower "after content" box, so it overlaps the badge's row instead
+   of clearing it. Reserve room for the button's own footprint (30px
+   circle + its 36px right offset, plus a small gap) so a long badge
+   message (a privacy-breach warning, not just the short "local &
+   private" line) never renders underneath it. */
+.privacy-check-badge{
+  margin-right:70px;
+}
 /* .bc-remove-btn (shared/site.css) sets display:flex unconditionally,
    which as an author rule beats the browser's own [hidden]{display:none}
    UA-stylesheet rule regardless of specificity — the button stayed
@@ -1144,6 +1155,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
         <span class="gfx-md icon-codify" role="img" aria-label="Codify icon"></span>
         <span>Codify</span>
       </div>
+      <span class="privacy-check-badge" id="cfPrivacyBadge" aria-live="polite"></span>
     </div>
 
     <button type="button" class="cf-back-btn bc-canvas-back-btn" id="cfBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
@@ -1371,7 +1383,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
     </div>
 
     <div class="tool-controls" style="grid-template-columns:1fr;">
-      <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify">Download PNG</button>
+      <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
     </div>
 
     <div class="tool-status" id="cfStatus"></div>
@@ -1426,9 +1438,9 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=38" defer></script>
+<script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=72" defer></script>
+<script src="/codify/codify-tool.js?v=73" defer></script>
 </body>
 </html>
