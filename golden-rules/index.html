@@ -61,39 +61,98 @@
 <link rel="stylesheet" href="/shared/site.css?v=92">
 <style>
 /* ===== GOLDEN RULES ===== */
+/* Fluid switcher: collapsed to just the active tool's pill by default,
+   expanding into the full row on hover/focus (and via .expanded, toggled
+   in golden-rules-tool.js, for touch — :hover never fires on tap). Each
+   inactive button is a real element the whole time (not display:none),
+   just collapsed to max-width:0/opacity:0/pointer-events:none, so it
+   stays in the tab order and a keyboard user tabbing onto one triggers
+   the reveal via :focus-within. Only max-width/padding/margin/opacity
+   transition (not width, which doesn't animate from/to "auto") — same
+   height throughout so the row never jumps vertically as it grows. */
 .golden-rules-switcher{
   display:flex;
-  flex-wrap:wrap;
+  align-items:center;
   justify-content:center;
-  gap:12px;
-  margin:32px 0 48px;
+  flex-wrap:nowrap;
+  width:fit-content;
+  max-width:100%;
+  margin:32px auto 48px;
+  padding:6px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scrollbar-width:none;
+  cursor:pointer;
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
 }
 
 .golden-rules-tool-btn{
-  padding:12px 28px;
+  flex:0 0 auto;
+  max-width:0;
+  padding:12px 0;
+  margin:0;
   border-radius:14px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.05);
+  border:1px solid transparent;
+  background:transparent;
   color:var(--text);
   font-weight:800;
   font-size:16px;
-  cursor:pointer;
   font-family:inherit;
-  transition:.2s;
-}
-
-html[data-theme="dark"] .golden-rules-tool-btn{
-  background:rgba(255,255,255,.05);
+  white-space:nowrap;
+  overflow:hidden;
+  opacity:0;
+  cursor:pointer;
+  pointer-events:none;
+  transition:max-width .4s cubic-bezier(.22,1,.36,1), padding .4s cubic-bezier(.22,1,.36,1), margin .4s cubic-bezier(.22,1,.36,1), opacity .25s ease, background .2s, border-color .2s;
 }
 
 .golden-rules-tool-btn:hover{
   border-color:var(--border-strong);
 }
 
+.golden-rules-tool-btn.active,
+.golden-rules-switcher:hover .golden-rules-tool-btn,
+.golden-rules-switcher:focus-within .golden-rules-tool-btn,
+.golden-rules-switcher.expanded .golden-rules-tool-btn{
+  max-width:200px;
+  padding:12px 28px;
+  margin:0 3px;
+  opacity:1;
+  pointer-events:auto;
+}
+
 .golden-rules-tool-btn.active{
   background:#4da6ff;
   border-color:#4da6ff;
   color:#020617;
+}
+
+/* The "more tools" hint sits after the active pill while collapsed and
+   fades/collapses away the same way an inactive pill does, once expanded. */
+.golden-rules-switcher::after{
+  content:"more tools \203A";
+  flex:0 0 auto;
+  max-width:120px;
+  padding-left:6px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--text);
+  opacity:.45;
+  white-space:nowrap;
+  transition:max-width .3s, opacity .2s, padding .3s;
+}
+.golden-rules-switcher:hover::after,
+.golden-rules-switcher:focus-within::after,
+.golden-rules-switcher.expanded::after{
+  max-width:0;
+  padding-left:0;
+  opacity:0;
 }
 
 .ad-slot-incontent{
@@ -1297,6 +1356,6 @@ html[data-theme="dark"] .golden-rules-tool-btn{
 </div>
 
 <script src="/shared/site.js?v=38" defer></script>
-<script src="/golden-rules/golden-rules-tool.js?v=2" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=4" defer></script>
 </body>
 </html>

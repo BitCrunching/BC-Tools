@@ -19,9 +19,34 @@ function selectGoldenRulesTool(tool){
   });
 }
 
+/* The switcher only shows the active tool's pill until hovered/focused
+   (pure CSS — see .golden-rules-switcher in golden-rules/index.html).
+   :hover never fires on tap, so touch needs its own reveal step: a tap
+   on the already-active pill while collapsed just expands the row
+   instead of re-selecting the same tool (which would be a no-op anyway);
+   a tap on any other visible pill selects normally and re-collapses. */
+const grSwitcher = document.querySelector(".golden-rules-switcher");
 document.querySelectorAll(".golden-rules-tool-btn").forEach(btn => {
-  btn.addEventListener("click", () => selectGoldenRulesTool(btn.dataset.tool));
+  btn.addEventListener("click", (e) => {
+    const collapsed = grSwitcher && !grSwitcher.classList.contains("expanded");
+    if (collapsed && btn.classList.contains("active")) {
+      e.preventDefault();
+      grSwitcher.classList.add("expanded");
+      return;
+    }
+    selectGoldenRulesTool(btn.dataset.tool);
+    if (grSwitcher) grSwitcher.classList.remove("expanded");
+    // A clicked button keeps focus by default, which would hold the row
+    // open via :focus-within even after the mouse leaves — blur it so
+    // the row actually collapses back down to just the chosen tool.
+    btn.blur();
+  });
 });
+if (grSwitcher) {
+  document.addEventListener("click", (e) => {
+    if (!grSwitcher.contains(e.target)) grSwitcher.classList.remove("expanded");
+  });
+}
 
 /* Every tool page's own "Getting started with" footer links here with
    ?tool=<id> (see shared/site.js's .go-to-golden-rules handler) so
