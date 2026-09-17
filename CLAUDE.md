@@ -8,9 +8,11 @@ of the same handful of components — read this first instead of re-deriving
 When a new pattern gets established (a new component, a new rule), add it
 here in the same edit — this file only stays useful if it's kept current.
 
-**Keep code comments short.** One line explaining *why*, not a paragraph.
-This file is the exception (it's the reference, meant to be read in full);
-comments inline in the actual site files are not.
+**Comments are rare, not default.** Only write one when the code can't
+explain itself — a genuinely non-obvious *why*. No comment for what the
+code already says. If you do write one, one line. This file is the
+exception (it's the reference, meant to be read in full); comments inline
+in the actual site files are not.
 
 **Layout of this file**: "Reference tools" below, then the component
 reference (current rules/values only — read this section day-to-day), then

@@ -4,11 +4,7 @@
    live preview DOM (gradient, window chrome, dots, code — whatever's
    actually on screen is what gets exported). */
 (function(){
-  /* escapeXml/hsvToHex/hexToHsv live in codify-pure.js now (loaded right
-     before this file) — pulled out because they're the one part of
-     Codify that's pure, DOM-free logic, so they're the part actually
-     worth unit-testing (see codify-pure.test.js) instead of only ever
-     being checked by reloading the page. */
+  // Pure helpers live in codify-pure.js so they're unit-testable.
   const { escapeXml, hsvToHex, hexToHsv } = window.CodifyPure;
   const codeInput = document.getElementById("cfCodeInput");
   const codeOutput = document.getElementById("cfCodeOutput");
