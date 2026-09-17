@@ -18,7 +18,7 @@
    site.css's version changes and a new icon gets added, since the
    @import's target URL never changed. Bump this alongside icons.css's
    own <link> in index.html whenever icons.css's content changes. */
-@import url("icons.css?v=2");
+@import url("icons.css?v=3");
 /* Same reasoning: the 4 category texture recipes (image/video/sound/
    code) live in textures.css so any tool's own .tool-app banner can opt
    into the same treatment its homepage card uses via data-category,
@@ -931,6 +931,10 @@ footer a{
 .nav-close-btn.visible{
   display:flex;
 }
+
+/* Language dropdown CSS (.nav-lang-wrap/.nav-lang-btn/.nav-lang-menu)
+   removed from the live site on request — archived in full, not
+   deleted, at shared/i18n-archive.js along with re-enable steps. */
 
 .nav-close-btn:hover{
   color:var(--text);
@@ -3106,8 +3110,8 @@ html[data-theme="dark"] .bc-editor-input:hover{
    background-image — since neither is this class's concern. */
 .bc-resize-handle{
   position:absolute;
-  width:21px;
-  height:21px;
+  width:30px;
+  height:30px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -3121,6 +3125,24 @@ html[data-theme="dark"] .bc-editor-input:hover{
   width:13px;
   height:13px;
   pointer-events:none;
+}
+/* Default icon (and its 18px size, matching Congify's own) for the
+   ::before-background-image technique — the other of the two ways to
+   put an icon on this handle, see the inline-<svg> rule just above for
+   the alternative. Originated in Congify; Colorfy and Codify had grown
+   byte-identical copies of this same diagonal-arrow icon under their
+   own local classes before this was shared. Congify's own copy (already
+   18px) was removed outright as fully redundant; Codify's now inherits
+   this rather than keeping its own smaller 13px version, so it matches
+   Congify's exactly, per request. Colorfy's stays genuinely smaller on
+   purpose, so it kept its own ::before rule — just trimmed to only the
+   width/height override now, letting `content`/`background` fall
+   through to here instead of redeclaring them. */
+.bc-resize-handle::before{
+  content:"";
+  width:18px;
+  height:18px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
 }
 
 /* ===== .bc-obj-remove-btn / .bc-obj-resize-handle / .bc-obj-drag-handle
@@ -3200,6 +3222,8 @@ html[data-theme="dark"] .bc-editor-input:hover{
    button, plus two more sizes inside Colorfy) — all six now point at
    this one shared base. */
 .bc-remove-btn{
+  width:30px;
+  height:30px;
   padding:0;
   border-radius:50%;
   border:2px solid #fff;
@@ -3239,6 +3263,8 @@ html[data-theme="dark"] .bc-editor-input:hover{
     display:flex;
     align-items:center;
     justify-content:center;
+    width:30px;
+    height:30px;
     padding:0;
     border:2px solid #fff;
     border-radius:50%;

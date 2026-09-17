@@ -1,15 +1,16 @@
-/* shared/site.js — theme toggle, language switch, cookie consent, nav
-   share menu, privacy-check helpers, and downloadBlob(), shared by every
-   standalone (MPA) page. Ported from index.html's inline scripts — same
-   localStorage keys ("bc-theme", "bc-lang", "bc-cookie-consent") so
-   choices made here stay in sync with the SPA pages. Load with `defer`
-   so the DOM (nav/footer/cookie markup) exists before this runs.
+/* shared/site.js — theme toggle, cookie consent, nav share menu,
+   privacy-check helpers, and downloadBlob(), shared by every standalone
+   (MPA) page. Ported from index.html's inline scripts — same
+   localStorage keys ("bc-theme", "bc-cookie-consent") so choices made
+   here stay in sync with the SPA pages. Load with `defer` so the DOM
+   (nav/footer/cookie markup) exists before this runs.
 
    Not a 1:1 copy of the SPA's version: the Cookies-page "docked" panel
    variant and its mobile-reopen button are dropped (that page still
-   lives in the SPA), and only nav/footer/cookie copy is translated here
-   — tool-specific copy is written directly in each standalone page's
-   markup, in English only for now. */
+   lives in the SPA). The language switcher (translations object,
+   applyLanguage, the nav-lang button/menu) was removed from the live
+   site on request — see the comment further down where it used to
+   live, and shared/i18n-archive.js for the archived version. */
 
 /* ===== Custom scroll-position restore on reload, replacing the
    browser's own native one entirely (history.scrollRestoration stays
@@ -290,12 +291,9 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
       toggle.setAttribute("aria-expanded", "true");
       banner.hidden = false;
       render();
-      /* Same central nav confirmation the theme/language/share buttons
-         already use (#navTerminal) — not yet in the i18n dict (see
-         CLAUDE.md's translation-timing rule: English first, cs/pl only
-         once this line is confirmed final), so it's a plain literal
-         for now rather than a translations[currentLang] lookup that
-         would silently render "undefined" for non-English visitors. */
+      /* Same central nav confirmation the theme/share buttons already
+         use (#navTerminal) — a plain literal, same as every other
+         nav-terminal string since the i18n system was removed. */
       showNavTerminal("Guide panel ready — at your service.");
     });
   }
@@ -616,6 +614,15 @@ function privacyCheckExternalHost(rawUrl){
   try {
     const url = new URL(rawUrl, location.href);
     if (url.protocol === "blob:" || url.protocol === "data:") return null;
+    /* Same-origin requests aren't a privacy concern — they're the page
+       fetching its own already-public static assets, not sending
+       anything to a third party. Caught live: Codify's PNG export (via
+       html-to-image, which fetches+inlines a snapshotted element's
+       stylesheets so cross-origin fonts/CSS render in the exported
+       image) requests shared/icons.css and shared/textures.css on a
+       tool's first export, which without this check registered as a
+       false "privacy breach" against the page's own domain. */
+    if (url.hostname === location.hostname) return null;
     if (PRIVACY_CHECK_ALLOWLIST.some(host => url.hostname === host || url.hostname.endsWith("." + host))) return null;
     return url.hostname;
   } catch (err) {
@@ -660,201 +667,28 @@ function startPrivacyCheck(){
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
   if (!badgeEl) return;
-  const dict = translations[currentLang] || translations.en;
   if (privacyCheckExternalCount === 0){
-    const key = action === "convert" ? "convert_check_ok" : "privacy_check_ok";
-    const fallback = action === "convert" ? "convert local & private" : "download local & private";
-    const label = dict[key] || fallback;
+    const label = action === "convert" ? "convert local & private" : "download local & private";
     badgeEl.textContent = "> BC_Tools_bot: " + label;
   } else {
     /* {action} names which step actually leaked, not just that one did
        — a tool with a separate convert-then-download flow (Congify)
        can have a breach happen during either, and just saying "privacy
        breach" without saying which wouldn't tell you where to look. */
-    const actionKey = action === "convert" ? "privacy_check_action_convert" : "privacy_check_action_download";
-    const actionFallback = action === "convert" ? "convert" : "download";
-    const actionWord = dict[actionKey] || actionFallback;
-    const template = dict.privacy_check_warn || "ATTENTION! - ({count}) privacy breach during {action} - {host}";
+    const actionWord = action === "convert" ? "convert" : "download";
+    const template = "ATTENTION! - ({count}) privacy breach during {action} - {host}";
     const text = template.replace("{count}", privacyCheckExternalCount).replace("{action}", actionWord).replace("{host}", privacyCheckExternalHosts.join(", "));
     badgeEl.textContent = "> " + text;
   }
   badgeEl.classList.add("visible");
 }
 
-/* ===== Minimal translations — nav/footer/cookie/share copy only.
-   Tool-specific strings live directly in each standalone page's markup. ===== */
-const translations = {
-  en: {
-    nav_theme: "Toggle light and dark mode",
-    nav_share: "Share",
-    nav_back: "Back to Creative Hub",
-    nav_terminal_dark: "Dark mode set",
-    nav_terminal_light: "Light mode set",
-    nav_terminal_lang: "Language set to {lang}",
-    share_copy: "Copy link / URL",
-    share_copied: "URL copied to clipboard",
-    share_more: "More options",
-    share_email: "Email",
-    footer_company_heading: "Serious matters",
-    footer_getting_started_heading: "Getting started with",
-    footer_contact_heading: "Get in touch with us",
-    footer_contact_email: "<a href=\"mailto:contact@bitcrunching.com\">contact@bitcrunching.com</a>",
-    footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Join our discord</a>",
-    nav_about: "Our Universe",
-    nav_about_title: "About Us",
-    nav_faq: "Already Answered",
-    nav_faq_title: "FAQ",
-    mp_footer_terms: "Galactic Handbook",
-    mp_footer_terms_title: "Terms of Use",
-    mp_footer_privacy: "Alien Privacy Protocol",
-    mp_footer_privacy_title: "Privacy Policy",
-    mp_footer_cookies: "Cookie Registry",
-    mp_footer_cookies_title: "Cookie Policy",
-    cookie_banner_text: "We use cookies. Choose which categories to allow below — see our <a data-goto=\"cookies\">Cookie Registry</a> for details.",
-    cookie_banner_text_docked: "Choose which cookies to allow",
-    cookie_banner_text_mobile: "Choose which cookies to allow",
-    cookie_cat_necessary: "Necessary (always on)",
-    cookie_cat_necessary_detail: "These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.",
-    cookie_cat_analytics: "Analytics (Google Analytics)",
-    cookie_cat_analytics_detail: "Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.",
-    cookie_cat_advertising: "Advertising (Google AdSense)",
-    cookie_cat_advertising_detail: "Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.",
-    cookie_status_allowed: "...allowed",
-    cookie_status_disabled: "...disabled",
-    cookie_banner_accept_all: "Accept All",
-    cookie_banner_disable_all: "Disable all",
-    cookie_banner_save: "Confirm choices",
-    cookie_banner_saved: "> preferences_saved",
-    ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    privacy_check_ok: "download local & private",
-    convert_check_ok: "convert local & private",
-    privacy_check_warn: "ATTENTION! - ({count}) privacy breach during {action} - {host}",
-    privacy_check_action_convert: "convert",
-    privacy_check_action_download: "download"
-  },
-  cs: {
-    nav_theme: "Přepnout světlý a tmavý režim",
-    nav_share: "Sdílet",
-    nav_back: "Zpět na Creative Hub",
-    nav_terminal_dark: "Tmavý režim zapnut",
-    nav_terminal_light: "Světlý režim zapnut",
-    nav_terminal_lang: "Jazyk nastaven na {lang}",
-    share_copy: "Kopírovat odkaz",
-    share_copied: "Odkaz zkopírován",
-    share_more: "Další možnosti",
-    share_email: "E-mail",
-    footer_company_heading: "Vážné záležitosti",
-    footer_getting_started_heading: "Začínáme s",
-    footer_contact_heading: "Ozvěte se nám",
-    footer_contact_email: "<a href=\"mailto:contact@bitcrunching.com\">contact@bitcrunching.com</a>",
-    footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Připojte se k našemu discordu</a>",
-    nav_about: "Náš vesmír",
-    nav_about_title: "O nás",
-    nav_faq: "Máme odpovědi",
-    nav_faq_title: "FAQ",
-    mp_footer_terms: "Galaktická příručka",
-    mp_footer_terms_title: "Podmínky použití",
-    mp_footer_privacy: "Mimozemský protokol soukromí",
-    mp_footer_privacy_title: "Zásady ochrany osobních údajů",
-    mp_footer_cookies: "Registr cookies",
-    mp_footer_cookies_title: "Zásady používání cookies",
-    cookie_banner_text: "Používáme cookies. Níže si můžete vybrat, které kategorie povolíte — podrobnosti najdete v našem <a data-goto=\"cookies\">Registru cookies</a>.",
-    cookie_banner_text_docked: "Vyberte, které cookies povolit",
-    cookie_banner_text_mobile: "Vyberte, které cookies povolit",
-    cookie_cat_necessary: "Nezbytné (vždy zapnuto)",
-    cookie_cat_necessary_detail: "These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.",
-    cookie_cat_analytics: "Analytické (Google Analytics)",
-    cookie_cat_analytics_detail: "Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.",
-    cookie_cat_advertising: "Reklamní (Google AdSense)",
-    cookie_cat_advertising_detail: "Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.",
-    cookie_status_allowed: "...povoleno",
-    cookie_status_disabled: "...zakázáno",
-    cookie_banner_accept_all: "Přijmout vše",
-    cookie_banner_disable_all: "Zakázat vše",
-    cookie_banner_save: "Potvrdit volby",
-    cookie_banner_saved: "> předvolby_uloženy",
-    ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    privacy_check_ok: "stažení lokální a soukromé",
-    convert_check_ok: "konverze lokální a soukromá",
-    privacy_check_warn: "POZOR! - ({count}) narušení soukromí během akce {action} - {host}",
-    privacy_check_action_convert: "konverze",
-    privacy_check_action_download: "stažení"
-  },
-  pl: {
-    nav_theme: "Przełącz tryb jasny i ciemny",
-    nav_share: "Udostępnij",
-    nav_back: "Powrót do Creative Hub",
-    nav_terminal_dark: "Tryb ciemny włączony",
-    nav_terminal_light: "Tryb jasny włączony",
-    nav_terminal_lang: "Ustawiono język: {lang}",
-    share_copy: "Kopiuj link",
-    share_copied: "Link skopiowany",
-    share_more: "Więcej opcji",
-    share_email: "E-mail",
-    footer_company_heading: "Poważne sprawy",
-    footer_getting_started_heading: "Pierwsze kroki z",
-    footer_contact_heading: "Skontaktuj się z nami",
-    footer_contact_email: "<a href=\"mailto:contact@bitcrunching.com\">contact@bitcrunching.com</a>",
-    footer_contact_discord: "<a href=\"https://discord.gg/FqKdCc99t\" target=\"_blank\" rel=\"noopener\">Dołącz do naszego discorda</a>",
-    nav_about: "Nasz wszechświat",
-    nav_about_title: "O nas",
-    nav_faq: "Mamy odpowiedzi",
-    nav_faq_title: "FAQ",
-    mp_footer_terms: "Galaktyczny podręcznik",
-    mp_footer_terms_title: "Warunki użytkowania",
-    mp_footer_privacy: "Kosmiczny protokół prywatności",
-    mp_footer_privacy_title: "Polityka prywatności",
-    mp_footer_cookies: "Rejestr plików cookie",
-    mp_footer_cookies_title: "Polityka plików cookie",
-    cookie_banner_text: "Używamy plików cookie. Poniżej możesz wybrać, które kategorie zezwolić — szczegóły znajdziesz w naszym <a data-goto=\"cookies\">Rejestrze plików cookie</a>.",
-    cookie_banner_text_docked: "Wybierz, które pliki cookie zezwolić",
-    cookie_banner_text_mobile: "Wybierz, które pliki cookie zezwolić",
-    cookie_cat_necessary: "Niezbędne (zawsze włączone)",
-    cookie_cat_necessary_detail: "These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.",
-    cookie_cat_analytics: "Analityczne (Google Analytics)",
-    cookie_cat_analytics_detail: "Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.",
-    cookie_cat_advertising: "Reklamowe (Google AdSense)",
-    cookie_cat_advertising_detail: "Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.",
-    cookie_status_allowed: "...dozwolone",
-    cookie_status_disabled: "...wyłączone",
-    cookie_banner_accept_all: "Zaakceptuj wszystkie",
-    cookie_banner_disable_all: "Wyłącz wszystkie",
-    cookie_banner_save: "Potwierdź wybór",
-    cookie_banner_saved: "> preferencje_zapisane",
-    ck_settings_btn: "DEV_TOOLS_COOKIES:",
-    privacy_check_ok: "pobieranie lokalne i prywatne",
-    convert_check_ok: "konwersja lokalna i prywatna",
-    privacy_check_warn: "UWAGA! - ({count}) naruszenie prywatności podczas {action} - {host}",
-    privacy_check_action_convert: "konwersji",
-    privacy_check_action_download: "pobierania"
-  }
-};
-
-let currentLang = "en";
-
-function applyLanguage(lang){
-  const dict = translations[lang] || translations.en;
-  currentLang = translations[lang] ? lang : "en";
-
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.dataset.i18n;
-    if (dict[key] !== undefined) el.innerHTML = dict[key];
-  });
-
-  document.querySelectorAll("[data-i18n-label]").forEach(el => {
-    const key = el.dataset.i18nLabel;
-    if (dict[key] !== undefined){
-      el.setAttribute("aria-label", dict[key]);
-      el.setAttribute("title", dict[key]);
-    }
-  });
-
-  document.documentElement.lang = currentLang;
-
-  try { localStorage.setItem("bc-lang", currentLang); } catch (e) { /* storage unavailable */ }
-
-  document.dispatchEvent(new CustomEvent("bc:langchange"));
-}
+/* i18n system (translations object, applyLanguage, the language-switcher
+   nav button/menu) removed from the live site on request — archived in
+   full, not deleted, at shared/i18n-archive.js along with re-enable
+   steps. Every string that used to be looked up in translations.en is
+   now a plain literal at its own call site (nav terminal confirmations,
+   the cookie-consent banner's status/button text, etc). */
 
 /* ===== Central nav confirmation display ===== */
 function showNavTerminal(text){
@@ -898,17 +732,9 @@ function showNavTerminal(text){
       const next = isLight ? "dark" : "light";
       applyTheme(next);
       try { localStorage.setItem("bc-theme", next); } catch (e) { /* storage unavailable */ }
-      const dict = translations[currentLang] || translations.en;
-      showNavTerminal(next === "dark" ? dict.nav_terminal_dark : dict.nav_terminal_light);
+      showNavTerminal(next === "dark" ? "Dark mode set" : "Light mode set");
     });
   }
-})();
-
-/* ===== LANGUAGE SWITCHER ===== */
-(function(){
-  let savedLang = null;
-  try { savedLang = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
-  applyLanguage(savedLang && translations[savedLang] ? savedLang : "en");
 })();
 
 /* ===== NAV SHARE BUTTON ===== */
@@ -950,8 +776,7 @@ function showNavTerminal(text){
       if (btn.dataset.share === "copy"){
         try {
           await navigator.clipboard.writeText(window.location.href);
-          const dict = translations[currentLang] || translations.en;
-          showNavTerminal(dict.share_copied);
+          showNavTerminal("URL copied to clipboard");
         }
         catch { /* clipboard unavailable */ }
       }
@@ -1104,18 +929,12 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    const dict = translations[currentLang] || translations.en;
-    const key = allowed ? "cookie_status_allowed" : "cookie_status_disabled";
-    const fallback = allowed ? "...allowed" : "...disabled";
-    return dict[key] || fallback;
+    return allowed ? "...allowed" : "...disabled";
   }
 
   function renderActionButton(){
     const allOn = analyticsToggle.checked && advertisingToggle.checked;
-    const dict = translations[currentLang] || translations.en;
-    const key = allOn ? "cookie_banner_disable_all" : "cookie_banner_accept_all";
-    const fallback = allOn ? "Disable all" : "Accept All";
-    acceptAllBtn.textContent = dict[key] || fallback;
+    acceptAllBtn.textContent = allOn ? "Disable all" : "Accept All";
     acceptAllBtn.classList.toggle("is-disable-all", allOn);
   }
 
@@ -1145,8 +964,6 @@ function showNavTerminal(text){
   renderStatuses();
   refreshConsentState();
   syncDockPlacement(true);
-
-  document.addEventListener("bc:langchange", renderStatuses);
 
   acceptAllBtn.addEventListener("click", () => {
     const turnOn = !(analyticsToggle.checked && advertisingToggle.checked);
@@ -1257,4 +1074,57 @@ function bcRegisterKeyShortcut(key, btn){
     e.preventDefault();
     btn.click();
   });
+}
+
+/* Shared "click cycles a value instantly, a fast second click undoes that
+   and opens the fuller control instead" gesture — originated as two
+   hand-copied near-duplicates in Codify's click handler (the background-
+   color zone and the Shadow zone each tracked their own
+   lastClickTime/valueBeforeClick pair and ran the same undo-then-open
+   branch). Pulled out once both were doing the exact same thing on
+   different state, same reasoning as every other shared bcRegister-/
+   bcCreate-prefixed helper in this file: one real implementation instead
+   of a copy that can drift.
+
+   `thresholdMs` — how close together (ms) two clicks need to land to
+   count as the "double" gesture; much tighter than the browser's own
+   native dblclick threshold (300-500ms, tuned for double-clicking small
+   icons) is deliberate here, so a quick single click never feels delayed
+   waiting to see if a second one follows.
+   `getState()` — reads the current value, called right before `cycle()`
+   so the gesture can hand it back to `revert()` if a second click follows.
+   `cycle(e)` — runs on every single click (the common case): advance to
+   the next value.
+   `revert(prevState, e)` — runs only on the double-click: undo whatever
+   `cycle` just did, putting the value back to what `getState()` last saw.
+   `open(e)` — runs right after `revert`, on the double-click only: hand
+   off to the fuller control (a color panel, an options panel, ...).
+   `e.stopPropagation()` is called here, before `open()`, on every
+   consumer's behalf — without it, this same click bubbles up to whatever
+   outside-click listener closes that fuller control (a common pattern
+   site-wide for dropdown/panel components), which sees the click as
+   "outside" the panel `open()` just opened and closes it in the same
+   tick. This is exactly the bug Codify's own background-color zone had
+   (missing this one line, while the Shadow zone next to it already had
+   it) — folding it into the shared helper means no future caller of this
+   gesture can reintroduce that same bug by forgetting it once more.
+
+   Returns a click-event handler — attach it directly:
+   `zone.addEventListener("click", bcCreateQuickCycleGesture({...}))`. */
+function bcCreateQuickCycleGesture({ thresholdMs = 200, getState, cycle, revert, open }){
+  let lastClickTime = 0;
+  let stateBeforeClick = null;
+  return function(e){
+    const now = performance.now();
+    if (now - lastClickTime < thresholdMs){
+      if (stateBeforeClick !== null) revert(stateBeforeClick, e);
+      e.stopPropagation();
+      open(e);
+      lastClickTime = 0;
+      return;
+    }
+    lastClickTime = now;
+    stateBeforeClick = getState();
+    cycle(e);
+  };
 }
