@@ -535,6 +535,24 @@ legitimate absence, not a gap.
   growth short of the real intended max (see Colorfy's `frameWidthMax` fix,
   Lessons Learned).
 
+## Branching: `main` vs `development` vs `dev-<project>`
+
+`development` is the default day-to-day branch — nearly everything happens
+there. `main` is what actually deploys (GitHub Pages), and by 2026-09-17 had
+drifted ~150 commits behind `development`, missing entire tools (Codify,
+Colorfy weren't on it at all) — untangling that gap after the fact, to ship
+one `development` bugfix to `main`, was real, avoidable work.
+
+**For anything meant to ship to `main` as a discrete unit** (a new tool
+launch, a redesign, a multi-file sync like the 2026-09-17 chrome sync) —
+branch as `dev-<project-name>` off **`main`**, not off `development` (branching
+off `development` drags in everything else already ahead of `main`). Build
+and test it there, merge to `main` and push only when it's ready, then
+delete the branch. A single-file, single-fix bugfix (like the encrypted-PDF
+Context fix) is low-risk enough to apply on `main` directly without a
+branch — reserve `dev-<project-name>` for anything touching more than a
+couple of files.
+
 ## Cache-busting (non-negotiable)
 
 The dev server sends no `Cache-Control` header, so `<script src>` /
