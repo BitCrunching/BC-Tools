@@ -1310,6 +1310,26 @@
     }
   });
 
+  async function rebuildPdfFromRenderedPages(){
+    const { PDFDocument } = PDFLib;
+    const newDoc = await PDFDocument.create();
+    const renderScale = 2;
+    for (let i = 1; i <= pageCount; i++){
+      const page = await pdfjsDoc.getPage(i);
+      const viewport = page.getViewport({ scale: 1 });
+      const renderViewport = page.getViewport({ scale: renderScale });
+      const canvas = document.createElement("canvas");
+      canvas.width = renderViewport.width;
+      canvas.height = renderViewport.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport }).promise;
+      const pngBytes = dataUrlToBytes(canvas.toDataURL("image/png"));
+      const pngImage = await newDoc.embedPng(pngBytes);
+      const newPage = newDoc.addPage([viewport.width, viewport.height]);
+      newPage.drawImage(pngImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
+    }
+    return newDoc;
+  }
+
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
     downloadBtn.disabled = true;
@@ -1319,7 +1339,18 @@
     try {
       const { PDFDocument, StandardFonts, rgb } = PDFLib;
       const bytes = await currentFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(bytes);
+      let pdfDoc;
+      try {
+        pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        pdfDoc.getPages();
+      } catch (loadErr){
+        /* ignoreEncryption only skips pdf-lib's guard — it still can't
+           decrypt AES content streams, so a real encrypted PDF (common
+           for HR/official documents) throws here instead. Rebuild an
+           unencrypted PDF from the pages already rendered on-screen via
+           pdf.js, which decrypts fine. */
+        pdfDoc = await rebuildPdfFromRenderedPages();
+      }
 
       /* Bold/italic aren't a style flag on Helvetica — pdf-lib's base 14
          fonts include separate bold/oblique/bold-oblique variants, so
