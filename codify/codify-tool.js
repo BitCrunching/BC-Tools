@@ -609,23 +609,43 @@ console.log(a.next.value);`
       hoverLabel.style.left = Math.max(0, x - (labelRect.right - window.innerWidth)) + "px";
     }
   }
-  /* "HOD" (Hover Overlay Display) toggle — turns the whole inspector
-     layer above off, for anyone who finds it more distracting than
-     helpful once they already know the three zones. */
+  /* "HOD" (Hover Overlay Display) — press-and-hold, not a persistent
+     on/off toggle. Was a real preference (saved across visits via
+     localStorage) with a "change" event flipping it, but that's exactly
+     what made the stale-position bug above possible: the inspector could
+     be left sitting on screen through any number of edits with nothing
+     forcing a fresh, trustworthy mouse read. Holding it down sidesteps
+     the whole class of bug instead of chasing it further — the overlay
+     now only ever exists for as long as a real mouse button is actually
+     down, driven live by the ordinary mousemove listener below, so
+     there's never a moment where it's showing a position that isn't the
+     cursor's actual current one. No saved state, since "held" isn't a
+     preference to remember.
+     `.checked` is still what gates showing it (updateHoverOverlay checks
+     it below) — just driven by press/release now instead of a native
+     checkbox click, which is why mousedown calls preventDefault() first
+     (stops the browser's own click-to-toggle from fighting this). The
+     `pointerup` listener lives on `document`, not the toggle itself, so
+     releasing anywhere — not just back over the toggle — still ends the
+     hold, the same way a real "hold to peek" control should work. */
   const hodToggle = document.getElementById("cfHodToggle");
-  /* Remembers the on/off state across visits, same pattern as the
-     background color's own localStorage save just below in this file
-     (BG_COLOR_STORAGE_KEY). Defaults to on (the checkbox's own HTML
-     "checked" attribute) when nothing's been saved yet. */
-  const HOD_STORAGE_KEY = "bc-codify-hod";
   if (hodToggle){
-    try {
-      const savedHod = localStorage.getItem(HOD_STORAGE_KEY);
-      if (savedHod !== null) hodToggle.checked = savedHod === "1";
-    } catch(e){ /* storage unavailable */ }
-    hodToggle.addEventListener("change", () => {
-      try { localStorage.setItem(HOD_STORAGE_KEY, hodToggle.checked ? "1" : "0"); } catch(e){ /* storage unavailable */ }
+    hodToggle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      hodToggle.checked = true;
     });
+    hodToggle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      hodToggle.checked = true;
+    }, { passive: false });
+    const endHold = () => {
+      if (!hodToggle.checked) return;
+      hodToggle.checked = false;
+      if (hoverOverlay) hoverOverlay.hidden = true;
+    };
+    document.addEventListener("pointerup", endHold);
+    document.addEventListener("touchend", endHold);
+    document.addEventListener("touchcancel", endHold);
   }
   /* Reassigned below once the hover-overlay elements are confirmed to
      exist; declared here (not just inside that block) so renderPreview()
@@ -709,21 +729,11 @@ console.log(a.next.value);`
     refreshHoverOverlay = () => {
       hoverOverlay.hidden = true;
     };
-    /* The one place a stale-position replay is still fine: flipping HOD
-       back on is a deliberate, discrete user action, not a resize — mouse
-       position and layout are both already settled and accurate at this
-       exact instant, so recomputing immediately (rather than leaving the
-       user to first jiggle the mouse) is safe here specifically. Without
-       this, flipping the toggle on while resting over the preview showed
-       nothing until the cursor next moved, which read as "the toggle
-       doesn't work" (confirmed live). */
-    function showHoverOverlayIfHovering(){
-      if (lastMoveX !== null && previewWrap.matches(":hover")){
-        updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
-      } else {
-        hoverOverlay.hidden = true;
-      }
-    }
+    /* No "turn it back on and recompute immediately" case to handle
+       anymore — HOD is now driven purely by hold/release (see its own
+       comment above) plus this mousemove listener, so there's never a
+       moment where something else needs to force a fresh read; the next
+       mousemove while held does that naturally. */
     previewWrap.addEventListener("mousemove", (e) => {
       lastMoveX = e.clientX;
       lastMoveY = e.clientY;
@@ -733,15 +743,6 @@ console.log(a.next.value);`
       hoverOverlay.hidden = true;
       lastMoveX = lastMoveY = null;
     });
-    if (hodToggle){
-      hodToggle.addEventListener("change", () => {
-        if (!hodToggle.checked){
-          hoverOverlay.hidden = true;
-          return;
-        }
-        showHoverOverlayIfHovering();
-      });
-    }
     /* Belt-and-suspenders for any resize renderPreview() itself doesn't
        cover (a browser window resize, a webfont finishing its swap) —
        harmless if it never fires, since refreshHoverOverlay() is a no-op
@@ -813,7 +814,8 @@ console.log(a.next.value);`
       renderShadowReadouts();
       applyShadow();
     }
-    if (hodToggle) hodToggle.checked = true;
+    if (hodToggle) hodToggle.checked = false;
+    if (hoverOverlay) hoverOverlay.hidden = true;
     if (continueBtn) continueBtn.hidden = true;
     if (formatPngBtn && formatSvgBtn) setExportFormat("png");
     autoFitCodeInput();
