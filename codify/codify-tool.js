@@ -551,14 +551,11 @@ console.log(a.next.value);`
           toggleMacNavClick();
           return;
         }
-        /* The click-to-cycle gesture itself still runs while the
-           Background ON/OFF toggle is off — it still updates
-           pendingBgValue (see setPreviewBackground further down),
-           just doesn't touch the live preview until ON is pressed
-           again. Only the hover tooltip below is suppressed while off,
-           so there's no visible cue for an interaction that currently
-           has no visible effect — the click keeps working underneath
-           it regardless. */
+        /* Still runs while the Background ON/OFF toggle is off — updates
+           pendingBgValue (see setPreviewBackground further down), just
+           doesn't touch the live preview until ON is pressed again. HOD
+           shows this zone the same regardless of the toggle's state
+           (a click here always does something, even if not visibly). */
         bgZoneGesture(e);
         return;
       }
