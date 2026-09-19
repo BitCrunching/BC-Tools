@@ -980,15 +980,15 @@ html[data-theme="dark"] .cf-toggle-switch{
   user-select:none;
 }
 
-/* ===== Hover inspector overlay — DevTools-style "what am I about to
-   click" highlight over the preview's three zones (see codify-tool.js
-   for the mousemove math). Fixed to the viewport rather than nested
-   inside .cf-preview-wrap, so it paints above the window/titlebar/code
-   regardless of their own stacking, and pointer-events:none throughout
-   so it can never itself become the click target. Classic DevTools
-   content-box blue (rgba(111,168,220,...)) for the tint, since that's
-   the one color scheme this exact kind of overlay is already
-   recognizable by. */
+/* ===== HOD inspector overlay — "what can I click here" map, all five
+   zones shown at once while HOD is held (see codify-tool.js). Fixed to
+   the viewport rather than nested inside .cf-preview-wrap, so it paints
+   above the window/titlebar/code regardless of their own stacking, and
+   pointer-events:none throughout so it can never itself become the
+   click target. Each zone gets its own tint (see below) rather than one
+   shared color, since they're all visible together now — a single color
+   would read as one undifferentiated blob instead of five distinct
+   click targets. */
 .cf-hover-overlay{
   position:fixed;
   inset:0;
@@ -996,13 +996,25 @@ html[data-theme="dark"] .cf-toggle-switch{
   pointer-events:none;
 }
 .cf-hover-overlay[hidden]{ display:none; }
-.cf-hover-band,
-.cf-hover-rect{
+.cf-hover-zone{
   position:absolute;
-  background:rgba(111,168,220,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  padding:4px;
 }
-.cf-hover-label{
-  position:absolute;
+/* One hue per action: amber for Mac nav, violet for Shadow, the
+   original DevTools content-box blue kept for Background (still the
+   most screen real estate, so the most "default"-reading color), green
+   for Template, red/coral for Theme — chosen to sit clearly apart from
+   each other and from the site's own pink Codify banner underneath. */
+.cf-hover-zone-macnav{ background:rgba(255,193,7,.4); }
+.cf-hover-zone-shadow{ background:rgba(167,139,250,.4); }
+.cf-hover-zone-bg{ background:rgba(111,168,220,.4); }
+.cf-hover-zone-template{ background:rgba(74,222,128,.4); }
+.cf-hover-zone-theme{ background:rgba(248,113,113,.4); }
+.cf-hover-zone-label{
   padding:4px 8px;
   border-radius:6px;
   background:#1a1a22;
@@ -1012,11 +1024,14 @@ html[data-theme="dark"] .cf-toggle-switch{
   font-weight:700;
   letter-spacing:.02em;
   white-space:nowrap;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 /* Terminal-style "> " prompt — CLAUDE.md's own convention for a line
    that reads like a command result, same recipe the nav's copy-link
    confirmation and every tool's status readout already use. */
-.cf-hover-label::before{
+.cf-hover-zone-label::before{
   content:"> ";
   opacity:.7;
 }
@@ -1474,12 +1489,12 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
          exported PNG (html-to-image snapshots #cfPreviewWrap only) and
          never intercepts the actual click underneath it. -->
     <div class="cf-hover-overlay" id="cfHoverOverlay" hidden>
-      <div class="cf-hover-band" data-band="top"></div>
-      <div class="cf-hover-band" data-band="bottom"></div>
-      <div class="cf-hover-band" data-band="left"></div>
-      <div class="cf-hover-band" data-band="right"></div>
-      <div class="cf-hover-rect" id="cfHoverRect"></div>
-      <div class="cf-hover-label" id="cfHoverLabel"></div>
+      <div class="cf-hover-zone cf-hover-zone-macnav" data-zone="top"><span class="cf-hover-zone-label">Mac nav — click to toggle</span></div>
+      <div class="cf-hover-zone cf-hover-zone-shadow" data-zone="bottom"><span class="cf-hover-zone-label">Shadow — click to toggle</span></div>
+      <div class="cf-hover-zone cf-hover-zone-bg" data-zone="left"><span class="cf-hover-zone-label">Background</span></div>
+      <div class="cf-hover-zone cf-hover-zone-bg" data-zone="right"><span class="cf-hover-zone-label">Background</span></div>
+      <div class="cf-hover-zone cf-hover-zone-template" data-zone="template"><span class="cf-hover-zone-label">Template</span></div>
+      <div class="cf-hover-zone cf-hover-zone-theme" data-zone="theme"><span class="cf-hover-zone-label">Theme</span></div>
     </div>
 
     <div class="cf-filename-row">
@@ -1575,6 +1590,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=89" defer></script>
+<script src="/codify/codify-tool.js?v=90" defer></script>
 </body>
 </html>
