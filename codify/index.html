@@ -1087,6 +1087,39 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   cursor:not-allowed;
 }
 
+/* Copy has no reason to exist until there's code to copy — collapsed to
+   zero width (not just disabled/dimmed like the rule above) while
+   empty, so PNG/SVG share the full row between them, then pops open
+   with a springy overshoot the moment code appears — same proven
+   :disabled-driven, no-JS-needed pattern this button used before it
+   became a static third segment. flex-grow stays constant (1, same as
+   PNG/SVG) in both states — max-width alone does the collapsing, since
+   that's what a flex item's final size actually clamps to regardless of
+   flex-grow; letting flex-grow itself animate isn't reliable cross-
+   browser. Needs an explicit enabled-state max-width (not the default
+   `none`) since a transition can't interpolate to/from `none`. */
+#cfCopyBtn{
+  overflow:hidden;
+  max-width:200px;
+  transform-origin:center;
+  transition:max-width .32s cubic-bezier(.34,1.56,.64,1),
+    padding .32s cubic-bezier(.34,1.56,.64,1),
+    border-width .2s ease,
+    opacity .22s ease,
+    transform .32s cubic-bezier(.34,1.56,.64,1);
+}
+#cfCopyBtn:disabled{
+  max-width:0;
+  min-width:0;
+  padding-left:0;
+  padding-right:0;
+  border-left-width:0;
+  border-right-width:0;
+  opacity:0;
+  transform:scaleX(0);
+  pointer-events:none;
+}
+
 @media (max-width:768px){
   .cf-preview-wrap{ padding:24px; }
 }
