@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codify – Free Code Screenshot Generator – BC Tools</title>
+<meta name="description" content="Turn a code snippet into a beautiful, styled screenshot for free, right in your browser. Pick a language and export as PNG — nothing ever leaves your device.">
+<link rel="canonical" href="https://bitcrunching.com/codify/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Codify – Free Code Screenshot Generator – BC Tools">
+<meta property="og:description" content="Turn a code snippet into a beautiful, styled screenshot for free, right in your browser. Pick a language and export as PNG — nothing ever leaves your device.">
+<meta property="og:url" content="https://bitcrunching.com/codify/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Codify – Free Code Screenshot Generator – BC Tools">
+<meta name="twitter:description" content="Turn a code snippet into a beautiful, styled screenshot for free, right in your browser. Pick a language and export as PNG — nothing ever leaves your device.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=93">
+<script>window.Prism = { manual: true };</script>
+<script src="/vendor/prism.min.js?v=3"></script>
+<link rel="stylesheet" href="/vendor/prism-dracula.css" id="cfThemeLink">
+<style>
+#page-codify::before{
+  background:#C81C86;
+}
+#page-codify::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:36px;
+  opacity:.5;
+  background-image:
+    linear-gradient(rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,.14) 1px, transparent 1px);
+  background-size:14px 14px, 14px 14px, 28px 28px, 28px 28px;
+  background-position:0 0, 0 0, 7px 7px, 7px 7px;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now — same recipe as Convert/Context/Congify/Coudio's help
+   banners. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+  border-bottom:1px dashed rgba(255,255,255,.14);
+}
+html[data-theme="light"] .help-banner-header{
+  border-bottom-color:rgba(29,36,54,.25);
+}
+.help-banner-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+.help-banner-term-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.14);
+  background:none;
+  color:#e5e7eb;
+  opacity:.8;
+  font-family:"Courier New", Courier, monospace;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:.2s;
+}
+html[data-theme="light"] .help-banner-term-btn{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+.help-banner-term-btn:hover{
+  opacity:1;
+  border-color:#4ade80;
+  color:#4ade80;
+}
+.help-banner-term-btn:disabled{
+  opacity:.3;
+  cursor:default;
+}
+.help-banner-term-btn:disabled:hover{
+  border-color:rgba(255,255,255,.14);
+  color:#e5e7eb;
+}
+html[data-theme="light"] .help-banner-term-btn:disabled:hover{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. Same recipe as Combine's. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-codify{ animation:icon-wobble .5s ease; }
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Convert's .cv-remove-btn/
+   Coudio's .cd-remove-btn. Positioned directly against .tool-app
+   (already position:relative) rather than a nested "after content"
+   box like those two — Codify's own after-content area starts well
+   below the header (below the whole editor+settings row), so anchoring
+   there would need a much larger, layout-dependent negative offset for
+   the same visual result this reaches directly. */
+.cf-remove-btn{
+  position:absolute;
+  top:36px;
+  right:36px;
+  z-index:6;
+  font-size:18px;
+}
+/* .privacy-check-badge (shared/site.css) sits in the same top-right
+   corner as .cf-remove-btn above, which — unlike Convert/Coudio's own
+   remove buttons — is anchored directly against .tool-app rather than
+   a lower "after content" box, so it overlaps the badge's row instead
+   of clearing it. Reserve room for the button's own footprint (30px
+   circle + its 36px right offset, plus a small gap) so a long badge
+   message (a privacy-breach warning, not just the short "local &
+   private" line) never renders underneath it. */
+.privacy-check-badge{
+  margin-right:70px;
+}
+/* .bc-remove-btn (shared/site.css) sets display:flex unconditionally,
+   which as an author rule beats the browser's own [hidden]{display:none}
+   UA-stylesheet rule regardless of specificity — the button stayed
+   visibly rendered even with the hidden attribute set, confirmed live
+   (the "×" showed up on the banner before any code was typed, despite
+   codify-tool.js only ever un-hiding it via markStarted()). Convert/
+   Coudio's own .bc-remove-btn usage never hits this because theirs is
+   never actually toggled with the hidden attribute in the first place;
+   Codify is the one tool that starts hidden, so the override belongs
+   here rather than in the shared class. */
+.cf-remove-btn[hidden]{
+  display:none;
+}
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position stay here, same split as
+   .cf-remove-btn/.bc-remove-btn above. Sits just to the left of
+   Remove, same corner. Unlike Remove (only relevant once the code
+   differs from the placeholder, JS-toggled via [hidden]), this is
+   always shown on mobile — it's plain navigation, not tied to editor
+   state. */
+.cf-back-btn{
+  position:absolute;
+  top:36px;
+  right:72px;
+  z-index:6;
+}
+
+/* Page-specific: the code input + the exportable "screenshot" preview —
+   the only genuinely new components this tool introduces. Reuses the
+   same translucent-black dropdown chrome as Congify/Coudio's controls
+   rather than inventing a third variant, just renamed to this page's
+   own class prefix. */
+.cf-code-input-wrap{
+  position:relative;
+  margin-top:20px;
+}
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+/* Chrome (border/background/color/placeholder/hover/focus/scrollbar,
+   light+dark) now lives in shared/site.css's .bc-editor-input, applied
+   via the second class on the element (see the textarea's markup) —
+   this only keeps what's genuinely specific to a code-screenshot
+   editor: size and font. */
+.cf-code-input{
+  display:block;
+  width:100%;
+  height:80px;
+  min-height:80px;
+  max-height:80vh;
+  padding:16px 18px;
+  border-radius:16px;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  line-height:1.6;
+  /* Starts shrunk — height auto-fits to content as you type (see
+     autoFitCodeInput in codify-tool.js) rather than offering a manual
+     drag handle, so there's nothing here to resize by hand; the
+     browser's own barely-visible corner grip is turned off since it
+     would just sit there doing nothing. */
+  resize:none;
+  /* Height auto-fits the content as you type (see autoFitCodeInput in
+     codify-tool.js), so the browser's own scrollbar track almost never
+     has anything to actually scroll — it just sits there as a sliver
+     of UI noise on the right edge. Scrolling still works (for content
+     past the 80vh cap above) via wheel/keyboard, the track visual is
+     just hidden. */
+}
+/* Reads the clipboard straight into the field, the way Coudio/Congify's
+   URL Paste buttons already work — mobile-only (see media query below),
+   same corner the tool's now-removed drag-to-resize handle used to sit
+   in. */
+.cf-paste-btn{
+  display:none;
+  position:absolute;
+  right:-10px;
+  bottom:-10px;
+  height:32px;
+  padding:0 14px;
+  border-radius:16px;
+  background:#2563eb;
+  border:2px solid #fff;
+  color:#fff;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  z-index:4;
+  transition:.2s;
+}
+.cf-paste-btn:hover{
+  background:#1d4fd1;
+}
+@media (max-width:768px){
+  .cf-paste-btn{ display:block; }
+}
+/* The scale/brightness "lift" lives on the whole banner now (below) —
+   having it here too doubled up into two separate wobbles on the same
+   hover. The hover/focus background reaction itself is
+   .bc-editor-input's (shared/site.css) — see the textarea's markup. */
+
+/* The whole banner lifts together with the drop zone, same as
+   Convert/Congify/Coudio's whole-banner hover — here it's driven by
+   :has() off the input's own :hover/:focus rather than gating on an
+   upload state, since this zone is always the target. */
+#page-codify{
+  /* Overrides the shared .tool-app min-height:402px default — every
+     other tool's banner is 1100×322.5px too, just via a state-gated
+     rule (pre-upload only); Codify has no such state, so this applies
+     unconditionally. */
+  min-height:322.5px;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+#page-codify:has(#cfCodeInput:hover),
+#page-codify:has(#cfCodeInput:focus){
+  filter:brightness(1.03);
+  transform:scale(1.004);
+}
+#page-codify:has(#cfCodeInput:active){
+  transform:scale(.997);
+  transition-duration:.1s;
+}
+
+/* The rest of the tool (language/theme/template pickers, live preview,
+   download) stays out of the way until there's actually code to work
+   with — same "reveal once there's real content" idea as Convert's
+   afterDrop, just keyed off the editor instead of a file being picked.
+   Driven entirely by codify-tool.js (a "started" flag, set once and
+   never unset) rather than :placeholder-shown, so clearing the editor
+   back to empty doesn't hide this again and revert to the pre-typing
+   look — once you're working, the tool stays in "working" mode. */
+#cfAfterInput{
+  display:none;
+}
+#cfAfterInput.cf-started{
+  display:block;
+}
+
+.cf-settings{
+  display:flex;
+  flex-wrap:wrap;
+  gap:24px;
+  margin-top:20px;
+}
+/* Sized to its own text (flex-basis:auto, flex-grow:0) rather than
+   stretching evenly with its siblings — "Mac nav" stays narrow,
+   "Background" gets the room its longer label actually needs.
+   min-width:0 lets it shrink (down to ellipsis, .cf-toggle-label/
+   .bc-combo-input's own overflow rules) rather than overflowing if the
+   row gets too crowded to fit every label at full width; max-width:148px
+   caps how wide even the longest label is allowed to grow. Height stays
+   the fixed 40px every pill/toggle in this row already uses
+   (.bc-combo-trigger, .cf-toggle-switch), only width is flexible here.
+   Presets and HOD used to live in this row too (hence the old "Custom
+   and HOD stay narrow" wording here) — both moved to the file name row
+   instead, see .cf-filename-row-left. */
+.cf-setting-group{
+  flex:0 1 auto;
+  min-width:0;
+  max-width:148px;
+  height:40px;
+}
+#page-codify .bc-combo-input{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+/* .cf-setting-group label used to style a generic setting-group heading
+   — dead now (the only <label> left under .cf-setting-group is the
+   Background color trigger below), and actively harmful: its
+   `.cf-setting-group label` selector (one class + one type = higher
+   specificity than a single class) was beating .bc-dropdown-trigger's
+   `display:flex`, silently forcing the trigger back to block layout —
+   the dot, text, and invisible color input stopped centering/flowing
+   as a row and just stacked in normal text flow instead. Removed
+   rather than scoped, since nothing else needs it. */
+
+/* Lets users pick the exported screenshot's backdrop color instead of
+   being stuck with the tool's own brand pink — the backdrop IS the
+   exported PNG's background (see .cf-preview-wrap below), so this is
+   the one setting that changes what actually ends up in the download.
+   Used to be a <label> wrapping a full-size invisible <input type=color>
+   (opening the OS's own native picker on click) — replaced with a real
+   custom trigger+panel (.cf-bg-control below) once that native picker
+   started visually colliding with the Background/Imp pill sitting next
+   to it. The real <input type=color> still exists, just hidden — see
+   .cf-bg-control's own comment further down. */
+
+/* Background control — trigger + custom popover panel (swatches, a hex
+   field, Import image), same shape as the Shadow control elsewhere in
+   this row. Replaces a plain <label> wrapping a real <input type=color>
+   as the trigger, which opened the browser/OS's own native color-picker
+   dialog on click — inconsistent with every other control on the page,
+   and it visually collided with the Background/Imp pill sitting right
+   next to it (confirmed live, screenshot showed the OS picker's own
+   swatch panel overlapping the "Imp" label). The real <input type=color>
+   still exists (see #cfBgColorInput in the panel below) purely as
+   internal state codify-tool.js already reads/writes — just hidden and
+   never the thing a click opens directly anymore. */
+.cf-bg-control{
+  position:relative;
+  width:100%;
+}
+.cf-bg-panel{
+  width:200px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cf-bg-swatches{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:6px;
+}
+.cf-bg-swatch{
+  width:100%;
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid rgba(127,127,127,.35);
+  padding:0;
+  cursor:pointer;
+  transition:.15s;
+}
+.cf-bg-swatch:hover{
+  transform:scale(1.1);
+}
+.cf-bg-swatch.active{
+  border-color:#2563eb;
+  box-shadow:0 0 0 2px rgba(37,99,235,.35);
+}
+/* Free-form picker — the 6 swatches are quick presets, this is what
+   actually lets a visitor land on any color, not just those six (the
+   swatches-only panel this replaces had no way to do that short of the
+   hex field, which needs already knowing the hex you want). A plain
+   saturation/value square + hue strip, not the OS-native color dialog —
+   same reasoning as the rest of this panel (see cfBgColorInput's own
+   comment): a real in-page control instead of a browser popup. Hue
+   drives the square's own base background-color (JS, see
+   updateSvBackground); saturation runs left(0)->right(1), value runs
+   top(1)->bottom(0) via the two overlaid gradients below. */
+.cf-bg-sv{
+  position:relative;
+  width:100%;
+  height:120px;
+  border-radius:10px;
+  border:1px solid rgba(127,127,127,.35);
+  cursor:crosshair;
+  background-image:
+    linear-gradient(to top, #000, rgba(0,0,0,0)),
+    linear-gradient(to right, #fff, rgba(255,255,255,0));
+  touch-action:none;
+}
+.cf-bg-sv-thumb{
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.cf-bg-hue{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:14px;
+  border-radius:7px;
+  background:linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor:pointer;
+}
+.cf-bg-hue::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+  cursor:pointer;
+}
+.cf-bg-hue::-moz-range-thumb{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+  cursor:pointer;
+}
+.cf-bg-hex-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.cf-bg-hex-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  opacity:.8;
+  flex-shrink:0;
+}
+.cf-bg-hex-input{
+  flex:1;
+  min-width:0;
+  height:32px;
+  padding:0 10px;
+  border-radius:8px;
+  border:1px solid rgba(127,127,127,.35);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+}
+.cf-bg-hex-input:focus{
+  outline:none;
+  border-color:#2563eb;
+}
+
+/* Import sits next to the ON/OFF background toggle, not stacked above
+   it — .option-change-btn is width:100% by default (meant to fill a
+   settings row on its own), so both need width:auto here and their own
+   sizing instead: Import keeps most of the row, ON/OFF is just wide
+   enough for its own three/four-letter label. */
+.cf-bg-toggle-row{
+  display:flex;
+  gap:8px;
+}
+.cf-bg-toggle-row .option-change-btn{
+  width:auto;
+}
+#cfBgImageTrigger{
+  flex:1;
+  min-width:0;
+}
+#cfBgEnableBtn{
+  flex:0 0 auto;
+  width:60px;
+}
+/* OFF reads as visually "off" the same way a disabled control does
+   elsewhere on this site — dimmer, not just a different label — rather
+   than looking identical to the ON state but for three letters of text. */
+.cf-bg-enable-btn[aria-pressed="false"]{
+  opacity:.55;
+}
+
+/* Purely a live-preview affordance — a checkerboard behind the window
+   so "background off" reads as "transparent," not "did this break,"
+   the same convention every image editor uses for it. Doesn't touch
+   what actually exports: the export paints straight from
+   previewWrap.style.background (set to "transparent" alongside this
+   class in codify-tool.js), never from this pseudo-element, so the
+   real PNG/SVG output stays genuinely transparent regardless. A ::before
+   (not a background on .cf-preview-wrap itself) because the wrap's own
+   background is the literal inline style the export reads — layering
+   the checkerboard there instead of fighting that with specificity. */
+.cf-preview-wrap.cf-bg-transparent::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background-color:#fff;
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0px;
+  pointer-events:none;
+}
+
+/* The exportable "screenshot" — a gradient backdrop with the code
+   window centered on it. html-to-image snapshots exactly this element,
+   so everything that should appear in the exported PNG (gradient,
+   window chrome, dots, code) has to actually be visible DOM here, not
+   drawn separately for export. */
+/* Click-through prototype: the whole preview is one left/right split
+   (see codify-tool.js) — left opens Template, right opens Theme — so
+   cursor:pointer here is enough on its own; every child (window,
+   titlebar, code) inherits it rather than needing its own override,
+   since none of them are a separate click zone anymore. */
+.cf-preview-wrap{
+  position:relative;
+  /* Explicit auto side-margins matter now that this panel is itself
+     resizable (see #cfResizeHandle in codify-tool.js) — at less than
+     its container's full width it needs to stay centered instead of
+     sitting flush left, same as it always already looked while its
+     width came only from filling the row. */
+  margin:24px auto 0;
+  padding:56px;
+  border-radius:20px;
+  background:#E5E7EB;
+  display:flex;
+  justify-content:center;
+  cursor:pointer;
+  /* The whole preview is a click/double-click surface now (cycling
+     templates, themes, and background color) — without this, every one
+     of those clicks also does a normal browser text selection on
+     whatever word/line it happens to land on (worst with the rapid
+     double-click), which then just sits there highlighted for no
+     reason since nothing here is meant to be copied by dragging. */
+  user-select:none;
+}
+/* The sizing that used to live directly on .cf-window now lives on this
+   wrapper instead — .cf-window itself just fills it (width:100%) — so
+   the wrapper (not clipped by .cf-window's own overflow:hidden) has
+   somewhere to anchor its own resize handle without the handle getting
+   cut off by the window's rounded corners. */
+.cf-window-wrap{
+  position:relative;
+  width:100%;
+  max-width:640px;
+}
+.cf-window{
+  width:100%;
+  border-radius:12px;
+  overflow:hidden;
+  background:#282a36;
+  box-shadow:0 30px 60px rgba(0,0,0,.35);
+}
+/* Shape/color is the shared .bc-resize-handle (shared/site.css) — only
+   the corner offset and cursor stay local, same split as Colorfy's/
+   Congify's own copy. Two independent handles now, one per panel:
+   #cfWindowResizeHandle sits at #cfWindowWrap's own corner and drags
+   #cfWindow's width (the snippet itself); #cfResizeHandle stays
+   anchored to #cfPreviewWrap's corner (the background panel around it)
+   and drags the panel's own width instead — used to be the other way
+   around (this one moved the window), swapped so each handle now
+   actually sits on the panel it resizes. */
+.cf-window-resize-handle{
+  width:25px;
+  height:25px;
+  right:16px;
+  bottom:16px;
+  cursor:nwse-resize;
+}
+/* Smaller than .bc-resize-handle's 30px default (sits right on the
+   snippet's own corner, next to real code, so a slightly smaller circle
+   than the background-panel handle's reads as the less dominant of the
+   two) — content:"" still needed locally even though the actual icon
+   (background) comes from the shared .bc-resize-handle::before rule,
+   same reasoning as Colorfy's own smaller handle in shared/site.css. */
+.cf-window-resize-handle::before{
+  content:"";
+  width:15px;
+  height:15px;
+}
+.cf-resize-handle{
+  right:16px;
+  bottom:16px;
+  cursor:nwse-resize;
+}
+/* Toggled off by the Shadow switch alongside Traffic lights — this is
+   the one deliberate exception to "no shadows" in CLAUDE.md (already
+   documented at .cf-window's own rule above): a real screenshot tool's
+   window drop-shadow, not site UI chrome, so it's fine to let it be
+   optional rather than exempt it from ever being questioned. */
+.cf-window.cf-no-shadow{
+  box-shadow:none;
+}
+/* Each Prism theme (see the Theme dropdown) carries its own background
+   for the window itself — Prism's own CSS only styles the code text,
+   not this chrome, so the mapping lives here rather than in the
+   vendored theme files. */
+.cf-window[data-theme="vscdark"]{ background:#1e1e1e; }
+.cf-window[data-theme="okaidia"]{ background:#272822; }
+.cf-window[data-theme="ghlight"]{ background:#ffffff; }
+.cf-window[data-theme="onedark"]{ background:#282c34; }
+.cf-titlebar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:14px 16px;
+  background:rgba(255,255,255,.06);
+}
+.cf-window[data-theme="ghlight"] .cf-titlebar{
+  background:rgba(0,0,0,.05);
+}
+.cf-dot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+}
+.cf-dot-red{ background:#ff5f56; }
+.cf-dot-yellow{ background:#ffbd2e; }
+.cf-dot-green{ background:#27c93f; }
+
+/* Hides the whole titlebar strip (not just the dots) when the switch
+   below is off — a plain top edge with no chrome, same "off" look
+   Carbon/Ray.so-style screenshot tools offer. */
+#cfWindow.cf-hide-titlebar .cf-titlebar{ display:none; }
+
+/* ===== .cf-toggle-switch — on/off pill switch for the traffic lights ===
+   Same 40px/12px-radius/border/background on-banner flip recipe every
+   other setting pill on this row uses (.bc-combo-trigger), just with a
+   real iOS-style track+knob switch inside instead of a dropdown —
+   genuinely a different control (binary on/off, not "pick one of
+   several"), so it earns its own class rather than being forced into
+   .bc-combo-trigger's dropdown-pill shape. */
+.cf-toggle-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  cursor:pointer;
+  user-select:none;
+}
+html[data-theme="dark"] .cf-toggle-switch{
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* HOD sits alone at the file name row's left edge (see .cf-filename-row)
+   rather than sharing a sized-to-fit-its-siblings row with Mac nav/
+   Shadow, so it needs its own fixed cap instead of the shared
+   width:100% above. */
+.cf-hod-toggle{
+  width:120px;
+  max-width:120px;
+  height:40px;
+  flex:none;
+}
+/* Presets moved here from .cf-settings, right next to HOD — same
+   fixed-cap idea as .cf-hod-toggle just above, sized to its own
+   longest option ("Midnight Purple") rather than the 120px HOD uses.
+   Was a .bc-combo dropdown; now a plain .option-change-btn (click
+   cycles straight to the next preset, no menu to open) — renamed from
+   .cf-preset-combo to match, cap itself unchanged. */
+.cf-preset-btn{
+  width:150px;
+  max-width:150px;
+  flex:none;
+}
+.cf-toggle-switch input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+.cf-toggle-track{
+  position:relative;
+  flex-shrink:0;
+  width:34px;
+  height:18px;
+  border-radius:9px;
+  background:rgba(127,127,127,.4);
+  transition:.2s;
+}
+.cf-toggle-knob{
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s;
+}
+.cf-toggle-switch input:checked ~ .cf-toggle-track{
+  background:#2563eb;
+}
+.cf-toggle-switch input:checked ~ .cf-toggle-track .cf-toggle-knob{
+  transform:translateX(16px);
+}
+.cf-toggle-switch input:focus-visible ~ .cf-toggle-track{
+  outline:2px solid #2563eb;
+  outline-offset:2px;
+}
+.cf-toggle-label{
+  flex:1 1 auto;
+  min-width:0;
+  font-weight:700;
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ===== Shadow control — trigger + popover (opacity/distance/direction/
+   on-off) ===== Was a plain .cf-toggle-switch (on/off only); the trigger
+   button reuses .bc-dropdown-trigger's own pill exactly like Background
+   does, and the panel reuses .bc-dropdown-menu's chrome (border/radius/
+   background/flip) as a second class, only adding its own padding/gap
+   for the slider rows — same shared+local split every other control on
+   this page already follows. */
+.cf-shadow-control{
+  position:relative;
+  width:100%;
+}
+.cf-shadow-trigger{
+  justify-content:space-between;
+}
+.cf-shadow-panel{
+  width:220px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cf-shadow-panel-toggle{
+  width:auto;
+  align-self:flex-start;
+  height:32px;
+  padding:0 10px 0 4px;
+  border:none;
+  background:none;
+}
+.cf-shadow-slider-row{
+  display:grid;
+  grid-template-columns:64px 1fr 40px;
+  align-items:center;
+  gap:8px;
+}
+.cf-shadow-slider-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  opacity:.8;
+}
+.cf-shadow-slider-value{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+/* Native range, minimally themed — accent-color alone (not a full
+   custom track/thumb rebuild) picks up the OS/browser's own light/dark
+   rendering for free, which already matches this panel's flip since
+   the panel's own background is the only piece that needs one. */
+.cf-shadow-slider{
+  width:100%;
+  accent-color:#2563eb;
+}
+/* This panel's own content is never dark-mode-fixed the way an
+   always-dark surface is (see CLAUDE.md) — .bc-dropdown-menu already
+   flips light/dark on its own, this only needs the slider labels/values
+   to follow var(--text) as they already do above. */
+
+/* ===== Output file name — same right-aligned "> File name:" tag +
+   inline-editable underline field Congify's #gifScrubberFileName uses,
+   under its own preview. The HOD toggle (formerly just another entry
+   in .cf-settings, on the right) now sits at this row's left edge
+   instead — same idea as Congify's own left-side timecode toggle next
+   to its filename field, space-between against the filename group. */
+.cf-filename-row{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.cf-filename-row-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.cf-filename-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.cf-filename-tag{ flex-shrink:0; }
+.cf-filename-input{
+  /* Sized to its actual content instead of stretching — a 10-char name
+     shows a 10-char-wide underline, not one spanning the row. Same
+     Chrome-only field-sizing + max-width/ellipsis fallback Congify's
+     own filename field uses. */
+  field-sizing:content;
+  max-width:220px;
+  min-width:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:inherit;
+  font:inherit;
+  cursor:text;
+}
+.cf-filename-input:hover{
+  border-bottom-color:var(--border-strong);
+}
+.cf-filename-input:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+/* No scrolling — this window is exactly what gets exported to a static
+   PNG, so long lines wrap within the fixed 640px width instead of
+   requiring a scrollbar that wouldn't exist in the image anyway. Height
+   is left unconstrained (unlimited snippet length). */
+/* font-size set here too, not just on .cf-window code below — every
+   vendored Prism theme (vendor/prism-*.css) sets its own font-size on
+   pre[class*="language-"] itself (13px for VS Code Dark, 16px for
+   Dracula, 1em/inherited for the rest), and line-height:1.5-ish on that
+   same rule is a unitless multiplier resolved against THAT font-size,
+   not code's — so two themes with the exact same visible code still
+   produced different actual line-heights and window dimensions.
+   Pinning pre's own font-size here (same value as code's) makes every
+   theme's line-height resolve identically regardless of what its own
+   vendor file requested. */
+.cf-window pre{
+  margin:0;
+  padding:24px;
+  font-size:14px;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  background:none !important;
+  text-shadow:none !important;
+}
+.cf-window code{
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  line-height:1.6;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere;
+}
+/* Placeholder code shown in the screenshot preview itself, once the
+   editor's been used at least once — same idea as the textarea's own
+   "Paste or type your code here" ghost text, just here so the window
+   never renders as a blank rectangle if someone clears the editor.
+   Dimmed and non-selectable so it doesn't get exported looking like
+   real, confidently-styled code. */
+#cfCodeOutput.cf-ghost{
+  opacity:.35;
+  user-select:none;
+}
+
+/* ===== Hover inspector overlay — DevTools-style "what am I about to
+   click" highlight over the preview's three zones (see codify-tool.js
+   for the mousemove math). Fixed to the viewport rather than nested
+   inside .cf-preview-wrap, so it paints above the window/titlebar/code
+   regardless of their own stacking, and pointer-events:none throughout
+   so it can never itself become the click target. Classic DevTools
+   content-box blue (rgba(111,168,220,...)) for the tint, since that's
+   the one color scheme this exact kind of overlay is already
+   recognizable by. */
+.cf-hover-overlay{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  pointer-events:none;
+}
+.cf-hover-overlay[hidden]{ display:none; }
+.cf-hover-band,
+.cf-hover-rect{
+  position:absolute;
+  background:rgba(111,168,220,.45);
+}
+.cf-hover-label{
+  position:absolute;
+  padding:4px 8px;
+  border-radius:6px;
+  background:#1a1a22;
+  color:#fff;
+  font-family:"Courier New", Courier, monospace;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+/* Terminal-style "> " prompt — CLAUDE.md's own convention for a line
+   that reads like a command result, same recipe the nav's copy-link
+   confirmation and every tool's status readout already use. */
+.cf-hover-label::before{
+  content:"> ";
+  opacity:.7;
+}
+
+/* ===== PNG/SVG format toggle — same connected-segment recipe as
+   Congify's .gif-mode-toggle (Basic/Advanced): two independently-styled
+   [aria-pressed] buttons, unselected as an outline-only pill matching
+   Compress's unselected .tool-format-btn, selected filled matching the
+   on-banner flip every other control here uses. Always visible (not
+   media-query gated like Congify's) since PNG-vs-SVG is a real choice
+   at every width, not two panels only worth collapsing on mobile. */
+.cf-format-toggle{
+  display:flex;
+  width:100%;
+  max-width:240px;
+  margin:16px auto 0;
+}
+.cf-format-toggle button{
+  flex:1;
+  height:40px;
+  padding:0 14px;
+  border-radius:0;
+  border:1px solid var(--border-strong);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.cf-format-toggle button:first-child{
+  border-top-left-radius:20px;
+  border-bottom-left-radius:20px;
+}
+.cf-format-toggle button:last-child{
+  border-top-right-radius:20px;
+  border-bottom-right-radius:20px;
+}
+/* Every button after the first shares its left edge with the one
+   before it — was just :last-child (PNG/SVG only) before Copy joined
+   as a third, middle segment; broadened so Copy's own left border
+   doesn't double up against PNG's right border either. */
+.cf-format-toggle button:not(:first-child){
+  border-left:none;
+}
+.cf-format-toggle button[aria-pressed="true"]{
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+}
+html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* border-color (not the border shorthand) on the selected state — same
+   fix Congify's own toggle needed — so the border-left:none above
+   survives being selected instead of the shared divider doubling up. */
+.cf-format-toggle button:not(:first-child)[aria-pressed="true"]{
+  border-left:none;
+}
+/* Copy (the middle segment, #cfCopyBtn) is an action, not a third
+   format choice, so it never carries [aria-pressed] — just a plain
+   segment that disables (matching Download) once there's nothing to
+   copy yet. */
+.cf-format-toggle button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+/* Copy has no reason to exist until there's code to copy — collapsed to
+   zero width (not just disabled/dimmed like the rule above) while
+   empty, so PNG/SVG share the full row between them, then pops open
+   with a springy overshoot the moment code appears — same proven
+   :disabled-driven, no-JS-needed pattern this button used before it
+   became a static third segment. flex-grow stays constant (1, same as
+   PNG/SVG) in both states — max-width alone does the collapsing, since
+   that's what a flex item's final size actually clamps to regardless of
+   flex-grow; letting flex-grow itself animate isn't reliable cross-
+   browser. Needs an explicit enabled-state max-width (not the default
+   `none`) since a transition can't interpolate to/from `none`. */
+#cfCopyBtn{
+  overflow:hidden;
+  max-width:200px;
+  transform-origin:center;
+  transition:max-width .32s cubic-bezier(.34,1.56,.64,1),
+    padding .32s cubic-bezier(.34,1.56,.64,1),
+    border-width .2s ease,
+    opacity .22s ease,
+    transform .32s cubic-bezier(.34,1.56,.64,1);
+}
+#cfCopyBtn:disabled{
+  max-width:0;
+  min-width:0;
+  padding-left:0;
+  padding-right:0;
+  border-left-width:0;
+  border-right-width:0;
+  opacity:0;
+  transform:scaleX(0);
+  pointer-events:none;
+}
+
+@media (max-width:768px){
+  .cf-preview-wrap{ padding:24px; }
+}
+/* Mobile shows just "Download" on the primary action button — the
+   fuller desktop label ("Convert and download", "Strip metadata and
+   download", etc.) doesn't fit well at phone widths, and "Download" is
+   what actually happens from the user's side either way. */
+@media (max-width:768px){
+  #cfDownloadBtn{ font-size:0; }
+  #cfDownloadBtn::before{
+    content:"Download";
+    font-size:20px;
+  }
+}
+
+/* Copy never carries [aria-pressed] (see above), so without its own
+   rule it never got any fill/color feedback on click — just the plain
+   border-hover every segment gets. Gives it real color feedback using
+   the exact same shared on-banner flip recipe (CLAUDE.md) every other
+   control on this site already uses, rather than a bespoke one-off:
+   light rgba(255,255,255,.35)/.45, dark rgba(0,0,0,.25)/.35 for
+   hover/active respectively — the same numbers PNG/SVG's own
+   [aria-pressed="true"] state already uses two rules up. */
+#cfCopyBtn:hover:not(:disabled){
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+}
+#cfCopyBtn:active:not(:disabled){
+  border-color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.45);
+}
+html[data-theme="dark"] #cfCopyBtn:hover:not(:disabled){
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
+  border-color:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.36);
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">We use cookies. Choose which categories to allow below — see our <a data-goto="cookies">Cookie Policy</a> for details.</p>
+  <p class="cookie-banner-text-mobile">Choose which categories to allow</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Toggle cookie settings contents" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Choose which categories to allow</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="More about necessary cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessary (always on)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="More about analytics cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Analytics (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="More about advertising cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Advertising (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Accept All</button>
+    <button type="button" id="cookieBannerSave">Confirm choices</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Toggle light and dark mode" title="Toggle light and dark mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copy link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="More share options"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">Email</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cfHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cfHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cfHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cfHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="help-banner-term-btn" id="cfHelpBack">&lt; BACK</button>
+      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="cfHelpCloseMobile">CLOSE</button>
+      <button type="button" class="help-banner-term-btn" id="cfHelpNext">NEXT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cfHelpBody">
+    <div class="engine-status-row">&gt; <span id="cfHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-codify">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-codify" role="img" aria-label="Codify icon"></span>
+        <span>Codify</span>
+      </div>
+      <span class="privacy-check-badge" id="cfPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cf-back-btn bc-canvas-back-btn" id="cfBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cf-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cfRemoveBtn" aria-label="Clear code" hidden>×</button>
+
+    <div class="cf-code-input-wrap">
+      <textarea class="cf-code-input bc-editor-input" id="cfCodeInput" spellcheck="false" placeholder="Paste or type your code here" aria-label="Paste or type your code here"></textarea>
+      <button type="button" class="cf-paste-btn" id="cfPasteBtn">Paste</button>
+    </div>
+
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cfContinueBtn" hidden>Continue where you left off</button>
+
+    <div id="cfAfterInput">
+    <div class="cf-settings">
+      <div class="cf-setting-group">
+        <div class="bc-combo" id="cfLanguageDropdown">
+          <div class="bc-combo-trigger" id="cfLanguageTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <input class="bc-combo-input" id="cfLanguageInput" value="JavaScript" readonly aria-label="Search languages">
+            <span class="bc-combo-chevron" aria-hidden="true"></span>
+          </div>
+          <div class="bc-combo-menu" id="cfLanguageMenu" role="listbox" hidden>
+            <button type="button" class="bc-combo-option active" data-lang="javascript" data-label="JavaScript" role="option" aria-selected="true"><span>JavaScript</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="typescript" data-label="TypeScript" role="option" aria-selected="false"><span>TypeScript</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="python" data-label="Python" role="option" aria-selected="false"><span>Python</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="markup" data-label="HTML" role="option" aria-selected="false"><span>HTML</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="css" data-label="CSS" role="option" aria-selected="false"><span>CSS</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="rust" data-label="Rust" role="option" aria-selected="false"><span>Rust</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="go" data-label="Go" role="option" aria-selected="false"><span>Go</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="java" data-label="Java" role="option" aria-selected="false"><span>Java</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="c" data-label="C" role="option" aria-selected="false"><span>C</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="cpp" data-label="C++" role="option" aria-selected="false"><span>C++</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="php" data-label="PHP" role="option" aria-selected="false"><span>PHP</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="ruby" data-label="Ruby" role="option" aria-selected="false"><span>Ruby</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="sql" data-label="SQL" role="option" aria-selected="false"><span>SQL</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="yaml" data-label="YAML" role="option" aria-selected="false"><span>YAML</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="json" data-label="JSON" role="option" aria-selected="false"><span>JSON</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-lang="bash" data-label="Bash" role="option" aria-selected="false"><span>Bash</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <div class="bc-combo-empty" id="cfLanguageEmpty" hidden>No matches</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-setting-group">
+        <div class="bc-combo" id="cfThemeDropdown">
+          <div class="bc-combo-trigger" id="cfThemeTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <input class="bc-combo-input" id="cfThemeInput" value="Dracula" readonly aria-label="Search themes">
+            <span class="bc-combo-chevron" aria-hidden="true"></span>
+          </div>
+          <div class="bc-combo-menu" id="cfThemeMenu" role="listbox" hidden>
+            <button type="button" class="bc-combo-option active" data-theme="dracula" data-href="/vendor/prism-dracula.css" data-label="Dracula" role="option" aria-selected="true"><span>Dracula</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-theme="vscdark" data-href="/vendor/prism-vscdark.css" data-label="VS Code Dark" role="option" aria-selected="false"><span>VS Code Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-theme="okaidia" data-href="/vendor/prism-okaidia.css" data-label="Monokai" role="option" aria-selected="false"><span>Monokai</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-theme="ghlight" data-href="/vendor/prism-ghlight.css" data-label="GitHub Light" role="option" aria-selected="false"><span>GitHub Light</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-theme="onedark" data-href="/vendor/prism-onedark.css" data-label="One Dark" role="option" aria-selected="false"><span>One Dark</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <div class="bc-combo-empty" id="cfThemeEmpty" hidden>No matches</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-setting-group">
+        <div class="bc-combo" id="cfTemplateDropdown">
+          <div class="bc-combo-trigger" id="cfTemplateTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <input class="bc-combo-input" id="cfTemplateInput" value="Hello world" readonly aria-label="Search templates">
+            <span class="bc-combo-chevron" aria-hidden="true"></span>
+          </div>
+          <div class="bc-combo-menu" id="cfTemplateMenu" role="listbox" hidden>
+            <button type="button" class="bc-combo-option active" data-template="hello" data-label="Hello world" role="option" aria-selected="true"><span>Hello world</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="fibonacci" data-label="Fibonacci" role="option" aria-selected="false"><span>Fibonacci</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="fetch" data-label="API fetch" role="option" aria-selected="false"><span>API fetch</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="class" data-label="Class example" role="option" aria-selected="false"><span>Class example</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="sort" data-label="Bubble sort" role="option" aria-selected="false"><span>Bubble sort</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="binarySearch" data-label="Binary search" role="option" aria-selected="false"><span>Binary search</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="debounce" data-label="Debounce" role="option" aria-selected="false"><span>Debounce</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="promise" data-label="Promise chain" role="option" aria-selected="false"><span>Promise chain</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="array" data-label="Array methods" role="option" aria-selected="false"><span>Array methods</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-template="linkedList" data-label="Linked list" role="option" aria-selected="false"><span>Linked list</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <div class="bc-combo-empty" id="cfTemplateEmpty" hidden>No matches</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-setting-group">
+        <div class="cf-bg-control" id="cfBgControl">
+          <button type="button" class="cf-bg-trigger bc-dropdown-trigger" id="cfBgTrigger" aria-haspopup="true" aria-expanded="false">
+            <span class="bc-color-dot" id="cfBgColorSwatch" style="background:#E5E7EB;" aria-hidden="true"></span>
+            <span>Background</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <!-- Custom panel, not the OS-native color picker a plain
+               <input type=color> would pop open (that's still here —
+               see cfBgColorInput below — but now hidden and driven
+               programmatically, never the thing a click actually
+               opens). Same trigger+panel shape as Shadow's own control
+               just above/below this one in the row. -->
+          <div class="cf-bg-panel bc-dropdown-menu" id="cfBgPanel" hidden>
+            <div class="cf-bg-swatches" id="cfBgSwatches" role="listbox" aria-label="Background color">
+              <button type="button" class="cf-bg-swatch" data-color="#E5E7EB" style="background:#E5E7EB;" aria-label="#E5E7EB"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#7C3AED" style="background:#7C3AED;" aria-label="#7C3AED"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#2563EB" style="background:#2563EB;" aria-label="#2563EB"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#22C55E" style="background:#22C55E;" aria-label="#22C55E"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#F97316" style="background:#F97316;" aria-label="#F97316"></button>
+              <button type="button" class="cf-bg-swatch" data-color="#1E1E1E" style="background:#1E1E1E;" aria-label="#1E1E1E"></button>
+            </div>
+            <div class="cf-bg-sv" id="cfBgSv" role="slider" tabindex="0" aria-label="Saturation and brightness">
+              <div class="cf-bg-sv-thumb" id="cfBgSvThumb"></div>
+            </div>
+            <input type="range" class="cf-bg-hue" id="cfBgHue" min="0" max="359" step="1" value="0" aria-label="Hue">
+            <label class="cf-bg-hex-row">
+              <span class="cf-bg-hex-label">Hex</span>
+              <input type="text" id="cfBgHexInput" class="cf-bg-hex-input" value="#E5E7EB" maxlength="7" spellcheck="false" aria-label="Custom hex color">
+            </label>
+            <input type="color" id="cfBgColorInput" value="#E5E7EB" aria-hidden="true" tabindex="-1" hidden>
+            <div class="cf-bg-toggle-row">
+              <button type="button" class="cf-bg-image-trigger option-change-btn" id="cfBgImageTrigger" title="Import a custom background image">
+                <span class="option-change-btn-label">Import</span>
+              </button>
+              <button type="button" class="cf-bg-enable-btn option-change-btn" id="cfBgEnableBtn" title="Turn the background off (transparent export)" aria-pressed="true">
+                <span class="option-change-btn-label" id="cfBgEnableBtnLabel">ON</span>
+              </button>
+            </div>
+            <input type="file" id="cfBgImageInput" accept="image/*" aria-label="Import a custom background image" hidden>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-setting-group">
+        <label class="cf-toggle-switch">
+          <input type="checkbox" id="cfTrafficLightsToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">Mac nav</span>
+        </label>
+      </div>
+
+      <div class="cf-setting-group">
+        <div class="cf-shadow-control" id="cfShadowControl">
+          <button type="button" class="cf-shadow-trigger bc-dropdown-trigger" id="cfShadowTrigger" aria-haspopup="true" aria-expanded="false">
+            <span>Shadow</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="cf-shadow-panel bc-dropdown-menu" id="cfShadowPanel" hidden>
+            <label class="cf-toggle-switch cf-shadow-panel-toggle">
+              <input type="checkbox" id="cfShadowToggle" checked>
+              <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+              <span class="cf-toggle-label">On</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Opacity</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowOpacity" min="0" max="100" value="35" aria-label="Shadow opacity">
+              <span class="cf-shadow-slider-value" id="cfShadowOpacityValue">35%</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Distance</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowDistance" min="0" max="60" value="30" aria-label="Shadow distance">
+              <span class="cf-shadow-slider-value" id="cfShadowDistanceValue">30px</span>
+            </label>
+            <label class="cf-shadow-slider-row">
+              <span class="cf-shadow-slider-label">Direction</span>
+              <input type="range" class="cf-shadow-slider" id="cfShadowDirection" min="0" max="360" value="0" aria-label="Shadow direction">
+              <span class="cf-shadow-slider-value" id="cfShadowDirectionValue">0°</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cf-preview-wrap" id="cfPreviewWrap">
+      <div class="cf-window-wrap" id="cfWindowWrap">
+        <div class="cf-window" id="cfWindow" data-theme="dracula">
+          <div class="cf-titlebar">
+            <span class="cf-dot cf-dot-red"></span><span class="cf-dot cf-dot-yellow"></span><span class="cf-dot cf-dot-green"></span>
+          </div>
+          <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
+        </div>
+        <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
+      </div>
+      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Background panel size" tabindex="0"></span>
+    </div>
+
+    <!-- Hover inspector overlay (see codify-tool.js) — a DevTools-style
+         "what am I about to click" layer over the three zones the
+         preview splits into: background, left half (Template), right
+         half (Theme). Purely visual (pointer-events:none), positioned
+         with real coordinates on every mousemove rather than being part
+         of the preview's own DOM, so it can never end up inside the
+         exported PNG (html-to-image snapshots #cfPreviewWrap only) and
+         never intercepts the actual click underneath it. -->
+    <div class="cf-hover-overlay" id="cfHoverOverlay" hidden>
+      <div class="cf-hover-band" data-band="top"></div>
+      <div class="cf-hover-band" data-band="bottom"></div>
+      <div class="cf-hover-band" data-band="left"></div>
+      <div class="cf-hover-band" data-band="right"></div>
+      <div class="cf-hover-rect" id="cfHoverRect"></div>
+      <div class="cf-hover-label" id="cfHoverLabel"></div>
+    </div>
+
+    <div class="cf-filename-row">
+      <div class="cf-filename-row-left">
+        <label class="cf-toggle-switch cf-hod-toggle" title="Hover overlay display — the click-zone highlight over the preview">
+          <input type="checkbox" id="cfHodToggle" checked>
+          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+          <span class="cf-toggle-label">HOD</span>
+        </label>
+        <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
+          <span class="option-change-btn-label" id="cfStyleBtnLabel">Presets</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+      <span class="cf-filename-group">
+        <span class="cf-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="cf-filename-tag-text">File name:</span></span>
+        <input type="text" class="cf-filename-input" id="cfFileNameInput" aria-label="Output file name" spellcheck="false" value="codify-snippet">
+      </span>
+    </div>
+
+    <!-- Same connected-segment recipe as Congify's Basic/Advanced switch
+         (.gif-mode-toggle) — independently-styled buttons sharing
+         dividers, rather than a sliding-highlight toggle. Unlike
+         Congify's (mobile-only, since desktop there has room to show
+         both panels at once), this one's relevant at every width: PNG
+         vs SVG is a real either/or choice for what Download/Copy
+         actually produce, not a space-saving collapse of two panels.
+         Copy sits as a third, middle segment — [aria-pressed] only ever
+         goes on PNG/SVG (the actual either/or choice), not Copy (an
+         action, not a format pick). -->
+    <div class="cf-format-toggle" id="cfFormatToggle">
+      <button type="button" id="cfFormatPngBtn" aria-pressed="true">PNG</button>
+      <button type="button" id="cfCopyBtn" title="Copy PNG to clipboard" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Copy</button>
+      <button type="button" id="cfFormatSvgBtn" aria-pressed="false">SVG</button>
+    </div>
+
+    <div class="tool-controls" style="grid-template-columns:1fr;">
+      <button class="tool-primary-btn" id="cfDownloadBtn" title="Download PNG (D)" data-ga-event="tool_primary_action" data-ga-tool="codify" disabled>Download PNG</button>
+    </div>
+
+    <div class="tool-status" id="cfStatus"></div>
+    </div><!-- /#cfAfterInput -->
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="codify">
+  <h3>New to making code screenshots?</h3>
+  <p>A plain-text code snippet pasted into a chat, slide, or social post loses everything that makes real code easy to read at a glance — no syntax color, no consistent spacing, often no line breaks preserved at all. A styled screenshot fixes that, but only if it's actually legible at the size it'll be viewed at.</p>
+  <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="codify" href="/golden-rules/?tool=codify">just one click away.</a></p>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Company</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">Our Universe</span><span class="footer-link-plain">About Us</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">Already Answered</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">Galactic Handbook</span><span class="footer-link-plain">Terms of Use</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">Alien Privacy Protocol</span><span class="footer-link-plain">Privacy Policy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Cookie Registry</span><span class="footer-link-plain">Cookie Policy</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Getting started with</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Get in touch with us</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=39" defer></script>
+<script src="/vendor/html-to-image.min.js"></script>
+<script src="/codify/codify-pure.js?v=1" defer></script>
+<script src="/codify/codify-tool.js?v=86" defer></script>
+</body>
+</html>
