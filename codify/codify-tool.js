@@ -691,32 +691,39 @@ console.log(a.next.value);`
       }
     }
     let lastMoveX = null, lastMoveY = null;
-    /* The window auto-resizes (more code typed, a template/language swap,
-       font-size changes) whenever renderPreview() runs — but the overlay
-       only ever redrew on mousemove, so if the cursor was resting still
-       over the preview while any of that happened, the highlight stayed
-       frozen at the window's old size (confirmed live: window grew
-       155px -> 334px tall while the highlight rect stayed at 155px,
-       ending well short of the window's real bottom edge — reads as the
-       overlay being "stuck", exactly as reported). Assigned to the
-       outer refreshHoverOverlay so renderPreview() can call it directly
-       after every resize-causing change, not just react to one. */
+    /* Recomputing the overlay's position after a resize by replaying the
+       last known mouse position through document.elementFromPoint() (the
+       original fix here) turned out not to be trustworthy — confirmed
+       still producing a visibly wrong, detached box after a paste even
+       once hide-when-not-hovering was added on top of it, and editing so
+       much as one more character was enough to reproduce it again. The
+       replay is inherently guessy: elementFromPoint() at a remembered
+       coordinate can land on a different element than the one actually
+       under the cursor once layout has shifted, and there's no way to
+       tell the difference from in here. Simplest robust fix: stop trying
+       to replay a stale position at all. Any resize-driven change (typing,
+       pasting, a template/theme swap, dragging the resize handle) just
+       hides the overlay outright — it reappears correctly positioned on
+       the next REAL mousemove, which is the only time the browser's own
+       hit-testing is actually trustworthy. */
     refreshHoverOverlay = () => {
+      hoverOverlay.hidden = true;
+    };
+    /* The one place a stale-position replay is still fine: flipping HOD
+       back on is a deliberate, discrete user action, not a resize — mouse
+       position and layout are both already settled and accurate at this
+       exact instant, so recomputing immediately (rather than leaving the
+       user to first jiggle the mouse) is safe here specifically. Without
+       this, flipping the toggle on while resting over the preview showed
+       nothing until the cursor next moved, which read as "the toggle
+       doesn't work" (confirmed live). */
+    function showHoverOverlayIfHovering(){
       if (lastMoveX !== null && previewWrap.matches(":hover")){
         updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
       } else {
-        /* Not currently hovering — a resize-causing change (typing,
-           pasting, a template swap) with the cursor elsewhere used to
-           leave whatever overlay was showing before frozen in its old,
-           now-wrong position instead of clearing it (confirmed live:
-           pasting a snippet while the cursor rested up in the code
-           editor left the highlight box floating detached, well outside
-           the now-resized preview window). Hide it — it'll reappear
-           correctly positioned on the next real mousemove over the
-           preview. */
         hoverOverlay.hidden = true;
       }
-    };
+    }
     previewWrap.addEventListener("mousemove", (e) => {
       lastMoveX = e.clientX;
       lastMoveY = e.clientY;
@@ -732,7 +739,7 @@ console.log(a.next.value);`
           hoverOverlay.hidden = true;
           return;
         }
-        refreshHoverOverlay();
+        showHoverOverlayIfHovering();
       });
     }
     /* Belt-and-suspenders for any resize renderPreview() itself doesn't
@@ -841,12 +848,10 @@ console.log(a.next.value);`
     codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
     if (window.Prism) Prism.highlightElement(codeOutput);
     /* #cfWindow sizes itself to codeOutput's content, so this line can
-       (and usually does) resize it — re-sync the hover-inspector overlay
-       against the now-current size immediately, synchronously, rather
-       than waiting on a mousemove that may not come (see
-       refreshHoverOverlay's own comment for the "stuck" bug this fixes).
-       getBoundingClientRect() inside it forces the reflow that makes the
-       new size available right here, not just eventually. */
+       (and usually does) resize it, which can leave the hover-inspector
+       overlay pointing at stale coordinates — see refreshHoverOverlay's
+       own comment for why it just hides here rather than trying to
+       recompute against wherever the cursor last was. */
     refreshHoverOverlay();
   }
   codeInput.addEventListener("input", () => {
