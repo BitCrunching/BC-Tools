@@ -757,18 +757,53 @@ html[data-theme="dark"] .cf-toggle-switch{
   border:1px solid rgba(0,0,0,.4);
   background:rgba(0,0,0,.25);
 }
-/* HOD sits alone at the file name row's left edge (see .cf-filename-row)
-   rather than sharing a sized-to-fit-its-siblings row with Mac nav/
-   Shadow, so it needs its own fixed cap instead of the shared
-   width:100% above. */
-.cf-hod-toggle{
+/* ===== .cf-hod-btn — plain press-and-hold button, not a toggle =====
+   Used to share .cf-toggle-switch's on/off track+knob visual, which
+   read as a persistent setting — genuinely misleading now that holding
+   it down is the entire interaction (see codify-tool.js). Same shell
+   recipe (40px/12px-radius/border/background on-banner flip) as
+   .cf-toggle-switch above, just as a plain button with no switch
+   artwork inside, plus its own pressed state so holding it down gives
+   real visual feedback instead of looking inert the whole time. Sits
+   alone at the file name row's left edge (see .cf-filename-row) rather
+   than sharing a sized-to-fit-its-siblings row, so it gets its own
+   fixed cap instead of a shared width:100%. */
+.cf-hod-btn{
   width:120px;
   max-width:120px;
   height:40px;
   flex:none;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-family:inherit;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
+  transition:background .1s, border-color .1s;
+}
+html[data-theme="dark"] .cf-hod-btn{
+  border:1px solid rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* Pressed/held feedback — driven by aria-pressed (set in codify-tool.js
+   alongside the actual hold-state flag), not :active, since the real
+   "held" state can outlive a plain :active (mouseup fires on
+   `document`, so a drag that ends away from the button itself would
+   leave :active cleared while still genuinely held). */
+.cf-hod-btn[aria-pressed="true"]{
+  background:rgba(255,255,255,.5);
+  border-color:rgba(255,255,255,.7);
+}
+html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
+  background:rgba(0,0,0,.4);
+  border-color:rgba(0,0,0,.6);
 }
 /* Presets moved here from .cf-settings, right next to HOD — same
-   fixed-cap idea as .cf-hod-toggle just above, sized to its own
+   fixed-cap idea as .cf-hod-btn just above, sized to its own
    longest option ("Midnight Purple") rather than the 120px HOD uses.
    Was a .bc-combo dropdown; now a plain .option-change-btn (click
    cycles straight to the next preset, no menu to open) — renamed from
@@ -1499,11 +1534,7 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 
     <div class="cf-filename-row">
       <div class="cf-filename-row-left">
-        <label class="cf-toggle-switch cf-hod-toggle" title="Hold to preview the click-zone highlight over the preview">
-          <input type="checkbox" id="cfHodToggle">
-          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-          <span class="cf-toggle-label">HOD</span>
-        </label>
+        <button type="button" class="cf-hod-btn" id="cfHodToggle" aria-pressed="false" title="Hold to preview the click-zone highlight over the preview">HOD</button>
         <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
           <span class="option-change-btn-label" id="cfStyleBtnLabel">Presets</span>
           <span class="option-change-btn-icon" aria-hidden="true"></span>
@@ -1590,6 +1621,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=91" defer></script>
+<script src="/codify/codify-tool.js?v=92" defer></script>
 </body>
 </html>
