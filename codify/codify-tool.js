@@ -604,9 +604,9 @@ console.log(a.next.value);`
      one glance answers "what can I click here" instead of hunting zone
      by zone. `.checked` still gates it; driven by press/release rather
      than a native checkbox click, which is why mousedown calls
-     preventDefault() first. The `pointerup` listener lives on
-     `document`, not the toggle itself, so releasing anywhere — not just
-     back over the toggle — still ends the hold. */
+     preventDefault() first. The `mouseup` listener lives on `document`,
+     not the toggle itself, so releasing anywhere — not just back over
+     the toggle — still ends the hold. */
   const hodToggle = document.getElementById("cfHodToggle");
   /* Reassigned below once the hover-overlay elements are confirmed to
      exist; declared here (not just inside that block) so hodToggle's own
@@ -676,7 +676,12 @@ console.log(a.next.value);`
       hodToggle.checked = false;
       if (hoverOverlay) hoverOverlay.hidden = true;
     };
-    document.addEventListener("pointerup", endHold);
+    /* mouseup, not pointerup — confirmed live that pointerup doesn't
+       reliably fire for every release, leaving checked stuck true with
+       the overlay hidden under it (pressed but permanently "off"-looking
+       until the next accidental mouseup landed somewhere). mouseup is
+       the one guaranteed to pair with the mousedown above. */
+    document.addEventListener("mouseup", endHold);
     document.addEventListener("touchend", endHold);
     document.addEventListener("touchcancel", endHold);
   }
