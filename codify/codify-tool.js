@@ -704,6 +704,17 @@ console.log(a.next.value);`
     refreshHoverOverlay = () => {
       if (lastMoveX !== null && previewWrap.matches(":hover")){
         updateHoverOverlay(lastMoveX, lastMoveY, document.elementFromPoint(lastMoveX, lastMoveY));
+      } else {
+        /* Not currently hovering — a resize-causing change (typing,
+           pasting, a template swap) with the cursor elsewhere used to
+           leave whatever overlay was showing before frozen in its old,
+           now-wrong position instead of clearing it (confirmed live:
+           pasting a snippet while the cursor rested up in the code
+           editor left the highlight box floating detached, well outside
+           the now-resized preview window). Hide it — it'll reappear
+           correctly positioned on the next real mousemove over the
+           preview. */
+        hoverOverlay.hidden = true;
       }
     };
     previewWrap.addEventListener("mousemove", (e) => {
