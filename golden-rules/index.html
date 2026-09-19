@@ -58,43 +58,108 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=89">
+<link rel="stylesheet" href="/shared/site.css?v=92">
 <style>
 /* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
 .golden-rules-switcher{
   display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:12px;
-  margin:32px 0 48px;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
 }
 
 .golden-rules-tool-btn{
-  padding:12px 28px;
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
   border-radius:14px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.05);
+  border:1px solid transparent;
+  background:transparent;
   color:var(--text);
   font-weight:800;
   font-size:16px;
-  cursor:pointer;
   font-family:inherit;
-  transition:.2s;
-}
-
-html[data-theme="dark"] .golden-rules-tool-btn{
-  background:rgba(255,255,255,.05);
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
 }
 
 .golden-rules-tool-btn:hover{
   border-color:var(--border-strong);
 }
 
-.golden-rules-tool-btn.active{
-  background:#4da6ff;
-  border-color:#4da6ff;
-  color:#020617;
-}
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 
 .ad-slot-incontent{
   margin:32px auto;
@@ -142,13 +207,9 @@ html[data-theme="dark"] .golden-rules-tool-btn{
   padding:6px 24px;
 }
 
-.golden-rules-articles[data-tool="convert"] .golden-rules-article{ background:#d670ff21; }
-.golden-rules-articles[data-tool="compress"] .golden-rules-article{ background:#68e1ff21; }
-.golden-rules-articles[data-tool="combine"] .golden-rules-article{ background:#ec6f6321; }
-.golden-rules-articles[data-tool="exif"] .golden-rules-article{ background:#4ade8021; }
-.golden-rules-articles[data-tool="context"] .golden-rules-article{ background:#ffd15521; }
-.golden-rules-articles[data-tool="gif"] .golden-rules-article{ background:#22D3D021; }
-.golden-rules-articles[data-tool="coudio"] .golden-rules-article{ background:#00f5d421; }
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
 
 .golden-rules-article summary{
   padding:18px 0;
@@ -300,6 +361,7 @@ html[data-theme="dark"] .golden-rules-tool-btn{
     </div>
 
     <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
       <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
@@ -307,6 +369,7 @@ html[data-theme="dark"] .golden-rules-tool-btn{
       <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
     <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
@@ -1190,7 +1253,7 @@ html[data-theme="dark"] .golden-rules-tool-btn{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=33" defer></script>
-<script src="/golden-rules/golden-rules-tool.js?v=2" defer></script>
+<script src="/shared/site.js?v=39" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=3" defer></script>
 </body>
 </html>
