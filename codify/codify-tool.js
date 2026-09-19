@@ -568,23 +568,23 @@ console.log(a.next.value);`
     });
   }
 
-  /* ===== Hover inspector overlay =====
-     Same three zones the click handler above already recognizes
-     (background / left half / right half), just drawn as a DevTools-
-     style highlight on hover instead of only reacting on click — lets
-     someone see what a click would do before committing to it. Recomputes
-     real getBoundingClientRect() coordinates on every mousemove rather
-     than tracking zone boundaries separately, so it can never drift out
-     of sync with the actual click logic above (resizes, scrolls, and
-     zoom all just fall out of that for free). */
+  /* ===== HOD inspector overlay =====
+     Same five zones the click handler above already recognizes (Mac nav /
+     Shadow / Background / Template / Theme), drawn as a DevTools-style
+     highlight map — press-and-hold HOD to see all of them at once,
+     each its own color, instead of only discovering what's clickable by
+     clicking it. Recomputes real getBoundingClientRect() coordinates
+     rather than tracking zone boundaries separately, so it can never
+     drift out of sync with the actual click logic above (resizes,
+     scrolls, and zoom all just fall out of that for free). */
   const hoverOverlay = document.getElementById("cfHoverOverlay");
-  const hoverRect = document.getElementById("cfHoverRect");
-  const hoverLabel = document.getElementById("cfHoverLabel");
-  const hoverBands = hoverOverlay ? {
-    top: hoverOverlay.querySelector('[data-band="top"]'),
-    bottom: hoverOverlay.querySelector('[data-band="bottom"]'),
-    left: hoverOverlay.querySelector('[data-band="left"]'),
-    right: hoverOverlay.querySelector('[data-band="right"]')
+  const hoverZones = hoverOverlay ? {
+    top: hoverOverlay.querySelector('[data-zone="top"]'),
+    bottom: hoverOverlay.querySelector('[data-zone="bottom"]'),
+    left: hoverOverlay.querySelector('[data-zone="left"]'),
+    right: hoverOverlay.querySelector('[data-zone="right"]'),
+    template: hoverOverlay.querySelector('[data-zone="template"]'),
+    theme: hoverOverlay.querySelector('[data-zone="theme"]')
   } : null;
   function positionBox(el, x, y, w, h){
     el.style.left = x + "px";
@@ -592,172 +592,64 @@ console.log(a.next.value);`
     el.style.width = Math.max(0, w) + "px";
     el.style.height = Math.max(0, h) + "px";
   }
-  function positionLabel(x, y, text){
-    hoverLabel.textContent = text;
-    /* Sits just above the highlighted zone; flips below it near the top
-       of the viewport so it never renders off-screen, same rule
-       DevTools' own tag uses. Clamped horizontally too — the "Right
-       half" zone's label starts at the preview's own midpoint, which on
-       a narrow viewport can sit close enough to the edge that a longer
-       label (its width not known until the browser lays it out) would
-       otherwise run off-screen. */
-    const labelHeight = 26;
-    hoverLabel.style.top = (y - labelHeight >= 0 ? y - labelHeight : y) + "px";
-    hoverLabel.style.left = x + "px";
-    const labelRect = hoverLabel.getBoundingClientRect();
-    if (labelRect.right > window.innerWidth){
-      hoverLabel.style.left = Math.max(0, x - (labelRect.right - window.innerWidth)) + "px";
-    }
-  }
-  /* "HOD" (Hover Overlay Display) — press-and-hold, not a persistent
-     on/off toggle. Was a real preference (saved across visits via
-     localStorage) with a "change" event flipping it, but that's exactly
-     what made the stale-position bug above possible: the inspector could
-     be left sitting on screen through any number of edits with nothing
-     forcing a fresh, trustworthy mouse read. Holding it down sidesteps
-     the whole class of bug instead of chasing it further — the overlay
-     now only ever exists for as long as a real mouse button is actually
-     down, driven live by the ordinary mousemove listener below, so
-     there's never a moment where it's showing a position that isn't the
-     cursor's actual current one. No saved state, since "held" isn't a
-     preference to remember.
-     `.checked` is still what gates showing it (updateHoverOverlay checks
-     it below) — just driven by press/release now instead of a native
-     checkbox click, which is why mousedown calls preventDefault() first
-     (stops the browser's own click-to-toggle from fighting this). The
-     `pointerup` listener lives on `document`, not the toggle itself, so
-     releasing anywhere — not just back over the toggle — still ends the
-     hold, the same way a real "hold to peek" control should work. */
+  /* "HOD" (Hover Overlay Display) — press-and-hold. Used to track the
+     cursor and reveal one zone at a time (Mac nav / Shadow / Background /
+     Template / Theme), which meant redrawing on every mousemove and
+     resize — exactly the machinery that kept producing stale-position
+     bugs (a remembered mouse coordinate replayed through
+     document.elementFromPoint() after layout had already moved on).
+     Showing every zone at once, each its own color, sidesteps that
+     entirely: there's no "which zone is the cursor over" question left
+     to answer, so nothing can go stale. It's also arguably more useful —
+     one glance answers "what can I click here" instead of hunting zone
+     by zone. `.checked` still gates it; driven by press/release rather
+     than a native checkbox click, which is why mousedown calls
+     preventDefault() first. The `pointerup` listener lives on
+     `document`, not the toggle itself, so releasing anywhere — not just
+     back over the toggle — still ends the hold. */
   const hodToggle = document.getElementById("cfHodToggle");
-  if (hodToggle){
-    hodToggle.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      hodToggle.checked = true;
-    });
-    hodToggle.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      hodToggle.checked = true;
-    }, { passive: false });
-    const endHold = () => {
-      if (!hodToggle.checked) return;
-      hodToggle.checked = false;
-      if (hoverOverlay) hoverOverlay.hidden = true;
-    };
-    document.addEventListener("pointerup", endHold);
-    document.addEventListener("touchend", endHold);
-    document.addEventListener("touchcancel", endHold);
-  }
   /* Reassigned below once the hover-overlay elements are confirmed to
-     exist; declared here (not just inside that block) so renderPreview()
-     further down — which is what actually causes the window to resize —
-     can call it too, without a real dependency on ResizeObserver timing.
-     Left as a no-op otherwise. */
+     exist; declared here (not just inside that block) so hodToggle's own
+     mousedown/touchstart handlers and renderPreview() further down can
+     call it too. Left as a no-op otherwise. */
   let refreshHoverOverlay = () => {};
-  if (previewWrap && cfWindow && hoverOverlay && hoverRect && hoverLabel && hoverBands){
-    /* Pulled out of the mousemove listener so the HOD toggle's own
-       "change" handler below can re-run the same positioning against
-       the last known cursor position — needed for the case where HOD
-       gets switched back on while the mouse is already resting over
-       the preview: without this, nothing highlighted again until the
-       cursor actually moved, which reads as "the toggle doesn't work"
-       since flipping it produced no visible effect. */
-    function updateHoverOverlay(clientX, clientY, target){
-      if (hodToggle && !hodToggle.checked){
-        hoverOverlay.hidden = true;
-        return;
-      }
+  if (previewWrap && cfWindow && hoverOverlay && hoverZones){
+    function showAllZones(){
       const wrapRect = previewWrap.getBoundingClientRect();
       const winRect = cfWindow.getBoundingClientRect();
       hoverOverlay.hidden = false;
-      if (target === previewWrap){
-        /* The ring around the window splits into three independent
-           zones now: above is Mac nav's own, below is Shadow's
-           (matching the click handler above), left/right are what's
-           left for Background. Only the bands for whichever zone the
-           cursor is actually in get drawn — the other zones' bands
-           collapse to 0×0 the same way the left/right-half branch below
-           already clears hoverRect when it's not in play. */
-        hoverRect.style.width = "0px";
-        hoverRect.style.height = "0px";
-        if (clientY >= winRect.bottom){
-          positionBox(hoverBands.top, 0, 0, 0, 0);
-          positionBox(hoverBands.left, 0, 0, 0, 0);
-          positionBox(hoverBands.right, 0, 0, 0, 0);
-          positionBox(hoverBands.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
-          positionLabel(wrapRect.left, winRect.bottom, "Shadow — click to toggle");
-        } else if (clientY < winRect.top){
-          positionBox(hoverBands.bottom, 0, 0, 0, 0);
-          positionBox(hoverBands.left, 0, 0, 0, 0);
-          positionBox(hoverBands.right, 0, 0, 0, 0);
-          positionBox(hoverBands.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
-          positionLabel(wrapRect.left, wrapRect.top, "Mac nav — click to toggle");
-        } else {
-          positionBox(hoverBands.bottom, 0, 0, 0, 0);
-          positionBox(hoverBands.top, 0, 0, 0, 0);
-          positionBox(hoverBands.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
-          positionBox(hoverBands.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
-          positionLabel(wrapRect.left, winRect.top, "Background — click to change color");
-        }
-        return;
-      }
-      Object.values(hoverBands).forEach(band => { band.style.width = "0px"; band.style.height = "0px"; });
-      const hoveredLeftHalf = (clientX - wrapRect.left) < wrapRect.width / 2;
-      if (hoveredLeftHalf){
-        positionBox(hoverRect, winRect.left, winRect.top, winRect.width / 2, winRect.height);
-        positionLabel(winRect.left, winRect.top, "Left half — click to change template");
-      } else {
-        positionBox(hoverRect, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
-        positionLabel(winRect.left + winRect.width / 2, winRect.top, "Right half — click to change theme");
-      }
+      positionBox(hoverZones.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+      positionBox(hoverZones.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
+      positionBox(hoverZones.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
+      positionBox(hoverZones.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
+      positionBox(hoverZones.template, winRect.left, winRect.top, winRect.width / 2, winRect.height);
+      positionBox(hoverZones.theme, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
     }
-    let lastMoveX = null, lastMoveY = null;
-    /* Recomputing the overlay's position after a resize by replaying the
-       last known mouse position through document.elementFromPoint() (the
-       original fix here) turned out not to be trustworthy — confirmed
-       still producing a visibly wrong, detached box after a paste even
-       once hide-when-not-hovering was added on top of it, and editing so
-       much as one more character was enough to reproduce it again. The
-       replay is inherently guessy: elementFromPoint() at a remembered
-       coordinate can land on a different element than the one actually
-       under the cursor once layout has shifted, and there's no way to
-       tell the difference from in here. Simplest robust fix: stop trying
-       to replay a stale position at all. Any resize-driven change (typing,
-       pasting, a template/theme swap, dragging the resize handle) just
-       hides the overlay outright — it reappears correctly positioned on
-       the next REAL mousemove, which is the only time the browser's own
-       hit-testing is actually trustworthy. */
+    /* Unlike the old single-spotlight version, recomputing here is
+       genuinely safe now — every zone's rect comes straight from live
+       layout, nothing guessed from a remembered cursor position — so a
+       resize-driven change (typing, pasting, a template/theme swap,
+       dragging the resize handle) while held can just redraw fresh
+       instead of having to hide and wait for a mousemove that might not
+       come. */
     refreshHoverOverlay = () => {
-      hoverOverlay.hidden = true;
+      if (hodToggle && hodToggle.checked) showAllZones();
+      else hoverOverlay.hidden = true;
     };
-    /* No "turn it back on and recompute immediately" case to handle
-       anymore — HOD is now driven purely by hold/release (see its own
-       comment above) plus this mousemove listener, so there's never a
-       moment where something else needs to force a fresh read; the next
-       mousemove while held does that naturally. */
-    previewWrap.addEventListener("mousemove", (e) => {
-      lastMoveX = e.clientX;
-      lastMoveY = e.clientY;
-      updateHoverOverlay(e.clientX, e.clientY, e.target);
-    });
-    previewWrap.addEventListener("mouseleave", () => {
-      hoverOverlay.hidden = true;
-      lastMoveX = lastMoveY = null;
-    });
     /* Belt-and-suspenders for any resize renderPreview() itself doesn't
        cover (a browser window resize, a webfont finishing its swap) —
-       harmless if it never fires, since refreshHoverOverlay() is a no-op
-       whenever the cursor isn't actually over the preview. */
+       harmless if it never fires, since refreshHoverOverlay() is a
+       no-op whenever HOD isn't currently held. */
     if (typeof ResizeObserver !== "undefined"){
       new ResizeObserver(() => refreshHoverOverlay()).observe(cfWindow);
     }
-    /* Scrolling moves the preview under a cursor that never itself
-       generates a "mousemove" (its viewport position hasn't changed,
-       only what's under it has) — so without this, scrolling the page
-       while HOD is showing leaves the highlight stuck at whatever
-       screen position it was drawn at, no longer over the window at
-       all. rAF-throttled since "scroll" can fire far more often than a
-       redraw is actually useful for. Capture + passive so it catches
-       scrolling on any ancestor (not just window) without blocking it. */
+    /* Scrolling moves the preview without the zones' fixed-position
+       coordinates following along on their own — without this, scrolling
+       the page while HOD is held leaves every zone stuck at whatever
+       screen position they were drawn at. rAF-throttled since "scroll"
+       can fire far more often than a redraw is actually useful for.
+       Capture + passive so it catches scrolling on any ancestor (not
+       just window) without blocking it. */
     let scrollRefreshQueued = false;
     window.addEventListener("scroll", () => {
       if (scrollRefreshQueued) return;
@@ -767,6 +659,26 @@ console.log(a.next.value);`
         refreshHoverOverlay();
       });
     }, { capture: true, passive: true });
+  }
+  if (hodToggle){
+    hodToggle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      hodToggle.checked = true;
+      refreshHoverOverlay();
+    });
+    hodToggle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      hodToggle.checked = true;
+      refreshHoverOverlay();
+    }, { passive: false });
+    const endHold = () => {
+      if (!hodToggle.checked) return;
+      hodToggle.checked = false;
+      if (hoverOverlay) hoverOverlay.hidden = true;
+    };
+    document.addEventListener("pointerup", endHold);
+    document.addEventListener("touchend", endHold);
+    document.addEventListener("touchcancel", endHold);
   }
 
   /* ===== "started" state — sticky once reached =====
