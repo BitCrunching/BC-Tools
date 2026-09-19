@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colorfy – Pick a Color from Any Image – BC Tools</title>
+<meta name="description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
+<link rel="canonical" href="https://bitcrunching.com/colorfy/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Colorfy – Pick a Color from Any Image – BC Tools">
+<meta property="og:description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
+<meta property="og:url" content="https://bitcrunching.com/colorfy/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Colorfy – Pick a Color from Any Image – BC Tools">
+<meta name="twitter:description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=92">
+<style>
+#page-colorfy::before{
+  background:#FF8A4C;
+}
+.tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cyAfterDrop is revealed, so it never fights the picker
+   itself once there's real content to interact with. Same "jump" plays
+   while a file is being dragged over the banner (.active class,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
+   confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
+.tool-app:has(#cyAfterDrop[hidden]):hover,
+.tool-app:has(#cyAfterDrop[hidden]).active{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+.tool-app:has(#cyAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .gfx-placeholder{ animation:icon-wobble .5s ease; }
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row from shared/site.css — same "classified terminal"
+   look as every other tool's help banner. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+  border-bottom:1px dashed rgba(255,255,255,.14);
+}
+html[data-theme="light"] .help-banner-header{
+  border-bottom-color:rgba(29,36,54,.25);
+}
+.help-banner-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+.help-banner-term-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.14);
+  background:none;
+  color:#e5e7eb;
+  opacity:.8;
+  font-family:"Courier New", Courier, monospace;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:.2s;
+}
+html[data-theme="light"] .help-banner-term-btn{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+.help-banner-term-btn:hover{
+  opacity:1;
+  border-color:#4ade80;
+  color:#4ade80;
+}
+.help-banner-term-btn:disabled{
+  opacity:.3;
+  cursor:default;
+}
+.help-banner-term-btn:disabled:hover{
+  border-color:rgba(255,255,255,.14);
+  color:#e5e7eb;
+}
+html[data-theme="light"] .help-banner-term-btn:disabled:hover{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+#cyDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cyDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cyDrop.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+#cyDrop.tool-drop-revealed{
+  border-color:var(--border-strong);
+}
+#cyDrop.tool-drop-revealed.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+.tool-app.active{
+  background:rgba(255,140,66,.08);
+}
+
+/* No separate dark workspace panel — the uploaded image is the
+   workspace, so .colorfy-frame (holding the canvas, pickers, and the
+   resize/remove/add controls) sits directly in the banner instead of
+   inside an extra padded wrapper. Every picker ring is still clamped
+   to this frame's own bounds in JS, so dragging one never lands
+   somewhere that isn't actually part of the image. */
+.colorfy-frame{
+  position:relative;
+  width:650px;
+  max-width:100%;
+  margin:16px auto 0;
+  border-radius:12px;
+  background:repeating-conic-gradient(#3a4258 0% 25%, #2b3247 0% 50%) 0 0 / 20px 20px;
+  border:1px solid var(--border-strong);
+  line-height:0;
+}
+/* Rounds the canvas's own corners to match the frame instead of
+   relying on overflow:hidden on the frame — overflow:hidden would
+   also clip the resize handle and picker ring, both of which are
+   meant to hang slightly outside the frame's edge. */
+.colorfy-frame canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:12px;
+  cursor:crosshair;
+}
+
+/* Same "×" remove button as Congify's .gif-remove-btn — clears the
+   loaded image and brings back the drop zone, rather than requiring a
+   second file pick to replace what's loaded. */
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here. */
+.colorfy-remove-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:6;
+  font-size:18px;
+}
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position stay here, same split as
+   .colorfy-remove-btn/.bc-remove-btn above. Sits just to the left of
+   Remove, same corner. */
+.colorfy-back-btn{
+  position:absolute;
+  top:10px;
+  right:46px;
+  z-index:6;
+}
+
+/* "+" adds another picker ring (up to 4 total) — sits in its own row
+   just below the preview rather than floating over the image corner,
+   so it reads as a control for the picker(s), not part of the image
+   itself. Disabled (not hidden) once 4 pickers are already placed, so
+   it's clear why it stopped working rather than the control just
+   vanishing. */
+.colorfy-add-row{
+  display:flex;
+  justify-content:center;
+  margin-top:12px;
+}
+/* Collapses the row's own margin along with the button once all 4
+   pickers are placed, instead of leaving an empty gap behind. */
+.colorfy-add-row:has(#cyAddBtn[hidden]){
+  display:none;
+}
+.colorfy-add-btn{
+  width:28px;
+  height:28px;
+  padding:0;
+  border-radius:50%;
+  border:1px solid #1d4fd1;
+  background:#2563eb;
+  color:#fff;
+  font-weight:900;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.colorfy-add-btn:hover{
+  background:#1d4fd1;
+}
+.colorfy-add-btn:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+/* Same filled-circle-with-white-border look as Congify/Codify's drag
+   handles, just with a see-through center (not a solid fill) so the
+   ring itself doesn't obscure the exact pixel it's marking. */
+.colorfy-picker{
+  position:absolute;
+  width:26px;
+  height:26px;
+  margin:-13px 0 0 -13px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-sizing:border-box;
+  cursor:grab;
+  touch-action:none;
+  z-index:4;
+}
+.colorfy-picker::before{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,.5);
+}
+.colorfy-picker:active{
+  cursor:grabbing;
+}
+/* Numbers each ring so it's obvious which result row below belongs to
+   which picker once there's more than one on the image. */
+.colorfy-picker-num{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+  text-shadow:0 0 3px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.9);
+  pointer-events:none;
+}
+
+/* Drag-to-resize handle on the preview's corner — circle geometry is
+   the shared .bc-resize-handle (shared/site.css). Lets the preview
+   grow up to 800px for a closer look at fine detail. Purely a
+   display-size change: the canvas keeps sampling at the image's real
+   resolution regardless of how large or small it's rendered. */
+.colorfy-resize-handle{
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+}
+/* content is needed here even though the actual icon (background) now
+   comes from the shared .bc-resize-handle::before rule — a ::before
+   with no content declared of its own doesn't generate at all, shared
+   rule or not. Only width/height stay local, since this one's icon is
+   deliberately smaller than Congify's/Codify's 18px default. */
+.colorfy-resize-handle::before{
+  content:"";
+  width:13px;
+  height:13px;
+}
+
+/* The format dropdown applies to every picker's code at once (one
+   consistent notation across the whole list, not a per-row choice),
+   so it sits on its own above the list rather than repeated per row. */
+.colorfy-format-row{
+  display:flex;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.colorfy-picker-list{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+}
+.colorfy-picker-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.colorfy-swatch{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  flex-shrink:0;
+}
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.colorfy-code-btn{
+  height:36px;
+  min-width:170px;
+  padding:0 16px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+  transition:.2s;
+}
+.colorfy-code-btn:hover{
+  background:rgba(255,255,255,.45);
+}
+html[data-theme="dark"] .colorfy-code-btn{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .colorfy-code-btn:hover{
+  background:rgba(0,0,0,.35);
+}
+.colorfy-code-btn.copied{
+  border-color:#4ade80;
+  color:#4ade80;
+}
+/* Only shown on pickers beyond the first — there's always at least
+   one active picker, so it can't be removed down to zero. */
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size stays here. */
+.colorfy-picker-remove-btn{
+  width:28px;
+  height:28px;
+  flex-shrink:0;
+  font-size:16px;
+}
+/* Saves this one row's color into the palette below — unlike the
+   picker rows themselves, a saved color survives loading a new image
+   or reloading the page (localStorage), since it's an explicit "keep
+   this one" action rather than part of the current session. */
+.colorfy-save-btn{
+  height:36px;
+  padding:0 14px;
+  flex-shrink:0;
+  border-radius:10px;
+  border:1px solid #1f9d57;
+  background:#22c55e;
+  color:#fff;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.colorfy-save-btn:hover{
+  background:#1f9d57;
+}
+.colorfy-save-btn:disabled{
+  opacity:.5;
+  cursor:default;
+  background:#22c55e;
+}
+
+/* ===== Saved palette — sits outside .tool-after-drop (a sibling, not
+   a child) so it stays visible even after removing the current image
+   or before one's ever been loaded, since saved colors are meant to
+   outlive any one file. Hidden only when genuinely empty. */
+.colorfy-palette[hidden]{ display:none; }
+.colorfy-palette{
+  margin-top:24px;
+  padding-top:20px;
+  border-top:1px dashed rgba(255,255,255,.3);
+}
+html[data-theme="light"] .colorfy-palette{
+  border-top-color:rgba(0,0,0,.2);
+}
+.colorfy-palette-heading{
+  margin:0 0 12px;
+  text-align:center;
+}
+.colorfy-palette-list{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+}
+.colorfy-palette-chip{
+  position:relative;
+  width:40px;
+  height:80px;
+}
+/* A "strip" rather than the old square chip — taller so a saved color
+   reads more like a real paint sample than a tiny dot, still narrow
+   enough that a full row of 4 pickers' worth of saves stays compact. */
+.colorfy-palette-swatch{
+  width:100%;
+  height:100%;
+  padding:0;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  cursor:pointer;
+  transition:transform .15s;
+}
+.colorfy-palette-swatch:hover{
+  transform:scale(1.05);
+}
+.colorfy-palette-swatch.copied{
+  outline:2px solid #4ade80;
+  outline-offset:2px;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here. */
+.colorfy-palette-remove-btn{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  width:18px;
+  height:18px;
+  font-size:12px;
+}
+
+/* Copy confirmation for a saved color strip — same terminal look as
+   the site nav's copy-link confirmation (shared/site.css .nav-terminal),
+   just anchored to the tool banner's bottom-left corner instead of the
+   nav's center, since that's where the palette strips actually live. */
+.colorfy-copy-terminal{
+  position:absolute;
+  left:24px;
+  bottom:20px;
+  padding:6px 12px;
+  border-radius:8px;
+  background:rgba(0,0,0,.35);
+  color:#4ade80;
+  font-family:"Courier New", Courier, monospace;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+  z-index:5;
+}
+.colorfy-copy-terminal.show{
+  opacity:1;
+}
+.colorfy-copy-terminal-prompt{
+  opacity:.7;
+}
+.colorfy-copy-terminal-cursor{
+  animation:copy-toast-blink 1s step-end infinite;
+}
+@media (max-width:640px){
+  .colorfy-copy-terminal{
+    left:16px;
+    bottom:12px;
+    font-size:12px;
+  }
+}
+/* Format picker — lets the code button below show HEX, RGB, HSB, or
+   HSL instead of always showing one fixed format. Uses the shared
+   .bc-dropdown component (shared/site.css). .colorfy-format-row
+   centers it with no other width constraint, so it needs an explicit
+   width here rather than relying on the shared trigger's width:100%
+   against an otherwise auto-sized flex item (that circular case is
+   the same trap documented in CLAUDE.md's resizable-frame notes —
+   always give it a real anchor). */
+.colorfy-format-row .bc-dropdown{
+  width:140px;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">We use cookies. Choose which categories to allow below — see our <a data-goto="cookies">Cookie Policy</a> for details.</p>
+  <p class="cookie-banner-text-mobile">Choose which categories to allow</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Toggle cookie settings contents" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Choose which categories to allow</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="More about necessary cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessary (always on)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>These keep the essentials working — remembering your cookie choice, your language, and your light/dark theme. They can't be turned off, and like everything else on this site, they never leave your device.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="More about analytics cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Analytics (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Lets us see how many people visit and which tools get used, via Google Analytics. This never includes your files or their contents — those never leave your browser, regardless of this setting.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="More about advertising cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Advertising (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Used by Google AdSense to show ads. Currently switched off site-wide while we wait on AdSense approval, so this toggle has no effect yet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Accept All</button>
+    <button type="button" id="cookieBannerSave">Confirm choices</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Toggle light and dark mode" title="Toggle light and dark mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copy link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="More share options"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">Email</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cyHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cyHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cyHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cyHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="help-banner-term-btn" id="cyHelpBack">&lt; BACK</button>
+      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="cyHelpCloseMobile">CLOSE</button>
+      <button type="button" class="help-banner-term-btn" id="cyHelpNext">NEXT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cyHelpBody">
+    <div class="engine-status-row">&gt; <span id="cyHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-colorfy">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-placeholder gfx-md" role="img" aria-label="Colorfy icon">(icon-colorfy.txt)</span>
+        Colorfy
+      </div>
+    </div>
+
+    <div class="tool-drop" id="cyDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">an image</span></div>
+    <input type="file" id="cyInput" accept="image/*" hidden>
+
+    <div class="tool-after-drop" id="cyAfterDrop" hidden>
+      <div class="colorfy-frame" id="cyFrame">
+        <canvas id="cyCanvas"></canvas>
+        <button type="button" class="colorfy-back-btn bc-canvas-back-btn" id="cyBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5"></path>
+            <path d="M11 18l-6-6 6-6"></path>
+          </svg>
+        </button>
+        <button type="button" class="colorfy-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cyRemoveBtn" aria-label="Remove image">×</button>
+        <span class="colorfy-resize-handle bc-resize-handle" id="cyResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></span>
+      </div>
+
+      <div class="colorfy-format-row">
+        <div class="bc-dropdown" id="cyFormatDropdown">
+          <button type="button" class="bc-dropdown-trigger" id="cyFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="bc-dropdown-trigger-label" id="cyFormatTriggerLabel">HEX</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="bc-dropdown-menu" id="cyFormatMenu" role="listbox" hidden>
+            <button type="button" class="bc-dropdown-option active" data-format="hex" data-label="HEX" role="option" aria-selected="true">HEX</button>
+            <button type="button" class="bc-dropdown-option" data-format="rgb" data-label="RGB" role="option" aria-selected="false">RGB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsb" data-label="HSB" role="option" aria-selected="false">HSB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsl" data-label="HSL" role="option" aria-selected="false">HSL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="colorfy-picker-list" id="cyPickerList"></div>
+
+      <div class="colorfy-add-row">
+        <button type="button" class="colorfy-add-btn" id="cyAddBtn" aria-label="Add another picker">+</button>
+      </div>
+    </div>
+
+    <div class="colorfy-palette" id="cyPalette" hidden>
+      <h3 class="colorfy-palette-heading bc-heading">Saved colors</h3>
+      <div class="colorfy-palette-list" id="cyPaletteList"></div>
+    </div>
+
+    <div class="tool-status" id="cyStatus"></div>
+
+    <div class="colorfy-copy-terminal" id="cyCopyTerminal" aria-live="polite">
+      <span class="colorfy-copy-terminal-prompt">&gt;</span>
+      <span id="cyCopyTerminalText"></span><span class="colorfy-copy-terminal-cursor">_</span>
+    </div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="colorfy">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-2"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>New to picking colors from images?</h3>
+    <p>Drop in any image and Colorfy starts you off with two pickers already sampling two different spots — drag either ring anywhere over the image (or just click a spot) to sample somewhere else, and the code below updates live. Hit the + to add up to 4 pickers at once, each with its own row below. Switch between HEX, RGB, HSB, and HSL from the dropdown, and click any code to copy it straight to your clipboard.</p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Company</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">Our Universe</span><span class="footer-link-plain">About Us</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">Already Answered</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">Galactic Handbook</span><span class="footer-link-plain">Terms of Use</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">Alien Privacy Protocol</span><span class="footer-link-plain">Privacy Policy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Cookie Registry</span><span class="footer-link-plain">Cookie Policy</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Getting started with</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Get in touch with us</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=39" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=13" defer></script>
+</body>
+</html>
