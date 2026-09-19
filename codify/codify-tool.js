@@ -602,12 +602,20 @@ console.log(a.next.value);`
      entirely: there's no "which zone is the cursor over" question left
      to answer, so nothing can go stale. It's also arguably more useful —
      one glance answers "what can I click here" instead of hunting zone
-     by zone. `.checked` still gates it; driven by press/release rather
-     than a native checkbox click, which is why mousedown calls
-     preventDefault() first. The `mouseup` listener lives on `document`,
-     not the toggle itself, so releasing anywhere — not just back over
-     the toggle — still ends the hold. */
+     by zone.
+     A plain button now, not a checkbox-based toggle switch (that visual
+     implied a persistent on/off setting, which stopped being true the
+     moment this became hold-only) — so `hodHeld` is a real variable, not
+     `.checked`, and `aria-pressed` (also driving the pressed-state CSS)
+     is what reflects it in the DOM. The `mouseup` listener lives on
+     `document`, not the button itself, so releasing anywhere — not just
+     back over the button — still ends the hold. */
   const hodToggle = document.getElementById("cfHodToggle");
+  let hodHeld = false;
+  function setHodHeld(held){
+    hodHeld = held;
+    if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
+  }
   /* Reassigned below once the hover-overlay elements are confirmed to
      exist; declared here (not just inside that block) so hodToggle's own
      mousedown/touchstart handlers and renderPreview() further down can
@@ -633,7 +641,7 @@ console.log(a.next.value);`
        instead of having to hide and wait for a mousemove that might not
        come. */
     refreshHoverOverlay = () => {
-      if (hodToggle && hodToggle.checked) showAllZones();
+      if (hodHeld) showAllZones();
       else hoverOverlay.hidden = true;
     };
     /* Belt-and-suspenders for any resize renderPreview() itself doesn't
@@ -663,17 +671,17 @@ console.log(a.next.value);`
   if (hodToggle){
     hodToggle.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      hodToggle.checked = true;
+      setHodHeld(true);
       refreshHoverOverlay();
     });
     hodToggle.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      hodToggle.checked = true;
+      setHodHeld(true);
       refreshHoverOverlay();
     }, { passive: false });
     const endHold = () => {
-      if (!hodToggle.checked) return;
-      hodToggle.checked = false;
+      if (!hodHeld) return;
+      setHodHeld(false);
       if (hoverOverlay) hoverOverlay.hidden = true;
     };
     /* mouseup, not pointerup — confirmed live that pointerup doesn't
@@ -731,7 +739,7 @@ console.log(a.next.value);`
       renderShadowReadouts();
       applyShadow();
     }
-    if (hodToggle) hodToggle.checked = false;
+    setHodHeld(false);
     if (hoverOverlay) hoverOverlay.hidden = true;
     if (continueBtn) continueBtn.hidden = true;
     if (formatPngBtn && formatSvgBtn) setExportFormat("png");
