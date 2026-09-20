@@ -1092,12 +1092,12 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   flex:1 1 0;
   min-width:8px;
   align-self:stretch;
-  /* Negative top/bottom margin so this box's edges land exactly on Mac
-     nav/Shadow's own edges (both 8px in from the wrap) instead of
-     #cfWindowWrap's own top/bottom (which sit further in, at the real
-     padding boundary) — align-self:stretch otherwise sizes this box to
-     #cfWindowWrap's height alone, leaving a gap above/below it. */
-  margin:-8px 4px;
+  /* Negative top/bottom margin stretches this well past #cfWindowWrap's
+     own height (which align-self:stretch alone would cap it to) out to
+     the same 8px-from-the-wrap inset Mac nav/Shadow's own outer edges
+     use — reaching toward the panel's outline instead of stopping at
+     the window's edge. */
+  margin:calc(8px - var(--cf-preview-pad)) 4px;
   box-sizing:border-box;
   border-color:#6fa8dc;
 }
