@@ -658,15 +658,16 @@ console.log(a.next.value);`
     template: () => document.getElementById("cfTemplateTrigger"),
     theme: () => document.getElementById("cfThemeTrigger")
   };
-  /* Same five colors as the legend swatches (index.html), so the
-     highlighted control and the outline it corresponds to visibly
-     match. */
+  /* Same five colors each zone's own stroke uses (index.html — the
+     top/bottom edges, the two divider halves, the background outline),
+     so the highlighted control and the outline it corresponds to
+     visibly match. */
   const HOD_ZONE_COLORS = {
-    macNav: "#ffc107",
+    macNav: "#fb923c",
     shadow: "#facc15",
     background: "#6fa8dc",
     template: "#4ade80",
-    theme: "#f87171"
+    theme: "#fa8072"
   };
   let hodHoverZone = null;
   function setHodHoverZone(zone){
