@@ -398,9 +398,8 @@ console.log(a.next.value);`
   });
   /* Declared here (not inside the `if` below) so the double-click zone
      on the preview's bottom strip, further down, can open the same
-     panel the trigger button does — same reasoning as showAllZones
-     being hoisted out of its own `if` earlier in this file. No-ops when
-     the panel doesn't exist. */
+     panel the trigger button does. No-ops when the panel doesn't
+     exist. */
   function closeShadowPanel(){
     if (!shadowPanel || !shadowTrigger) return;
     shadowPanel.hidden = true;
@@ -565,108 +564,51 @@ console.log(a.next.value);`
     });
   }
 
-  /* ===== HOD inspector overlay =====
-     Same five zones the click handler above already recognizes (Mac nav /
-     Shadow / Background / Template / Theme), drawn as a DevTools-style
-     highlight map — press-and-hold HOD to see all of them at once,
-     each its own color, instead of only discovering what's clickable by
-     clicking it. Recomputes real getBoundingClientRect() coordinates
-     rather than tracking zone boundaries separately, so it can never
-     drift out of sync with the actual click logic above (resizes,
-     scrolls, and zoom all just fall out of that for free). */
-  const hoverOverlay = document.getElementById("cfHoverOverlay");
-  /* [class, data-zone, label text] — built fresh into brand-new DOM
-     nodes on every press rather than kept as static markup; see
-     showAllZones' own comment for why. */
-  const HOVER_ZONE_DEFS = [
-    ["cf-hover-zone-macnav", "top", "Mac nav — click to toggle"],
-    ["cf-hover-zone-shadow", "bottom", "Shadow — click to toggle"],
-    ["cf-hover-zone-bg", "left", "Background"],
-    ["cf-hover-zone-bg", "right", "Background"],
-    ["cf-hover-zone-template", "template", "Template"],
-    ["cf-hover-zone-theme", "theme", "Theme"]
-  ];
-  function makeBox(cls, x, y, w, h, label){
-    const el = document.createElement("div");
-    el.className = "cf-hover-zone " + cls;
-    el.style.left = x + "px";
-    el.style.top = y + "px";
-    el.style.width = Math.max(0, w) + "px";
-    el.style.height = Math.max(0, h) + "px";
-    const span = document.createElement("span");
-    span.className = "cf-hover-zone-label";
-    span.textContent = label;
-    el.appendChild(span);
-    return el;
-  }
-  /* "HOD" (Hover Overlay Display) — press-and-hold. A frozen snapshot,
-     not a live-tracking overlay: computed once right when the button is
-     pressed, untouched for the rest of the hold, cleared on release.
-     Every version that recomputed continuously while held (a tracked
-     cursor position, then all-zones-at-once with mousemove/
-     ResizeObserver/scroll listeners, then the same recompute deferred to
-     requestAnimationFrame) kept testing perfectly correct in isolation —
-     49 rapid edits, a real scroll gesture, frame-by-frame samples
-     through a big paste, all zero mismatches — yet still visibly
-     mis-rendered in real use, confirmed live and repeatedly, as two
-     different-sized sets of zones superimposed. Even after removing the
-     recompute-while-held loop entirely (one write on press, nothing
-     else), it *still* happened — which rules out timing/staleness as the
-     cause altogether, since there was nothing left to recompute late.
-     That only makes sense as the browser's compositor occasionally
-     painting a stale cached layer for the *same, reused* position:fixed
-     DOM nodes alongside the fresh paint. So instead of repositioning six
-     persistent elements, every press now builds six brand new ones from
-     scratch (makeBox above) and every release throws them away — a
-     stale composited layer can't bleed through if the element that
-     would-be-stale layer belonged to no longer exists. */
+  /* ===== HOD "what can I click here" indicator =====
+     Was a separate position:fixed overlay layer, JS-computing pixel
+     coordinates for six semi-transparent boxes on every press. Every
+     variant of that architecture — live-tracking the cursor, then all
+     zones at once with mousemove/ResizeObserver/scroll listeners, a
+     frozen one-shot snapshot, rebuilding the DOM nodes from scratch each
+     time — kept testing perfectly correct in isolation (rapid edits, a
+     real scroll gesture, frame-by-frame samples, zero mismatches every
+     time) yet still visibly mis-rendered in real use, confirmed
+     repeatedly down to inspecting the live DOM in DevTools. Rebuilt with
+     zero position math of any kind instead of chasing that further:
+     `.cf-hod-active`, toggled on #cfPreviewWrap and #cfWindow while
+     held, draws colored outlines via CSS (box-shadow insets for the
+     edges, a ::after pseudo-element at left:50% for the Template/Theme
+     divider) directly on the real elements. Nothing here ever reads or
+     writes a pixel coordinate, so nothing can go stale — the outlines
+     are just those elements' own edges, always exactly where the
+     elements themselves are. */
   const hodToggle = document.getElementById("cfHodToggle");
+  const hodLegend = document.getElementById("cfHodLegend");
   let hodHeld = false;
   function setHodHeld(held){
     hodHeld = held;
     if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
-  }
-  let showAllZones = () => {};
-  if (previewWrap && cfWindow && hoverOverlay){
-    showAllZones = () => {
-      const wrapRect = previewWrap.getBoundingClientRect();
-      const winRect = cfWindow.getBoundingClientRect();
-      const frag = document.createDocumentFragment();
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[0][0], wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top, HOVER_ZONE_DEFS[0][2]));
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[1][0], wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom, HOVER_ZONE_DEFS[1][2]));
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[2][0], wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height, HOVER_ZONE_DEFS[2][2]));
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[3][0], winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height, HOVER_ZONE_DEFS[3][2]));
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[4][0], winRect.left, winRect.top, winRect.width / 2, winRect.height, HOVER_ZONE_DEFS[4][2]));
-      frag.appendChild(makeBox(HOVER_ZONE_DEFS[5][0], winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height, HOVER_ZONE_DEFS[5][2]));
-      hoverOverlay.textContent = "";
-      hoverOverlay.appendChild(frag);
-      hoverOverlay.hidden = false;
-    };
+    if (previewWrap) previewWrap.classList.toggle("cf-hod-active", held);
+    if (cfWindow) cfWindow.classList.toggle("cf-hod-active", held);
+    if (hodLegend) hodLegend.hidden = !held;
   }
   if (hodToggle){
     hodToggle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       setHodHeld(true);
-      showAllZones();
     });
     hodToggle.addEventListener("touchstart", (e) => {
       e.preventDefault();
       setHodHeld(true);
-      showAllZones();
     }, { passive: false });
     const endHold = () => {
       if (!hodHeld) return;
       setHodHeld(false);
-      if (hoverOverlay){
-        hoverOverlay.hidden = true;
-        hoverOverlay.textContent = "";
-      }
     };
     /* mouseup, not pointerup — confirmed live that pointerup doesn't
-       reliably fire for every release, leaving checked stuck true with
-       the overlay hidden under it (pressed but permanently "off"-looking
-       until the next accidental mouseup landed somewhere). mouseup is
-       the one guaranteed to pair with the mousedown above. */
+       reliably fire for every release, leaving the held state stuck true
+       until the next accidental mouseup landed somewhere. mouseup is the
+       one guaranteed to pair with the mousedown above. */
     document.addEventListener("mouseup", endHold);
     document.addEventListener("touchend", endHold);
     document.addEventListener("touchcancel", endHold);
@@ -718,7 +660,6 @@ console.log(a.next.value);`
       applyShadow();
     }
     setHodHeld(false);
-    if (hoverOverlay) hoverOverlay.hidden = true;
     if (continueBtn) continueBtn.hidden = true;
     if (formatPngBtn && formatSvgBtn) setExportFormat("png");
     autoFitCodeInput();
@@ -752,13 +693,10 @@ console.log(a.next.value);`
     codeOutput.classList.toggle("cf-ghost", isEmpty);
     codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
     if (window.Prism) Prism.highlightElement(codeOutput);
-    /* #cfWindow sizes itself to codeOutput's content, so this line can
-       (and usually does) resize it — if HOD's frozen snapshot is showing
-       when that happens, it's now definitely stale (see showAllZones'
-       own comment for why it's a one-shot snapshot, not a live-tracking
-       overlay), so just hide it rather than leave a wrong one showing.
-       Reappears correctly positioned on the next press. */
-    if (hodHeld && hoverOverlay){ hoverOverlay.hidden = true; hoverOverlay.textContent = ""; }
+    /* No HOD sync needed here anymore — its outline is plain CSS
+       (.cf-hod-active) directly on #cfWindow/#cfPreviewWrap, so it just
+       stays correct on its own as #cfWindow resizes to fit new content,
+       the same way any other CSS on it would. */
   }
   codeInput.addEventListener("input", () => {
     templatePreviewCode = null;
@@ -1294,6 +1232,15 @@ ${titlebarSvg}
   }
 
   async function renderCodifyExport(){
+    /* HOD's outline elements live inside #cfWindow now (see their own
+       CSS comment) — unlike the old separate overlay layer, they're
+       technically within what html-to-image captures below. In practice
+       a real mouse release always fires before a click can land on
+       Download/Copy (can't hold HOD and click elsewhere with the same
+       button), so this is belt-and-suspenders rather than a fix for
+       something actually reachable — but free insurance against ever
+       exporting a stray colored edge/divider. */
+    setHodHeld(false);
     if (exportFormat === "svg"){
       const svgString = buildSvgString();
       const blob = new Blob([svgString], { type: "image/svg+xml" });
@@ -1698,7 +1645,6 @@ ${titlebarSvg}
       virtualWidth = Math.min(getMax(), Math.max(getMin(), virtualWidth + (e.clientX - lastX)));
       lastX = e.clientX;
       setWidth(Math.round(virtualWidth));
-      if (hodHeld && hoverOverlay){ hoverOverlay.hidden = true; hoverOverlay.textContent = ""; }
     });
     function endResize(e){
       resizing = false;
@@ -1715,7 +1661,6 @@ ${titlebarSvg}
       const current = getWidth();
       const next = e.key === "ArrowRight" ? current + 20 : current - 20;
       setWidth(Math.round(Math.min(getMax(), Math.max(getMin(), next))));
-      if (hodHeld && hoverOverlay){ hoverOverlay.hidden = true; hoverOverlay.textContent = ""; }
     });
   }
 

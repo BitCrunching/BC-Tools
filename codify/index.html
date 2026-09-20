@@ -933,6 +933,7 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   justify-content:space-between;
 }
 .cf-filename-row-left{
+  position:relative;
   display:flex;
   align-items:center;
   gap:8px;
@@ -1015,43 +1016,76 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   user-select:none;
 }
 
-/* ===== HOD inspector overlay — "what can I click here" map, all five
-   zones shown at once while HOD is held (see codify-tool.js). Fixed to
-   the viewport rather than nested inside .cf-preview-wrap, so it paints
-   above the window/titlebar/code regardless of their own stacking, and
-   pointer-events:none throughout so it can never itself become the
-   click target. Each zone gets its own tint (see below) rather than one
-   shared color, since they're all visible together now — a single color
-   would read as one undifferentiated blob instead of five distinct
-   click targets. */
-.cf-hover-overlay{
-  position:fixed;
-  inset:0;
-  z-index:40;
+/* ===== HOD "what can I click here" indicator — see codify-tool.js =====
+   Was a separate position:fixed overlay layer, JS-computing pixel
+   coordinates for six semi-transparent boxes on every press. Every
+   variant of that (live-tracking, frozen snapshot, rebuilding the DOM
+   nodes from scratch each time) kept visibly mis-rendering in real use
+   regardless — confirmed repeatedly, down to the browser's DevTools
+   inspector — pointing at the browser's own compositor rather than
+   anything fixable in the position-computation logic itself. Rebuilt
+   with zero position math of any kind: colored outlines directly on
+   the real elements (toggled by one class, `.cf-hod-active`, added to
+   both on press) instead of a separate tracking layer, so there's
+   nothing left that could desync from what it's supposed to be
+   tracking — the outlines just *are* the real elements' own edges. */
+#cfPreviewWrap.cf-hod-active{
+  box-shadow:0 0 0 3px rgba(111,168,220,.85);
+}
+#cfWindow{
+  position:relative;
+}
+/* Real static elements, not box-shadow — #cfWindow's box-shadow property
+   is already spoken for by the Shadow feature's own drop-shadow, set as
+   an inline style (applyShadow() in codify-tool.js), which always beats
+   any stylesheet rule regardless of selector specificity. Three small,
+   always-present children (markup below) instead, each just a plain
+   background-color bar/line positioned with fixed CSS percentages —
+   top:0 / bottom:0 / left:50% resolve against #cfWindow's own box
+   (position:relative above makes it the containing block) the same way
+   the browser resolves any other percentage, live, with no JS reading a
+   pixel value and writing it back for any of it to fall out of sync.
+   overflow:hidden on .cf-window (see its own rule) clips these to the
+   rounded corners for free. */
+.cf-hod-edge{
+  position:absolute;
+  left:0;
+  width:100%;
+  height:4px;
+  opacity:0;
   pointer-events:none;
 }
-.cf-hover-overlay[hidden]{ display:none; }
-.cf-hover-zone{
+.cf-hod-edge-top{ top:0; background:#ffc107; }
+.cf-hod-edge-bottom{ bottom:0; background:#facc15; }
+.cf-hod-divider{
   position:absolute;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  padding:4px;
+  top:0;
+  left:50%;
+  width:2px;
+  height:100%;
+  background:linear-gradient(to bottom, rgba(74,222,128,.9), rgba(248,113,113,.9));
+  opacity:0;
+  pointer-events:none;
 }
-/* One hue per action: amber for Mac nav, yellow for Shadow, the
-   original DevTools content-box blue kept for Background (still the
-   most screen real estate, so the most "default"-reading color), green
-   for Template, red/coral for Theme — chosen to sit clearly apart from
-   each other and from the site's own pink Codify banner underneath. */
-.cf-hover-zone-macnav{ background:rgba(255,193,7,.4); }
-.cf-hover-zone-shadow{ background:rgba(250,204,21,.4); }
-.cf-hover-zone-bg{ background:rgba(111,168,220,.4); }
-.cf-hover-zone-template{ background:rgba(74,222,128,.4); }
-.cf-hover-zone-theme{ background:rgba(248,113,113,.4); }
-.cf-hover-zone-label{
-  padding:4px 8px;
-  border-radius:6px;
+#cfWindow.cf-hod-active .cf-hod-edge,
+#cfWindow.cf-hod-active .cf-hod-divider{
+  opacity:1;
+}
+/* Compact static legend, anchored to the HOD button's own row via
+   normal CSS (position:absolute against .cf-filename-row-left, which is
+   already correctly laid out by the browser) rather than tracking any
+   live coordinate — explains what each outline color means without
+   needing its own position math either. */
+.cf-hod-legend{
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:10px 12px;
+  border-radius:10px;
   background:#1a1a22;
   color:#fff;
   font-family:"Courier New", Courier, monospace;
@@ -1059,16 +1093,18 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   font-weight:700;
   letter-spacing:.02em;
   white-space:nowrap;
-  max-width:100%;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
-/* Terminal-style "> " prompt — CLAUDE.md's own convention for a line
-   that reads like a command result, same recipe the nav's copy-link
-   confirmation and every tool's status readout already use. */
-.cf-hover-zone-label::before{
-  content:"> ";
-  opacity:.7;
+.cf-hod-legend[hidden]{ display:none; }
+.cf-hod-legend-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.cf-hod-legend-swatch{
+  width:10px;
+  height:10px;
+  border-radius:2px;
+  flex:none;
 }
 
 /* ===== PNG/SVG format toggle — same connected-segment recipe as
@@ -1509,31 +1545,30 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
             <span class="cf-dot cf-dot-red"></span><span class="cf-dot cf-dot-yellow"></span><span class="cf-dot cf-dot-green"></span>
           </div>
           <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
+          <div class="cf-hod-edge cf-hod-edge-top" aria-hidden="true"></div>
+          <div class="cf-hod-edge cf-hod-edge-bottom" aria-hidden="true"></div>
+          <div class="cf-hod-divider" aria-hidden="true"></div>
         </div>
         <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
       </div>
       <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Background panel size" tabindex="0"></span>
     </div>
 
-    <!-- Hover inspector overlay (see codify-tool.js) — a DevTools-style
-         "what am I about to click" layer over the three zones the
-         preview splits into: background, left half (Template), right
-         half (Theme). Purely visual (pointer-events:none), positioned
-         with real coordinates on every mousemove rather than being part
-         of the preview's own DOM, so it can never end up inside the
-         exported PNG (html-to-image snapshots #cfPreviewWrap only) and
-         never intercepts the actual click underneath it. -->
-    <!-- Deliberately empty — codify-tool.js builds and destroys the six
-         zone elements from scratch on every press/release instead of
-         reusing persistent ones (see its own comment: reusing the same
-         position:fixed nodes across repeated show/hide cycles was
-         suspected of letting the browser's compositor occasionally
-         paint a stale cached layer alongside the fresh one). -->
-    <div class="cf-hover-overlay" id="cfHoverOverlay" aria-hidden="true" hidden></div>
-
     <div class="cf-filename-row">
       <div class="cf-filename-row-left">
-        <button type="button" class="cf-hod-btn" id="cfHodToggle" aria-pressed="false" title="Hold to preview the click-zone highlight over the preview">HOD</button>
+        <button type="button" class="cf-hod-btn" id="cfHodToggle" aria-pressed="false" title="Hold to outline the preview's click zones">HOD</button>
+        <!-- Static legend, not a live overlay (see codify-tool.js) —
+             explains the outline colors .cf-hod-active draws directly on
+             #cfPreviewWrap/#cfWindow while held. Anchored to this row via
+             plain CSS (position:absolute against .cf-filename-row-left),
+             no coordinates computed in JS at all. -->
+        <div class="cf-hod-legend" id="cfHodLegend" aria-hidden="true" hidden>
+          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#ffc107"></span>Top edge — Mac nav</div>
+          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#facc15"></span>Bottom edge — Shadow</div>
+          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#6fa8dc"></span>Outline — Background</div>
+          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#4ade80"></span>Left of divider — Template</div>
+          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#f87171"></span>Right of divider — Theme</div>
+        </div>
         <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
           <span class="option-change-btn-label" id="cfStyleBtnLabel">Presets</span>
           <span class="option-change-btn-icon" aria-hidden="true"></span>
@@ -1620,6 +1655,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=96" defer></script>
+<script src="/codify/codify-tool.js?v=98" defer></script>
 </body>
 </html>
