@@ -592,26 +592,16 @@ console.log(a.next.value);`
     if (cfWindow) cfWindow.classList.toggle("cf-hod-active", held);
     if (hodLegend) hodLegend.hidden = !held;
   }
+  /* Plain click toggle, not press-and-hold — hold relied on a
+     mousedown/mouseup pair staying in sync across the whole document,
+     which real use kept finding ways to desync (a release swallowed by
+     the editor regaining focus mid-paste, etc.), reported repeatedly as
+     the outline getting stuck showing a stale state. A click toggle has
+     no such pairing to lose: one event, flip once, nothing to miss. */
   if (hodToggle){
-    hodToggle.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      setHodHeld(true);
+    hodToggle.addEventListener("click", () => {
+      setHodHeld(!hodHeld);
     });
-    hodToggle.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      setHodHeld(true);
-    }, { passive: false });
-    const endHold = () => {
-      if (!hodHeld) return;
-      setHodHeld(false);
-    };
-    /* mouseup, not pointerup — confirmed live that pointerup doesn't
-       reliably fire for every release, leaving the held state stuck true
-       until the next accidental mouseup landed somewhere. mouseup is the
-       one guaranteed to pair with the mousedown above. */
-    document.addEventListener("mouseup", endHold);
-    document.addEventListener("touchend", endHold);
-    document.addEventListener("touchcancel", endHold);
   }
 
   /* ===== "started" state — sticky once reached =====
