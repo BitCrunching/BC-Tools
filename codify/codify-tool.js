@@ -1458,6 +1458,18 @@ ${titlebarSvg}
     const origPadding = cfWindowWrap.style.padding;
     const origWidth = cfWindowWrap.style.width;
     const origMaxWidth = cfWindowWrap.style.maxWidth;
+    /* Pinned explicitly, not left to updateWindowFontSize's own
+       ResizeObserver — widening #cfWindowWrap by 200px below (bleed*2)
+       to make room for the shadow is exactly the kind of width change
+       that observer exists to react to, and if it fires while
+       genuinely widened (async, so timing isn't guaranteed either way)
+       the code text would render at whatever size THAT width maps to
+       for the one frame html-to-image happens to capture — a real,
+       if narrow, way for the export to not match what's actually on
+       screen. Locking it to the pre-bleed value for the whole
+       widen/capture/restore sequence removes the race entirely rather
+       than relying on timing. */
+    const origFontSize = cfWindow.style.getPropertyValue("--cf-code-font-size");
     /* max-width:640px (from the stylesheet, not overridden by the
        inline width below on its own) still clamps an explicit inline
        width to 640 regardless — max-width always wins over width,
@@ -1467,10 +1479,12 @@ ${titlebarSvg}
     cfWindowWrap.style.maxWidth = "none";
     cfWindowWrap.style.width = (winRect.width + bleed * 2) + "px";
     cfWindowWrap.style.padding = bleed + "px";
+    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
     const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
     cfWindowWrap.style.padding = origPadding;
     cfWindowWrap.style.width = origWidth;
     cfWindowWrap.style.maxWidth = origMaxWidth;
+    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
     const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
