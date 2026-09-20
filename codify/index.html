@@ -82,6 +82,84 @@
   background-position:0 0, 0 0, 7px 7px, 7px 7px;
 }
 
+/* ===== Portrait-phone notice =====
+   A code editor genuinely doesn't fit a phone held upright — the
+   preview's own text was wrapping one or two characters per line (see
+   the redesign discussion this came out of). Deliberately no dismiss —
+   the tool doesn't actually work at this width, so "continue anyway"
+   would just hand someone a broken editor. Same fixed-fullscreen-
+   overlay shape Context's own overlay uses (position:fixed, dvh/dvw
+   for iOS Safari's collapsing address bar, high z-index), shown purely
+   via the media query below — no JS involved at all. Landscape phones
+   and anything tablet-width or wider never see this.
+
+   Covers the full viewport, including .site-nav and the footer — a
+   self-contained screen, not a strip layered over the rest of the
+   page. Its own back button (below) is the only way out, top-right. */
+.cf-orientation-notice{
+  display:none;
+}
+@media (max-width:640px) and (orientation:portrait){
+  .cf-orientation-notice{
+    display:flex;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    width:100dvw;
+    height:100dvh;
+    z-index:2000;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:32px;
+    text-align:center;
+    background:#1a1a22;
+    color:#fff;
+  }
+}
+/* Real .cf-back-btn (top-right corner of #page-codify) is covered by
+   this overlay like everything else in the tool, so it gets its own —
+   same shared .bc-canvas-back-btn shape/color, same data-goto
+   navigation (shared/site.js's delegate, no extra JS needed here). */
+.cf-orientation-notice .bc-canvas-back-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:flex;
+}
+/* Rotates from portrait to landscape and back — a literal demonstration
+   of the ask, not just a generic spinner. Pauses at each end (the
+   15%/65% holds) rather than rotating continuously, so it reads as
+   "turn it like this" instead of just spinning. */
+@keyframes cf-orientation-rotate{
+  0%, 15%{ transform:rotate(0deg); }
+  50%, 65%{ transform:rotate(90deg); }
+  100%{ transform:rotate(0deg); }
+}
+.cf-orientation-notice-icon{
+  width:56px;
+  height:56px;
+  animation:cf-orientation-rotate 2.4s ease-in-out infinite;
+}
+.cf-orientation-notice-icon svg{
+  width:100%;
+  height:100%;
+}
+.cf-orientation-notice-title{
+  font-size:20px;
+  font-weight:900;
+  max-width:320px;
+}
+.cf-orientation-notice-body{
+  font-size:15px;
+  opacity:.75;
+  max-width:320px;
+  line-height:1.5;
+}
+
 /* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
    .engine-status-row/.engine-status-value from shared/site.css — the
    same "classified terminal" look as About's banner and the mainpage
@@ -263,6 +341,23 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   top:36px;
   right:72px;
   z-index:6;
+}
+/* Flush into the banner's actual corner on mobile — the 36px desktop
+   inset (there to clear the logo/title row at that size) reads as an
+   odd, unexplained gap once the banner's own padding shrinks under
+   768px. Back sits at right:48px (12px inset + Remove's own 30px
+   diameter + a 6px gap), same increment as the desktop 36px/72px
+   pair — placed after both buttons' base rules so it actually wins
+   the cascade instead of being overridden by them. */
+@media (max-width:768px){
+  .cf-remove-btn{
+    top:12px;
+    right:12px;
+  }
+  .cf-back-btn{
+    top:12px;
+    right:48px;
+  }
 }
 
 /* Page-specific: the code input + the exportable "screenshot" preview —
@@ -1347,6 +1442,22 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 
 @media (max-width:768px){
   .cf-preview-wrap{ padding:24px; --cf-preview-pad:24px; }
+  /* Drag-to-resize doesn't translate to touch well at this width (the
+     handle's small hit target competes with normal scrolling) — both
+     panels just auto-fit their content on mobile instead. */
+  .cf-window-resize-handle,
+  .cf-resize-handle{
+    display:none;
+  }
+  /* File name above HOD/Presets on mobile, not squeezed onto the same
+     row beside them — column-reverse flips the visual order without
+     touching the markup, since .cf-filename-group is already the
+     second DOM child (.cf-filename-row-left/HOD+Presets is first). */
+  .cf-filename-row{
+    flex-direction:column-reverse;
+    align-items:flex-start;
+    gap:10px;
+  }
 }
 /* Mobile shows just "Download" on the primary action button — the
    fuller desktop label ("Convert and download", "Strip metadata and
@@ -1500,6 +1611,22 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 </div>
 <div class="tool-wrap">
   <div class="tool-app" id="page-codify">
+    <div class="cf-orientation-notice" id="cfOrientationNotice">
+      <button type="button" class="bc-canvas-back-btn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <div class="cf-orientation-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+          <line x1="11" y1="18" x2="13" y2="18"></line>
+        </svg>
+      </div>
+      <p class="cf-orientation-notice-title">Codify needs a bigger screen</p>
+      <p class="cf-orientation-notice-body">A code editor doesn't fit a phone held upright. Try it on desktop, or turn your phone sideways.</p>
+    </div>
     <div class="tool-header">
       <div class="tool-logo">
         <span class="gfx-md icon-codify" role="img" aria-label="Codify icon"></span>
@@ -1821,6 +1948,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=111" defer></script>
+<script src="/codify/codify-tool.js?v=113" defer></script>
 </body>
 </html>
