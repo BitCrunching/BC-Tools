@@ -630,6 +630,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      width came only from filling the row. */
   margin:24px auto 0;
   padding:56px;
+  /* Mac nav/Shadow's HOD zone outlines (below) size themselves off
+     this same value via var(), instead of a second hardcoded number
+     that could drift from the real padding — one source for both. */
+  --cf-preview-pad:56px;
   border-radius:20px;
   background:#E5E7EB;
   display:flex;
@@ -1045,45 +1049,66 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
 #cfWindow{
   position:relative;
 }
-/* Real static elements, not box-shadow — #cfWindow's box-shadow property
-   is already spoken for by the Shadow feature's own drop-shadow, set as
-   an inline style (applyShadow() in codify-tool.js), which always beats
-   any stylesheet rule regardless of selector specificity. Three small,
-   always-present children (markup below) instead, each just a plain
-   background-color bar/line positioned with fixed CSS percentages —
-   top:0 / bottom:0 / left:50% resolve against #cfWindow's own box
-   (position:relative above makes it the containing block) the same way
-   the browser resolves any other percentage, live, with no JS reading a
-   pixel value and writing it back for any of it to fall out of sync.
-   overflow:hidden on .cf-window (see its own rule) clips these to the
-   rounded corners for free. */
-.cf-hod-edge{
+/* Each zone gets a full rounded-corner outline around its own actual
+   region, not just a thin edge line — real static elements (not
+   box-shadow: #cfWindow's box-shadow is already spoken for by the
+   Shadow feature's own drop-shadow, set as an inline style in
+   applyShadow(), which always beats any stylesheet rule), sized with
+   plain CSS (percentages, and var(--cf-preview-pad) for the two zones
+   that live in the wrap's own padding band) so nothing here is ever a
+   JS-computed pixel value that could fall out of sync.
+
+   Mac nav/Shadow's real click zones (see previewWrap's click listener
+   in codify-tool.js) are the padding band above/below #cfWindow, not
+   the window itself — these two live directly in #cfPreviewWrap so
+   their outline actually sits where a click there lands, sized off the
+   same --cf-preview-pad custom property the wrap's own padding uses
+   (one source, so they can't drift from it). Template/Theme are each
+   half of #cfWindow itself, rounded only on their own outer corners to
+   match the window's real shape. */
+.cf-hod-zone{
   position:absolute;
-  left:0;
-  width:100%;
-  height:8px;
+  border-radius:10px;
+  border:3px solid transparent;
   opacity:0;
   pointer-events:none;
 }
-.cf-hod-edge-top{ top:0; background:#fb923c; }
-.cf-hod-edge-bottom{ bottom:0; background:#facc15; }
-/* Template (left half) and Theme (right half) each get their own solid
-   stroke — thicker than a hairline, with a small gap between them, so
-   the two colors read as two separate zones even on a short/thin
-   window (a 2px-total hairline blurred into one indistinct line at
-   small sizes). */
-.cf-hod-divider{
-  position:absolute;
-  top:0;
-  width:6px;
-  height:100%;
-  opacity:0;
-  pointer-events:none;
+.cf-hod-zone-macnav{
+  top:8px;
+  left:var(--cf-preview-pad);
+  right:var(--cf-preview-pad);
+  height:calc(var(--cf-preview-pad) - 16px);
+  border-color:#fb923c;
 }
-.cf-hod-divider-template{ left:calc(50% - 8px); background:#4ade80; }
-.cf-hod-divider-theme{ left:calc(50% + 2px); background:#fa8072; }
-#cfWindow.cf-hod-active .cf-hod-edge,
-#cfWindow.cf-hod-active .cf-hod-divider{
+.cf-hod-zone-shadow{
+  bottom:8px;
+  left:var(--cf-preview-pad);
+  right:var(--cf-preview-pad);
+  height:calc(var(--cf-preview-pad) - 16px);
+  border-color:#facc15;
+}
+#cfPreviewWrap.cf-hod-active .cf-hod-zone-macnav,
+#cfPreviewWrap.cf-hod-active .cf-hod-zone-shadow{
+  opacity:1;
+}
+.cf-hod-zone-template{
+  top:4px;
+  bottom:4px;
+  left:4px;
+  width:calc(50% - 6px);
+  border-radius:10px 0 0 10px;
+  border-color:#4ade80;
+}
+.cf-hod-zone-theme{
+  top:4px;
+  bottom:4px;
+  right:4px;
+  width:calc(50% - 6px);
+  border-radius:0 10px 10px 0;
+  border-color:#fa8072;
+}
+#cfWindow.cf-hod-active .cf-hod-zone-template,
+#cfWindow.cf-hod-active .cf-hod-zone-theme{
   opacity:1;
 }
 /* Compact static legend, anchored to the HOD button's own row via
@@ -1252,7 +1277,7 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
 }
 
 @media (max-width:768px){
-  .cf-preview-wrap{ padding:24px; }
+  .cf-preview-wrap{ padding:24px; --cf-preview-pad:24px; }
 }
 /* Mobile shows just "Download" on the primary action button — the
    fuller desktop label ("Convert and download", "Strip metadata and
@@ -1585,16 +1610,21 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 
     <div class="cf-preview-wrap" id="cfPreviewWrap">
       <div class="cf-hod-toast" id="cfHodToast" aria-hidden="true"><span class="cf-hod-toast-prompt">&gt;</span> toggle on</div>
+      <!-- Mac nav/Shadow's zone outlines live directly in the wrap, not
+           inside #cfWindow — their real click zone (see previewWrap's
+           click listener in codify-tool.js) is the wrap's own padding
+           band above/below the window, so the outline needs to sit
+           there too, not get clipped by #cfWindow's overflow:hidden. -->
+      <div class="cf-hod-zone cf-hod-zone-macnav" aria-hidden="true"></div>
+      <div class="cf-hod-zone cf-hod-zone-shadow" aria-hidden="true"></div>
       <div class="cf-window-wrap" id="cfWindowWrap">
         <div class="cf-window" id="cfWindow" data-theme="dracula">
           <div class="cf-titlebar">
             <span class="cf-dot cf-dot-red"></span><span class="cf-dot cf-dot-yellow"></span><span class="cf-dot cf-dot-green"></span>
           </div>
           <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
-          <div class="cf-hod-edge cf-hod-edge-top" aria-hidden="true"></div>
-          <div class="cf-hod-edge cf-hod-edge-bottom" aria-hidden="true"></div>
-          <div class="cf-hod-divider cf-hod-divider-template" aria-hidden="true"></div>
-          <div class="cf-hod-divider cf-hod-divider-theme" aria-hidden="true"></div>
+          <div class="cf-hod-zone cf-hod-zone-template" aria-hidden="true"></div>
+          <div class="cf-hod-zone cf-hod-zone-theme" aria-hidden="true"></div>
         </div>
         <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
       </div>
