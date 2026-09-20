@@ -1092,14 +1092,26 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   flex:1 1 0;
   min-width:8px;
   align-self:stretch;
-  /* Negative top/bottom margin stretches this well past #cfWindowWrap's
-     own height (which align-self:stretch alone would cap it to) out to
-     the same 8px-from-the-wrap inset Mac nav/Shadow's own outer edges
-     use — reaching toward the panel's outline instead of stopping at
-     the window's edge. */
-  margin:calc(8px - var(--cf-preview-pad)) 4px;
+  /* Negative top/bottom margin so this box's edges land exactly on Mac
+     nav/Shadow's own edges (both 8px in from the wrap) instead of
+     #cfWindowWrap's own top/bottom (which sit further in, at the real
+     padding boundary) — align-self:stretch otherwise sizes this box to
+     #cfWindowWrap's height alone, leaving a gap above/below it. */
+  margin:-8px 4px;
   box-sizing:border-box;
   border-color:#6fa8dc;
+}
+/* Outward-facing side only (away from the window, toward the wrap's
+   own edge) gets the same negative-margin extension the top/bottom
+   zones already reach with — the flex row's own content box starts
+   inside #cfPreviewWrap's padding, well short of the wrap's true edge,
+   so a plain margin can't reach past that on its own. The inward side
+   (next to #cfWindowWrap) keeps the small fixed 4px above instead. */
+.cf-hod-zone-bg-left{
+  margin-left:calc(8px - var(--cf-preview-pad));
+}
+.cf-hod-zone-bg-right{
+  margin-right:calc(8px - var(--cf-preview-pad));
 }
 #cfPreviewWrap.cf-hod-active .cf-hod-zone-bg{
   opacity:1;
@@ -1609,7 +1621,7 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
            window (the actual Background click zone), and stretches to
            the window's own height for free, tracking both resize
            handles with zero JS. -->
-      <div class="cf-hod-zone cf-hod-zone-bg" aria-hidden="true"></div>
+      <div class="cf-hod-zone cf-hod-zone-bg cf-hod-zone-bg-left" aria-hidden="true"></div>
       <div class="cf-window-wrap" id="cfWindowWrap">
         <div class="cf-window" id="cfWindow" data-theme="dracula">
           <div class="cf-titlebar">
@@ -1621,7 +1633,7 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
         </div>
         <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
       </div>
-      <div class="cf-hod-zone cf-hod-zone-bg" aria-hidden="true"></div>
+      <div class="cf-hod-zone cf-hod-zone-bg cf-hod-zone-bg-right" aria-hidden="true"></div>
       <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Background panel size" tabindex="0"></span>
     </div>
 
