@@ -277,11 +277,29 @@ console.log(a.next.value);`
   };
   let currentStyle = "custom";
 
+  /* Keeps --cf-preview-pad (what HOD's Mac nav/Shadow/Background zone
+     math in index.html sizes itself off) in sync with whatever padding
+     actually ends up on the element — a preset writing previewWrap.style.
+     padding directly, with nothing else touching this custom property,
+     silently desynced the two and misaligned every HOD zone the moment
+     any preset (all of which use a different padding than the 56px/24px
+     CSS default) was active. removeProperty (not "") on clear so the
+     CSS rule's own responsive value — 56px desktop, 24px under 768px —
+     takes back over instead of getting stuck at whatever was last set. */
+  function setPreviewPadding(value){
+    previewWrap.style.padding = value;
+    if (value){
+      previewWrap.style.setProperty("--cf-preview-pad", value);
+    } else {
+      previewWrap.style.removeProperty("--cf-preview-pad");
+    }
+  }
+
   function applyStyle(styleKey){
     currentStyle = styleKey;
     if (styleKey === "custom"){
       setPreviewBackground(bgColorInput.value);
-      previewWrap.style.padding = "";
+      setPreviewPadding("");
       return;
     }
     const preset = STYLE_PRESETS[styleKey];
@@ -290,7 +308,7 @@ console.log(a.next.value);`
     cfWindow.dataset.theme = preset.theme;
     setComboDisplay(themeMenu, themeInput, "theme", preset.theme);
     setPreviewBackground(preset.background);
-    previewWrap.style.padding = preset.padding;
+    setPreviewPadding(preset.padding);
     bgColorSwatch.style.background = preset.background;
   }
 
@@ -1596,7 +1614,7 @@ ${titlebarSvg}
          preset's padding override back to the CSS default. */
       if (currentStyle !== "custom"){
         currentStyle = "custom";
-        previewWrap.style.padding = "";
+        setPreviewPadding("");
         if (styleControl) styleControl.setIndex(0);
       }
     });
@@ -1651,7 +1669,7 @@ ${titlebarSvg}
     bgSwatchEls.forEach(el => el.classList.remove("active"));
     if (currentStyle !== "custom"){
       currentStyle = "custom";
-      previewWrap.style.padding = "";
+      setPreviewPadding("");
       if (styleControl) styleControl.setIndex(0);
     }
     schedulePersist();
