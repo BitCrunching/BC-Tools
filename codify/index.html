@@ -85,14 +85,13 @@
 /* ===== Portrait-phone notice =====
    A code editor genuinely doesn't fit a phone held upright — the
    preview's own text was wrapping one or two characters per line (see
-   the redesign discussion this came out of). Rather than keep chasing
-   individual mobile-layout fixes, this is a straight, honest ask:
-   bigger screen or landscape. Same fixed-fullscreen-overlay shape
-   Context's own overlay uses (position:fixed, dvh/dvw for iOS Safari's
-   collapsing address bar, high z-index), shown only via the media
-   query below — no JS needed to decide whether it's relevant, only to
-   handle the dismiss. Landscape phones and anything tablet-width or
-   wider never see this at all. */
+   the redesign discussion this came out of). Deliberately no dismiss —
+   the tool doesn't actually work at this width, so "continue anyway"
+   would just hand someone a broken editor. Same fixed-fullscreen-
+   overlay shape Context's own overlay uses (position:fixed, dvh/dvw
+   for iOS Safari's collapsing address bar, high z-index), shown purely
+   via the media query below — no JS involved at all. Landscape phones
+   and anything tablet-width or wider never see this. */
 .cf-orientation-notice{
   display:none;
 }
@@ -116,9 +115,6 @@
     background:#1a1a22;
     color:#fff;
   }
-}
-.cf-orientation-notice.dismissed{
-  display:none !important;
 }
 /* Rotates from portrait to landscape and back — a literal demonstration
    of the ask, not just a generic spinner. Pauses at each end (the
@@ -148,21 +144,6 @@
   opacity:.75;
   max-width:320px;
   line-height:1.5;
-}
-.cf-orientation-notice-dismiss{
-  margin-top:8px;
-  padding:10px 20px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.3);
-  background:rgba(255,255,255,.1);
-  color:#fff;
-  font-family:inherit;
-  font-size:14px;
-  font-weight:700;
-  cursor:pointer;
-}
-.cf-orientation-notice-dismiss:hover{
-  background:rgba(255,255,255,.18);
 }
 
 /* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
@@ -1623,9 +1604,8 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
           <line x1="11" y1="18" x2="13" y2="18"></line>
         </svg>
       </div>
-      <p class="cf-orientation-notice-title">Codify works best on a bigger screen</p>
-      <p class="cf-orientation-notice-body">Try it on desktop, or turn your phone sideways for more room to work with.</p>
-      <button type="button" class="cf-orientation-notice-dismiss" id="cfOrientationDismiss">Continue anyway</button>
+      <p class="cf-orientation-notice-title">Codify needs a bigger screen</p>
+      <p class="cf-orientation-notice-body">A code editor doesn't fit a phone held upright. Try it on desktop, or turn your phone sideways.</p>
     </div>
     <div class="tool-header">
       <div class="tool-logo">
@@ -1948,6 +1928,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=112" defer></script>
+<script src="/codify/codify-tool.js?v=113" defer></script>
 </body>
 </html>
