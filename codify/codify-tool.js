@@ -613,6 +613,7 @@ console.log(a.next.value);`
         hodToast.classList.remove("cf-hod-toast-show");
       }
     }
+    if (!held) setHodHoverZone(null);
   }
   /* Plain click toggle, not press-and-hold — hold relied on a
      mousedown/mouseup pair staying in sync across the whole document,
@@ -624,6 +625,62 @@ console.log(a.next.value);`
     hodToggle.addEventListener("click", () => {
       setHodHeld(!hodHeld);
     });
+  }
+
+  /* ===== HOD hover highlight — marks the matching settings control
+     while the mouse sits over its zone, same zone math the click
+     gesture above already uses (e.target === previewWrap + a Y/X split
+     against #cfWindow's own rect). Read fresh off getBoundingClientRect
+     at the instant of each real mousemove and immediately discarded —
+     never stored or reused across frames — so it can't drift the way
+     the old tracked overlay did. Targets are looked up lazily by id
+     rather than closed over as consts, since several (#cfBgTrigger
+     among them) aren't declared until later in this file. */
+  const HOD_ZONE_TARGETS = {
+    macNav: () => { const t = document.getElementById("cfTrafficLightsToggle"); return t && t.closest(".cf-toggle-switch"); },
+    shadow: () => document.getElementById("cfShadowTrigger"),
+    background: () => document.getElementById("cfBgTrigger"),
+    template: () => document.getElementById("cfTemplateTrigger"),
+    theme: () => document.getElementById("cfThemeTrigger")
+  };
+  /* Same five colors as the legend swatches (index.html), so the
+     highlighted control and the outline it corresponds to visibly
+     match. */
+  const HOD_ZONE_COLORS = {
+    macNav: "#ffc107",
+    shadow: "#facc15",
+    background: "#6fa8dc",
+    template: "#4ade80",
+    theme: "#f87171"
+  };
+  let hodHoverZone = null;
+  function setHodHoverZone(zone){
+    if (zone === hodHoverZone) return;
+    if (hodHoverZone && HOD_ZONE_TARGETS[hodHoverZone]){
+      const prevEl = HOD_ZONE_TARGETS[hodHoverZone]();
+      if (prevEl){ prevEl.classList.remove("cf-hod-hover-target"); prevEl.style.outlineColor = ""; }
+    }
+    hodHoverZone = zone;
+    if (zone && HOD_ZONE_TARGETS[zone]){
+      const nextEl = HOD_ZONE_TARGETS[zone]();
+      if (nextEl){ nextEl.classList.add("cf-hod-hover-target"); nextEl.style.outlineColor = HOD_ZONE_COLORS[zone]; }
+    }
+  }
+  if (previewWrap && cfWindow){
+    previewWrap.addEventListener("mousemove", (e) => {
+      if (!hodHeld){ setHodHoverZone(null); return; }
+      if (e.target === previewWrap){
+        const winRect = cfWindow.getBoundingClientRect();
+        if (e.clientY >= winRect.bottom){ setHodHoverZone("shadow"); return; }
+        if (e.clientY < winRect.top){ setHodHoverZone("macNav"); return; }
+        setHodHoverZone("background");
+        return;
+      }
+      const rect = previewWrap.getBoundingClientRect();
+      const overLeftHalf = (e.clientX - rect.left) < rect.width / 2;
+      setHodHoverZone(overLeftHalf ? "template" : "theme");
+    });
+    previewWrap.addEventListener("mouseleave", () => setHodHoverZone(null));
   }
 
   /* ===== "started" state — sticky once reached =====
