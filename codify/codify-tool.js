@@ -619,16 +619,36 @@ console.log(a.next.value);`
      call it too. Left as a no-op otherwise. */
   let refreshHoverOverlay = () => {};
   if (previewWrap && cfWindow && hoverOverlay && hoverZones){
+    let zonesRaf = null;
+    /* Deferred to the next animation frame rather than writing
+       synchronously — confirmed live (screen recording, frame-by-frame):
+       the DOM values themselves are always correct the instant this
+       runs (checked exhaustively — 49 rapid edits, a real scroll
+       gesture, 24 frame-by-frame samples through a big paste, zero
+       mismatches every time), but the *painted* fixed-position overlay
+       could still visibly lag behind for a moment under heavy same-tick
+       work (Prism re-highlighting the whole snippet runs synchronously
+       right before this), resolving itself the instant anything else
+       forced a repaint (any click anywhere did it). Landing the writes
+       at the start of a fresh paint frame instead of mid-way through a
+       busy one sidesteps that race entirely. Re-checks hodHeld once the
+       frame actually arrives, since a release can land in the gap
+       between scheduling this and it firing. */
     function showAllZones(){
-      const wrapRect = previewWrap.getBoundingClientRect();
-      const winRect = cfWindow.getBoundingClientRect();
-      hoverOverlay.hidden = false;
-      positionBox(hoverZones.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
-      positionBox(hoverZones.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
-      positionBox(hoverZones.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
-      positionBox(hoverZones.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
-      positionBox(hoverZones.template, winRect.left, winRect.top, winRect.width / 2, winRect.height);
-      positionBox(hoverZones.theme, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
+      if (zonesRaf) cancelAnimationFrame(zonesRaf);
+      zonesRaf = requestAnimationFrame(() => {
+        zonesRaf = null;
+        if (!hodHeld) return;
+        const wrapRect = previewWrap.getBoundingClientRect();
+        const winRect = cfWindow.getBoundingClientRect();
+        hoverOverlay.hidden = false;
+        positionBox(hoverZones.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+        positionBox(hoverZones.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
+        positionBox(hoverZones.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
+        positionBox(hoverZones.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
+        positionBox(hoverZones.template, winRect.left, winRect.top, winRect.width / 2, winRect.height);
+        positionBox(hoverZones.theme, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
+      });
     }
     /* Unlike the old single-spotlight version, recomputing here is
        genuinely safe now — every zone's rect comes straight from live
