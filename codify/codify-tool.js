@@ -332,11 +332,106 @@ console.log(a.next.value);`
     applyStyle(opt.value);
   }) : null;
 
-  /* ===== Traffic lights on/off ===== */
+  /* ===== Mac nav control (on/off + traffic light style/color) =====
+     Used to be a plain on/off .cf-toggle-switch — now a trigger button
+     that opens a small popover panel (.cf-macnav-panel), same
+     trigger+panel shape as Shadow's/Background's own controls. The
+     on/off switch moves inside the panel (same .cf-toggle-switch shape
+     Shadow's own panel already uses for its "On" switch); three style
+     options join it — Classic (the original fixed red/yellow/green),
+     Monochrome and Custom both a single color applied to all three
+     dots. applyMacNavDots() is the one place that actually writes dot
+     colors, onto the real .cf-dot elements — buildSvgString() further
+     down reads those same elements' computed colors for SVG export
+     rather than a second hardcoded color list, so export always
+     matches whatever's on screen. */
   const trafficLightsToggle = document.getElementById("cfTrafficLightsToggle");
+  const macNavControl = document.getElementById("cfMacNavControl");
+  const macNavTrigger = document.getElementById("cfMacNavTrigger");
+  const macNavPanel = document.getElementById("cfMacNavPanel");
+  const macNavTriggerDots = macNavTrigger ? [...macNavTrigger.querySelectorAll(".cf-macnav-trigger-dot")] : [];
+  const macNavStyleRow = document.getElementById("cfMacNavStyleRow");
+  const macNavStyleSwatches = macNavStyleRow ? [...macNavStyleRow.querySelectorAll(".cf-macnav-style-swatch")] : [];
+  const macNavHexRow = document.getElementById("cfMacNavHexRow");
+  const macNavHexInput = document.getElementById("cfMacNavHexInput");
+  const macNavColorInput = document.getElementById("cfMacNavColorInput");
+  const macNavCustomSwatchDot = document.getElementById("cfMacNavCustomSwatchDot");
+
+  const MACNAV_CLASSIC = ["#ff5f56", "#ffbd2e", "#27c93f"];
+  const MACNAV_MONOCHROME = "#9ca3af";
+  let macNavStyle = "classic";
+  let macNavCustomColor = "#2563EB";
+
+  function applyMacNavDots(){
+    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME]
+      : macNavStyle === "custom" ? [macNavCustomColor, macNavCustomColor, macNavCustomColor]
+      : MACNAV_CLASSIC;
+    cfWindow.querySelectorAll(".cf-dot").forEach((dot, i) => { dot.style.background = colors[i]; });
+    macNavTriggerDots.forEach((dot, i) => { dot.style.background = colors[i]; });
+  }
+  function setMacNavStyle(style){
+    macNavStyle = style;
+    macNavStyleSwatches.forEach(btn => {
+      const active = btn.dataset.style === style;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    if (macNavHexRow) macNavHexRow.hidden = style !== "custom";
+    applyMacNavDots();
+  }
+  function setMacNavCustomColor(hex){
+    macNavCustomColor = hex;
+    if (macNavHexInput) macNavHexInput.value = hex;
+    if (macNavColorInput) macNavColorInput.value = hex;
+    if (macNavCustomSwatchDot) macNavCustomSwatchDot.style.background = hex;
+    if (macNavStyle === "custom") applyMacNavDots();
+  }
+  setMacNavCustomColor(macNavCustomColor);
+  applyMacNavDots();
+
   if (trafficLightsToggle){
     trafficLightsToggle.addEventListener("change", () => {
       cfWindow.classList.toggle("cf-hide-titlebar", !trafficLightsToggle.checked);
+    });
+  }
+  macNavStyleSwatches.forEach(btn => {
+    btn.addEventListener("click", () => setMacNavStyle(btn.dataset.style));
+  });
+  if (macNavHexInput){
+    macNavHexInput.addEventListener("change", () => {
+      const hex = macNavHexInput.value.trim();
+      if (/^#[0-9a-f]{6}$/i.test(hex)) setMacNavCustomColor(hex);
+      else macNavHexInput.value = macNavCustomColor;
+    });
+  }
+  if (macNavColorInput){
+    macNavColorInput.addEventListener("input", () => setMacNavCustomColor(macNavColorInput.value));
+  }
+  function closeMacNavPanel(){
+    if (!macNavPanel || !macNavTrigger) return;
+    macNavPanel.hidden = true;
+    macNavTrigger.setAttribute("aria-expanded", "false");
+  }
+  function openMacNavPanel(){
+    if (!macNavPanel || !macNavTrigger) return;
+    macNavPanel.hidden = false;
+    macNavTrigger.setAttribute("aria-expanded", "true");
+  }
+  if (macNavTrigger && macNavPanel && macNavControl){
+    macNavTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = !macNavPanel.hidden;
+      closeMacNavPanel();
+      if (!isOpen) openMacNavPanel();
+    });
+    document.addEventListener("click", (e) => {
+      if (!macNavPanel.hidden && !macNavControl.contains(e.target)) closeMacNavPanel();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !macNavPanel.hidden){
+        closeMacNavPanel();
+        macNavTrigger.focus();
+      }
     });
   }
 
@@ -674,7 +769,7 @@ console.log(a.next.value);`
      rather than closed over as consts, since several (#cfBgTrigger
      among them) aren't declared until later in this file. */
   const HOD_ZONE_TARGETS = {
-    macNav: () => { const t = document.getElementById("cfTrafficLightsToggle"); return t && t.closest(".cf-toggle-switch"); },
+    macNav: () => document.getElementById("cfMacNavTrigger"),
     shadow: () => document.getElementById("cfShadowTrigger"),
     background: () => document.getElementById("cfBgTrigger"),
     template: () => document.getElementById("cfTemplateTrigger"),
@@ -758,6 +853,7 @@ console.log(a.next.value);`
       trafficLightsToggle.checked = true;
       cfWindow.classList.remove("cf-hide-titlebar");
     }
+    setMacNavStyle("classic");
     if (shadowToggle){
       shadowToggle.checked = true;
       if (shadowOpacityInput) shadowOpacityInput.value = 35;
@@ -1104,7 +1200,12 @@ console.log(a.next.value);`
       const titlebarRect = titlebarEl.getBoundingClientRect();
       const titlebarBg = getComputedStyle(titlebarEl).backgroundColor;
       const titlebarH = titlebarRect.height;
-      const dotColors = ["#ff5f56", "#ffbd2e", "#27c93f"];
+      /* Reads each dot's own real computed color rather than a
+         hardcoded classic red/yellow/green list — Mac nav's Monochrome/
+         Custom styles (applyMacNavDots) write directly to these same
+         elements, so export only ever matches them by reading the real
+         thing instead of guessing the classic colors back. */
+      const dotColors = [...titlebarEl.querySelectorAll(".cf-dot")].map(dot => getComputedStyle(dot).backgroundColor);
       const dotR = 6;
       const dotCY = winY + titlebarH / 2;
       const dotGap = 20; /* 12px dot + 8px gap, matches .cf-titlebar's own gap:8px */

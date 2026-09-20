@@ -930,6 +930,87 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
    flips light/dark on its own, this only needs the slider labels/values
    to follow var(--text) as they already do above. */
 
+/* ===== Mac nav control (on/off + traffic light style/color) =====
+   Same trigger+panel shape as Shadow's/Background's own controls just
+   above — was a plain on/off .cf-toggle-switch; the switch itself
+   moves inside the new panel (reusing .cf-shadow-panel-toggle's own
+   layout as a second class, same "On" switch shape), joined by three
+   style options. Classic is the original fixed red/yellow/green;
+   Monochrome and Custom both apply one color to all three dots —
+   .cf-macnav-swatch-dot's colors are set inline per option (JS), not
+   hardcoded per class, since Custom's own swatch has to reflect
+   whatever hex is currently picked. */
+.cf-macnav-control{
+  position:relative;
+  width:100%;
+}
+.cf-macnav-trigger{
+  justify-content:space-between;
+}
+.cf-macnav-trigger-dots{
+  display:flex;
+  gap:3px;
+  flex-shrink:0;
+}
+.cf-macnav-trigger-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+}
+.cf-macnav-panel{
+  width:200px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cf-macnav-panel-toggle{
+  width:auto;
+  align-self:flex-start;
+  height:32px;
+  padding:0 10px 0 4px;
+  border:none;
+  background:none;
+}
+.cf-macnav-style-row{
+  display:flex;
+  gap:8px;
+}
+.cf-macnav-style-swatch{
+  flex:1;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  border-radius:10px;
+  border:2px solid rgba(127,127,127,.35);
+  background:none;
+  padding:0;
+  cursor:pointer;
+  transition:.15s;
+}
+.cf-macnav-style-swatch:hover{
+  border-color:rgba(127,127,127,.6);
+}
+.cf-macnav-style-swatch.active{
+  border-color:#2563eb;
+}
+.cf-macnav-swatch-dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.cf-macnav-swatch-dot-custom{
+  width:16px;
+  height:16px;
+}
+/* Reuses .cf-bg-hex-row/.cf-bg-hex-label/.cf-bg-hex-input as-is (see
+   Background's own panel above) rather than a second near-identical
+   copy — a plain label+input row isn't specific to Background, just
+   the first place it was needed. */
+
 /* ===== Output file name — same right-aligned "> File name:" tag +
    inline-editable underline field Congify's #gifScrubberFileName uses,
    under its own preview. The HOD toggle (formerly just another entry
@@ -1570,11 +1651,38 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
       </div>
 
       <div class="cf-setting-group">
-        <label class="cf-toggle-switch">
-          <input type="checkbox" id="cfTrafficLightsToggle" checked>
-          <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-          <span class="cf-toggle-label">Mac nav</span>
-        </label>
+        <div class="cf-macnav-control" id="cfMacNavControl">
+          <button type="button" class="cf-macnav-trigger bc-dropdown-trigger" id="cfMacNavTrigger" aria-haspopup="true" aria-expanded="false">
+            <span class="cf-macnav-trigger-dots" id="cfMacNavTriggerDots" aria-hidden="true">
+              <span class="cf-macnav-trigger-dot" style="background:#ff5f56;"></span><span class="cf-macnav-trigger-dot" style="background:#ffbd2e;"></span><span class="cf-macnav-trigger-dot" style="background:#27c93f;"></span>
+            </span>
+            <span>Mac nav</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="cf-macnav-panel bc-dropdown-menu" id="cfMacNavPanel" hidden>
+            <label class="cf-toggle-switch cf-macnav-panel-toggle">
+              <input type="checkbox" id="cfTrafficLightsToggle" checked>
+              <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
+              <span class="cf-toggle-label">On</span>
+            </label>
+            <div class="cf-macnav-style-row" id="cfMacNavStyleRow" role="listbox" aria-label="Traffic light style">
+              <button type="button" class="cf-macnav-style-swatch active" data-style="classic" aria-label="Classic" role="option" aria-selected="true">
+                <span class="cf-macnav-swatch-dot" style="background:#ff5f56;"></span><span class="cf-macnav-swatch-dot" style="background:#ffbd2e;"></span><span class="cf-macnav-swatch-dot" style="background:#27c93f;"></span>
+              </button>
+              <button type="button" class="cf-macnav-style-swatch" data-style="monochrome" aria-label="Monochrome" role="option" aria-selected="false">
+                <span class="cf-macnav-swatch-dot" style="background:#9ca3af;"></span><span class="cf-macnav-swatch-dot" style="background:#9ca3af;"></span><span class="cf-macnav-swatch-dot" style="background:#9ca3af;"></span>
+              </button>
+              <button type="button" class="cf-macnav-style-swatch" data-style="custom" aria-label="Custom color" role="option" aria-selected="false">
+                <span class="cf-macnav-swatch-dot cf-macnav-swatch-dot-custom" id="cfMacNavCustomSwatchDot"></span>
+              </button>
+            </div>
+            <label class="cf-bg-hex-row" id="cfMacNavHexRow" hidden>
+              <span class="cf-bg-hex-label">Hex</span>
+              <input type="text" id="cfMacNavHexInput" class="cf-bg-hex-input" value="#2563EB" maxlength="7" spellcheck="false" aria-label="Custom traffic light color">
+            </label>
+            <input type="color" id="cfMacNavColorInput" value="#2563EB" aria-hidden="true" tabindex="-1" hidden>
+          </div>
+        </div>
       </div>
 
       <div class="cf-setting-group">
@@ -1735,6 +1843,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=106" defer></script>
+<script src="/codify/codify-tool.js?v=107" defer></script>
 </body>
 </html>
