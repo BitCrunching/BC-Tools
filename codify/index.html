@@ -93,12 +93,9 @@
    via the media query below — no JS involved at all. Landscape phones
    and anything tablet-width or wider never see this.
 
-   Starts BELOW .site-nav (72px at this breakpoint — shared/site.css's
-   own mobile height) instead of covering the full viewport — the real
-   nav (BC Tools logo, theme/share/help buttons) stays visible and
-   usable above it, rather than getting hidden along with the broken
-   tool underneath. .site-nav's own z-index is 50; this still needs to
-   clear everything else in #page-codify, hence 2000. */
+   Covers the full viewport, including .site-nav and the footer — a
+   self-contained screen, not a strip layered over the rest of the
+   page. Its own back button (below) is the only way out, top-right. */
 .cf-orientation-notice{
   display:none;
 }
@@ -106,12 +103,12 @@
   .cf-orientation-notice{
     display:flex;
     position:fixed;
-    top:72px;
+    top:0;
     left:0;
     width:100vw;
-    height:calc(100vh - 72px);
+    height:100vh;
     width:100dvw;
-    height:calc(100dvh - 72px);
+    height:100dvh;
     z-index:2000;
     flex-direction:column;
     align-items:center;
@@ -130,7 +127,7 @@
 .cf-orientation-notice .bc-canvas-back-btn{
   position:absolute;
   top:16px;
-  left:16px;
+  right:16px;
   display:flex;
 }
 /* Rotates from portrait to landscape and back — a literal demonstration
