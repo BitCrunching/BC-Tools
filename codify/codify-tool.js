@@ -25,6 +25,27 @@
   const formatPngBtn = document.getElementById("cfFormatPngBtn");
   const formatSvgBtn = document.getElementById("cfFormatSvgBtn");
 
+  /* ===== Portrait-phone notice =====
+     The overlay's own CSS media query (index.html) already decides
+     whether it's relevant — this only handles "Continue anyway",
+     persisted the same way the help banner's own dismiss is (a
+     localStorage flag, checked once on load and applied as a class so
+     the media query alone can't bring it back on a later visit). */
+  const orientationNotice = document.getElementById("cfOrientationNotice");
+  const orientationDismiss = document.getElementById("cfOrientationDismiss");
+  const ORIENTATION_DISMISS_KEY = "bc-codify-orientation-dismissed";
+  if (orientationNotice){
+    let dismissed = false;
+    try { dismissed = localStorage.getItem(ORIENTATION_DISMISS_KEY) === "1"; } catch (e) { /* storage unavailable */ }
+    if (dismissed) orientationNotice.classList.add("dismissed");
+    if (orientationDismiss){
+      orientationDismiss.addEventListener("click", () => {
+        orientationNotice.classList.add("dismissed");
+        try { localStorage.setItem(ORIENTATION_DISMISS_KEY, "1"); } catch (e) { /* storage unavailable */ }
+      });
+    }
+  }
+
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
