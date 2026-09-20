@@ -362,15 +362,15 @@ console.log(a.next.value);`
     applyStyle(opt.value);
   }) : null;
 
-  /* ===== Mac nav control (on/off + traffic light style/color) =====
+  /* ===== Mac nav control (on/off + traffic light style) =====
      Used to be a plain on/off .cf-toggle-switch — now a trigger button
      that opens a small popover panel (.cf-macnav-panel), same
      trigger+panel shape as Shadow's/Background's own controls. The
      on/off switch moves inside the panel (same .cf-toggle-switch shape
-     Shadow's own panel already uses for its "On" switch); three style
-     options join it — Classic (the original fixed red/yellow/green),
-     Monochrome and Custom both a single color applied to all three
-     dots. applyMacNavDots() is the one place that actually writes dot
+     Shadow's own panel already uses for its "On" switch); two style
+     options join it — Classic (the original fixed red/yellow/green)
+     and Monochrome (one neutral gray for all three dots).
+     applyMacNavDots() is the one place that actually writes dot
      colors, onto the real .cf-dot elements — buildSvgString() further
      down reads those same elements' computed colors for SVG export
      rather than a second hardcoded color list, so export always
@@ -382,20 +382,13 @@ console.log(a.next.value);`
   const macNavTriggerDots = macNavTrigger ? [...macNavTrigger.querySelectorAll(".cf-macnav-trigger-dot")] : [];
   const macNavStyleRow = document.getElementById("cfMacNavStyleRow");
   const macNavStyleSwatches = macNavStyleRow ? [...macNavStyleRow.querySelectorAll(".cf-macnav-style-swatch")] : [];
-  const macNavHexRow = document.getElementById("cfMacNavHexRow");
-  const macNavHexInput = document.getElementById("cfMacNavHexInput");
-  const macNavColorInput = document.getElementById("cfMacNavColorInput");
-  const macNavCustomSwatchDot = document.getElementById("cfMacNavCustomSwatchDot");
 
   const MACNAV_CLASSIC = ["#ff5f56", "#ffbd2e", "#27c93f"];
   const MACNAV_MONOCHROME = "#9ca3af";
   let macNavStyle = "classic";
-  let macNavCustomColor = "#2563EB";
 
   function applyMacNavDots(){
-    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME]
-      : macNavStyle === "custom" ? [macNavCustomColor, macNavCustomColor, macNavCustomColor]
-      : MACNAV_CLASSIC;
+    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME] : MACNAV_CLASSIC;
     cfWindow.querySelectorAll(".cf-dot").forEach((dot, i) => { dot.style.background = colors[i]; });
     macNavTriggerDots.forEach((dot, i) => { dot.style.background = colors[i]; });
   }
@@ -406,17 +399,8 @@ console.log(a.next.value);`
       btn.classList.toggle("active", active);
       btn.setAttribute("aria-selected", active ? "true" : "false");
     });
-    if (macNavHexRow) macNavHexRow.hidden = style !== "custom";
     applyMacNavDots();
   }
-  function setMacNavCustomColor(hex){
-    macNavCustomColor = hex;
-    if (macNavHexInput) macNavHexInput.value = hex;
-    if (macNavColorInput) macNavColorInput.value = hex;
-    if (macNavCustomSwatchDot) macNavCustomSwatchDot.style.background = hex;
-    if (macNavStyle === "custom") applyMacNavDots();
-  }
-  setMacNavCustomColor(macNavCustomColor);
   applyMacNavDots();
 
   if (trafficLightsToggle){
@@ -427,16 +411,6 @@ console.log(a.next.value);`
   macNavStyleSwatches.forEach(btn => {
     btn.addEventListener("click", () => setMacNavStyle(btn.dataset.style));
   });
-  if (macNavHexInput){
-    macNavHexInput.addEventListener("change", () => {
-      const hex = macNavHexInput.value.trim();
-      if (/^#[0-9a-f]{6}$/i.test(hex)) setMacNavCustomColor(hex);
-      else macNavHexInput.value = macNavCustomColor;
-    });
-  }
-  if (macNavColorInput){
-    macNavColorInput.addEventListener("input", () => setMacNavCustomColor(macNavColorInput.value));
-  }
   function closeMacNavPanel(){
     if (!macNavPanel || !macNavTrigger) return;
     macNavPanel.hidden = true;
