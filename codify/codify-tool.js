@@ -661,14 +661,14 @@ console.log(a.next.value);`
   });
   if (previewWrap && templateMenu && themeMenu && bgColorInput){
     previewWrap.addEventListener("click", (e) => {
-      /* Gated behind HOD being on — this used to fire on every click
-         unconditionally, so any stray click landing on the preview
-         (not just a deliberate one) silently cycled a real setting.
-         That's almost certainly what earlier bug reports ("changes
-         after clicking", "gets bugged after pasting") were actually
-         seeing — nothing wrong with HOD's outline rendering, just an
-         always-live click handler underneath it. */
-      if (!hodHeld) return;
+      /* Always live, not gated behind HOD — HOD is purely a visual
+         "what can I click here" indicator now (outlines only), not a
+         precondition for the clicks themselves actually doing
+         anything. Was gated behind hodHeld for a while (on the theory
+         that stray clicks were silently cycling settings), but that
+         made HOD do two unrelated jobs at once; disconnected back out
+         to how the preview's click-cycle gesture always originally
+         worked. */
       if (e.target === previewWrap){
         const winRect = cfWindow.getBoundingClientRect();
         if (e.clientY >= winRect.bottom){
