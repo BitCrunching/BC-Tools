@@ -626,12 +626,13 @@ console.log(a.next.value);`
     trafficLightsToggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  /* Background-color and Shadow zones share one gesture: a single click
-     cycles the value instantly, a fast second click (under 200ms — much
-     tighter than the browser's own native dblclick threshold, tuned for
-     double-clicking small icons, not this) undoes that and opens the
-     fuller control instead (the custom color panel / the Shadow options
-     panel). bcCreateQuickCycleGesture (shared/site.js) is the one real
+  /* Background-color, Shadow, and Mac nav zones all share one gesture:
+     a single click cycles the value instantly, a fast second click
+     (under 200ms — much tighter than the browser's own native dblclick
+     threshold, tuned for double-clicking small icons, not this) undoes
+     that and opens the fuller control instead (the custom color panel /
+     the Shadow options panel / the Mac nav style panel).
+     bcCreateQuickCycleGesture (shared/site.js) is the one real
      implementation of that dance — this used to be two hand-copied
      near-duplicates, each tracking its own lastClickTime/valueBeforeClick
      pair, which is exactly how the background-color copy ended up
@@ -647,6 +648,15 @@ console.log(a.next.value);`
       schedulePersist();
     },
     open: () => openShadowPanel()
+  });
+  const macNavZoneGesture = bcCreateQuickCycleGesture({
+    getState: () => trafficLightsToggle ? trafficLightsToggle.checked : null,
+    cycle: () => toggleMacNavClick(),
+    revert: (wasOn) => {
+      if (wasOn !== null && trafficLightsToggle) trafficLightsToggle.checked = wasOn;
+      cfWindow.classList.toggle("cf-hide-titlebar", !(wasOn === null ? true : wasOn));
+    },
+    open: () => openMacNavPanel()
   });
   const bgZoneGesture = bcCreateQuickCycleGesture({
     getState: () => bgColorInput.value,
@@ -676,7 +686,7 @@ console.log(a.next.value);`
           return;
         }
         if (e.clientY < winRect.top){
-          toggleMacNavClick();
+          macNavZoneGesture(e);
           return;
         }
         /* Still runs while the Background ON/OFF toggle is off — updates
