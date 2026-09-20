@@ -1035,10 +1035,11 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
    inspector — pointing at the browser's own compositor rather than
    anything fixable in the position-computation logic itself. Rebuilt
    with zero position math of any kind: colored outlines directly on
-   the real elements (toggled by one class, `.cf-hod-active`, added to
-   both on press) instead of a separate tracking layer, so there's
-   nothing left that could desync from what it's supposed to be
-   tracking — the outlines just *are* the real elements' own edges. */
+   the real elements (toggled by one class, `.cf-hod-active`, added on
+   a plain click — see codify-tool.js's toggle listener, not a press-
+   and-hold) instead of a separate tracking layer, so there's nothing
+   left that could desync from what it's supposed to be tracking — the
+   outlines just *are* the real elements' own edges. */
 #cfWindow{
   position:relative;
 }
@@ -1053,9 +1054,9 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
    Mac nav/Shadow's real click zones (see previewWrap's click listener
    in codify-tool.js) are the FULL WIDTH padding band above/below
    #cfWindow, not just the strip near the window — these two live
-   directly in #cfPreviewWrap, flush to its own edges (left:0/right:0,
-   matching how far the real click zone actually extends), not indented
-   to only the space immediately around the window.
+   directly in #cfPreviewWrap, only 8px in from its own edges (matching
+   Background's own outer inset below), not indented all the way in to
+   only the space immediately around the window.
 
    Background's real click zone is whatever's left over beside the
    window at the window's own height — rather than approximate that
@@ -1645,7 +1646,7 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
              anchored to this row via plain CSS (position:absolute
              against .cf-filename-row-left), no coordinates computed in
              JS at all. -->
-        <div class="cf-hod-legend" id="cfHodLegend" aria-hidden="true" hidden>
+        <div class="cf-hod-legend" id="cfHodLegend" hidden>
           <div class="cf-hod-legend-row">the option to modify the design with one click</div>
         </div>
         <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
