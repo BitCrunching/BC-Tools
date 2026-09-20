@@ -616,11 +616,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    so everything that should appear in the exported PNG (gradient,
    window chrome, dots, code) has to actually be visible DOM here, not
    drawn separately for export. */
-/* Click-through prototype: the whole preview is one left/right split
-   (see codify-tool.js) — left opens Template, right opens Theme — so
-   cursor:pointer here is enough on its own; every child (window,
-   titlebar, code) inherits it rather than needing its own override,
-   since none of them are a separate click zone anymore. */
+/* Click-through: the whole preview splits into zones (see
+   codify-tool.js's previewWrap click listener) — cursor:pointer below
+   is enough on its own; every child (window, titlebar, code) inherits
+   it rather than needing its own override, since none of them are a
+   separate click zone in their own right. */
 .cf-preview-wrap{
   position:relative;
   /* Explicit auto side-margins matter now that this panel is itself
@@ -638,20 +638,17 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:#E5E7EB;
   display:flex;
   justify-content:center;
-  cursor:default;
-  /* The whole preview is a click/double-click surface now (cycling
-     templates, themes, and background color) — without this, every one
-     of those clicks also does a normal browser text selection on
-     whatever word/line it happens to land on (worst with the rapid
-     double-click), which then just sits there highlighted for no
-     reason since nothing here is meant to be copied by dragging. */
-  user-select:none;
-}
-/* The click/double-click cycling above only actually runs while HOD is
-   on (see previewWrap's click listener in codify-tool.js) — cursor
-   follows that so it doesn't look clickable when it isn't. */
-.cf-preview-wrap.cf-hod-active{
+  /* The whole preview is a click/double-click surface at all times
+     (cycling templates, themes, background, shadow, mac nav) — not
+     gated behind HOD, which is purely a visual "what can I click here"
+     indicator (see codify-tool.js's click listener). */
   cursor:pointer;
+  /* Without this, every one of those clicks also does a normal browser
+     text selection on whatever word/line it happens to land on (worst
+     with the rapid double-click), which then just sits there
+     highlighted for no reason since nothing here is meant to be copied
+     by dragging. */
+  user-select:none;
 }
 /* The sizing that used to live directly on .cf-window now lives on this
    wrapper instead — .cf-window itself just fills it (width:100%) — so
@@ -1824,6 +1821,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=109" defer></script>
+<script src="/codify/codify-tool.js?v=110" defer></script>
 </body>
 </html>
