@@ -264,6 +264,23 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   right:72px;
   z-index:6;
 }
+/* Flush into the banner's actual corner on mobile — the 36px desktop
+   inset (there to clear the logo/title row at that size) reads as an
+   odd, unexplained gap once the banner's own padding shrinks under
+   768px. Back sits at right:48px (12px inset + Remove's own 30px
+   diameter + a 6px gap), same increment as the desktop 36px/72px
+   pair — placed after both buttons' base rules so it actually wins
+   the cascade instead of being overridden by them. */
+@media (max-width:768px){
+  .cf-remove-btn{
+    top:12px;
+    right:12px;
+  }
+  .cf-back-btn{
+    top:12px;
+    right:48px;
+  }
+}
 
 /* Page-specific: the code input + the exportable "screenshot" preview —
    the only genuinely new components this tool introduces. Reuses the
