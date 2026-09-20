@@ -1036,7 +1036,11 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
    nothing left that could desync from what it's supposed to be
    tracking — the outlines just *are* the real elements' own edges. */
 #cfPreviewWrap.cf-hod-active{
-  box-shadow:0 0 0 3px rgba(111,168,220,.85);
+  /* outline, not box-shadow — this site never uses box/text/drop
+     shadows (CLAUDE.md); outline draws the same ring without one and
+     without shifting layout the way a border would. */
+  outline:3px solid #6fa8dc;
+  outline-offset:0;
 }
 #cfWindow{
   position:relative;
@@ -1061,18 +1065,22 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   opacity:0;
   pointer-events:none;
 }
-.cf-hod-edge-top{ top:0; background:#ffc107; }
+.cf-hod-edge-top{ top:0; background:#fb923c; }
 .cf-hod-edge-bottom{ bottom:0; background:#facc15; }
+/* Template (left half) and Theme (right half) each get their own solid
+   stroke, immediately adjacent at center, instead of one shared
+   gradient line — matches "one color per zone" the same way the top/
+   bottom edges and the background outline already do. */
 .cf-hod-divider{
   position:absolute;
   top:0;
-  left:50%;
   width:2px;
   height:100%;
-  background:linear-gradient(to bottom, rgba(74,222,128,.9), rgba(248,113,113,.9));
   opacity:0;
   pointer-events:none;
 }
+.cf-hod-divider-template{ left:calc(50% - 2px); background:#4ade80; }
+.cf-hod-divider-theme{ left:50%; background:#fa8072; }
 #cfWindow.cf-hod-active .cf-hod-edge,
 #cfWindow.cf-hod-active .cf-hod-divider{
   opacity:1;
@@ -1139,7 +1147,7 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
 }
 /* Marks the settings control matching whatever zone the mouse is over
    while HOD is on — color set inline per zone by codify-tool.js (same
-   five values as the legend swatches above), outline rather than
+   five values as each zone's own stroke above), outline rather than
    box-shadow per this site's shadow-free rule. */
 .cf-hod-hover-target{
   outline:3px solid;
@@ -1592,7 +1600,8 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
           <pre><code id="cfCodeOutput" class="language-javascript"></code></pre>
           <div class="cf-hod-edge cf-hod-edge-top" aria-hidden="true"></div>
           <div class="cf-hod-edge cf-hod-edge-bottom" aria-hidden="true"></div>
-          <div class="cf-hod-divider" aria-hidden="true"></div>
+          <div class="cf-hod-divider cf-hod-divider-template" aria-hidden="true"></div>
+          <div class="cf-hod-divider cf-hod-divider-theme" aria-hidden="true"></div>
         </div>
         <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Snippet panel size" tabindex="0"></span>
       </div>
@@ -1695,6 +1704,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=102" defer></script>
+<script src="/codify/codify-tool.js?v=103" defer></script>
 </body>
 </html>
