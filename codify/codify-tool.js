@@ -398,7 +398,7 @@ console.log(a.next.value);`
   });
   /* Declared here (not inside the `if` below) so the double-click zone
      on the preview's bottom strip, further down, can open the same
-     panel the trigger button does — same reasoning as refreshHoverOverlay
+     panel the trigger button does — same reasoning as showAllZones
      being hoisted out of its own `if` earlier in this file. No-ops when
      the panel doesn't exist. */
   function closeShadowPanel(){
@@ -613,88 +613,50 @@ console.log(a.next.value);`
     hodHeld = held;
     if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
   }
-  /* Reassigned below once the hover-overlay elements are confirmed to
+  /* A frozen snapshot, not a live-tracking overlay — computed once right
+     when the button is pressed, left untouched for the rest of the hold,
+     cleared on release. Used to recompute continuously while held
+     (mousemove, ResizeObserver, scroll, the resize-handle drag) to stay
+     accurate through anything that moved the window mid-hold — provably
+     correct every time it was tested synthetically (49 rapid edits, a
+     real scroll gesture, frame-by-frame through a big paste, zero
+     mismatches), and still confirmed live, repeatedly, to visibly
+     mis-render during real use anyway. Rather than keep chasing
+     whichever browser-rendering interaction that live-recompute loop was
+     hitting, removing the loop entirely removes the whole class of bug
+     with it — nothing to recompute means nothing to recompute wrong. The
+     tradeoff (zones can't track an edit made *during* a hold) is minor:
+     HOD is for glancing at what's clickable, not for editing and
+     inspecting in the same motion — release and press again after an
+     edit if the zones need to reflect it.
+     Reassigned below once the hover-overlay elements are confirmed to
      exist; declared here (not just inside that block) so hodToggle's own
-     mousedown/touchstart handlers and renderPreview() further down can
-     call it too. Left as a no-op otherwise. */
-  let refreshHoverOverlay = () => {};
+     mousedown/touchstart handlers can call it too. Left as a no-op
+     otherwise. */
+  let showAllZones = () => {};
   if (previewWrap && cfWindow && hoverOverlay && hoverZones){
-    let zonesRaf = null;
-    /* Deferred to the next animation frame rather than writing
-       synchronously — confirmed live (screen recording, frame-by-frame):
-       the DOM values themselves are always correct the instant this
-       runs (checked exhaustively — 49 rapid edits, a real scroll
-       gesture, 24 frame-by-frame samples through a big paste, zero
-       mismatches every time), but the *painted* fixed-position overlay
-       could still visibly lag behind for a moment under heavy same-tick
-       work (Prism re-highlighting the whole snippet runs synchronously
-       right before this), resolving itself the instant anything else
-       forced a repaint (any click anywhere did it). Landing the writes
-       at the start of a fresh paint frame instead of mid-way through a
-       busy one sidesteps that race entirely. Re-checks hodHeld once the
-       frame actually arrives, since a release can land in the gap
-       between scheduling this and it firing. */
-    function showAllZones(){
-      if (zonesRaf) cancelAnimationFrame(zonesRaf);
-      zonesRaf = requestAnimationFrame(() => {
-        zonesRaf = null;
-        if (!hodHeld) return;
-        const wrapRect = previewWrap.getBoundingClientRect();
-        const winRect = cfWindow.getBoundingClientRect();
-        hoverOverlay.hidden = false;
-        positionBox(hoverZones.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
-        positionBox(hoverZones.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
-        positionBox(hoverZones.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
-        positionBox(hoverZones.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
-        positionBox(hoverZones.template, winRect.left, winRect.top, winRect.width / 2, winRect.height);
-        positionBox(hoverZones.theme, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
-      });
-    }
-    /* Unlike the old single-spotlight version, recomputing here is
-       genuinely safe now — every zone's rect comes straight from live
-       layout, nothing guessed from a remembered cursor position — so a
-       resize-driven change (typing, pasting, a template/theme swap,
-       dragging the resize handle) while held can just redraw fresh
-       instead of having to hide and wait for a mousemove that might not
-       come. */
-    refreshHoverOverlay = () => {
-      if (hodHeld) showAllZones();
-      else hoverOverlay.hidden = true;
+    showAllZones = () => {
+      const wrapRect = previewWrap.getBoundingClientRect();
+      const winRect = cfWindow.getBoundingClientRect();
+      hoverOverlay.hidden = false;
+      positionBox(hoverZones.top, wrapRect.left, wrapRect.top, wrapRect.width, winRect.top - wrapRect.top);
+      positionBox(hoverZones.bottom, wrapRect.left, winRect.bottom, wrapRect.width, wrapRect.bottom - winRect.bottom);
+      positionBox(hoverZones.left, wrapRect.left, winRect.top, winRect.left - wrapRect.left, winRect.height);
+      positionBox(hoverZones.right, winRect.right, winRect.top, wrapRect.right - winRect.right, winRect.height);
+      positionBox(hoverZones.template, winRect.left, winRect.top, winRect.width / 2, winRect.height);
+      positionBox(hoverZones.theme, winRect.left + winRect.width / 2, winRect.top, winRect.width / 2, winRect.height);
     };
-    /* Belt-and-suspenders for any resize renderPreview() itself doesn't
-       cover (a browser window resize, a webfont finishing its swap) —
-       harmless if it never fires, since refreshHoverOverlay() is a
-       no-op whenever HOD isn't currently held. */
-    if (typeof ResizeObserver !== "undefined"){
-      new ResizeObserver(() => refreshHoverOverlay()).observe(cfWindow);
-    }
-    /* Scrolling moves the preview without the zones' fixed-position
-       coordinates following along on their own — without this, scrolling
-       the page while HOD is held leaves every zone stuck at whatever
-       screen position they were drawn at. rAF-throttled since "scroll"
-       can fire far more often than a redraw is actually useful for.
-       Capture + passive so it catches scrolling on any ancestor (not
-       just window) without blocking it. */
-    let scrollRefreshQueued = false;
-    window.addEventListener("scroll", () => {
-      if (scrollRefreshQueued) return;
-      scrollRefreshQueued = true;
-      requestAnimationFrame(() => {
-        scrollRefreshQueued = false;
-        refreshHoverOverlay();
-      });
-    }, { capture: true, passive: true });
   }
   if (hodToggle){
     hodToggle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       setHodHeld(true);
-      refreshHoverOverlay();
+      showAllZones();
     });
     hodToggle.addEventListener("touchstart", (e) => {
       e.preventDefault();
       setHodHeld(true);
-      refreshHoverOverlay();
+      showAllZones();
     }, { passive: false });
     const endHold = () => {
       if (!hodHeld) return;
@@ -792,11 +754,12 @@ console.log(a.next.value);`
     codeOutput.textContent = isEmpty ? (templatePreviewCode || GHOST_CODE) : codeInput.value;
     if (window.Prism) Prism.highlightElement(codeOutput);
     /* #cfWindow sizes itself to codeOutput's content, so this line can
-       (and usually does) resize it, which can leave the hover-inspector
-       overlay pointing at stale coordinates — see refreshHoverOverlay's
-       own comment for why it just hides here rather than trying to
-       recompute against wherever the cursor last was. */
-    refreshHoverOverlay();
+       (and usually does) resize it — if HOD's frozen snapshot is showing
+       when that happens, it's now definitely stale (see showAllZones'
+       own comment for why it's a one-shot snapshot, not a live-tracking
+       overlay), so just hide it rather than leave a wrong one showing.
+       Reappears correctly positioned on the next press. */
+    if (hodHeld && hoverOverlay) hoverOverlay.hidden = true;
   }
   codeInput.addEventListener("input", () => {
     templatePreviewCode = null;
@@ -1736,7 +1699,7 @@ ${titlebarSvg}
       virtualWidth = Math.min(getMax(), Math.max(getMin(), virtualWidth + (e.clientX - lastX)));
       lastX = e.clientX;
       setWidth(Math.round(virtualWidth));
-      refreshHoverOverlay();
+      if (hodHeld && hoverOverlay) hoverOverlay.hidden = true;
     });
     function endResize(e){
       resizing = false;
@@ -1753,7 +1716,7 @@ ${titlebarSvg}
       const current = getWidth();
       const next = e.key === "ArrowRight" ? current + 20 : current - 20;
       setWidth(Math.round(Math.min(getMax(), Math.max(getMin(), next))));
-      refreshHoverOverlay();
+      if (hodHeld && hoverOverlay) hoverOverlay.hidden = true;
     });
   }
 
