@@ -91,7 +91,14 @@
    overlay shape Context's own overlay uses (position:fixed, dvh/dvw
    for iOS Safari's collapsing address bar, high z-index), shown purely
    via the media query below — no JS involved at all. Landscape phones
-   and anything tablet-width or wider never see this. */
+   and anything tablet-width or wider never see this.
+
+   Starts BELOW .site-nav (72px at this breakpoint — shared/site.css's
+   own mobile height) instead of covering the full viewport — the real
+   nav (BC Tools logo, theme/share/help buttons) stays visible and
+   usable above it, rather than getting hidden along with the broken
+   tool underneath. .site-nav's own z-index is 50; this still needs to
+   clear everything else in #page-codify, hence 2000. */
 .cf-orientation-notice{
   display:none;
 }
@@ -99,12 +106,12 @@
   .cf-orientation-notice{
     display:flex;
     position:fixed;
-    top:0;
+    top:72px;
     left:0;
     width:100vw;
-    height:100vh;
+    height:calc(100vh - 72px);
     width:100dvw;
-    height:100dvh;
+    height:calc(100dvh - 72px);
     z-index:2000;
     flex-direction:column;
     align-items:center;
@@ -115,6 +122,16 @@
     background:#1a1a22;
     color:#fff;
   }
+}
+/* Real .cf-back-btn (top-right corner of #page-codify) is covered by
+   this overlay like everything else in the tool, so it gets its own —
+   same shared .bc-canvas-back-btn shape/color, same data-goto
+   navigation (shared/site.js's delegate, no extra JS needed here). */
+.cf-orientation-notice .bc-canvas-back-btn{
+  position:absolute;
+  top:16px;
+  left:16px;
+  display:flex;
 }
 /* Rotates from portrait to landscape and back — a literal demonstration
    of the ask, not just a generic spinner. Pauses at each end (the
@@ -1598,6 +1615,12 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <div class="tool-wrap">
   <div class="tool-app" id="page-codify">
     <div class="cf-orientation-notice" id="cfOrientationNotice">
+      <button type="button" class="bc-canvas-back-btn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
       <div class="cf-orientation-notice-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="7" y="2" width="10" height="20" rx="2"></rect>
