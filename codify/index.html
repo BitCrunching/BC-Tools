@@ -1523,14 +1523,13 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
          of the preview's own DOM, so it can never end up inside the
          exported PNG (html-to-image snapshots #cfPreviewWrap only) and
          never intercepts the actual click underneath it. -->
-    <div class="cf-hover-overlay" id="cfHoverOverlay" aria-hidden="true" hidden>
-      <div class="cf-hover-zone cf-hover-zone-macnav" data-zone="top"><span class="cf-hover-zone-label">Mac nav — click to toggle</span></div>
-      <div class="cf-hover-zone cf-hover-zone-shadow" data-zone="bottom"><span class="cf-hover-zone-label">Shadow — click to toggle</span></div>
-      <div class="cf-hover-zone cf-hover-zone-bg" data-zone="left"><span class="cf-hover-zone-label">Background</span></div>
-      <div class="cf-hover-zone cf-hover-zone-bg" data-zone="right"><span class="cf-hover-zone-label">Background</span></div>
-      <div class="cf-hover-zone cf-hover-zone-template" data-zone="template"><span class="cf-hover-zone-label">Template</span></div>
-      <div class="cf-hover-zone cf-hover-zone-theme" data-zone="theme"><span class="cf-hover-zone-label">Theme</span></div>
-    </div>
+    <!-- Deliberately empty — codify-tool.js builds and destroys the six
+         zone elements from scratch on every press/release instead of
+         reusing persistent ones (see its own comment: reusing the same
+         position:fixed nodes across repeated show/hide cycles was
+         suspected of letting the browser's compositor occasionally
+         paint a stale cached layer alongside the fresh one). -->
+    <div class="cf-hover-overlay" id="cfHoverOverlay" aria-hidden="true" hidden></div>
 
     <div class="cf-filename-row">
       <div class="cf-filename-row-left">
@@ -1621,6 +1620,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=95" defer></script>
+<script src="/codify/codify-tool.js?v=96" defer></script>
 </body>
 </html>
