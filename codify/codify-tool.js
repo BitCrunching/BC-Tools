@@ -592,22 +592,20 @@ console.log(a.next.value);`
      elements themselves are. */
   const hodToggle = document.getElementById("cfHodToggle");
   const hodLegend = document.getElementById("cfHodLegend");
-  const hodToast = document.getElementById("cfHodToast");
   let hodHeld = false;
-  let hodToastTimer = null;
+  let hodStatusTimer = null;
   let hodLegendTimer = null;
   function setHodHeld(held){
     hodHeld = held;
     if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
     if (previewWrap) previewWrap.classList.toggle("cf-hod-active", held);
     if (cfWindow) cfWindow.classList.toggle("cf-hod-active", held);
-    if (hodToastTimer){ clearTimeout(hodToastTimer); hodToastTimer = null; }
     if (hodLegendTimer){ clearTimeout(hodLegendTimer); hodLegendTimer = null; }
     if (hodLegend){
       if (held){
-        /* Same one-shot 2s reveal as the toast, not tied to how long
-           HOD itself stays on — a quick reminder of what the outlines
-           mean, not a persistent label. */
+        /* One-shot 2s reveal, not tied to how long HOD itself stays on
+           — a quick reminder of what the outlines mean, not a
+           persistent label. */
         hodLegend.hidden = false;
         hodLegendTimer = setTimeout(() => {
           hodLegend.hidden = true;
@@ -617,16 +615,19 @@ console.log(a.next.value);`
         hodLegend.hidden = true;
       }
     }
-    if (hodToast){
-      if (held){
-        hodToast.classList.add("cf-hod-toast-show");
-        hodToastTimer = setTimeout(() => {
-          hodToast.classList.remove("cf-hod-toast-show");
-          hodToastTimer = null;
-        }, 2000);
-      } else {
-        hodToast.classList.remove("cf-hod-toast-show");
-      }
+    /* Reuses the same #cfStatus line Download/Copy already show
+       "Rendering..."/"Done." on, instead of a separate overlay — same
+       terminal-status slot, same ">" prefix (.tool-status's own
+       ::before), just a different transient message. Only clears back
+       to empty if it's still our own message at the 2s mark, so a real
+       download status that started in the meantime doesn't get wiped. */
+    if (hodStatusTimer){ clearTimeout(hodStatusTimer); hodStatusTimer = null; }
+    if (statusEl && held){
+      statusEl.textContent = "toggle on";
+      hodStatusTimer = setTimeout(() => {
+        if (statusEl.textContent === "toggle on") statusEl.textContent = "";
+        hodStatusTimer = null;
+      }, 2000);
     }
     if (!held) setHodHoverZone(null);
   }
