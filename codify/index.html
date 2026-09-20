@@ -1080,8 +1080,8 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
 /* Compact static legend, anchored to the HOD button's own row via
    normal CSS (position:absolute against .cf-filename-row-left, which is
    already correctly laid out by the browser) rather than tracking any
-   live coordinate — explains what each outline color means without
-   needing its own position math either. */
+   live coordinate — one short descriptive line, wraps at a fixed
+   max-width instead of the old per-zone key's nowrap rows. */
 .cf-hod-legend{
   position:absolute;
   top:calc(100% + 8px);
@@ -1090,6 +1090,7 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   display:flex;
   flex-direction:column;
   gap:4px;
+  max-width:220px;
   padding:10px 12px;
   border-radius:10px;
   background:#1a1a22;
@@ -1098,7 +1099,7 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   font-size:12px;
   font-weight:700;
   letter-spacing:.02em;
-  white-space:nowrap;
+  white-space:normal;
 }
 .cf-hod-legend[hidden]{ display:none; }
 /* One-shot "toggle on" confirmation, top-left of the background panel —
@@ -1142,13 +1143,6 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
 .cf-hod-legend-row{
   display:flex;
   align-items:center;
-  gap:8px;
-}
-.cf-hod-legend-swatch{
-  width:10px;
-  height:10px;
-  border-radius:2px;
-  flex:none;
 }
 
 /* ===== PNG/SVG format toggle — same connected-segment recipe as
@@ -1603,16 +1597,11 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
       <div class="cf-filename-row-left">
         <button type="button" class="cf-hod-btn" id="cfHodToggle" aria-pressed="false" title="Click to outline the preview's click zones">HOD</button>
         <!-- Static legend, not a live overlay (see codify-tool.js) —
-             explains the outline colors .cf-hod-active draws directly on
-             #cfPreviewWrap/#cfWindow while held. Anchored to this row via
-             plain CSS (position:absolute against .cf-filename-row-left),
-             no coordinates computed in JS at all. -->
+             anchored to this row via plain CSS (position:absolute
+             against .cf-filename-row-left), no coordinates computed in
+             JS at all. -->
         <div class="cf-hod-legend" id="cfHodLegend" aria-hidden="true" hidden>
-          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#ffc107"></span>Top edge — Mac nav</div>
-          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#facc15"></span>Bottom edge — Shadow</div>
-          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#6fa8dc"></span>Outline — Background</div>
-          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#4ade80"></span>Left of divider — Template</div>
-          <div class="cf-hod-legend-row"><span class="cf-hod-legend-swatch" style="background:#f87171"></span>Right of divider — Theme</div>
+          <div class="cf-hod-legend-row">the option to modify the design with one click</div>
         </div>
         <button type="button" class="option-change-btn cf-preset-btn" id="cfStyleBtn" title="Style preset">
           <span class="option-change-btn-label" id="cfStyleBtnLabel">Presets</span>
