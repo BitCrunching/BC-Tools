@@ -25,6 +25,37 @@
   const formatPngBtn = document.getElementById("cfFormatPngBtn");
   const formatSvgBtn = document.getElementById("cfFormatSvgBtn");
 
+  /* ===== Code text scales with the window's own width =====
+     12px at WINDOW_WIDTH_MIN, 14px at WINDOW_WIDTH_MAX (same two
+     numbers the drag-resize clamp further down uses — duplicated
+     rather than shared, since they're two conceptually separate
+     things that only happen to match today). Declared up here, not
+     inside the resize-handle setup below, because that's a block
+     scope (`if (toolApp){...}`) — a function declared in there isn't
+     reachable from renderPreview, which needs to call this too: a
+     ResizeObserver alone missed the hidden (0-width, before any code
+     exists) -> visible transition reliably, confirmed live (stuck at
+     12px after typing real code into a fresh page). Written to a
+     custom property, not cfWindow.style.fontSize directly, so
+     index.html's own .cf-window pre/code rules stay the one place
+     that actually declares font-size (var(...,14px) is the fallback
+     if this script hasn't run yet). */
+  const WINDOW_FONT_WIDTH_MIN = 320;
+  const WINDOW_FONT_WIDTH_MAX = 640;
+  const WINDOW_FONT_MIN = 12;
+  const WINDOW_FONT_MAX = 14;
+  function updateWindowFontSize(){
+    if (!cfWindowWrap || !cfWindow) return;
+    const width = cfWindowWrap.getBoundingClientRect().width;
+    if (width <= 0) return;
+    const t = Math.min(1, Math.max(0, (width - WINDOW_FONT_WIDTH_MIN) / (WINDOW_FONT_WIDTH_MAX - WINDOW_FONT_WIDTH_MIN)));
+    const fontSize = WINDOW_FONT_MIN + t * (WINDOW_FONT_MAX - WINDOW_FONT_MIN);
+    cfWindow.style.setProperty("--cf-code-font-size", fontSize.toFixed(2) + "px");
+  }
+  if (cfWindowWrap && window.ResizeObserver){
+    new ResizeObserver(updateWindowFontSize).observe(cfWindowWrap);
+  }
+
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
@@ -918,6 +949,12 @@ console.log(a.next.value);`
        (.cf-hod-active) directly on #cfWindow/#cfPreviewWrap, so it just
        stays correct on its own as #cfWindow resizes to fit new content,
        the same way any other CSS on it would. */
+    /* Covers the hidden (0-width) -> visible transition on the very
+       first keystroke — see updateWindowFontSize's own comment for why
+       ResizeObserver alone missed this. Harmless to call on every
+       render; it's a cheap read+write and early-returns while still
+       genuinely hidden (width <= 0). */
+    updateWindowFontSize();
   }
   codeInput.addEventListener("input", () => {
     templatePreviewCode = null;
