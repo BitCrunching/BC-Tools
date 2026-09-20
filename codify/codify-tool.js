@@ -540,6 +540,14 @@ console.log(a.next.value);`
   });
   if (previewWrap && templateMenu && themeMenu && bgColorInput){
     previewWrap.addEventListener("click", (e) => {
+      /* Gated behind HOD being on — this used to fire on every click
+         unconditionally, so any stray click landing on the preview
+         (not just a deliberate one) silently cycled a real setting.
+         That's almost certainly what earlier bug reports ("changes
+         after clicking", "gets bugged after pasting") were actually
+         seeing — nothing wrong with HOD's outline rendering, just an
+         always-live click handler underneath it. */
+      if (!hodHeld) return;
       if (e.target === previewWrap){
         const winRect = cfWindow.getBoundingClientRect();
         if (e.clientY >= winRect.bottom){
@@ -584,13 +592,27 @@ console.log(a.next.value);`
      elements themselves are. */
   const hodToggle = document.getElementById("cfHodToggle");
   const hodLegend = document.getElementById("cfHodLegend");
+  const hodToast = document.getElementById("cfHodToast");
   let hodHeld = false;
+  let hodToastTimer = null;
   function setHodHeld(held){
     hodHeld = held;
     if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
     if (previewWrap) previewWrap.classList.toggle("cf-hod-active", held);
     if (cfWindow) cfWindow.classList.toggle("cf-hod-active", held);
     if (hodLegend) hodLegend.hidden = !held;
+    if (hodToastTimer){ clearTimeout(hodToastTimer); hodToastTimer = null; }
+    if (hodToast){
+      if (held){
+        hodToast.classList.add("cf-hod-toast-show");
+        hodToastTimer = setTimeout(() => {
+          hodToast.classList.remove("cf-hod-toast-show");
+          hodToastTimer = null;
+        }, 2000);
+      } else {
+        hodToast.classList.remove("cf-hod-toast-show");
+      }
+    }
   }
   /* Plain click toggle, not press-and-hold — hold relied on a
      mousedown/mouseup pair staying in sync across the whole document,

@@ -634,7 +634,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:#E5E7EB;
   display:flex;
   justify-content:center;
-  cursor:pointer;
+  cursor:default;
   /* The whole preview is a click/double-click surface now (cycling
      templates, themes, and background color) — without this, every one
      of those clicks also does a normal browser text selection on
@@ -642,6 +642,12 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
      double-click), which then just sits there highlighted for no
      reason since nothing here is meant to be copied by dragging. */
   user-select:none;
+}
+/* The click/double-click cycling above only actually runs while HOD is
+   on (see previewWrap's click listener in codify-tool.js) — cursor
+   follows that so it doesn't look clickable when it isn't. */
+.cf-preview-wrap.cf-hod-active{
+  cursor:pointer;
 }
 /* The sizing that used to live directly on .cf-window now lives on this
    wrapper instead — .cf-window itself just fills it (width:100%) — so
@@ -1095,6 +1101,31 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   white-space:nowrap;
 }
 .cf-hod-legend[hidden]{ display:none; }
+/* One-shot "toggle on" confirmation, top-left of the background panel —
+   fades in on press, then codify-tool.js removes the show class itself
+   after 2s (a plain setTimeout, not an animation loop) so it doesn't
+   linger and get mistaken for a persistent label. */
+.cf-hod-toast{
+  position:absolute;
+  top:12px;
+  left:12px;
+  z-index:10;
+  padding:6px 10px;
+  border-radius:8px;
+  background:rgba(0,0,0,.55);
+  color:#4ade80;
+  font-family:"Courier New", Courier, monospace;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+.cf-hod-toast-show{
+  opacity:1;
+}
 .cf-hod-legend-row{
   display:flex;
   align-items:center;
@@ -1539,6 +1570,7 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
     </div>
 
     <div class="cf-preview-wrap" id="cfPreviewWrap">
+      <div class="cf-hod-toast" id="cfHodToast" aria-hidden="true">toggle on</div>
       <div class="cf-window-wrap" id="cfWindowWrap">
         <div class="cf-window" id="cfWindow" data-theme="dracula">
           <div class="cf-titlebar">
@@ -1655,6 +1687,6 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 <script src="/shared/site.js?v=39" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=99" defer></script>
+<script src="/codify/codify-tool.js?v=100" defer></script>
 </body>
 </html>
