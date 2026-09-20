@@ -595,13 +595,28 @@ console.log(a.next.value);`
   const hodToast = document.getElementById("cfHodToast");
   let hodHeld = false;
   let hodToastTimer = null;
+  let hodLegendTimer = null;
   function setHodHeld(held){
     hodHeld = held;
     if (hodToggle) hodToggle.setAttribute("aria-pressed", held ? "true" : "false");
     if (previewWrap) previewWrap.classList.toggle("cf-hod-active", held);
     if (cfWindow) cfWindow.classList.toggle("cf-hod-active", held);
-    if (hodLegend) hodLegend.hidden = !held;
     if (hodToastTimer){ clearTimeout(hodToastTimer); hodToastTimer = null; }
+    if (hodLegendTimer){ clearTimeout(hodLegendTimer); hodLegendTimer = null; }
+    if (hodLegend){
+      if (held){
+        /* Same one-shot 2s reveal as the toast, not tied to how long
+           HOD itself stays on — a quick reminder of what the outlines
+           mean, not a persistent label. */
+        hodLegend.hidden = false;
+        hodLegendTimer = setTimeout(() => {
+          hodLegend.hidden = true;
+          hodLegendTimer = null;
+        }, 2000);
+      } else {
+        hodLegend.hidden = true;
+      }
+    }
     if (hodToast){
       if (held){
         hodToast.classList.add("cf-hod-toast-show");
