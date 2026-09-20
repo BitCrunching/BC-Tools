@@ -668,7 +668,7 @@ console.log(a.next.value);`
     shadow: "#facc15",
     background: "#6fa8dc",
     template: "#4ade80",
-    theme: "#fa8072"
+    theme: "#ef4444"
   };
   let hodHoverZone = null;
   function setHodHoverZone(zone){
