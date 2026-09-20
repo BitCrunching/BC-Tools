@@ -601,13 +601,16 @@ console.log(a.next.value);`
      time) yet still visibly mis-rendered in real use, confirmed
      repeatedly down to inspecting the live DOM in DevTools. Rebuilt with
      zero position math of any kind instead of chasing that further:
-     `.cf-hod-active`, toggled on #cfPreviewWrap and #cfWindow while
-     held, draws colored outlines via CSS (box-shadow insets for the
-     edges, a ::after pseudo-element at left:50% for the Template/Theme
-     divider) directly on the real elements. Nothing here ever reads or
-     writes a pixel coordinate, so nothing can go stale — the outlines
-     are just those elements' own edges, always exactly where the
-     elements themselves are. */
+     `.cf-hod-active`, toggled on #cfPreviewWrap and #cfWindow by a plain
+     click (not a press-and-hold — see the toggle listener just below),
+     shows five real, always-present rounded-outline boxes (index.html's
+     `.cf-hod-zone-*` rules) — Mac nav/Shadow as full-width bands in
+     #cfPreviewWrap's own padding, Background as two real flex siblings
+     of #cfWindowWrap that claim the actual leftover space beside it,
+     Template/Theme as the two halves of #cfWindow itself. Nothing here
+     ever reads or writes a pixel coordinate, so nothing can go stale —
+     the outlines are just those elements' own edges/allocated space,
+     always exactly where the elements themselves are. */
   const hodToggle = document.getElementById("cfHodToggle");
   const hodLegend = document.getElementById("cfHodLegend");
   let hodHeld = false;
