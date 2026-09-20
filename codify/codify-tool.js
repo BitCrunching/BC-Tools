@@ -193,7 +193,7 @@ console.log(a.next.value);`
   const registerCombo = bcRegisterCombo;
   const setComboDisplay = bcSetComboDisplay;
 
-  registerCombo(themeTrigger, themeInput, themeMenu, themeEmpty, (opt) => {
+  const themeCombo = registerCombo(themeTrigger, themeInput, themeMenu, themeEmpty, (opt) => {
     themeLink.href = opt.dataset.href;
     cfWindow.dataset.theme = opt.dataset.theme;
     /* Picking a theme by hand while a style preset is active means the
@@ -205,12 +205,12 @@ console.log(a.next.value);`
     }
   });
 
-  registerCombo(languageTrigger, languageInput, languageMenu, languageEmpty, (opt) => {
+  const languageCombo = registerCombo(languageTrigger, languageInput, languageMenu, languageEmpty, (opt) => {
     currentLang = opt.dataset.lang;
     renderPreview();
   });
 
-  registerCombo(templateTrigger, templateInput, templateMenu, templateEmpty, (opt) => {
+  const templateCombo = registerCombo(templateTrigger, templateInput, templateMenu, templateEmpty, (opt) => {
     const code = TEMPLATES[opt.dataset.template];
     if (code == null) return;
     /* Preview-only, not a real editor fill-in — picking a template
@@ -226,6 +226,36 @@ console.log(a.next.value);`
     renderPreview();
     schedulePersist();
     if (continueBtn) continueBtn.hidden = true;
+  });
+
+  /* ===== One open picker at a time, across every kind =====
+     Template/Theme/Language (bcRegisterCombo) already close each other
+     — they share one registry (bcCombos) in shared/site.js. Background/
+     Shadow/Mac nav are hand-rolled trigger+panel controls with their
+     own independent open/close pairs, so nothing coordinated the two
+     groups: opening Background while Shadow's panel was open left both
+     up at once, and vice versa. closeCfCustomPanels/closeCfCombos are
+     called from both sides — each custom panel's own open function
+     (further down) closes the other two panels AND every combo;
+     each combo's trigger closes the three custom panels (their own
+     siblings are already handled by bcRegisterCombo itself, so this
+     only needs to reach the panels, not double-close other combos).
+     References closeShadowPanel/closeBgPanel/closeMacNavPanel by name
+     even though they're declared later in this file — function
+     declarations hoist, and these only ever run later, after a real
+     click, by which point the whole script has finished loading. */
+  function closeCfCustomPanels(){
+    closeShadowPanel();
+    closeBgPanel();
+    closeMacNavPanel();
+  }
+  function closeCfCombos(){
+    themeCombo.close();
+    languageCombo.close();
+    templateCombo.close();
+  }
+  [themeTrigger, languageTrigger, templateTrigger].forEach(trigger => {
+    if (trigger) trigger.addEventListener("click", closeCfCustomPanels);
   });
 
   /* ===== Style presets ===== bundle a theme + a gradient backdrop +
@@ -414,6 +444,8 @@ console.log(a.next.value);`
   }
   function openMacNavPanel(){
     if (!macNavPanel || !macNavTrigger) return;
+    closeCfCustomPanels();
+    closeCfCombos();
     macNavPanel.hidden = false;
     macNavTrigger.setAttribute("aria-expanded", "true");
   }
@@ -520,6 +552,8 @@ console.log(a.next.value);`
   }
   function openShadowPanel(){
     if (!shadowPanel || !shadowTrigger) return;
+    closeCfCustomPanels();
+    closeCfCombos();
     shadowPanel.hidden = false;
     shadowTrigger.setAttribute("aria-expanded", "true");
   }
@@ -1563,6 +1597,8 @@ ${titlebarSvg}
   }
   function openBgPanel(){
     if (!bgPanel || !bgTrigger) return;
+    closeCfCustomPanels();
+    closeCfCombos();
     bgPanel.hidden = false;
     bgTrigger.setAttribute("aria-expanded", "true");
   }
