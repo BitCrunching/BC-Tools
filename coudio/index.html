@@ -354,17 +354,17 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   padding:0 16px;
   box-sizing:border-box;
 }
-/* Each row is a full control panel, not a hover-preview thumbnail —
-   its remove button stays visible always rather than only on hover
-   (.result-remove's shared default), the same reasoning Convert/
-   Coudio's other always-visible controls already follow. Repositioned
-   to the row's top-right corner (rather than the default top:6/right:6
-   meant for a much taller square card) since this row is only 60px
-   tall in total. */
-.cd-file-row .result-remove{
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here, repositioned to the
+   row's top-right corner (rather than the default top:6/right:6 meant
+   for a much taller square card) since this row is only 60px tall in
+   total. Always-visible by default (unlike .result-remove's old
+   hover-only fade) fits naturally here — a row is a full control panel,
+   not a hover-preview thumbnail. */
+.cd-file-row .cd-file-remove-btn{
+  position:absolute;
   top:15px;
   right:-30px;
-  opacity:1;
 }
 /* Flags a row that failed to convert (usually a decode failure — not a
    real/supported audio file) — set/cleared per conversion attempt in
@@ -518,7 +518,7 @@ html[data-theme="dark"] .cd-file-row-error{
      sizes (confirmed: right:240px only centered it at one specific
      width, drifting off-center at every other). This keeps it
      genuinely centered on the row regardless of viewport. */
-  .cd-file-row .result-remove{
+  .cd-file-row .cd-file-remove-btn{
     position:absolute;
     top:-14px;
     left:50%;
@@ -834,7 +834,7 @@ html[data-theme="dark"] .cd-file-row-error{
            wires up independently with no id collisions to worry about. -->
       <template id="cdFileRowTemplate">
         <div class="result cd-file-row">
-          <button type="button" class="result-remove" aria-label="Remove file">×</button>
+          <button type="button" class="cd-file-remove-btn bc-file-remove-btn" aria-label="Remove file">×</button>
 
           <div class="cd-row-name">
             <!-- Renames this row's OUTPUT, not the source file itself
@@ -997,6 +997,6 @@ html[data-theme="dark"] .cd-file-row-error{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/coudio/coudio-tool.js?v=51" defer></script>
+<script src="/coudio/coudio-tool.js?v=52" defer></script>
 </body>
 </html>

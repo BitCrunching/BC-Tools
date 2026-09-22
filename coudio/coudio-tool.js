@@ -149,7 +149,7 @@
       schedulePersist();
     });
 
-    row.querySelector(".result-remove").addEventListener("click", () => removeEntry(entry));
+    row.querySelector(".cd-file-remove-btn").addEventListener("click", () => removeEntry(entry));
     row.querySelector(".cd-row-convert-btn").addEventListener("click", () => convertEntry(entry));
 
     return row;
