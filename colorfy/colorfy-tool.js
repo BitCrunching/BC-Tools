@@ -16,16 +16,20 @@
   const resizeHandle = document.getElementById("cyResizeHandle");
   const status = document.getElementById("cyStatus");
   const toolApp = document.querySelector(".tool-app");
-  const copyTerminal = document.getElementById("cyCopyTerminal");
-  const copyTerminalText = document.getElementById("cyCopyTerminalText");
-  let copyTerminalTimer = null;
+  let statusClearTimer = null;
   if (!drop || !input || !afterDrop || !canvas || !pickerList) return;
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   let currentFile = null;
   let currentFormat = "hex";
   const FRAME_WIDTH_MIN = 240;
-  const FRAME_WIDTH_MAX = 800;
+  /* 1028 = .tool-app's own full-width inner content width (1100px width
+     minus 36px padding on each side) — this cap now matches the
+     banner's true edge-to-edge max rather than stopping short of it.
+     frameWidthMax() below still clamps against the banner's actual
+     current width too, so this only matters once the banner itself is
+     at (or near) its own 1100px max. */
+  const FRAME_WIDTH_MAX = 1028;
 
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
@@ -247,9 +251,13 @@
   /* Same whole-banner drop target every tool uses — before an image is
      picked, #cyDrop is just the dashed visual cue, not the actual
      click/drag scope: the entire .tool-app banner opens the picker and
-     accepts a drag/drop. isDragEventInScope() flips the moment an
-     image loads and #cyDrop is hidden, so it never fights the color
-     picker once there's real content to interact with. */
+     accepts a drag/drop. Once an image IS loaded, #cyDrop is never
+     actually hidden (same pattern as Coudio/Combine/Cleanly's own drop
+     element) — it just picks up .tool-drop-revealed and collapses to
+     the shared "+ Add more files" pill (.tool-drop-addpill,
+     shared/site.css), staying in place above the frame as the target
+     for swapping in a different image, so the banner stays a drop
+     target throughout instead of narrowing to one small tile. */
   if (toolApp){
     toolApp.addEventListener("click", e => {
       if (e.target.closest("button, select, a, label, input, canvas")) return;
@@ -423,7 +431,7 @@
 
       const rm = document.createElement("button");
       rm.type = "button";
-      rm.className = "colorfy-palette-remove-btn bc-remove-btn";
+      rm.className = "colorfy-palette-remove-btn bc-file-remove-btn";
       rm.setAttribute("aria-label", "Remove saved color");
       rm.textContent = "×";
       rm.addEventListener("click", () => {
@@ -437,19 +445,28 @@
     });
   }
 
+  /* Plain .tool-status line (shared/site.css already prefixes it "> "
+     same as every other tool's status text, e.g. Coudio's own "1 file
+     loaded") — every copy/save confirmation on this page uses this one
+     helper now, including the palette-swatch copy below, which used to
+     show its own separate floating dark-chip terminal instead. */
+  function flashStatus(message){
+    status.textContent = message;
+    clearTimeout(statusClearTimer);
+    statusClearTimer = setTimeout(() => {
+      if (status.textContent === message) status.textContent = "";
+    }, 1600);
+  }
+
   function saveToPalette(rgb, btn){
     savedColors.push({ id: nextSavedId++, rgb: [...rgb] });
     persistPalette();
     renderPalette();
     if (btn){
-      const original = btn.textContent;
-      btn.textContent = "Saved!";
       btn.disabled = true;
-      setTimeout(() => {
-        btn.textContent = original;
-        btn.disabled = false;
-      }, 1000);
+      setTimeout(() => { btn.disabled = false; }, 1000);
     }
+    flashStatus(`Saved ${formatColor(rgb)}`);
   }
 
   function copySwatch(sw, rgb){
@@ -457,12 +474,7 @@
     navigator.clipboard.writeText(value).then(() => {
       sw.classList.add("copied");
       setTimeout(() => sw.classList.remove("copied"), 1000);
-      if (copyTerminal && copyTerminalText){
-        copyTerminalText.textContent = `copied ${value}`;
-        copyTerminal.classList.add("show");
-        clearTimeout(copyTerminalTimer);
-        copyTerminalTimer = setTimeout(() => copyTerminal.classList.remove("show"), 1600);
-      }
+      flashStatus(`Copied ${value}`);
     }).catch(() => {
       status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });
@@ -557,12 +569,8 @@
     if (!value) return;
     navigator.clipboard.writeText(value).then(() => {
       btn.classList.add("copied");
-      const original = btn.textContent;
-      btn.textContent = "Copied!";
-      setTimeout(() => {
-        btn.classList.remove("copied");
-        btn.textContent = original;
-      }, 1200);
+      setTimeout(() => btn.classList.remove("copied"), 1200);
+      flashStatus(`Copied ${value}`);
     }).catch(() => {
       status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });

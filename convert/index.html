@@ -62,7 +62,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=92">
+<link rel="stylesheet" href="/shared/site.css?v=97">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -131,6 +131,18 @@
    border on top, the one genuinely tool-specific piece. Same
    color at both themes, so no light/dark split needed here. */
 .result{ border-color:#d670ff55; }
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cv-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
 
 .result-heic-preview-btn{
   display:block;
@@ -223,7 +235,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -335,6 +347,13 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    single full-width column instead. */
 .tool-controls{
   grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
 }
 .tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
 .tool-io-label{
@@ -665,6 +684,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
 
     <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">Single files</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
       <button class="tool-primary-btn" id="cvConvertBtn" disabled title="Convert and download (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">Convert and download</button>
     </div>
 
@@ -808,6 +831,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/convert/convert-tool.js?v=26" defer></script>
+<script src="/convert/convert-tool.js?v=30" defer></script>
 </body>
 </html>

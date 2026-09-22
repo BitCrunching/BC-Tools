@@ -2,43 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Applies the saved light/dark theme before anything paints — the
-     real applyTheme logic lives in shared/site.js (loaded with defer,
-     so it only runs after the page is parsed); this tiny early inline
-     copy exists only to prevent a flash of the *other* theme on load.
-     Without it, the browser paints once using :root's default (light)
-     tokens before that deferred script ever runs — confirmed directly
-     (a dark-mode reload visibly flashed light for 2 frames before
-     flipping dark). Keep this in sync with shared/site.js's own
-     light/dark default logic if that ever changes. -->
 <script>
 (function(){
   try {
     var t = localStorage.getItem("bc-theme");
     document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
   } catch(e){}
-  /* Moved up from shared/site.js (deferred, so it only ran after full
-     HTML parsing) — set here instead so the browser's own native scroll
-     restoration is disabled from the very first possible moment, not
-     after it may have already had a chance to act. shared/site.js still
-     owns the actual restore-to-the-right-position logic; this one line
-     is just the earliest possible "opt out of the native one" flag. */
   try { history.scrollRestoration = "manual"; } catch(e){}
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cleanly – Strip Photo Metadata for Free – BC Tools</title>
-<meta name="description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
-<link rel="canonical" href="https://bitcrunching.com/cleanly/">
+<title>Codoc – Free Word to PDF Converter – BC Tools</title>
+<meta name="description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
+<link rel="canonical" href="https://bitcrunching.com/codoc/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="Cleanly – Strip Photo Metadata for Free – BC Tools">
-<meta property="og:description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
-<meta property="og:url" content="https://bitcrunching.com/cleanly/">
+<meta property="og:title" content="Codoc – Free Word to PDF Converter – BC Tools">
+<meta property="og:description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
+<meta property="og:url" content="https://bitcrunching.com/codoc/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Cleanly – Strip Photo Metadata for Free – BC Tools">
-<meta name="twitter:description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
+<meta name="twitter:title" content="Codoc – Free Word to PDF Converter – BC Tools">
+<meta name="twitter:description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
 <link rel="apple-touch-icon" href="/favicon.svg?v=4">
@@ -58,61 +43,31 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<script src="/vendor/exif.js"></script>
-<script src="/vendor/jszip.min.js"></script>
+<script src="/vendor/mammoth.browser.min.js"></script>
+<script src="/vendor/html2canvas.min.js"></script>
+<script src="/vendor/jspdf.umd.min.js"></script>
 
 <link rel="stylesheet" href="/shared/site.css?v=97">
 <style>
-.tool-app::before{ background:#7ED321; }
-.cs-shape{ background:#4ade80; }
+.tool-app::before{ background:linear-gradient(155deg,#5B6EF5); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
-/* Lively hover only while nothing's picked yet — :has() drops it the
-   moment #exAfterDrop is revealed, so it never fights the file list/
-   Strip button once there's real content to interact with. Same "jump"
-   plays while a file is being dragged over the banner (.active class,
-   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
-   confused with the :active pseudo-class just below, which is the
-   separate mouse-press-down effect. */
-.tool-app:has(#exAfterDrop[hidden]):hover{
+.tool-app:has(#cdcAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over needs a bolder, unmistakable reaction than plain hover —
-   1.012/1.08 read fine when you're stationary hovering the banner, but
-   during an actual drag your attention is on the OS drag cursor, not
-   the banner, so the subtle version went unnoticed ("doesn't react to
-   drag"). Kept as its own rule, not folded back into the :hover one. */
-.tool-app:has(#exAfterDrop[hidden]).active{
+.tool-app:has(#cdcAfterDrop[hidden]).active{
   filter:brightness(1.15);
   transform:scale(1.03);
 }
-.tool-app:has(#exAfterDrop[hidden]):active{
+.tool-app:has(#cdcAfterDrop[hidden]):active{
   transform:scale(.99);
   transition-duration:.1s;
 }
-
-/* Just a fun easter egg on double-click — not a functional cue, so it's
-   fine that it's low priority and simple. */
-@keyframes tool-app-wobble{
-  0%, 100%{ transform:scale(1) rotate(0deg); }
-  25%{ transform:scale(1.02) rotate(-1deg); }
-  50%{ transform:scale(.99) rotate(1deg); }
-  75%{ transform:scale(1.015) rotate(-.5deg); }
+.tool-app:has(#cdcAfterDrop[hidden]) #cdcResults{
+  display:none;
 }
-.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
 
-@keyframes icon-wobble{
-  0%, 100%{ transform:rotate(0deg) scale(1); }
-  25%{ transform:rotate(-10deg) scale(1.12); }
-  50%{ transform:rotate(8deg) scale(.95); }
-  75%{ transform:rotate(-4deg) scale(1.05); }
-}
-.tool-app.wobble .tool-logo .icon-cleanly{ animation:icon-wobble .5s ease; }
-
-/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
-   .engine-status-row from shared/site.css — same "classified terminal"
-   look as Convert/Compress/Combine's help banners. */
 .help-banner{
   margin:48px auto 0;
   width:calc(100% - 36px);
@@ -198,18 +153,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   color:#1d2436;
 }
 
-/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
-   for one plain CLOSE button in the nav row, between Back and Next —
-   dismisses for good, same as the red dot on desktop. Minimize isn't
-   offered on mobile; one clear action beats three cramped small ones
-   on a touch target this size. */
 .help-banner-close-mobile{ display:none; }
 @media (max-width:768px){
   .help-banner-dot{ display:none; }
   .help-banner-close-mobile{ display:block; }
-  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
-     phone-width header — keep the real text (still readable to screen
-     readers) but render it visually as just "GUIDE". */
   .help-banner-header .engine-status-title{ font-size:0; }
   .help-banner-header .engine-status-title::before{
     content:"GUIDE";
@@ -219,80 +166,106 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here, same split as Compress's .cp-remove-btn.
-   Unlike Convert/Compress (where the drop zone is hidden once a file
-   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
-   small negative offset reaches the card corner), Cleanly keeps its
-   drop zone visible in the revealed state — so #exAfterDrop starts far
-   down the card. The button is anchored to .tool-app itself instead and
-   shown only while files are loaded, via the same :has(#exAfterDrop…)
-   toggle the hover rules above already use. */
-.ex-remove-btn{
-  position:absolute;
-  top:16px;
-  right:16px;
-  z-index:6;
-  font-size:18px;
-  display:none;
-}
-.tool-app:has(#exAfterDrop:not([hidden])) .ex-remove-btn{ display:flex; }
-/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position/reveal-timing stay here, same
-   split as .ex-remove-btn/.bc-remove-btn above. Sits just to the left
-   of Remove, same corner, shown together with it. Both display rules
-   guarded to the same mobile breakpoint as .bc-canvas-back-btn's own
-   display:flex — see Combine's identical comment for why the :has()
-   rule specifically needs that guard. */
-.ex-back-btn{
-  position:absolute;
-  top:16px;
-  right:52px;
-  z-index:6;
-}
-@media (max-width:768px){
-  .ex-back-btn{ display:none; }
-  .tool-app:has(#exAfterDrop:not([hidden])) .ex-back-btn{ display:flex; }
-}
-
-/* Before a file is loaded the whole banner is the drop target, so the
-   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
-   doesn't cancel the shared .tool-drop-addpill's dashed border once it
-   collapses to the "＋ Add more files" pill. */
-#exDrop:not(.tool-drop-revealed){
+#cdcDrop{
   border-color:transparent;
   background:transparent;
 }
-#exDrop:not(.tool-drop-revealed):not(.active):hover{
+#cdcDrop:not(.active):hover{
   border-color:transparent;
   transform:none;
 }
-#exDrop.active{
-  border-color:#4ade80;
-  background:rgba(74,222,128,.1);
-}
-/* Revealed-state "＋ Add more files" pill is the shared
-   .tool-drop-addpill (shared/site.css) — opted in via the class on
-   #exDrop's markup. Only the brand-coloured drag-over state stays
-   local. */
-#exDrop.tool-drop-revealed.active{
-  border-color:#4ade80;
-  background:rgba(74,222,128,.1);
+#cdcDrop.active{
+  border-color:#5B6EF5;
+  background:rgba(91,110,245,.1);
 }
 .tool-app.active{
-  background:rgba(74,222,128,.08);
+  background:rgba(91,110,245,.08);
 }
-/* Mobile shows just "Download" on the primary action button — the
-   fuller desktop label ("Convert and download", "Strip metadata and
-   download", etc.) doesn't fit well at phone widths, and "Download" is
-   what actually happens from the user's side either way. */
-@media (max-width:768px){
-  #exStripBtn{ font-size:0; }
-  #exStripBtn::before{
-    content:"Download";
-    font-size:20px;
-  }
+
+.tool-after-drop{
+  position:relative;
 }
+.cdc-remove-btn{
+  position:absolute;
+  top:-85px;
+  right:-25px;
+  z-index:6;
+  font-size:18px;
+}
+.cdc-back-btn{
+  position:absolute;
+  top:-85px;
+  right:11px;
+  z-index:6;
+}
+
+.result{ border-color:#5B6EF555; }
+
+/* Only one control (Convert), same single-column override Convert
+   itself uses — shared/site.css's .tool-controls default is a 2-column
+   grid meant for a format-picker + button pair. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+
+/* Codoc-specific size request (not the shared .tool-primary-btn 74px
+   default) — a fixed 1028x70px CTA rather than the grid-stretched
+   default, so it's capped with max-width instead of forced full-width. */
+#cdcConvertBtn{
+  width:1028px;
+  max-width:100%;
+  height:70px;
+}
+
+.cdc-doc-icon{
+  width:44px;
+  height:44px;
+  border-radius:10px;
+  background:rgba(91,110,245,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.02em;
+  color:#5B6EF5;
+  flex:none;
+}
+.cdc-result-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.cdc-result-meta{ min-width:0; flex:1 1 auto; }
+.cdc-result-meta .result-name{
+  color:var(--text);
+  font-weight:700;
+  font-size:14px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cdc-result-size{
+  color:var(--text);
+  opacity:.6;
+  font-size:12px;
+}
+
+.cdc-offscreen{
+  position:absolute;
+  left:-99999px;
+  top:0;
+  width:794px;
+  background:#ffffff;
+  color:#111111;
+  padding:56px 64px;
+  font-family:"Calibri","Segoe UI",Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+.cdc-offscreen img{ max-width:100%; height:auto; }
+.cdc-offscreen table{ border-collapse:collapse; width:100%; }
+.cdc-offscreen table td, .cdc-offscreen table th{ border:1px solid #ccc; padding:4px 8px; }
 </style>
 </head>
 <body>
@@ -360,7 +333,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
             <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
         </svg>
         </button>
-                <div class="nav-share-wrap">    
+                <div class="nav-share-wrap">
       <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
         <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 3L9.5 14.5"></path>
@@ -391,70 +364,69 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   </div>
 </div>
 <main>
-<div class="help-banner engine-status-card" id="exHelpBanner" hidden>
+<div class="help-banner engine-status-card" id="cdcHelpBanner" hidden>
   <div class="help-banner-header">
-    <button type="button" class="help-banner-dot help-banner-dot-red" id="exHelpClose" aria-label="Close and don't show again"></button>
-    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="exHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cdcHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cdcHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
     <span class="help-banner-dot" aria-hidden="true"></span>
-    <span class="engine-status-title" id="exHelpStep"></span>
+    <span class="engine-status-title" id="cdcHelpStep"></span>
     <div class="help-banner-nav">
-      <button type="button" class="help-banner-term-btn" id="exHelpBack">&lt; BACK</button>
-      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="exHelpCloseMobile">CLOSE</button>
-      <button type="button" class="help-banner-term-btn" id="exHelpNext">NEXT &gt;</button>
+      <button type="button" class="help-banner-term-btn" id="cdcHelpBack">&lt; BACK</button>
+      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="cdcHelpCloseMobile">CLOSE</button>
+      <button type="button" class="help-banner-term-btn" id="cdcHelpNext">NEXT &gt;</button>
     </div>
   </div>
-  <div class="engine-status-body" id="exHelpBody">
-    <div class="engine-status-row">&gt; <span id="exHelpText"></span></div>
+  <div class="engine-status-body" id="cdcHelpBody">
+    <div class="engine-status-row">&gt; <span id="cdcHelpText"></span></div>
   </div>
 </div>
 <div class="tool-wrap">
-  <div class="tool-app">
+  <div class="tool-app" data-category="special">
     <div class="tool-header">
       <div class="tool-logo">
-        <span class="gfx-md icon-cleanly" role="img" aria-label="Cleanly icon"></span>
-        Cleanly
+        <span class="gfx-placeholder gfx-md" role="img" aria-label="Codoc icon">(icon)</span>
+        Codoc
       </div>
-      <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
+      <span class="privacy-check-badge" id="cdcPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <button type="button" class="ex-back-btn bc-canvas-back-btn" id="exBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 12H5"></path>
-        <path d="M11 18l-6-6 6-6"></path>
-      </svg>
-    </button>
-    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
+    <div class="tool-drop" id="cdcDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">a Word document (.docx)</span></div>
+    <input type="file" id="cdcInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cdcContinueBtn" hidden>Continue where you left off</button>
 
-    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
-    <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
-    <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
-
-    <div class="tool-after-drop" id="exAfterDrop" hidden>
-      <div class="exif-file-list" id="exFileList"></div>
-
-      <div class="exif-actions">
-        <button class="tool-primary-btn" id="exStripBtn" disabled title="Strip metadata and download (D)" data-ga-event="tool_primary_action" data-ga-tool="cleanly">Strip metadata and download</button>
-      </div>
+    <div class="tool-after-drop" id="cdcAfterDrop" hidden>
+      <button type="button" class="cdc-back-btn bc-canvas-back-btn" id="cdcBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <button type="button" class="cdc-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdcRemoveBtn" aria-label="Remove file">×</button>
     </div>
 
-    <div class="tool-status" id="exStatus"></div>
+    <div class="tool-results" id="cdcResults"></div>
+
+    <div class="tool-controls" id="cdcControls" hidden>
+      <button class="tool-primary-btn" id="cdcConvertBtn" disabled title="Convert and download" data-ga-event="tool_primary_action" data-ga-tool="codoc">Convert and download</button>
+    </div>
+
+    <div class="tool-status" id="cdcStatus"></div>
   </div>
 </div>
 
-<div class="content-section-convert" data-tool="exif">
+<div class="content-section-convert" data-tool="codoc">
   <div class="content-section-article-wrap">
     <div class="content-section-bg" aria-hidden="true">
       <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-2"></span>
       <span class="cs-shape cs-shape-3"></span>
     </div>
-    <h3>New to cleaning images?</h3>
-    <p>Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif" href="/golden-rules/?tool=exif">just one click away.</a></p>
+    <h3>New to Codoc?</h3>
+    <p>Codoc turns a Word document into a PDF entirely inside your browser — the file is parsed and rendered on your own device, nothing is uploaded anywhere. It reads modern Word files (.docx, Word 2007 and later); the older binary .doc format isn't supported.</p>
+    <p>Complex layouts — multi-column text, headers/footers, and precise pagination — may render slightly differently than in Word, since Codoc rebuilds the page flow from the document's content rather than Word's own print engine. For straightforward documents (headings, paragraphs, lists, tables, images) the result matches closely.</p>
   </div>
 
-  <div class="ad-slot">
-    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
   </div>
 </div>
 </main>
@@ -500,6 +472,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=14" defer></script>
+<script src="/codoc/codoc-tool.js?v=1" defer></script>
 </body>
 </html>

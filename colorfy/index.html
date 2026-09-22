@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=92">
+<link rel="stylesheet" href="/shared/site.css?v=97">
 <style>
 #page-colorfy::before{
   background:#FF8A4C;
@@ -159,7 +159,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -201,7 +201,12 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 .tool-after-drop[hidden]{ display:none; }
 
-#cyDrop{
+/* Same as Convert's #cvDrop / Coudio's #cdDrop — before an image is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it. Scoped to :not(.tool-drop-revealed) so it doesn't
+   cancel the shared .tool-drop-addpill's own dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#cyDrop:not(.tool-drop-revealed){
   border-color:transparent;
   background:transparent;
 }
@@ -213,9 +218,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   border-color:#FF8A4C;
   background:rgba(255,140,66,.1);
 }
-#cyDrop.tool-drop-revealed{
-  border-color:var(--border-strong);
-}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cyDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
 #cyDrop.tool-drop-revealed.active{
   border-color:#FF8A4C;
   background:rgba(255,140,66,.1);
@@ -491,11 +497,18 @@ html[data-theme="light"] .colorfy-palette{
   margin:0 0 12px;
   text-align:center;
 }
+/* Row-gap widened to 34px (column-gap stays 10px) — the remove btn now
+   floats above each chip (see .colorfy-palette-remove-btn) instead of
+   overlapping its corner, so a wrapped row needs real clearance from
+   the row above it or the buttons would sit on top of those chips.
+   The extra top margin gives the first row the same clearance from the
+   "Saved colors" heading above it. */
 .colorfy-palette-list{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
-  gap:10px;
+  gap:34px 10px;
+  margin-top:44px;
 }
 .colorfy-palette-chip{
   position:relative;
@@ -521,55 +534,20 @@ html[data-theme="light"] .colorfy-palette{
   outline:2px solid #4ade80;
   outline-offset:2px;
 }
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here. */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css,
+   the "beta remove btn" — translucent white/black flip, not
+   .bc-remove-btn's bold red) — only size/position stay here. */
 .colorfy-palette-remove-btn{
   position:absolute;
-  top:-6px;
-  right:-6px;
-  width:18px;
-  height:18px;
-  font-size:12px;
+  top:-32px;
+  left:50%;
+  right:auto;
+  transform:translateX(-50%);
+  width:25px;
+  height:25px;
+  font-size:15px;
 }
 
-/* Copy confirmation for a saved color strip — same terminal look as
-   the site nav's copy-link confirmation (shared/site.css .nav-terminal),
-   just anchored to the tool banner's bottom-left corner instead of the
-   nav's center, since that's where the palette strips actually live. */
-.colorfy-copy-terminal{
-  position:absolute;
-  left:24px;
-  bottom:20px;
-  padding:6px 12px;
-  border-radius:8px;
-  background:rgba(0,0,0,.35);
-  color:#4ade80;
-  font-family:"Courier New", Courier, monospace;
-  font-size:14px;
-  font-weight:700;
-  letter-spacing:.02em;
-  white-space:nowrap;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .2s ease;
-  z-index:5;
-}
-.colorfy-copy-terminal.show{
-  opacity:1;
-}
-.colorfy-copy-terminal-prompt{
-  opacity:.7;
-}
-.colorfy-copy-terminal-cursor{
-  animation:copy-toast-blink 1s step-end infinite;
-}
-@media (max-width:640px){
-  .colorfy-copy-terminal{
-    left:16px;
-    bottom:12px;
-    font-size:12px;
-  }
-}
 /* Format picker — lets the code button below show HEX, RGB, HSB, or
    HSL instead of always showing one fixed format. Uses the shared
    .bc-dropdown component (shared/site.css). .colorfy-format-row
@@ -705,7 +683,7 @@ html[data-theme="light"] .colorfy-palette{
       </div>
     </div>
 
-    <div class="tool-drop" id="cyDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">an image</span></div>
+    <div class="tool-drop tool-drop-addpill" id="cyDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">an image</span></div>
     <input type="file" id="cyInput" accept="image/*" hidden>
 
     <div class="tool-after-drop" id="cyAfterDrop" hidden>
@@ -749,11 +727,6 @@ html[data-theme="light"] .colorfy-palette{
     </div>
 
     <div class="tool-status" id="cyStatus"></div>
-
-    <div class="colorfy-copy-terminal" id="cyCopyTerminal" aria-live="polite">
-      <span class="colorfy-copy-terminal-prompt">&gt;</span>
-      <span id="cyCopyTerminalText"></span><span class="colorfy-copy-terminal-cursor">_</span>
-    </div>
   </div>
 </div>
 
@@ -815,6 +788,6 @@ html[data-theme="light"] .colorfy-palette{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/colorfy/colorfy-tool.js?v=13" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=22" defer></script>
 </body>
 </html>

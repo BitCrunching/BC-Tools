@@ -163,6 +163,84 @@ duplicate chrome out of the tool-local class, same split pattern as
   the *documented flip formula* is the actual bar for "not a separately
   patched layer," not literal class-sharing when the geometry doesn't fit.
 
+### `.bc-segmented-toggle` — joined-pill format/mode toggle
+
+A row of `[aria-pressed]` buttons sharing one continuous outline (only
+the outer corners round; interior borders merge into a single shared
+divider), selected segment filled via the on-banner flip recipe below.
+`shared/site.css` — covers segment chrome only; width/max-width/margin
+stay a local per-use override, same split as every other shared
+component here.
+
+```html
+<div class="bc-segmented-toggle"><button aria-pressed="true">A</button><button aria-pressed="false">B</button></div>
+```
+
+Optional modifiers, both animated (`.2s`–`.3s` `cubic-bezier(.4,0,.2,1)`
+transitions, not instant snaps): `.bc-segmented-toggle-collapsed` on a
+segment that's no longer a valid choice (collapses its flex share/
+padding/opacity to 0 in place, rather than `[hidden]`'s un-transitionable
+`display:none` — pair with `aria-hidden="true"`/`tabindex="-1"` in JS,
+since `pointer-events:none` alone doesn't stop keyboard focus);
+`.bc-segmented-toggle-solo` on the one segment left after a sibling
+collapses (rounds both its corners instead of just the one its DOM
+position owns — see the download-mode toggle below for the reference
+usage of both).
+
+This recipe existed independently twice before being promoted — Codify's
+`.cf-format-toggle` (PNG/SVG/Copy) and Congify's `.gif-mode-toggle`
+(Basic/Custom) — both left as-is (not worth the regression risk of
+migrating working tools just for this), but Convert's and Compress's
+newer Single-files/`.zip` download-mode toggle (below) is the reference
+adopter for any *future* segmented-toggle need — reach for this class,
+not a third hand-rolled copy.
+
+**Single files / `.zip` download-mode toggle** (Convert, Compress): both
+tools batch-download multiple converted/compressed files, historically
+always as a ZIP once there were more than 5 (`useZip = files.length > 5`,
+no user choice). Replaced with a real toggle — visible the whole time
+once any file's loaded, but **solo-ing down to whichever single option
+is actually valid** at the extremes rather than hiding the whole control:
+
+- **≤5 files**: only "Single files" shows — the `.zip` segment collapses
+  away, not just made inert, since a ZIP is pointless overhead for a
+  couple of files.
+- **6–20 files**: both segments show as a real, mostly-arbitrary choice,
+  defaulting to `.zip` (matches the old behavior when nobody touches it).
+- **>20 files**: only `.zip` shows — the "Single files" segment is
+  removed, since letting someone fire off 21+ individual downloads at
+  once is the exact problem a ZIP solves, no real reason to let them opt
+  out at that scale.
+
+`effectiveUseZip(count)` in each tool's own `-tool.js` centralizes the
+actual download decision — always call it instead of re-deriving the
+threshold logic inline. `updateDownloadModeToggle(count)` (called from
+each tool's existing `renderStatus()`, already run on every add/remove/
+reset of the file list — no new hook needed) toggles each segment via
+the shared `.bc-segmented-toggle-collapsed` class (shared/site.css)
+rather than the `[hidden]` attribute — `[hidden]` snaps straight to
+`display:none` with no way to transition, `.bc-segmented-toggle-collapsed`
+animates the segment's flex share/padding/opacity down to 0 instead, so
+the pill visibly grows/shrinks between one and two segments rather than
+popping. It also sets `aria-hidden`/`tabindex="-1"` on the collapsed
+segment, since `pointer-events:none` alone stops clicks but not keyboard
+focus. Adds the shared `.bc-segmented-toggle-solo` modifier class to
+whichever segment is left standing alone so it renders as a complete
+rounded pill instead of half of one (`:first-child`/`:last-child`
+corner-rounding is DOM-position-based, not visibility-based, so a soloed
+segment needs the explicit override — see `.bc-segmented-toggle-solo`
+above, which also carries its own transition so the corners round in
+smoothly rather than snapping). Also force-sets `downloadMode` to match
+the soloed segment, so `effectiveUseZip` and the visible pressed-state
+never disagree.
+
+**Convert's 16 SEO route siblings (`convert/jpg-to-png/index.html` etc.)
+don't carry this toggle's markup** — every DOM lookup for it is
+null-guarded, so those pages just silently keep the old toggle-less "zip
+above 5" behavior rather than throwing. Worth adding the markup there
+too if those pages are ever revisited for something else, but not broken
+as shipped.
+
 ### `.bc-combo-trigger` / `.cf-color-trigger` — small dropdown/setting pills
 
 - `height:40px; padding:0 12px; border-radius:12px;`
@@ -274,16 +352,27 @@ result"`. `.result`'s own default already covers:
   — the card and its text are separate rules that both need the flip
   independently. Check both whenever fixing one.
 
-**`.bc-file-remove-btn`** (`shared/site.css`) is the matching shared "×"
-circle for a file-item row — translucent white/black tint (not
-`.bc-remove-btn`'s bold solid-red circle, a different family used for small
-badges elsewhere). Cleanly's `.exif-file-remove` and Combine's
-`.combine-file-remove` both add `bc-file-remove-btn` as a second class,
-keeping their own class only as a JS-listener addressing hook.
+**`.bc-file-remove-btn`** (`shared/site.css`) — aka **"the beta remove
+btn"** (the user-facing nickname for it in this doc/conversation, since
+it's the deliberately lower-key, non-red sibling of `.bc-remove-btn`'s
+bold "delete everything" look) — is the matching shared "×" circle for a
+file-item row: translucent white/black tint, 28×28px, flips with theme
+(not `.bc-remove-btn`'s bold solid-red circle, a different family used
+for small badges elsewhere). Originated in Cleanly (`.exif-file-remove`)
+and Combine (`.combine-file-remove`); also now used by Colorfy's saved-
+color palette chip (`.colorfy-palette-remove-btn`, resized locally to
+25×25px), and by Convert/Compress/Coudio's per-file-row remove ("×"),
+which used to be `.result-remove` instead (see the Lessons Learned entry
+below for why that changed). Every adopter adds `bc-file-remove-btn` as a
+second class, keeping its own class only as a JS-listener addressing
+hook (and, where the button is absolutely positioned over a card/row,
+for the position override — `.bc-file-remove-btn` itself owns visual
+chrome only, same split as every other shared component here).
 
 **Exception — don't flip an overlay sitting on top of the thumbnail image
 itself**, only the ones sitting on the card's own background. `.result-remove`
-(the "×" that fades in over the thumbnail on hover) and
+(the on-image hover-fade "×", still used where a card's remove control
+should stay out of the way until hovered) and
 `.context-signature-camera-badge` (an overlay on a live camera feed) stay a
 fixed `rgba(0,0,0,.55)`-ish dark circle regardless of site theme on purpose
 — their contrast partner is unpredictable image/video content, not the
@@ -363,8 +452,12 @@ from scratch (see Lessons Learned: "editor hover bug").
   (`repeating-radial-gradient`, concentric rings), Code = mosaic (layered
   14px/28px grid `linear-gradient`s at `opacity:.5`), Video = filmstrip
   perforations on the **top edge only** (bottom row was tried and removed
-  on the homepage card — it crowded the "Read more" button). Driven by
-  `data-category="image|video|sound|code"` on the card / `.tool-app` — the
+  on the homepage card — it crowded the "Read more" button), Special =
+  sparse diagonal sparkle dots (`radial-gradient` dot repeated on a 24px
+  grid) — the catch-all category for a tool that doesn't fit
+  Image/Video/Sound/Code (e.g. a document-conversion tool), added
+  2026-09-21. Driven by `data-category="image|video|sound|code|special"`
+  on the card / `.tool-app` — the
   same file's selectors cover both (`#page-mainpage
   .card[data-category=...]` and `.tool-app[data-category=...]`), sharing
   one background recipe per category and splitting out only the z-index
@@ -401,15 +494,23 @@ there):
 ## Terminal text — the site's one recurring "readout" motif
 
 Used for: nav copy-link confirmation (`.nav-terminal`), the step-through
-help banners on every tool ("CODIFY_GUIDE: STEP 1/4" etc.), Colorfy's
-copy-strip toast (`.colorfy-copy-terminal`), About's/the homepage's
-engine-status card. This is the site's one deliberately "technical" visual
-voice — use it for transient confirmations and diagnostic-flavored copy,
-nowhere else.
+help banners on every tool ("CODIFY_GUIDE: STEP 1/4" etc.), About's/the
+homepage's engine-status card. This is the site's one deliberately
+"technical" visual voice — use it for transient confirmations and
+diagnostic-flavored copy, nowhere else. (Colorfy's copy/save confirmations
+used to have their own separate floating dark-chip toast,
+`.colorfy-copy-terminal` — retired, see Lessons Learned: "terminal font
+fallback"; they're plain `.tool-status` lines now, not this component.)
 
 - **Color**: `#4ade80` (green) on a dark/translucent chip — never used on a
   light chip.
-- **Font**: `"Courier New", Courier, monospace`.
+- **Font**: `"Space Mono","Courier New", Courier, "Liberation Mono",
+  "DejaVu Sans Mono", Consolas, Menlo, monospace` — a self-hosted webfont
+  (`@font-face` in `shared/site.css`, files in `vendor/fonts/`) leads the
+  stack now, with the old system-font names kept only as a fallback for
+  the vanishingly rare case the webfont fails to load. See Lessons
+  Learned: "terminal font fallback" for why a system-font stack alone
+  wasn't reliable enough.
 - **Size**: 14px desktop, drop to 12px under ~640-768px. Never smaller than
   12px, never larger than 14px — it's a readout, not a heading.
 - **Weight/spacing**: `font-weight:700; letter-spacing:.02em;`.
@@ -626,12 +727,18 @@ first:
 - **Codify**: `.bc-editor-input`; joint reference (with Colorfy) for the
   auto-fit resizable-frame conventions.
 - **Cleanly** and **Combine**: independently, byte-identically originated
-  `.bc-file-remove-btn` (`.exif-file-remove` / `.combine-file-remove`).
+  `.bc-file-remove-btn` ("the beta remove btn" — `.exif-file-remove` /
+  `.combine-file-remove`); later also adopted by Colorfy's saved-color
+  chip and by Convert/Compress/Coudio's per-file remove (moved off
+  `.result-remove` for this specific use — see Lessons Learned:
+  "beta remove btn adoption").
 - **Colorfy**: joint reference (with Codify) for resizable-frame
   conventions (`frameWidthMax` measurement fix).
 - **Convert**: original example of the on-banner flip recipe via
   `.tool-primary-btn`; the "zero undocumented overrides" clean baseline
-  (see Reference tools above).
+  (see Reference tools above); joint reference (with Compress) for
+  `.bc-segmented-toggle`'s promotion to a shared component, via the
+  Single-files/`.zip` download-mode toggle.
 
 ## Appendix: lessons learned / rejected approaches
 
@@ -733,3 +840,114 @@ width, measuring against an element that itself auto-sizes to the thing
 being measured creates a self-referential trap that caps growth short of
 the real intended max — fixed by measuring against a stable ancestor
 (`.tool-app`) instead.
+
+**Codoc scoped to DOC→PDF only — PDF→DOC rejected, not deferred**: Codoc
+(`codoc/`, the first "special"-category tool) converts DOC/DOCX→PDF via
+`mammoth.browser.min.js` (parse to HTML) + `html2canvas` + `jspdf.umd.min.js`
+(paginate to A4), all self-hosted in `/vendor/`, fully client-side like
+every other tool. The reverse direction, PDF→DOC, was explicitly considered
+and rejected rather than left as a "later" TODO:
+
+- PDF has no structural concept of paragraph/table/column — only
+  positioned glyphs. A client-side reconstruction (`pdf.js` text-position
+  extraction + gap heuristics + the `docx` npm package to write real
+  OOXML) is possible, but produces a document that only *looks* editable —
+  tables, multi-column layouts, and font/style fidelity all degrade badly,
+  on exactly the documents people most want converted.
+- The only way to genuinely close that quality gap is server-side (headless
+  LibreOffice or a commercial API like Adobe PDF Services) — real layout
+  inference and OCR, not geometry guessing. That means the file leaves the
+  user's device, which breaks the one guarantee every other tool's privacy
+  badge advertises (nothing uploads, nothing leaves the browser) — a
+  brand/trust decision, not just an engineering one, and not worth making
+  quietly for one tool's missing half-feature.
+- A "best effort" middle ground (ship the client-side reconstruction with a
+  visible quality caveat) was also rejected: it would undersell the site's
+  usual "just works" reliability rather than reinforce it.
+
+If PDF→DOC is ever revisited, it needs an explicit decision to make Codoc
+(or a new tool) the deliberate exception to the local-only model, not a
+bolt-on to the existing client-side pipeline.
+
+**Terminal font fallback**: a user reported Colorfy's copy-confirmation
+chip (`.colorfy-copy-terminal`) rendering in a rounded sans-serif instead
+of a monospace "terminal" look, on some unidentified device/browser.
+Every check on a normal desktop Chrome came back clean — computed
+`font-family` on both the chip and its text span correctly resolved to
+`"Courier New", Courier, monospace`, matching every other terminal-styled
+element site-wide, and a forced-visible screenshot rendered it correctly.
+Since it couldn't be reproduced, the fix was defensive rather than
+diagnostic: widened the shared font stack (site-wide, not just Colorfy) to
+`"Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas,
+Menlo, monospace` — more real, named monospace fonts before the bare
+`monospace` generic keyword, in case whatever platform the user was on
+doesn't carry "Courier New"/"Courier" and its own generic-monospace
+default isn't a true fixed-width font. Left the canvas-drawn "certificate"
+easter egg's own `ctx.font` strings (index.html, the asteroid-catch
+easter egg) alone — a separate, self-contained decorative feature, not
+part of this shared component.
+
+The widened system-font stack alone turned out not to be enough — the
+user reported the exact same rounded-sans rendering afterward. Escalated
+to self-hosting an actual webfont instead of guessing at more system-font
+names: **Space Mono** (Google Fonts, latin subset, regular + bold woff2
+only — this motif never renders non-latin text), vendored at
+`vendor/fonts/space-mono-{regular,bold}.woff2`, declared via `@font-face`
+in `shared/site.css` and placed first in the stack, old names kept after
+it as a last-resort fallback. This removes the font-availability
+guesswork entirely for the shared Terminal text motif generally (the same
+font file now ships to every visitor regardless of what's installed
+locally) — genuinely worth keeping.
+
+But the user's screenshot after that fix *still* showed the same rounded,
+un-monospaced rendering, unchanged — proving the font stack was never
+actually the bug for this specific element. The real issue: Colorfy's
+copy/save confirmations were split across two different, inconsistent
+UI treatments — `copyCode`/`saveToPalette` already used the plain
+`.tool-status` line, but `copySwatch` (the saved-colors palette swatch)
+still used its own separate component, a floating dark chip with green
+text (`.colorfy-copy-terminal`) sitting on top of the banner. The user's
+screenshots were always of *that* component, and no amount of font-stack
+fixing could make it look like the plain status line because it's a
+different element with deliberately different styling (dark background,
+green color) by original design. Fixed by retiring
+`.colorfy-copy-terminal` entirely (markup, CSS, and its dedicated JS
+show/hide logic) and routing all three confirmations (`copyCode`,
+`saveToPalette`, `copySwatch`) through one shared `flashStatus()` helper
+that just writes to `#cyStatus` — the same plain, themed, "> "-prefixed
+readout every other tool's status line already uses. Confirmed against
+the user's own reference screenshot afterward.
+
+**Lesson**: when a visual bug report doesn't budge after a fix that
+checks out correct in every direct test (computed styles, forced-visible
+renders, live screenshots), stop re-testing the same fix harder and
+check whether the report is actually about a *different element* than
+the one being patched — chasing a font-rendering theory across two
+escalations here was solving a real problem (the font stack was
+genuinely worth hardening) that just wasn't *this* bug.
+
+**Beta remove btn adoption (`.bc-file-remove-btn`) on Convert/Compress/
+Coudio**: requested directly — reuse Cleanly's non-red file-remove button
+("the beta remove btn") for Colorfy's saved-color chip, and connect
+Convert/Compress/Coudio's own per-file remove "×" to the same shared
+class. The first part (Colorfy) was a straightforward class swap
+(`bc-remove-btn` → `bc-file-remove-btn`, keeping the tool's own 25×25px
+local size override). The second part was a real, deliberate design
+change, not just a rename: Convert/Compress/Coudio's per-file remove had
+always been `.result-remove` — a *different* shared class, documented
+above as the on-purpose exception that stays a fixed dark circle and
+fades in only on hover, because it overlays a thumbnail image rather
+than sitting on a card's own themed background. Switching to
+`.bc-file-remove-btn` makes it always-visible and theme-flipping instead
+of hover-reveal-and-fixed-dark. Went ahead with it since it was asked
+for directly and by name across all three tools, but flagging the
+tradeoff here since it reverses that earlier documented reasoning:
+Convert/Compress's remove button no longer stays out of the way until
+hovered, and now visually competes with the thumbnail underneath it more
+than before. `.result-remove` itself is untouched and still exists for
+any future on-image-overlay use — only these three tools' specific
+buttons moved to the new class, each keeping a local class
+(`.cv-file-remove-btn` / `.cp-file-remove-btn` / `.cd-file-remove-btn`)
+purely for the position override (`.bc-file-remove-btn` isn't
+`position:absolute` by default, since Cleanly/Combine use it inline in a
+flex row, not overlaid on a card).
