@@ -62,7 +62,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=93">
+<link rel="stylesheet" href="/shared/site.css?v=94">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -335,6 +335,13 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    single full-width column instead. */
 .tool-controls{
   grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
 }
 .tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
 .tool-io-label{
@@ -665,6 +672,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
 
     <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">Single files</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
       <button class="tool-primary-btn" id="cvConvertBtn" disabled title="Convert and download (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">Convert and download</button>
     </div>
 
@@ -797,6 +808,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <h3>Get in touch with us</h3>
       <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
       <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
     </div>
   </div>
 </div>
@@ -807,6 +819,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/convert/convert-tool.js?v=26" defer></script>
+<script src="/convert/convert-tool.js?v=27" defer></script>
 </body>
 </html>

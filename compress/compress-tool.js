@@ -25,6 +25,59 @@
   let files = [];
   let selectedQuality = null;
 
+  /* ===== Single files / .zip download-mode toggle =====
+     Same reasoning/thresholds/solo-segment behavior as Convert's own
+     copy of this (see its own comment for the full rationale): stays
+     visible once any file's loaded, but solos down to whichever single
+     option is valid at the current count — ≤5 forces "Single files"
+     (removes the .zip segment), >20 forces ".zip" (removes the "Single
+     files" segment), and only 6-20 shows both as a real choice,
+     defaulting to "zip" (Compress's original, toggle-less behavior). */
+  const DOWNLOAD_MODE_TOGGLE_MIN = 5;
+  const DOWNLOAD_MODE_TOGGLE_MAX = 20;
+  const downloadModeToggle = document.getElementById("cpDownloadModeToggle");
+  const downloadModeSingleBtn = document.getElementById("cpDownloadModeSingleBtn");
+  const downloadModeZipBtn = document.getElementById("cpDownloadModeZipBtn");
+  let downloadMode = "zip";
+  function setDownloadMode(mode){
+    downloadMode = mode;
+    if (downloadModeSingleBtn) downloadModeSingleBtn.setAttribute("aria-pressed", String(mode === "single"));
+    if (downloadModeZipBtn) downloadModeZipBtn.setAttribute("aria-pressed", String(mode === "zip"));
+  }
+  if (downloadModeSingleBtn && downloadModeZipBtn){
+    downloadModeSingleBtn.addEventListener("click", () => setDownloadMode("single"));
+    downloadModeZipBtn.addEventListener("click", () => setDownloadMode("zip"));
+  }
+  /* Collapses a no-longer-valid segment via .bc-segmented-toggle-solo's
+     sibling class (.bc-segmented-toggle-collapsed, shared/site.css)
+     instead of the [hidden] attribute — [hidden] snaps to display:none
+     instantly (no transition possible), the collapsed class animates
+     its flex share/padding/opacity down to 0 so the toggle smoothly
+     grows/shrinks between showing one segment and two, rather than
+     popping. aria-hidden/tabindex keep it out of the tab order and
+     screen-reader flow while collapsed, since pointer-events:none alone
+     only blocks clicks, not keyboard focus. */
+  function updateDownloadModeToggle(count){
+    if (!downloadModeToggle || !downloadModeSingleBtn || !downloadModeZipBtn) return;
+    downloadModeToggle.hidden = count === 0;
+    const showSingle = count <= DOWNLOAD_MODE_TOGGLE_MAX;
+    const showZip = count > DOWNLOAD_MODE_TOGGLE_MIN;
+    [[downloadModeSingleBtn, showSingle], [downloadModeZipBtn, showZip]].forEach(([btn, show]) => {
+      btn.classList.toggle("bc-segmented-toggle-collapsed", !show);
+      btn.setAttribute("aria-hidden", String(!show));
+      btn.tabIndex = show ? 0 : -1;
+    });
+    downloadModeSingleBtn.classList.toggle("bc-segmented-toggle-solo", showSingle && !showZip);
+    downloadModeZipBtn.classList.toggle("bc-segmented-toggle-solo", showZip && !showSingle);
+    if (showSingle && !showZip) setDownloadMode("single");
+    else if (showZip && !showSingle) setDownloadMode("zip");
+  }
+  function effectiveUseZip(count){
+    if (count <= DOWNLOAD_MODE_TOGGLE_MIN) return false;
+    if (count > DOWNLOAD_MODE_TOGGLE_MAX) return true;
+    return downloadMode === "zip";
+  }
+
   /* "Compress and download" is the idle label everywhere except
      mobile, where it's shortened to just "Download" — screen width,
      not device, since it's about fitting the button. Only touches the
@@ -47,7 +100,7 @@
     ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows a live estimate of the resulting file size before you commit."],
     ["CHECK_BEFORE_COMPRESSING", "Your files show up below once picked — check them before compressing, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the level guide further down the page — it explains what each level is actually good for."],
-    ["YOU_ARE_SET", "Hit Compress and the files download automatically (as a ZIP if there are more than 5). Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit Compress and the files download automatically — as a ZIP once you've got more than 5 (you can switch back to single files up to 20). Close this with the red dot and we won't show it again."]
   ]);
 
   /* Level buttons + Compress button stay hidden until a file is
@@ -177,6 +230,7 @@
   }
 
   function renderStatus(){
+    updateDownloadModeToggle(files.length);
     if (files.length > 0){
       const count = files.length;
       const word = count === 1 ? "image" : "images";
@@ -422,7 +476,7 @@
     compressBtn.textContent = "Compressing...";
     status.textContent = `Compressing... 0 of ${files.length}`;
 
-    const useZip = files.length > 5;
+    const useZip = effectiveUseZip(files.length);
     let resultsCleared = false;
     function clearResultsOnce(){
       if (resultsCleared) return;

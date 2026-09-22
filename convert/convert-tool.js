@@ -246,6 +246,66 @@
   let files = [];
   let selectedFormat = "";
 
+  /* ===== Single files / .zip download-mode toggle =====
+     Stays visible once any file's loaded, but only offers the choice
+     that's actually meaningful at the current count — it doesn't hide
+     itself wholesale, it solos down to whichever single option is still
+     valid: 5 or fewer outputs always download individually (the .zip
+     segment is removed — a ZIP would be pointless overhead for 2-3
+     files), more than 20 always zips (the "Single files" segment is
+     removed — firing 21+ individual downloads at once is the exact
+     problem a ZIP solves, no real reason to let someone opt out of that
+     at that scale). Between 6 and 20 both segments show and it's a real,
+     mostly-arbitrary choice, defaulting to "zip" (Convert's original,
+     toggle-less behavior). A soloed segment gets the shared
+     .bc-segmented-toggle-solo modifier (shared/site.css) so it reads as
+     a complete pill (both corners rounded) instead of half a broken
+     one. */
+  const DOWNLOAD_MODE_TOGGLE_MIN = 5;
+  const DOWNLOAD_MODE_TOGGLE_MAX = 20;
+  const downloadModeToggle = document.getElementById("cvDownloadModeToggle");
+  const downloadModeSingleBtn = document.getElementById("cvDownloadModeSingleBtn");
+  const downloadModeZipBtn = document.getElementById("cvDownloadModeZipBtn");
+  let downloadMode = "zip";
+  function setDownloadMode(mode){
+    downloadMode = mode;
+    if (downloadModeSingleBtn) downloadModeSingleBtn.setAttribute("aria-pressed", String(mode === "single"));
+    if (downloadModeZipBtn) downloadModeZipBtn.setAttribute("aria-pressed", String(mode === "zip"));
+  }
+  if (downloadModeSingleBtn && downloadModeZipBtn){
+    downloadModeSingleBtn.addEventListener("click", () => setDownloadMode("single"));
+    downloadModeZipBtn.addEventListener("click", () => setDownloadMode("zip"));
+  }
+  /* Collapses a no-longer-valid segment via .bc-segmented-toggle-solo's
+     sibling class (.bc-segmented-toggle-collapsed, shared/site.css)
+     instead of the [hidden] attribute — [hidden] snaps to display:none
+     instantly (no transition possible), the collapsed class animates
+     its flex share/padding/opacity down to 0 so the toggle smoothly
+     grows/shrinks between showing one segment and two, rather than
+     popping. aria-hidden/tabindex keep it out of the tab order and
+     screen-reader flow while collapsed, since pointer-events:none alone
+     only blocks clicks, not keyboard focus. */
+  function updateDownloadModeToggle(count){
+    if (!downloadModeToggle || !downloadModeSingleBtn || !downloadModeZipBtn) return;
+    downloadModeToggle.hidden = count === 0;
+    const showSingle = count <= DOWNLOAD_MODE_TOGGLE_MAX;
+    const showZip = count > DOWNLOAD_MODE_TOGGLE_MIN;
+    [[downloadModeSingleBtn, showSingle], [downloadModeZipBtn, showZip]].forEach(([btn, show]) => {
+      btn.classList.toggle("bc-segmented-toggle-collapsed", !show);
+      btn.setAttribute("aria-hidden", String(!show));
+      btn.tabIndex = show ? 0 : -1;
+    });
+    downloadModeSingleBtn.classList.toggle("bc-segmented-toggle-solo", showSingle && !showZip);
+    downloadModeZipBtn.classList.toggle("bc-segmented-toggle-solo", showZip && !showSingle);
+    if (showSingle && !showZip) setDownloadMode("single");
+    else if (showZip && !showSingle) setDownloadMode("zip");
+  }
+  function effectiveUseZip(count){
+    if (count <= DOWNLOAD_MODE_TOGGLE_MIN) return false;
+    if (count > DOWNLOAD_MODE_TOGGLE_MAX) return true;
+    return downloadMode === "zip";
+  }
+
   /* ===== Keep Input and Output from ever matching =====
      If picking one makes it equal the other, the other side flips to
      whatever the changed side used to be — e.g. Input=JPG/Output=PNG,
@@ -388,6 +448,7 @@
   });
 
   function renderStatus(){
+    updateDownloadModeToggle(files.length);
     if (files.length > 0){
       const count = files.length;
       const word = count === 1 ? "file" : "files";
@@ -848,7 +909,7 @@
           allOutputs.push(...pages);
         }
 
-        const useZip = allOutputs.length > 5;
+        const useZip = effectiveUseZip(allOutputs.length);
         const zip = useZip ? new JSZip() : null;
         let done = 0;
 
@@ -892,7 +953,7 @@
       } else {
         // Images -> images
         status.textContent = `Converting... 0 of ${files.length}`;
-        const useZip = files.length > 5;
+        const useZip = effectiveUseZip(files.length);
         const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
         const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
         const zip = useZip ? new JSZip() : null;

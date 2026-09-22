@@ -60,7 +60,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=93">
+<link rel="stylesheet" href="/shared/site.css?v=94">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -275,6 +275,13 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    own index.html already carries for its own single-button #cvControls. */
 .tool-controls{
   grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cp-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
 }
 
 /* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
@@ -506,6 +513,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
     </div>
 
     <div class="tool-controls" id="cpControls" hidden>
+      <div class="bc-segmented-toggle cp-download-mode-toggle" id="cpDownloadModeToggle" hidden>
+        <button type="button" id="cpDownloadModeSingleBtn" aria-pressed="false">Single files</button>
+        <button type="button" id="cpDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
       <button class="tool-primary-btn" id="cpCompressBtn" disabled title="Compress and download (D)" data-ga-event="tool_primary_action" data-ga-tool="compress">Compress and download</button>
     </div>
 
@@ -594,6 +605,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <h3>Get in touch with us</h3>
       <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
       <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
     </div>
   </div>
 </div>
@@ -604,6 +616,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=39" defer></script>
-<script src="/compress/compress-tool.js?v=22" defer></script>
+<script src="/compress/compress-tool.js?v=23" defer></script>
 </body>
 </html>

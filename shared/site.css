@@ -2999,6 +2999,141 @@ html[data-theme="dark"] .bc-toggle-btn:disabled:hover{
   gap:6px;
 }
 
+/* ===== .bc-segmented-toggle — shared joined-pill format/mode toggle =====
+   A row of `[aria-pressed]` buttons sharing one continuous outline
+   (only the outer corners round, interior borders merge into one
+   shared divider), selected segment filled via the same on-banner flip
+   recipe every other control here uses. This exact recipe already
+   existed independently twice — Codify's `.cf-format-toggle`
+   (PNG/SVG/Copy) and Congify's `.gif-mode-toggle` (Basic/Custom) — before
+   a third and fourth adopter (Convert/Compress's Single/.zip download
+   toggle) made it worth promoting to one real shared class instead of a
+   third and fourth hand-rolled copy. Codify's and Congify's own local
+   classes are untouched (not worth the regression risk of migrating
+   working tools for this), but any *new* segmented-toggle need should
+   reach for this instead of copying either of theirs.
+   Usage: `<div class="bc-segmented-toggle"><button aria-pressed="true">
+   A</button><button aria-pressed="false">B</button></div>` — width/
+   max-width/margin stay a local, per-use override (this only owns the
+   segment chrome), same split as every other shared component here. */
+.bc-segmented-toggle{
+  display:flex;
+}
+/* Without this, [hidden] never actually takes effect — this rule's own
+   display:flex above is author CSS, which beats the browser's default
+   [hidden]{display:none} regardless of the attribute being set (same
+   bug already hit on .tool-controls, .gif-sliders, .bc-add-tile). */
+.bc-segmented-toggle[hidden]{
+  display:none;
+}
+/* A segment hidden individually (one option no longer valid — see the
+   Single-files/.zip download-mode toggle's solo-segment behavior,
+   CLAUDE.md) needs the same explicit override, since a bare button has
+   no competing display rule to fight but [hidden] still needs to win
+   over nothing looking wrong once :first-child/:last-child start being
+   applied to whichever segment is left. Kept as a hard, no-transition
+   fallback — the animated version a segment actually uses when it
+   disappears is .bc-segmented-toggle-collapsed below, not this. */
+.bc-segmented-toggle button[hidden]{
+  display:none;
+}
+.bc-segmented-toggle button{
+  flex:1;
+  height:40px;
+  padding:0 14px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.5);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  transition:background .25s cubic-bezier(.4,0,.2,1),
+             border-color .25s cubic-bezier(.4,0,.2,1),
+             color .25s cubic-bezier(.4,0,.2,1),
+             flex-grow .3s cubic-bezier(.4,0,.2,1),
+             flex-basis .3s cubic-bezier(.4,0,.2,1),
+             padding .3s cubic-bezier(.4,0,.2,1),
+             opacity .2s cubic-bezier(.4,0,.2,1);
+}
+/* A segment losing/gaining validity (the Single-files/.zip toggle's
+   solo behavior) animates out instead of vanishing via [hidden]'s
+   instant display:none — collapses its own flex share, padding, and
+   opacity together so the sibling smoothly grows to fill the space
+   rather than the pill visibly snapping. Stays in normal flow (not
+   display:none) for the whole transition, so it needs pointer-events:
+   none of its own rather than relying on display to make it
+   unclickable while collapsed. border-width isn't included: a
+   transitioning border width causes visible corner-radius popping
+   at 0 because border-radius still applies to a border that no
+   longer has any width to round — opacity fading it out reads just
+   as clean without that glitch. */
+.bc-segmented-toggle button.bc-segmented-toggle-collapsed{
+  flex:0 0 0;
+  padding-left:0;
+  padding-right:0;
+  opacity:0;
+  pointer-events:none;
+}
+.bc-segmented-toggle button:first-child{
+  border-top-left-radius:20px;
+  border-bottom-left-radius:20px;
+}
+.bc-segmented-toggle button:last-child{
+  border-top-right-radius:20px;
+  border-bottom-right-radius:20px;
+}
+.bc-segmented-toggle button:not(:first-child){
+  border-left:none;
+}
+.bc-segmented-toggle button[aria-pressed="true"]{
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+}
+.bc-segmented-toggle button:not(:first-child)[aria-pressed="true"]{
+  border-left:none;
+}
+.bc-segmented-toggle button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+html[data-theme="dark"] .bc-segmented-toggle button{
+  border-color:rgba(0,0,0,.4);
+}
+html[data-theme="dark"] .bc-segmented-toggle button[aria-pressed="true"]{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+/* Modifier for when only one segment is left standing (the sibling is
+   [hidden], not removed from the DOM — see the download-mode toggle's
+   solo-segment behavior, CLAUDE.md) — :first-child/:last-child are DOM-
+   position-based, not visibility-based, so the surviving segment would
+   otherwise only get ONE side rounded (whichever corner its DOM position
+   happens to own) instead of reading as a normal, complete pill. Same
+   specificity as the :first-child/:last-child rules above (one class +
+   one pseudo/tag each) — wins on source order since it's declared after
+   them, same "later rule wins the tie" pattern the dark-theme overrides
+   throughout this file already rely on. */
+.bc-segmented-toggle button.bc-segmented-toggle-solo{
+  border-radius:20px;
+  border-left:1px solid rgba(255,255,255,.5);
+  transition:background .25s cubic-bezier(.4,0,.2,1),
+             border-color .25s cubic-bezier(.4,0,.2,1),
+             color .25s cubic-bezier(.4,0,.2,1),
+             flex-grow .3s cubic-bezier(.4,0,.2,1),
+             flex-basis .3s cubic-bezier(.4,0,.2,1),
+             padding .3s cubic-bezier(.4,0,.2,1),
+             opacity .2s cubic-bezier(.4,0,.2,1),
+             border-radius .3s cubic-bezier(.4,0,.2,1);
+}
+html[data-theme="dark"] .bc-segmented-toggle button.bc-segmented-toggle-solo{
+  border-left-color:rgba(0,0,0,.4);
+}
+
 /* ===== .bc-editor-input — shared on-banner text editor surface =====
    Codify's code textarea is currently the only editor-style input on
    the site, but it was still a private .cf-code-input recipe rather
