@@ -580,7 +580,7 @@
   function addRemoveButton(card, file){
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "result-remove";
+    btn.className = "cv-file-remove-btn bc-file-remove-btn";
     btn.setAttribute("aria-label", "Remove");
     btn.textContent = "×";
     btn.addEventListener("click", () => {
@@ -608,7 +608,7 @@
   function addResultRemoveButton(card){
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "result-remove";
+    btn.className = "cv-file-remove-btn bc-file-remove-btn";
     btn.setAttribute("aria-label", "Remove");
     btn.textContent = "×";
     btn.addEventListener("click", () => {
