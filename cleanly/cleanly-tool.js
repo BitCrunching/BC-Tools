@@ -3,12 +3,10 @@
   const drop = document.getElementById("exDrop");
   const input = document.getElementById("exInput");
   const fileList = document.getElementById("exFileList");
-  const stripBtn = document.getElementById("exStripBtn");
-  bcRegisterKeyShortcut("d", stripBtn);
   const status = document.getElementById("exStatus");
   const afterDrop = document.getElementById("exAfterDrop");
   const toolApp = document.querySelector(".tool-app");
-  if (!drop || !input || !fileList || !stripBtn) return;
+  if (!drop || !input || !fileList) return;
 
   let files = [];
 
@@ -20,12 +18,11 @@
     ["WHAT_IT_FINDS", "Once a file's in, we scan it and show exactly what's hiding inside — GPS location, camera model, timestamps, or editor data."],
     ["CHECK_BEFORE_STRIPPING", "Your files show up below once picked — check what was found, and remove any you don't need."],
     ["NOT_SURE_WHY_IT_MATTERS", "Scroll down to the guide further down the page — it explains what metadata actually reveals and why stripping it matters."],
-    ["YOU_ARE_SET", "Hit Strip and the cleaned files download automatically (as a ZIP if there are more than 5). Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Each file gets its own Clean first / Clean and download buttons, right next to its remove ×  — Clean first just checks the result, Clean and download saves it right away. Close this with the red dot and we won't show it again."]
   ]);
 
-  /* File list + Strip button stay hidden until a file is picked —
-     first-time visitors get one obvious step instead of competing
-     controls at once. */
+  /* File list stays hidden until a file is picked — first-time visitors
+     get one obvious step instead of competing controls at once. */
   function revealAfterDropUI(){
     if (afterDrop) afterDrop.hidden = false;
     drop.classList.add("tool-drop-revealed");
@@ -36,14 +33,13 @@
      canvas-corner "×", same as Convert/Compress) and also when the
      per-file remove button below empties the list — without the latter,
      removing the last file one-by-one left the tool stranded in the
-     "revealed" state (file list area, disabled Strip button) with no
-     way back to the actual intro drop zone. */
+     "revealed" state (empty file list area) with no way back to the
+     actual intro drop zone. */
   function resetTool(){
     files = [];
     fileList.innerHTML = "";
     if (afterDrop) afterDrop.hidden = true;
     drop.classList.remove("tool-drop-revealed");
-    stripBtn.disabled = true;
     status.textContent = "";
     bcDbClear(EX_DB_NAME, EX_DB_STORE);
   }
@@ -55,8 +51,17 @@
     return f.type === "image/svg+xml" || /\.svg$/i.test(f.name);
   }
 
+  /* Browsers that can't natively decode HEIC (everything but Safari)
+     also don't recognize its MIME type — f.type comes back empty
+     rather than "image/heic" — so the extension check is required,
+     not just a nice-to-have fallback like it is for .svg above. Same
+     check as Convert's/Compress's own isHeicFile(). */
+  function isHeicFile(f){
+    return f.type === "image/heic" || f.type === "image/heif" || /\.hei[cf]$/i.test(f.name);
+  }
+
   function isImageFile(f){
-    return f.type === "image/jpeg" || f.type === "image/png" || /\.(jpe?g|png)$/i.test(f.name) || isSvgFile(f);
+    return f.type === "image/jpeg" || f.type === "image/png" || /\.(jpe?g|png)$/i.test(f.name) || isSvgFile(f) || isHeicFile(f);
   }
 
   /* Any xmlns:<prefix> declaration other than the standard SVG-spec
@@ -109,19 +114,58 @@
     try {
       const text = await file.text();
       if (/<metadata[\s\S]*?<\/metadata>/i.test(text) || /<rdf:RDF/i.test(text)){
-        found.push("🧾 Embedded metadata");
+        found.push("Embedded metadata found!");
       }
       const customNs = findCustomNsPrefixes(text);
       if (customNs.length){
-        found.push(`🖋️ Editor authoring data (${customNs.join(", ")})`);
+        found.push("Editor metadata found!");
       }
       if (/<!--[\s\S]*?-->/.test(text)){
-        found.push("💬 Comments");
+        found.push("Comments metadata found!");
       }
     } catch (err){
       /* unreadable as text — treat as clean, stripImage will still try */
     }
     return found;
+  }
+
+  /* HEIC decode (via heic2any's WASM HEVC decoder) — loaded on demand,
+     same pattern as Convert's/Compress's own loadHeic2any()/
+     decodeHeicFile(). exif.js (below) can't read a HEIC file's
+     metadata box at all (it only understands JPEG/TIFF's APP1
+     segment), so there's no accurate "found tags" list for HEIC the
+     way there is for JPEG/PNG — heicFindings() below is a fixed
+     disclaimer tag instead of a real scan. Stripping still genuinely
+     works: decoding through heic2any and re-encoding to PNG produces
+     a brand-new file with none of the original's metadata attached,
+     scanned or not. */
+  let heic2anyLoadPromise = null;
+  function loadHeic2any(){
+    if (window.heic2any) return Promise.resolve();
+    if (!heic2anyLoadPromise){
+      heic2anyLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/vendor/heic2any.min.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load the HEIC decoder."));
+        document.head.appendChild(script);
+      });
+    }
+    return heic2anyLoadPromise;
+  }
+
+  const heicDecodeCache = new WeakMap();
+  async function decodeHeicFile(file){
+    if (heicDecodeCache.has(file)) return heicDecodeCache.get(file);
+    await loadHeic2any();
+    const decoded = await window.heic2any({ blob: file, toType: "image/png", quality: 0.92 });
+    const pngFile = Array.isArray(decoded) ? decoded[0] : decoded;
+    heicDecodeCache.set(file, pngFile);
+    return pngFile;
+  }
+
+  function heicFindings(){
+    return ["HEIC metadata found!"];
   }
 
   function formatSize(bytes){
@@ -155,19 +199,19 @@
     const lat = gpsToDecimal(tags.GPSLatitude, tags.GPSLatitudeRef);
     const lon = gpsToDecimal(tags.GPSLongitude, tags.GPSLongitudeRef);
     if (lat !== null && lon !== null){
-      found.push(`📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      found.push("GPS metadata found!");
     }
 
     if (tags.Make || tags.Model){
-      found.push(`📷 ${[tags.Make, tags.Model].filter(Boolean).join(" ")}`);
+      found.push("Camera metadata found!");
     }
 
     if (tags.DateTimeOriginal || tags.DateTime){
-      found.push(`📅 ${tags.DateTimeOriginal || tags.DateTime}`);
+      found.push("Date metadata found!");
     }
 
     if (tags.Software){
-      found.push(`🖋️ ${tags.Software}`);
+      found.push("Software metadata found!");
     }
 
     return found;
@@ -179,25 +223,84 @@
       const el = document.createElement("div");
       el.className = "exif-file-item result";
 
-      const noMetadataText = "No metadata found";
+      const noMetadataText = "No dangerous metadata found";
       const tagsHtml = item.tags.length
-        ? item.tags.map(label => `<span class="exif-tag">${label}</span>`).join("")
-        : `<span class="exif-tag exif-tag-clean">${noMetadataText}</span>`;
+        ? item.tags.map((label, idx) => idx === 0
+            ? `<span class="exif-tag"><span class="exif-status-icon exif-status-icon-warn" aria-hidden="true">⚠</span> - ${label}</span>`
+            : `<span class="exif-tag">${label}</span>`).join("")
+        : `<span class="exif-tag exif-tag-clean"><span class="exif-status-icon exif-status-icon-clean" aria-hidden="true">✓</span> - ${noMetadataText}</span>`;
 
       const svgScanNote = isSvgFile(item.file)
         ? `<div class="exif-scan-note">Cleanly checks for known patterns — it does not guarantee your file will be completely clean.</div>`
         : "";
 
+      /* HEIC thumbnails skip the automatic <img> — pointed straight at
+         raw HEIC bytes it just shows a broken image icon in every
+         browser but Safari. Same opt-in "Preview" pattern as Convert/
+         Compress's own HEIC result cards, just scaled down to this
+         row's small thumb instead of a full preview card. */
+      const thumbHtml = isHeicFile(item.file)
+        ? `<button type="button" class="exif-file-heic-preview" aria-label="Preview">HEIC</button>`
+        : `<img src="${item.src}" alt="">`;
+
+      /* Three states per row:
+         - not yet cleaned: "Clean first" (processes only, no download —
+           see stripEntry's own doc comment) and "Clean and download"
+           (cleans, then immediately downloads) sit side by side.
+         - cleaned but not yet downloaded (only reachable via "Clean
+           first"): a single, enabled "Download" button — there's still a
+           real action left to offer.
+         - already downloaded, however it got there: whichever button
+           actually triggered the download ("Download" after Clean first,
+           or "Clean and download" directly) stays in place but
+           permanently disabled, rather than swapping label or
+           disappearing — the file already saved itself, so there's
+           nothing left to click, but the row still reads clearly as
+           "this is how it got downloaded" instead of a control just
+           vanishing. item.downloaded (set by downloadEntry(), the one
+           function both paths funnel through) is what flips this state;
+           item.downloadedVia records which of the two labels to keep
+           showing, disabled.
+         Each enabled button carries its own data-ga-action (on top of
+         the shared data-ga-event/data-ga-tool pair every .tool-primary-
+         btn already uses) so GA can tell which of the three a click was,
+         not just that "the cleanly primary action" fired. */
+      const actionButtonsHtml = item.stripped
+        ? (item.downloaded
+            ? (item.downloadedVia === "clean_and_download"
+                ? `<button type="button" class="tool-primary-btn ex-row-clean-download-btn" disabled>Clean and download</button>`
+                : `<button type="button" class="tool-primary-btn ex-row-download-btn" disabled>Download</button>`)
+            : `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`)
+        : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
+           <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`;
+
       el.innerHTML = `
-        <div class="exif-file-thumb"><img src="${item.src}" alt=""></div>
+        <div class="exif-file-thumb">${thumbHtml}</div>
         <div class="exif-file-info">
           <div class="exif-file-name">${item.file.name}</div>
           <div class="exif-file-size">${formatSize(item.file.size)}</div>
           <div class="exif-tags">${tagsHtml}</div>
           ${svgScanNote}
         </div>
-        <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="Remove">×</button>
+        <div class="exif-file-actions">${actionButtonsHtml}</div>
+        <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
+
+      const heicPreviewBtn = el.querySelector(".exif-file-heic-preview");
+      if (heicPreviewBtn){
+        heicPreviewBtn.addEventListener("click", async () => {
+          heicPreviewBtn.disabled = true;
+          try {
+            const decoded = await decodeHeicFile(item.file);
+            const img = document.createElement("img");
+            img.alt = "";
+            img.src = URL.createObjectURL(decoded);
+            heicPreviewBtn.replaceWith(img);
+          } catch (err){
+            heicPreviewBtn.disabled = false;
+          }
+        });
+      }
 
       el.querySelector(".exif-file-remove").addEventListener("click", () => {
         files.splice(i, 1);
@@ -206,8 +309,16 @@
           return;
         }
         renderList();
-        stripBtn.disabled = files.length === 0;
       });
+
+      const downloadBtn = el.querySelector(".ex-row-download-btn");
+      if (downloadBtn) downloadBtn.addEventListener("click", () => downloadEntry(item, "download"));
+
+      const cleanFirstBtn = el.querySelector(".ex-row-strip-btn");
+      if (cleanFirstBtn) cleanFirstBtn.addEventListener("click", () => stripEntry(item, el));
+
+      const cleanDownloadBtn = el.querySelector(".ex-row-clean-download-btn");
+      if (cleanDownloadBtn) cleanDownloadBtn.addEventListener("click", () => stripEntry(item, el, { thenDownload: true }));
 
       fileList.appendChild(el);
     });
@@ -220,16 +331,17 @@
     const picked = [...newFiles].filter(isImageFile);
     if (picked.length === 0) return;
     for (const file of picked){
-      const tags = isSvgFile(file) ? await readSvgFindings(file) : summarizeTags(await readTags(file));
+      const tags = isSvgFile(file) ? await readSvgFindings(file)
+        : isHeicFile(file) ? heicFindings()
+        : summarizeTags(await readTags(file));
       files.push({
         file,
-        src: URL.createObjectURL(file),
+        src: isHeicFile(file) ? "" : URL.createObjectURL(file),
         tags
       });
     }
     revealAfterDropUI();
     renderList();
-    stripBtn.disabled = files.length === 0;
   }
 
   input.addEventListener("change", e => {
@@ -274,8 +386,22 @@
     return new Blob([optimizeSvgMarkup(text)], { type: "image/svg+xml" });
   }
 
+  /* HEIC can't be re-encoded as HEIC in-browser (no browser ships a
+     HEIC/HEVC encoder) — decoding through heic2any straight to PNG
+     both strips the metadata (the decode discards it, nothing carries
+     it into the freshly-encoded PNG) and sidesteps the <img>/canvas
+     round trip below, which can't decode HEIC bytes in the first
+     place outside Safari. Output name gets its extension swapped to
+     .png to match — see the outputName logic in the strip handler. */
+  async function stripHeic(file){
+    await loadHeic2any();
+    const decoded = await window.heic2any({ blob: file, toType: "image/png", quality: 0.95 });
+    return Array.isArray(decoded) ? decoded[0] : decoded;
+  }
+
   function stripImage(file){
     if (isSvgFile(file)) return stripSvg(file);
+    if (isHeicFile(file)) return stripHeic(file);
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -296,48 +422,87 @@
     });
   }
 
-  stripBtn.addEventListener("click", async () => {
-    if (!files.length) return;
-    stripBtn.disabled = true;
-    status.textContent = "Removing metadata…";
+  /* Per-row Clean — same shape as Coudio's own convertEntry(): each file
+     is a fully independent action (own buttons), not one shared batch
+     button running all files in sequence. No ZIP path needed any more
+     since there's never more than one file being downloaded at once.
 
-    startPrivacyCheck();
+     Two entry points before a file's cleaned — "Clean first" (no
+     download) and "Clean and download" (cleans, then immediately calls
+     downloadEntry once) — both funnel through this one function,
+     distinguished only by the thenDownload option. Clean first leaves
+     item.downloaded unset, so the row falls back to a single, enabled
+     "Download" button — the file's clean but not yet saved, so there's
+     still a real action to offer. Once *that* button is clicked (or
+     "Clean and download" was clicked directly), downloadEntry() itself
+     sets item.downloaded/item.downloadedVia — see its own doc comment —
+     and the row permanently disables whichever button actually did the
+     downloading rather than swapping labels or removing it. See
+     renderList's actionButtonsHtml for exactly which of the two
+     item.stripped/item.downloaded reads produces.
+
+     Unlike Coudio's Convert button, none of these labels change while
+     working — they just get disabled. The working/done/failed state
+     shows up in the shared #exStatus line below the list instead
+     ("Removing metadata from X…" / "Done — X cleaned. Click Download to
+     save it." / "Couldn't clean X…"), the same place every other status
+     message in this tool already goes — a mid-word button label was more
+     churn on the one element a visitor is already looking at than it was
+     worth.
+
+     Cleaning itself never touches the network (it's pure canvas/
+     heic2any/SVG-string work), so it doesn't get its own privacy-check
+     pair — only the eventual download does, since that's the step the
+     privacy badge is actually about. */
+  async function stripEntry(item, row, { thenDownload = false } = {}){
+    const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn")];
+    buttons.forEach(btn => { btn.disabled = true; });
+    status.textContent = `Removing metadata from ${item.file.name}…`;
+
     try {
-      const useZip = files.length > 5;
-      const zip = useZip ? new JSZip() : null;
-      let done = 0;
+      const blob = await stripImage(item.file);
+      /* HEIC comes back out as a PNG (see stripHeic above) — swap the
+         extension so the eventual download actually matches its real
+         format instead of a .heic name on a PNG's bytes. */
+      const outputName = isHeicFile(item.file)
+        ? item.file.name.replace(/\.hei[cf]$/i, ".png")
+        : item.file.name;
 
-      for (const item of files){
-        const blob = await stripImage(item.file);
-        const outputName = item.file.name;
+      item.stripped = true;
+      item.strippedBlob = blob;
+      item.strippedName = outputName;
+      item.tags = [];
 
-        if (useZip){
-          zip.file(outputName, blob);
-        } else {
-          downloadBlob(blob, outputName);
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-
-        done++;
-        status.textContent = `Processing… ${done} of ${files.length}`;
-      }
-
-      if (useZip){
-        status.textContent = "Building ZIP file…";
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        downloadBlob(zipBlob, "bctools-cleaned-images.zip");
-        status.textContent = `Done. ZIP contains ${files.length} cleaned images.`;
+      if (thenDownload){
+        downloadEntry(item, "clean_and_download");
       } else {
-        status.textContent = `Done. Cleaned ${files.length} images.`;
+        status.textContent = `Done — ${item.file.name} cleaned. Click Download to save it.`;
+        renderList();
       }
     } catch (err){
       console.error(err);
-      status.textContent = "Something went wrong removing metadata. Please try again.";
-    } finally {
-      stripBtn.disabled = files.length === 0;
-      finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
+      status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+      buttons.forEach(btn => { btn.disabled = false; });
     }
-  });
+  }
+
+  /* Marks the file as downloaded and re-renders so whichever button
+     triggered this (the standalone "Download" after Clean first, or
+     "Clean and download" directly) locks into a permanently disabled
+     state — see the note on actionButtonsHtml in renderList(). Called
+     both from a row's Download button and from stripEntry()'s
+     thenDownload path, which is why it takes `via` rather than assuming
+     one particular caller. The only step in this flow that gets a
+     privacy-check pair — cleaning itself never touches the network. */
+  function downloadEntry(item, via){
+    startPrivacyCheck();
+    downloadBlob(item.strippedBlob, item.strippedName);
+    item.downloaded = true;
+    item.downloadedVia = via;
+    status.textContent = `Downloaded ${item.strippedName}.`;
+    finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
+    renderList();
+  }
 
   /* ===== "Continue where you left off" persistence =====
      Same "list stays after a successful run" behavior as Combine —

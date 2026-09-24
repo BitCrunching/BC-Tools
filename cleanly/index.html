@@ -59,9 +59,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<script src="/vendor/jszip.min.js"></script>
-
-<link rel="stylesheet" href="/shared/site.css?v=97">
+<link rel="stylesheet" href="/shared/site.css?v=108">
 <style>
 .tool-app::before{ background:#7ED321; }
 .cs-shape{ background:#4ade80; }
@@ -282,15 +280,46 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .tool-app.active{
   background:rgba(74,222,128,.08);
 }
-/* Mobile shows just "Download" on the primary action button — the
-   fuller desktop label ("Convert and download", "Strip metadata and
-   download", etc.) doesn't fit well at phone widths, and "Download" is
-   what actually happens from the user's side either way. */
-@media (max-width:768px){
-  #exStripBtn{ font-size:0; }
-  #exStripBtn::before{
-    content:"Download";
-    font-size:20px;
+/* Per-row Clean/Download button(s) — same compact-CTA exception
+   Coudio's own .cd-row-convert-btn documents in CLAUDE.md: N independent
+   per-file actions, not one global CTA, so .tool-primary-btn's 74px
+   height doesn't fit. Only height/padding/font-size are overridden —
+   color/border/flip recipe stay .tool-primary-btn's own. Shared by all
+   three buttons renderList() can put in a row's .exif-file-actions
+   (Clean first / Clean and download / Download) so they line up at the
+   same size regardless of which one(s) are showing. */
+.ex-row-strip-btn,
+.ex-row-clean-download-btn,
+.ex-row-download-btn{
+  flex-shrink:0;
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.ex-row-strip-btn:disabled,
+.ex-row-clean-download-btn:disabled,
+.ex-row-download-btn:disabled{
+  opacity:.5;
+  cursor:default;
+}
+
+/* Two side-by-side action buttons (Clean first + Clean and download)
+   plus the thumb and remove "×" don't fit a single row at phone widths —
+   confirmed directly (the row's fixed-width parts alone need ~450px,
+   before the filename/tags column gets any space at all). Below 480px,
+   .exif-file-item wraps and .exif-file-actions becomes its own full-
+   width line under the thumb/info, with its button(s) sharing that width
+   evenly instead of shrinking to overlap. */
+@media (max-width:480px){
+  .exif-file-item{
+    flex-wrap:wrap;
+  }
+  .exif-file-actions{
+    flex-basis:100%;
+    order:1;
+  }
+  .exif-file-actions .tool-primary-btn{
+    flex:1 1 0;
   }
 }
 </style>
@@ -423,18 +452,14 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
         <path d="M11 18l-6-6 6-6"></path>
       </svg>
     </button>
-    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
+    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files" title="Closed project">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
-    <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
+    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, HEIC, or SVG images</span></div>
+    <input type="file" id="exInput" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif,.svg,image/svg+xml" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="exAfterDrop" hidden>
       <div class="exif-file-list" id="exFileList"></div>
-
-      <div class="exif-actions">
-        <button class="tool-primary-btn" id="exStripBtn" disabled title="Strip metadata and download (D)" data-ga-event="tool_primary_action" data-ga-tool="cleanly">Strip metadata and download</button>
-      </div>
     </div>
 
     <div class="tool-status" id="exStatus"></div>
@@ -499,7 +524,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=39" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=14" defer></script>
+<script src="/shared/site.js?v=41" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=34" defer></script>
 </body>
 </html>

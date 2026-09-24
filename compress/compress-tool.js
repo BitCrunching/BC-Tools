@@ -312,6 +312,7 @@
       btn.type = "button";
       btn.className = "cp-file-remove-btn bc-file-remove-btn";
       btn.setAttribute("aria-label", "Remove");
+      btn.title = "Remove file";
       btn.textContent = "×";
       btn.addEventListener("click", () => {
         files = files.filter(f => f !== file);
@@ -344,6 +345,7 @@
     btn.type = "button";
     btn.className = "cp-file-remove-btn bc-file-remove-btn";
     btn.setAttribute("aria-label", "Remove");
+    btn.title = "Remove file";
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       const img = card.querySelector("img");

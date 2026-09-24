@@ -138,7 +138,7 @@
         <div class="combine-file-thumb"></div>
         <span class="combine-file-name">${file.name}</span>
         <span class="combine-file-size">${formatSize(file.size)}</span>
-        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove">×</button>
+        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
 
       const thumbSlot = item.querySelector(".combine-file-thumb");

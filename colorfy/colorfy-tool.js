@@ -374,8 +374,9 @@
       if (pickers.length > 1){
         const rm = document.createElement("button");
         rm.type = "button";
-        rm.className = "colorfy-picker-remove-btn bc-remove-btn";
+        rm.className = "colorfy-picker-remove-btn bc-file-remove-btn";
         rm.setAttribute("aria-label", "Remove picker " + (i + 1));
+        rm.title = "Remove picker " + (i + 1);
         rm.textContent = "×";
         rm.addEventListener("click", () => removePicker(p.id));
         row.appendChild(rm);
@@ -433,6 +434,7 @@
       rm.type = "button";
       rm.className = "colorfy-palette-remove-btn bc-file-remove-btn";
       rm.setAttribute("aria-label", "Remove saved color");
+      rm.title = "Remove saved color";
       rm.textContent = "×";
       rm.addEventListener("click", () => {
         savedColors = savedColors.filter(sc => sc.id !== c.id);

@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=97">
+<link rel="stylesheet" href="/shared/site.css?v=108">
 <style>
 #page-colorfy::before{
   background:#FF8A4C;
@@ -262,23 +262,32 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
    loaded image and brings back the drop zone, rather than requiring a
    second file pick to replace what's loaded. */
 /* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here. */
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in .colorfy-frame), shown via the same :has() toggle
+   those two use instead of relying on a hidden ancestor. */
 .colorfy-remove-btn{
   position:absolute;
-  top:10px;
-  right:10px;
+  top:16px;
+  right:16px;
   z-index:6;
   font-size:18px;
+  display:none;
 }
+.tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position stay here, same split as
-   .colorfy-remove-btn/.bc-remove-btn above. Sits just to the left of
-   Remove, same corner. */
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .colorfy-remove-btn/.bc-remove-btn above. Sits just to the
+   left of Remove, same corner, shown together with it. */
 .colorfy-back-btn{
   position:absolute;
-  top:10px;
-  right:46px;
+  top:16px;
+  right:52px;
   z-index:6;
+}
+@media (max-width:768px){
+  .colorfy-back-btn{ display:none; }
+  .tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-back-btn{ display:flex; }
 }
 
 /* "+" adds another picker ring (up to 4 total) — sits in its own row
@@ -445,8 +454,9 @@ html[data-theme="dark"] .colorfy-code-btn:hover{
 }
 /* Only shown on pickers beyond the first — there's always at least
    one active picker, so it can't be removed down to zero. */
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size stays here. */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only size stays here (28x28 already matches its
+   own default, kept explicit for clarity). */
 .colorfy-picker-remove-btn{
   width:28px;
   height:28px;
@@ -683,19 +693,20 @@ html[data-theme="light"] .colorfy-palette{
       </div>
     </div>
 
+    <button type="button" class="colorfy-back-btn bc-canvas-back-btn" id="cyBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="colorfy-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cyRemoveBtn" aria-label="Remove image">×</button>
+
     <div class="tool-drop tool-drop-addpill" id="cyDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">an image</span></div>
     <input type="file" id="cyInput" accept="image/*" hidden>
 
     <div class="tool-after-drop" id="cyAfterDrop" hidden>
       <div class="colorfy-frame" id="cyFrame">
         <canvas id="cyCanvas"></canvas>
-        <button type="button" class="colorfy-back-btn bc-canvas-back-btn" id="cyBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M19 12H5"></path>
-            <path d="M11 18l-6-6 6-6"></path>
-          </svg>
-        </button>
-        <button type="button" class="colorfy-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cyRemoveBtn" aria-label="Remove image">×</button>
         <span class="colorfy-resize-handle bc-resize-handle" id="cyResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></span>
       </div>
 
@@ -787,7 +798,7 @@ html[data-theme="light"] .colorfy-palette{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=39" defer></script>
-<script src="/colorfy/colorfy-tool.js?v=22" defer></script>
+<script src="/shared/site.js?v=41" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=24" defer></script>
 </body>
 </html>

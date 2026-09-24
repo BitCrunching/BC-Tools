@@ -398,9 +398,11 @@ console.log(a.next.value);`
      that opens a small popover panel (.cf-macnav-panel), same
      trigger+panel shape as Shadow's/Background's own controls. The
      on/off switch moves inside the panel (same .cf-toggle-switch shape
-     Shadow's own panel already uses for its "On" switch); two style
-     options join it — Classic (the original fixed red/yellow/green)
-     and Monochrome (one neutral gray for all three dots).
+     Shadow's own panel already uses for its "On" switch); three style
+     options join it — Classic (the original fixed red/yellow/green),
+     Monochrome (one neutral gray for all three dots), and Red/Green
+     (red and green stay their normal colors, yellow goes gray/
+     nonchromatic).
      applyMacNavDots() is the one place that actually writes dot
      colors, onto the real .cf-dot elements — buildSvgString() further
      down reads those same elements' computed colors for SVG export
@@ -416,10 +418,13 @@ console.log(a.next.value);`
 
   const MACNAV_CLASSIC = ["#ff5f56", "#ffbd2e", "#27c93f"];
   const MACNAV_MONOCHROME = "#9ca3af";
+  const MACNAV_RG_ONLY = ["#ff5f56", "#9ca3af", "#27c93f"];
   let macNavStyle = "classic";
 
   function applyMacNavDots(){
-    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME] : MACNAV_CLASSIC;
+    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME]
+      : macNavStyle === "rg-only" ? MACNAV_RG_ONLY
+      : MACNAV_CLASSIC;
     cfWindow.querySelectorAll(".cf-dot").forEach((dot, i) => { dot.style.background = colors[i]; });
     macNavTriggerDots.forEach((dot, i) => { dot.style.background = colors[i]; });
   }

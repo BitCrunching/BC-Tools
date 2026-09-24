@@ -60,7 +60,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=97">
+<link rel="stylesheet" href="/shared/site.css?v=108">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -339,33 +339,36 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(48,196,255,.08);
 }
 
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here, same split as Convert's .cv-remove-btn /
-   Coudio's .cd-remove-btn. Sits inside #cpAfterDrop (position:relative
-   below) rather than directly on .tool-app, so it only shows once a
-   file's loaded and #cpAfterDrop is revealed. Same negative top/right
-   trick as Convert/Coudio: pulls the button up out of #cpAfterDrop's own
-   box (which starts below the header) so it lands at the true top-right
-   corner of the whole card next to the "Compress" logo. */
 .tool-after-drop{
   position:relative;
 }
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cpAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. */
 .cp-remove-btn{
   position:absolute;
-  top:-85px;
-  right:-25px;
+  top:16px;
+  right:16px;
   z-index:6;
   font-size:18px;
+  display:none;
 }
+.tool-app:has(#cpAfterDrop:not([hidden])) .cp-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position stay here, same split as
-   .cp-remove-btn/.bc-remove-btn above. Sits just to the left of
-   Remove, same corner. */
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cp-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
 .cp-back-btn{
   position:absolute;
-  top:-85px;
-  right:11px;
+  top:16px;
+  right:52px;
   z-index:6;
+}
+@media (max-width:768px){
+  .cp-back-btn{ display:none; }
+  .tool-app:has(#cpAfterDrop:not([hidden])) .cp-back-btn{ display:flex; }
 }
 </style>
 </head>
@@ -491,18 +494,19 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cp-back-btn bc-canvas-back-btn" id="cpBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop" id="cpDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images</span></div>
     <input type="file" id="cpInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/svg+xml,image/tiff,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cpAfterDrop" hidden>
-      <button type="button" class="cp-back-btn bc-canvas-back-btn" id="cpBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5"></path>
-          <path d="M11 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-      <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-controls" id="cpToolControls">
         <div class="compress-level-buttons" id="cpLevelButtons">
           <button type="button" class="tool-format-btn" data-quality="0.9" data-label="Low" data-level-key="low">
@@ -627,7 +631,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=39" defer></script>
-<script src="/compress/compress-tool.js?v=26" defer></script>
+<script src="/shared/site.js?v=41" defer></script>
+<script src="/compress/compress-tool.js?v=27" defer></script>
 </body>
 </html>

@@ -88,8 +88,10 @@ Two distinct component families — don't blend them:
   `<button class="tool-primary-btn" id="cvConvertBtn">` is the reference:
   the shared class as-is, nothing local.
 - `:disabled` — light `rgba(255,255,255,.2)`, dark `rgba(0,0,0,.14)`.
-- Used by 8 of 9 tools (Colorfy has no single global CTA — its action model
-  is per-swatch copy buttons instead, so it doesn't use this class at all).
+- Used by 7 of 9 tools as one single global CTA (Colorfy has no single
+  global CTA at all — its action model is per-swatch copy buttons instead —
+  and Cleanly/Coudio use the *per-row* variant below rather than one global
+  button).
 - **Every tool also gets `.tool-primary-btn.tool-continue-btn`** — a
   compound-selector override in `shared/site.css` for the "Continue where
   you left off" button. This is a real, documented exception, not drift.
@@ -105,7 +107,76 @@ Two distinct component families — don't blend them:
   variants below): it applies specifically when the *number* of
   primary-style buttons on screen has genuinely changed from one to many,
   not when a single CTA just needs a different size — that case still gets
-  a real variant class, not a local override.
+  a real variant class, not a local override. **Cleanly followed the same
+  template directly** — its clean/download actions moved from one global
+  `.exif-actions` CTA below the file list to per-row buttons (wrapped in
+  `.exif-file-actions`, `shared/site.css`) sitting right next to each
+  row's own `.bc-file-remove-btn` ("the beta remove btn"). All of them
+  share one local class trio (`.ex-row-strip-btn`/`.ex-row-clean-
+  download-btn`/`.ex-row-download-btn`, `cleanly/index.html`) for sizing —
+  `height:40px; padding:0 18px; font-size:14px;`, same values as Coudio's
+  own local class. Several genuine differences from Coudio's
+  `convertEntry()`:
+
+  1. **A row shows two buttons before it's cleaned, one after — and which
+     one after depends on which of the two got clicked.** Before
+     `item.stripped` is true: "Clean first" (`stripEntry()`, no download)
+     and "Clean and download" (`stripEntry(item, row, { thenDownload:
+     true })`, cleans then immediately calls `downloadEntry()` once) sit
+     side by side — one lets a visitor check the result first, the other
+     is the one-click path for anyone who doesn't care to. After Clean
+     first, the row shows a single "Download" button (`downloadEntry()` —
+     re-downloads the already-cleaned blob, doesn't clean again) — there's
+     still a real action left to offer. After Clean and download, the
+     *same* "Clean and download" button stays in place but permanently
+     `disabled` instead of swapping to "Download" or disappearing — the
+     file already saved itself, so re-offering a download would just
+     invite a redundant second save, but the button staying put (just
+     inert) still reads as "this is how it got cleaned" rather than the
+     row silently losing a control. `item.downloaded` (set only by the
+     `thenDownload` path) is what distinguishes this outcome from plain
+     Clean first in `renderList()`'s `actionButtonsHtml`.
+     `stripEntry()`'s own `row.querySelectorAll(".ex-row-strip-btn,
+     .ex-row-clean-download-btn")` disables whichever of the two is
+     currently showing while it works, since only one might be on screen
+     depending on state.
+  2. **Cleaning and downloading are deliberately separate actions, not
+     one**, even from "Clean and download" — that button still calls
+     `stripEntry()` first and lets it call `downloadEntry()` internally,
+     rather than duplicating the strip+download logic inline. `stripEntry()`
+     marks `item.stripped = true`, clears `item.tags` to `[]`, and stashes
+     the blob/output-name on the item (`item.strippedBlob`/`strippedName`),
+     then re-renders the row so it reads as an always-clean file would
+     (the same `.exif-status-icon-clean` "No dangerous metadata found"
+     pill). Only `downloadEntry()` gets a `startPrivacyCheck()`/
+     `finishPrivacyCheck()` pair — cleaning itself never touches the
+     network (it's pure canvas/`heic2any`/SVG-string work), so the privacy
+     badge, which is about outbound requests, has nothing to report for
+     that step and stays silent until a file is actually downloaded.
+  3. **None of these buttons' own text ever shows a working/done/failed
+     state** — unlike Coudio's Convert button, which cycles its own label
+     through "Convert" → "Converting…" → "Done"/"Failed" → back to
+     "Convert". Cleanly's buttons read only "Clean first" / "Clean and
+     download" / "Download", full stop (disabled while a clean is in
+     flight); every transient status ("Removing metadata from X…" /
+     "Done — X cleaned. Click Download to save it." / "Downloaded X." /
+     "Couldn't clean X…") goes to the shared `#exStatus` line below the
+     file list instead — the one place every other status message in this
+     tool already goes, rather than making the button a visitor is
+     looking at relabel itself mid-action.
+  4. **Each of the three buttons carries its own `data-ga-action`**
+     (`"clean_first"` / `"clean_and_download"` / `"download"`) alongside
+     the `data-ga-event="tool_primary_action"`/`data-ga-tool="cleanly"`
+     pair every `.tool-primary-btn` already uses — `data-ga-action` isn't
+     a new tracked field shared/site.js has to know about, it's just
+     another `data-ga-*` attribute, and the existing delegated click
+     listener (`shared/site.js`) already turns any `data-ga-<param>` into
+     a GA4 event param automatically. Reach for the same
+     `data-ga-<param>` pattern any time two-or-more buttons share one
+     `data-ga-event` name and GA needs to tell them apart.
+
+  No ZIP path is needed any more either way, once every file has its own
+  independent download.
 
 ### Picking a dropdown widget: `.bc-combo` vs `.bc-dropdown`
 
@@ -369,6 +440,14 @@ hook (and, where the button is absolutely positioned over a card/row,
 for the position override — `.bc-file-remove-btn` itself owns visual
 chrome only, same split as every other shared component here).
 
+**Every adopter also carries a `title` alongside its `aria-label`** —
+`title="Remove file"` for the genuine per-file cases (Cleanly, Combine,
+Compress, Convert, Coudio), matching whatever the item actually is for
+Colorfy's two non-file cases instead (`title="Remove picker N"` /
+`title="Remove saved color"`, mirroring their own `aria-label` text
+rather than a literal "Remove file" that wouldn't fit). This gives every
+instance a native hover tooltip, not just a screen-reader label.
+
 **Exception — don't flip an overlay sitting on top of the thumbnail image
 itself**, only the ones sitting on the card's own background. `.result-remove`
 (the on-image hover-fade "×", still used where a card's remove control
@@ -378,6 +457,24 @@ fixed `rgba(0,0,0,.55)`-ish dark circle regardless of site theme on purpose
 — their contrast partner is unpredictable image/video content, not the
 page background, so flipping them doesn't make sense the way it does for a
 control that sits on a known, theme-aware surface.
+
+## `.bc-remove-btn` / `.bc-canvas-back-btn` — the "remove all" corner pair
+
+Every tool's own "clear everything and go back to the intro" red × button
+(`.bc-remove-btn`) plus its mobile-only back-to-Hub companion
+(`.bc-canvas-back-btn`) share one settled position now, standardized
+2026-09-22 after they'd drifted per tool: **`top:16px; right:16px`** for
+Remove, **`top:16px; right:52px`** for Back — both direct children of
+`.tool-app` (not nested inside the revealed-content box), toggled with
+`display:none` / `.tool-app:has(#xxAfterDrop:not([hidden])) .xx-remove-btn{
+display:flex; }` rather than relying on a hidden ancestor. Cleanly's
+`.ex-remove-btn`/Combine's `.cb-remove-btn` originated this exact recipe
+(see Lessons Learned: "remove-all button position standardization" for
+why the others didn't already match it, and what changed to bring them in
+line). Codify keeps its own `hidden`-attribute toggle instead of the
+`:has()` pattern (its own remove button isn't tied to an "after drop" box
+the way the others are) but uses the identical `16px`/`16px`/`52px`
+values.
 
 ## Shared typography: `.bc-label`, `.bc-heading`, `.bc-body`
 
@@ -636,6 +733,85 @@ legitimate absence, not a gap.
   growth short of the real intended max (see Colorfy's `frameWidthMax` fix,
   Lessons Learned).
 
+## HEIC support: `loadHeic2any` / `decodeHeicFile`
+
+No browser but Safari can decode HEIC/HEIF through `<img>`/`<canvas>`, and
+none can *encode* it back out — there is no in-browser HEIC writer at all.
+Every tool that accepts HEIC input works around both halves of that with
+`heic2any` (`vendor/heic2any.min.js`, a ~1.3MB WASM HEVC decoder), loaded
+on demand rather than as a static `<script>` tag since most visitors never
+touch a HEIC file:
+
+```js
+let heic2anyLoadPromise = null;
+function loadHeic2any(){
+  if (window.heic2any) return Promise.resolve();
+  if (!heic2anyLoadPromise){
+    heic2anyLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/vendor/heic2any.min.js";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load the HEIC decoder."));
+      document.head.appendChild(script);
+    });
+  }
+  return heic2anyLoadPromise;
+}
+```
+
+- **Detection**: `isHeicFile(f)` checks `f.type === "image/heic"` /
+  `"image/heif"` **or** a `.hei[cf]` filename extension — every browser but
+  Safari fails to report a MIME type for HEIC at all, so the extension
+  check is required, not just a nice-to-have fallback the way it is for
+  `.svg`.
+- **Thumbnails skip the decode by default**: an `<img>` pointed straight
+  at raw HEIC bytes just shows a broken image icon in every browser but
+  Safari, and running the full WASM decode for every file in a batch is
+  the slow part a visitor actually notices. Convert/Compress make it
+  opt-in — a "Preview" button (`.result-heic-preview-btn`, local to each
+  tool's own `<style>`) that decodes just that one file on click. Cleanly's
+  file-row thumb is too small (56px) for that button treatment, so it
+  reuses the same opt-in-decode idea at that size instead —
+  `.exif-file-heic-preview` (`shared/site.css`, since it's namespaced
+  under the already-shared `.exif-*` family) fills the thumb slot with a
+  plain "HEIC" label button, replaced in place by a real `<img>` once
+  clicked.
+- **Decoding is cached per file** (`WeakMap`) so a preview click and the
+  real convert/strip operation that follows don't pay for the same decode
+  twice.
+- **No shared JS module** — same reasoning as `.bc-resize-handle`/
+  `.bc-toggle-btn` above: each adopter (Convert, Compress, Cleanly) keeps
+  its own copy of `loadHeic2any`/`decodeHeicFile`, byte-for-byte identical,
+  because there's no shared state to actually centralize (no DOM registry,
+  no cross-tool event wiring) — just a loader and a cache, cheap enough to
+  duplicate and simpler than inventing an import for it.
+- **Cleanly can't read a HEIC file's real metadata before stripping** —
+  `exif.js` (`vendor/exif.js`) only understands JPEG/TIFF's APP1 segment,
+  not HEIC's ISOBMFF metadata box, so there's no accurate "found tags"
+  list the way there is for JPEG/PNG. Rather than wrongly claim
+  `.exif-status-icon-clean` ("No dangerous metadata found") for a file that
+  almost certainly has some (HEIC is the iPhone default, GPS/camera/
+  timestamp and all), it always shows the warning state with a fixed
+  disclaimer tag (`HEIC metadata found!`). Stripping still genuinely works
+  despite the unscanned claim — decoding through `heic2any` to PNG
+  produces a brand-new file with none of the original's metadata attached,
+  scanned or not. Every found-metadata tag (`summarizeTags`/
+  `heicFindings`/`readSvgFindings` in `cleanly-tool.js`) follows the same
+  `"<Category> metadata found!"` template (`"GPS metadata found!"`,
+  `"Camera metadata found!"`, `"Date metadata found!"`, `"Software
+  metadata found!"`, `"Embedded metadata found!"`, etc.) rather than
+  interpolating the tag's actual value into the label — no emoji either,
+  plain text only. The leading tag in a warn row still gets the ⚠ status
+  glyph prefixed in front of this text by `renderList()` (e.g.
+  `"⚠ - Camera metadata found!"`), not baked into the string itself.
+- **Output can't stay HEIC**: since there's no in-browser HEIC encoder,
+  Convert's HEIC→JPEG/PNG targets use `heic2any`'s direct encode as a fast
+  path (skips an extra decode→canvas→encode round trip through
+  `decodeHeicFile`'s cached PNG), and Cleanly's strip output is always a
+  PNG regardless of input — its download filename swaps the `.hei[cf]`
+  extension to `.png` to match rather than shipping PNG bytes under the
+  original HEIC name.
+
 ## Branching: `main` vs `development` vs `dev-<project>`
 
 `development` is the default day-to-day branch — nearly everything happens
@@ -731,14 +907,23 @@ first:
   `.combine-file-remove`); later also adopted by Colorfy's saved-color
   chip and by Convert/Compress/Coudio's per-file remove (moved off
   `.result-remove` for this specific use — see Lessons Learned:
-  "beta remove btn adoption").
+  "beta remove btn adoption"). Cleanly later also adopted Coudio's own
+  per-row `.tool-primary-btn` variant (`.ex-row-strip-btn`, mirroring
+  `.cd-row-convert-btn`) once its Strip action moved from one global CTA
+  to one independent button per file (see `.tool-primary-btn` above).
+- **Coudio**: originated the per-row `.tool-primary-btn` variant pattern
+  (`.cd-row-convert-btn`) for tools with N independent per-item actions
+  instead of one global CTA — see `.tool-primary-btn` above; later
+  adopted by Cleanly.
 - **Colorfy**: joint reference (with Codify) for resizable-frame
   conventions (`frameWidthMax` measurement fix).
 - **Convert**: original example of the on-banner flip recipe via
   `.tool-primary-btn`; the "zero undocumented overrides" clean baseline
   (see Reference tools above); joint reference (with Compress) for
   `.bc-segmented-toggle`'s promotion to a shared component, via the
-  Single-files/`.zip` download-mode toggle.
+  Single-files/`.zip` download-mode toggle; originated the
+  `loadHeic2any`/`decodeHeicFile` HEIC decode pattern (see its own section
+  above), later duplicated byte-for-byte into Compress and Cleanly.
 
 ## Appendix: lessons learned / rejected approaches
 
@@ -951,3 +1136,54 @@ buttons moved to the new class, each keeping a local class
 purely for the position override (`.bc-file-remove-btn` isn't
 `position:absolute` by default, since Cleanly/Combine use it inline in a
 flex row, not overlaid on a card).
+
+**Remove-all button position standardization (`.bc-remove-btn`/
+`.bc-canvas-back-btn`)**: requested directly — visually match Cleanly's
+red "remove all" button position across Convert, Compress, Combine,
+Coudio, and Codify. Before this, three genuinely different recipes were
+in live use for the exact same visual result (top-right corner, next to
+the tool logo):
+
+1. **Cleanly/Combine** — `top:16px; right:16px`, a direct child of
+   `.tool-app`, shown via `.tool-app:has(#xxAfterDrop:not([hidden]))`.
+2. **Convert/Compress/Coudio** — nested *inside* their own revealed-
+   content box (`#cvAfterDrop`/`#cpAfterDrop`/`#cdEditor`), pulled back
+   up out of it with a large negative `top` (`-85px`, `-85px`, `-160px`
+   respectively) plus `right:-25px` — each value hand-tuned per tool to
+   compensate for that tool's own header height, since the box starts at
+   a different distance from the top depending on what's above it.
+3. **Codify** — already a direct child of `.tool-app` like #1, but at
+   `top:36px; right:36px` (`12px`/`12px` on mobile), toggled via the
+   `hidden` attribute directly rather than a `:has()` rule, with the
+   privacy badge carrying its own `margin-right:70px` to avoid the two
+   overlapping.
+
+Recipe #2 wasn't a bug — each tool's own comment explained exactly why
+the negative offset was there and wasn't a value that could be shared
+verbatim — but it meant three tools each carried a bespoke, layout-
+dependent pixel value for something that reads identically on screen
+everywhere else. Converted all of them to recipe #1: moved the
+button markup out of the nested box to sit as a direct sibling of
+`.tool-header` (Convert/Compress/Coudio), added the matching
+`.tool-app:has(...)` (or, for Coudio, `#page-coudio:has(...)`, matching
+that page's existing `:has()` selector convention) reveal rule, and
+landed every tool on the identical `16px`/`16px`/`52px` values. Codify
+needed no markup move (already anchored correctly) — just the pixel
+values changed, plus the privacy badge's margin trimmed from `70px` to
+`50px` to match the smaller footprint. Verified live via
+`getBoundingClientRect()` diffed against `.tool-app` on all five tools
+post-change — all land at the identical `16`/`16` (Remove) and
+implicit `52` (Back) offsets now. Convert's 16 SEO route siblings
+weren't touched — same reasoning as the download-mode toggle above, they
+keep their own pre-existing (still-working) copy of the old recipe.
+
+**Colorfy** was a follow-up round of the same fix, requested separately:
+its own remove/back buttons (`.colorfy-remove-btn`/`.colorfy-back-btn`)
+were nested inside `.colorfy-frame` (the image-preview box itself, not
+a revealed-content box like recipe #2 above) at `top:10px; right:10px`/
+`right:46px` — a fourth, still-different recipe, since Colorfy's "loaded
+content" IS the frame rather than a list/editor sitting below the
+header. Same fix: moved the markup out of `.colorfy-frame` to sit as a
+direct sibling of `.tool-header`, added
+`.tool-app:has(#cyAfterDrop:not([hidden]))` reveal rules, landed on the
+same `16px`/`16px`/`52px` values as everything else.
