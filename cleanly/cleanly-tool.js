@@ -267,34 +267,22 @@
         ? `<button type="button" class="exif-file-heic-preview" aria-label="Preview">HEIC</button>`
         : `<img src="${item.src}" alt="">`;
 
-      /* Three states per row:
+      /* Two states per row:
          - not yet cleaned: "Clean first" (processes only, no download —
            see stripEntry's own doc comment) and "Clean and download"
            (cleans, then immediately downloads) sit side by side.
-         - cleaned but not yet downloaded (only reachable via "Clean
-           first"): a single, enabled "Download" button — there's still a
-           real action left to offer.
-         - already downloaded, however it got there: whichever button
-           actually triggered the download ("Download" after Clean first,
-           or "Clean and download" directly) stays in place but
-           permanently disabled, rather than swapping label or
-           disappearing — the file already saved itself, so there's
-           nothing left to click, but the row still reads clearly as
-           "this is how it got downloaded" instead of a control just
-           vanishing. item.downloaded (set by downloadEntry(), the one
-           function both paths funnel through) is what flips this state;
-           item.downloadedVia records which of the two labels to keep
-           showing, disabled.
+         - cleaned (however it got there): a single "Download" button,
+           always enabled — clicking it just re-downloads the same
+           already-cleaned blob (downloadEntry()) as many times as
+           wanted. Nothing here ever permanently disables once a file's
+           been downloaded once — re-downloading the same cleaned result
+           is always allowed, not a one-shot action.
          Each enabled button carries its own data-ga-action (on top of
          the shared data-ga-event/data-ga-tool pair every .tool-primary-
-         btn already uses) so GA can tell which of the three a click was,
+         btn already uses) so GA can tell which of the two a click was,
          not just that "the cleanly primary action" fired. */
       const actionButtonsHtml = item.stripped
-        ? (item.downloaded
-            ? (item.downloadedVia === "clean_and_download"
-                ? `<button type="button" class="tool-primary-btn ex-row-clean-download-btn" disabled>Clean and download</button>`
-                : `<button type="button" class="tool-primary-btn ex-row-download-btn" disabled>Download</button>`)
-            : `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`)
+        ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
         : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
            <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`;
 
@@ -347,7 +335,7 @@
       });
 
       const downloadBtn = el.querySelector(".ex-row-download-btn");
-      if (downloadBtn) downloadBtn.addEventListener("click", () => downloadEntry(item, "download"));
+      if (downloadBtn) downloadBtn.addEventListener("click", () => downloadEntry(item));
 
       const cleanFirstBtn = el.querySelector(".ex-row-strip-btn");
       if (cleanFirstBtn) cleanFirstBtn.addEventListener("click", () => stripEntry(item, el));
@@ -469,16 +457,11 @@
      Two entry points before a file's cleaned — "Clean first" (no
      download) and "Clean and download" (cleans, then immediately calls
      downloadEntry once) — both funnel through this one function,
-     distinguished only by the thenDownload option. Clean first leaves
-     item.downloaded unset, so the row falls back to a single, enabled
-     "Download" button — the file's clean but not yet saved, so there's
-     still a real action to offer. Once *that* button is clicked (or
-     "Clean and download" was clicked directly), downloadEntry() itself
-     sets item.downloaded/item.downloadedVia — see its own doc comment —
-     and the row permanently disables whichever button actually did the
-     downloading rather than swapping labels or removing it. See
-     renderList's actionButtonsHtml for exactly which of the two
-     item.stripped/item.downloaded reads produces.
+     distinguished only by the thenDownload option. Either way, once
+     item.stripped is true the row falls back to a single "Download"
+     button that stays enabled forever — re-downloading the same
+     already-cleaned blob as many times as wanted is always allowed, not
+     a one-shot action (see renderList's actionButtonsHtml).
 
      Unlike Coudio's Convert button, none of these labels change while
      working — they just get disabled. The working/done/failed state
@@ -522,7 +505,7 @@
       await cleanFile(item);
 
       if (thenDownload){
-        downloadEntry(item, "clean_and_download");
+        downloadEntry(item);
       } else {
         status.textContent = `Done — ${item.file.name} cleaned. Click Download to save it.`;
         renderList();
@@ -549,10 +532,8 @@
     for (const item of files){
       try {
         if (!item.stripped) await cleanFile(item);
-        if (!item.downloaded){
-          downloadEntry(item, "mobile_download_all");
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+        downloadEntry(item);
+        await new Promise(resolve => setTimeout(resolve, 300));
       } catch (err){
         console.error(err);
         status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
@@ -562,19 +543,16 @@
   }
   if (mobileDownloadBtn) mobileDownloadBtn.addEventListener("click", mobileDownloadAll);
 
-  /* Marks the file as downloaded and re-renders so whichever button
-     triggered this (the standalone "Download" after Clean first, or
-     "Clean and download" directly) locks into a permanently disabled
-     state — see the note on actionButtonsHtml in renderList(). Called
-     both from a row's Download button and from stripEntry()'s
-     thenDownload path, which is why it takes `via` rather than assuming
-     one particular caller. The only step in this flow that gets a
-     privacy-check pair — cleaning itself never touches the network. */
-  function downloadEntry(item, via){
+  /* Re-renders after downloading purely so a row that just got cleaned
+     via "Clean and download" immediately shows the post-clean single
+     "Download" button, same as Clean first does — not to lock anything
+     out. Downloading never disables or marks a file as "used up"; the
+     Download button stays clickable for as many re-downloads as wanted.
+     The only step in this flow that gets a privacy-check pair — cleaning
+     itself never touches the network. */
+  function downloadEntry(item){
     startPrivacyCheck();
     downloadBlob(item.strippedBlob, item.strippedName);
-    item.downloaded = true;
-    item.downloadedVia = via;
     status.textContent = `Downloaded ${item.strippedName}.`;
     finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     renderList();

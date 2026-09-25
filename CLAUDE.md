@@ -118,28 +118,24 @@ Two distinct component families — don't blend them:
   own local class. Several genuine differences from Coudio's
   `convertEntry()`:
 
-  1. **A row shows two buttons before it's cleaned, one after — and which
-     one after depends on which of the two got clicked.** Before
-     `item.stripped` is true: "Clean first" (`stripEntry()`, no download)
-     and "Clean and download" (`stripEntry(item, row, { thenDownload:
-     true })`, cleans then immediately calls `downloadEntry()` once) sit
-     side by side — one lets a visitor check the result first, the other
-     is the one-click path for anyone who doesn't care to. After Clean
-     first, the row shows a single "Download" button (`downloadEntry()` —
-     re-downloads the already-cleaned blob, doesn't clean again) — there's
-     still a real action left to offer. After Clean and download, the
-     *same* "Clean and download" button stays in place but permanently
-     `disabled` instead of swapping to "Download" or disappearing — the
-     file already saved itself, so re-offering a download would just
-     invite a redundant second save, but the button staying put (just
-     inert) still reads as "this is how it got cleaned" rather than the
-     row silently losing a control. `item.downloaded` (set only by the
-     `thenDownload` path) is what distinguishes this outcome from plain
-     Clean first in `renderList()`'s `actionButtonsHtml`.
+  1. **A row shows two buttons before it's cleaned, one after — and that
+     one stays enabled forever.** Before `item.stripped` is true: "Clean
+     first" (`stripEntry()`, no download) and "Clean and download"
+     (`stripEntry(item, row, { thenDownload: true })`, cleans then
+     immediately calls `downloadEntry()` once) sit side by side — one lets
+     a visitor check the result first, the other is the one-click path for
+     anyone who doesn't care to. Either path lands on the same place once
+     `item.stripped` is true: a single "Download" button
+     (`renderList()`'s `actionButtonsHtml`) that never gets disabled or
+     swapped out — clicking it just re-downloads the same already-cleaned
+     blob (`downloadEntry()`) as many times as wanted. There's no
+     "already downloaded, don't offer it again" state at all: downloading
+     is not a one-shot action here, unlike e.g. Congify's result download.
      `stripEntry()`'s own `row.querySelectorAll(".ex-row-strip-btn,
-     .ex-row-clean-download-btn")` disables whichever of the two is
-     currently showing while it works, since only one might be on screen
-     depending on state.
+     .ex-row-clean-download-btn")` disables whichever of the two clean
+     buttons is currently showing only while the clean itself is in
+     flight, re-enabling on failure — this is a working-state disable, not
+     a used-once one.
   2. **Cleaning and downloading are deliberately separate actions, not
      one**, even from "Clean and download" — that button still calls
      `stripEntry()` first and lets it call `downloadEntry()` internally,
@@ -189,7 +185,9 @@ Two distinct component families — don't blend them:
      "Clean & download". Clicking it calls `mobileDownloadAll()`
      (`cleanly-tool.js`), which loops every loaded file sequentially
      (cleaning it first via the shared `cleanFile()` helper if it hasn't
-     been already, then calling `downloadEntry()`), with a `300ms` pause
+     been already, then calling `downloadEntry()` — every file, every
+     click, since downloads aren't a one-shot action here either), with a
+     `300ms` pause
      between downloads so the browser doesn't treat a download burst as
      spam and block them — this is genuinely the pre-redesign single-
      global-CTA model, kept alive specifically for the mobile breakpoint
