@@ -828,10 +828,20 @@ function loadHeic2any(){
 - **Output can't stay HEIC**: since there's no in-browser HEIC encoder,
   Convert's HEIC→JPEG/PNG targets use `heic2any`'s direct encode as a fast
   path (skips an extra decode→canvas→encode round trip through
-  `decodeHeicFile`'s cached PNG), and Cleanly's strip output is always a
-  PNG regardless of input — its download filename swaps the `.hei[cf]`
-  extension to `.png` to match rather than shipping PNG bytes under the
-  original HEIC name.
+  `decodeHeicFile`'s cached PNG). Cleanly's strip output picks between the
+  two instead of hardcoding one — a per-row PNG/JPG `.bc-segmented-toggle`
+  (`.ex-heic-format-toggle` for local width, `cleanly/index.html`) only
+  renders for HEIC rows (`isHeicFile(item.file)` in `renderList()`), since
+  every other input format keeps its own original format untouched and
+  has nothing to choose. Defaults to PNG (`item.heicFormat`, set in
+  `addFiles()`), disables once the row's been cleaned (the choice can't
+  retroactively change an already-baked `item.strippedBlob`), and shows on
+  both mobile and desktop — unlike the per-row action buttons, the format
+  choice still needs making regardless of which button ends up doing the
+  actual cleaning. `stripHeic(file, format)` picks `heic2any`'s `toType`
+  accordingly, and the download filename swaps the `.hei[cf]` extension to
+  `.png`/`.jpg` to match rather than shipping the wrong bytes under a
+  mismatched extension.
 
 ## Branching: `main` vs `development` vs `dev-<project>`
 

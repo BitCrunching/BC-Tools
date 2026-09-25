@@ -241,6 +241,23 @@
         ? `<div class="exif-scan-note">Cleanly checks for known patterns — it does not guarantee your file will be completely clean.</div>`
         : "";
 
+      /* PNG/JPG output choice — HEIC only. There's no in-browser HEIC
+         encoder (see stripHeic's own doc comment), so a HEIC file has to
+         come out as something else regardless; every other input format
+         (JPEG/PNG/SVG) keeps its own original format untouched, so there's
+         nothing to choose there and the toggle doesn't render at all.
+         Disabled once the row's already been cleaned — changing the
+         choice after the fact wouldn't do anything since item.strippedBlob
+         is already baked. `.bc-segmented-toggle` (shared/site.css) is the
+         shared joined-pill component (CLAUDE.md); `.ex-heic-format-toggle`
+         only adds this row's local width. */
+      const heicFormatToggleHtml = isHeicFile(item.file)
+        ? `<div class="bc-segmented-toggle ex-heic-format-toggle">
+             <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.stripped ? "disabled" : ""}>PNG</button>
+             <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.stripped ? "disabled" : ""}>JPG</button>
+           </div>`
+        : "";
+
       /* HEIC thumbnails skip the automatic <img> — pointed straight at
          raw HEIC bytes it just shows a broken image icon in every
          browser but Safari. Same opt-in "Preview" pattern as Convert/
@@ -288,10 +305,21 @@
           <div class="exif-file-size">${formatSize(item.file.size)}</div>
           <div class="exif-tags">${tagsHtml}</div>
           ${svgScanNote}
+          ${heicFormatToggleHtml}
         </div>
         <div class="exif-file-actions">${actionButtonsHtml}</div>
         <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
+
+      const heicFormatToggle = el.querySelector(".ex-heic-format-toggle");
+      if (heicFormatToggle){
+        heicFormatToggle.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            item.heicFormat = btn.dataset.format;
+            renderList();
+          });
+        });
+      }
 
       const heicPreviewBtn = el.querySelector(".exif-file-heic-preview");
       if (heicPreviewBtn){
@@ -345,7 +373,8 @@
       files.push({
         file,
         src: isHeicFile(file) ? "" : URL.createObjectURL(file),
-        tags
+        tags,
+        heicFormat: "png"
       });
     }
     revealAfterDropUI();
@@ -395,21 +424,23 @@
   }
 
   /* HEIC can't be re-encoded as HEIC in-browser (no browser ships a
-     HEIC/HEVC encoder) — decoding through heic2any straight to PNG
-     both strips the metadata (the decode discards it, nothing carries
-     it into the freshly-encoded PNG) and sidesteps the <img>/canvas
-     round trip below, which can't decode HEIC bytes in the first
-     place outside Safari. Output name gets its extension swapped to
-     .png to match — see the outputName logic in the strip handler. */
-  async function stripHeic(file){
+     HEIC/HEVC encoder) — decoding through heic2any straight to PNG or
+     JPEG (item.heicFormat — see the PNG/JPG toggle in renderList) both
+     strips the metadata (the decode discards it, nothing carries it into
+     the freshly-encoded output) and sidesteps the <img>/canvas round
+     trip below, which can't decode HEIC bytes in the first place outside
+     Safari. Output name gets its extension swapped to match — see the
+     outputName logic in cleanFile(). */
+  async function stripHeic(file, format){
     await loadHeic2any();
-    const decoded = await window.heic2any({ blob: file, toType: "image/png", quality: 0.95 });
+    const toType = format === "jpg" ? "image/jpeg" : "image/png";
+    const decoded = await window.heic2any({ blob: file, toType, quality: 0.95 });
     return Array.isArray(decoded) ? decoded[0] : decoded;
   }
 
-  function stripImage(file){
+  function stripImage(file, heicFormat){
     if (isSvgFile(file)) return stripSvg(file);
-    if (isHeicFile(file)) return stripHeic(file);
+    if (isHeicFile(file)) return stripHeic(file, heicFormat);
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -467,12 +498,13 @@
      (mobile, looping over every file with no per-row buttons to manage
      at all). */
   async function cleanFile(item){
-    const blob = await stripImage(item.file);
-    /* HEIC comes back out as a PNG (see stripHeic above) — swap the
-       extension so the eventual download actually matches its real
-       format instead of a .heic name on a PNG's bytes. */
+    const blob = await stripImage(item.file, item.heicFormat);
+    /* HEIC comes back out as a PNG or JPEG, whichever item.heicFormat
+       says (see the PNG/JPG toggle in renderList) — swap the extension
+       so the eventual download actually matches its real format instead
+       of a .heic name on a PNG/JPEG's bytes. */
     const outputName = isHeicFile(item.file)
-      ? item.file.name.replace(/\.hei[cf]$/i, ".png")
+      ? item.file.name.replace(/\.hei[cf]$/i, item.heicFormat === "jpg" ? ".jpg" : ".png")
       : item.file.name;
 
     item.stripped = true;
