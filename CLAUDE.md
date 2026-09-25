@@ -197,6 +197,21 @@ Two distinct component families — don't blend them:
      `stripEntry()` needs to know about row buttons to disable, since
      mobile has none.
 
+     **A real bug found and fixed here on audit**:
+     `mobileDownloadAll()`'s loop calls `downloadEntry()` every iteration,
+     which itself calls `renderList()`, which sets
+     `#exMobileDownloadBtn.disabled` purely from `files.length` — with
+     nothing else guarding it, that re-enabled the button (letting a
+     second overlapping run start on a stray double-click) the instant
+     the *first* file in a multi-file batch finished downloading, not
+     after the whole batch did. Fixed with a `mobileDownloadRunning`
+     module-level flag: set before the loop starts, checked by both
+     `mobileDownloadAll()`'s own early-return guard and by
+     `renderList()`'s disabled check
+     (`files.length === 0 || mobileDownloadRunning`), so every mid-loop
+     render still keeps the button correctly disabled until the whole
+     run actually finishes.
+
 ### Picking a dropdown widget: `.bc-combo` vs `.bc-dropdown`
 
 Two shared, reusable components live in `shared/site.js` /
@@ -849,6 +864,21 @@ function loadHeic2any(){
   `stripHeic(file, format)` picks `heic2any`'s `toType` accordingly, and
   the download filename swaps the `.hei[cf]` extension to `.png`/`.jpg` to
   match rather than shipping the wrong bytes under a mismatched extension.
+
+  **A real race condition found and fixed here on audit**: `item.cleaning`
+  (set by `stripEntry()`/`mobileDownloadAll()` for the duration of
+  `cleanFile()`) now also disables the toggle, on top of `item.stripped` —
+  without it, a visitor could flip PNG→JPG mid-decode, after `stripHeic()`
+  had already started encoding to the *old* format, and end up with a
+  downloaded file whose extension doesn't match its actual bytes.
+  `cleanFile()` also defends against this at the data level regardless of
+  whether that UI lock ever has a gap: it captures `item.heicFormat` into
+  a local `const` once, before its own `await`, and uses that captured
+  value for both the encode and the output filename — reading
+  `item.heicFormat` fresh a second time after the `await` would still be
+  wrong, since the bytes `stripHeic()` actually produced are fixed by
+  whatever format was current when the encode *started*, not whatever the
+  toggle says by the time a (possibly slow) decode finishes.
 
 ## Branching: `main` vs `development` vs `dev-<project>`
 

@@ -262,10 +262,20 @@
          Both stay in sync purely because renderList() rebuilds every row's
          markup from item.heicFormat on every change — there's no separate
          state to keep the two copies aligned. */
+      /* item.cleaning (set by stripEntry()/mobileDownloadAll() while
+         cleanFile() is actually in flight for this item) disables the
+         toggle too, not just item.stripped — otherwise a visitor can
+         flip PNG->JPG mid-decode, after stripHeic() already started
+         encoding to the old format, and end up with a downloaded file
+         whose extension doesn't match its actual bytes. cleanFile()
+         also defends against this itself by capturing item.heicFormat
+         once before its own await, but locking the control is what
+         actually stops the confusing "I picked JPG but nothing
+         changed" experience at the source. */
       const heicFormatToggle = variant => isHeicFile(item.file)
         ? `<div class="bc-segmented-toggle ex-heic-format-toggle ex-heic-format-toggle-${variant}">
-             <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.stripped ? "disabled" : ""}>PNG</button>
-             <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.stripped ? "disabled" : ""}>JPG</button>
+             <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.stripped || item.cleaning ? "disabled" : ""}>PNG</button>
+             <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.stripped || item.cleaning ? "disabled" : ""}>JPG</button>
            </div>`
         : "";
 
@@ -356,7 +366,7 @@
       fileList.appendChild(el);
     });
 
-    if (mobileDownloadBtn) mobileDownloadBtn.disabled = files.length === 0;
+    if (mobileDownloadBtn) mobileDownloadBtn.disabled = files.length === 0 || mobileDownloadRunning;
     if (files.length === 0) bcDbClear(EX_DB_NAME, EX_DB_STORE);
     else schedulePersist();
   }
@@ -491,13 +501,23 @@
      (mobile, looping over every file with no per-row buttons to manage
      at all). */
   async function cleanFile(item){
-    const blob = await stripImage(item.file, item.heicFormat);
-    /* HEIC comes back out as a PNG or JPEG, whichever item.heicFormat
-       says (see the PNG/JPG toggle in renderList) — swap the extension
-       so the eventual download actually matches its real format instead
-       of a .heic name on a PNG/JPEG's bytes. */
+    /* Captured once, before the await, and used for both the actual
+       encode and the output filename below — item.heicFormat is only
+       supposed to be un-editable while a clean is in flight (renderList
+       disables the toggle whenever item.cleaning is true), but reading
+       it fresh a second time after the await would still be wrong if
+       that guard ever had a gap: the bytes stripHeic() produces are
+       fixed by whatever format was current when the encode *started*,
+       so the filename has to match that, not whatever the toggle says
+       by the time the (possibly slow) decode finishes. */
+    const heicFormat = item.heicFormat;
+    const blob = await stripImage(item.file, heicFormat);
+    /* HEIC comes back out as a PNG or JPEG, whichever heicFormat says
+       (see the PNG/JPG toggle in renderList) — swap the extension so
+       the eventual download actually matches its real format instead of
+       a .heic name on a PNG/JPEG's bytes. */
     const outputName = isHeicFile(item.file)
-      ? item.file.name.replace(/\.hei[cf]$/i, item.heicFormat === "jpg" ? ".jpg" : ".png")
+      ? item.file.name.replace(/\.hei[cf]$/i, heicFormat === "jpg" ? ".jpg" : ".png")
       : item.file.name;
 
     item.stripped = true;
@@ -507,12 +527,14 @@
   }
 
   async function stripEntry(item, row, { thenDownload = false } = {}){
-    const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn")];
+    const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn, .ex-heic-format-toggle button")];
     buttons.forEach(btn => { btn.disabled = true; });
+    item.cleaning = true;
     status.textContent = `Removing metadata from ${item.file.name}…`;
 
     try {
       await cleanFile(item);
+      item.cleaning = false;
 
       if (thenDownload){
         downloadEntry(item);
@@ -522,6 +544,7 @@
       }
     } catch (err){
       console.error(err);
+      item.cleaning = false;
       status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
       buttons.forEach(btn => { btn.disabled = false; });
     }
@@ -535,21 +558,43 @@
      "at once" would just thrash one core rather than actually go faster.
      A small delay between downloads (matching Combine's/Cleanly's old
      batch download pacing) keeps the browser from treating a burst of
-     several downloads as spam and blocking them. */
+     several downloads as spam and blocking them.
+
+     mobileDownloadRunning guards against a real double-click bug: this
+     loop calls downloadEntry() every iteration, which itself calls
+     renderList(), which sets mobileDownloadBtn.disabled purely from
+     files.length — with nothing else guarding it, that re-enabled the
+     button (and let a second overlapping run start) the instant the
+     *first* file in the batch finished, not after the whole batch did.
+     renderList()'s own disabled check below now also looks at this flag,
+     so every mid-loop render keeps the button correctly disabled until
+     the whole run actually finishes. */
+  let mobileDownloadRunning = false;
   async function mobileDownloadAll(){
-    if (!files.length || !mobileDownloadBtn) return;
+    if (!files.length || !mobileDownloadBtn || mobileDownloadRunning) return;
+    mobileDownloadRunning = true;
     mobileDownloadBtn.disabled = true;
-    for (const item of files){
-      try {
-        if (!item.stripped) await cleanFile(item);
-        downloadEntry(item);
-        await new Promise(resolve => setTimeout(resolve, 300));
-      } catch (err){
-        console.error(err);
-        status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+    try {
+      for (const item of files){
+        try {
+          if (!item.stripped){
+            item.cleaning = true;
+            renderList();
+            await cleanFile(item);
+            item.cleaning = false;
+          }
+          downloadEntry(item);
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (err){
+          console.error(err);
+          item.cleaning = false;
+          status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+        }
       }
+    } finally {
+      mobileDownloadRunning = false;
+      mobileDownloadBtn.disabled = files.length === 0;
     }
-    mobileDownloadBtn.disabled = files.length === 0;
   }
   if (mobileDownloadBtn) mobileDownloadBtn.addEventListener("click", mobileDownloadAll);
 
