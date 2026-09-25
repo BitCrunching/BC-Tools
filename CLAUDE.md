@@ -828,18 +828,27 @@ function loadHeic2any(){
   path (skips an extra decode→canvas→encode round trip through
   `decodeHeicFile`'s cached PNG). Cleanly's strip output picks between the
   two instead of hardcoding one — a per-row PNG/JPG `.bc-segmented-toggle`
-  (`.ex-heic-format-toggle` for local width, `cleanly/index.html`) only
-  renders for HEIC rows (`isHeicFile(item.file)` in `renderList()`), since
-  every other input format keeps its own original format untouched and
-  has nothing to choose. Defaults to PNG (`item.heicFormat`, set in
+  only renders for HEIC rows (`isHeicFile(item.file)` in `renderList()`),
+  since every other input format keeps its own original format untouched
+  and has nothing to choose. Defaults to PNG (`item.heicFormat`, set in
   `addFiles()`), disables once the row's been cleaned (the choice can't
-  retroactively change an already-baked `item.strippedBlob`), and shows on
-  both mobile and desktop — unlike the per-row action buttons, the format
-  choice still needs making regardless of which button ends up doing the
-  actual cleaning. `stripHeic(file, format)` picks `heic2any`'s `toType`
-  accordingly, and the download filename swaps the `.hei[cf]` extension to
-  `.png`/`.jpg` to match rather than shipping the wrong bytes under a
-  mismatched extension.
+  retroactively change an already-baked `item.strippedBlob`). Unlike the
+  per-row action buttons, the format choice still needs making regardless
+  of which button ends up doing the actual cleaning — so it's rendered
+  **twice**, not once: `.ex-heic-format-toggle-desktop` sits inside
+  `.exif-file-actions`, right next to "Clean first"; `.ex-heic-format-
+  toggle-mobile` sits in the info column instead. Only one is ever visible
+  — the desktop copy disappears below `768px` for free since its parent
+  `.exif-file-actions` is hidden outright there (see point 5 above), while
+  the mobile copy needs its own explicit `@media (min-width:769px){
+  display:none }` (`cleanly/index.html`) since it isn't inside anything
+  already hidden. Both stay in sync purely because `renderList()` rebuilds
+  every row's markup from `item.heicFormat` on every change — there's no
+  separate state to keep the two copies aligned, and `el.querySelectorAll
+  (".ex-heic-format-toggle")` wires click handlers onto both identically.
+  `stripHeic(file, format)` picks `heic2any`'s `toType` accordingly, and
+  the download filename swaps the `.hei[cf]` extension to `.png`/`.jpg` to
+  match rather than shipping the wrong bytes under a mismatched extension.
 
 ## Branching: `main` vs `development` vs `dev-<project>`
 

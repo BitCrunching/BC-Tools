@@ -250,9 +250,20 @@
          choice after the fact wouldn't do anything since item.strippedBlob
          is already baked. `.bc-segmented-toggle` (shared/site.css) is the
          shared joined-pill component (CLAUDE.md); `.ex-heic-format-toggle`
-         only adds this row's local width. */
-      const heicFormatToggleHtml = isHeicFile(item.file)
-        ? `<div class="bc-segmented-toggle ex-heic-format-toggle">
+         only adds this row's local width.
+
+         Rendered twice, not once: `-desktop` sits inside .exif-file-actions,
+         right next to "Clean first", and `-mobile` sits in the info column
+         where the desktop copy used to live. Only one is ever visible at a
+         time — .exif-file-actions is hidden outright below 768px (see
+         index.html), so the desktop copy disappears there for free, and
+         `.ex-heic-format-toggle-mobile` gets its own explicit desktop-only
+         hide (index.html) since it isn't inside anything already hidden.
+         Both stay in sync purely because renderList() rebuilds every row's
+         markup from item.heicFormat on every change — there's no separate
+         state to keep the two copies aligned. */
+      const heicFormatToggle = variant => isHeicFile(item.file)
+        ? `<div class="bc-segmented-toggle ex-heic-format-toggle ex-heic-format-toggle-${variant}">
              <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.stripped ? "disabled" : ""}>PNG</button>
              <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.stripped ? "disabled" : ""}>JPG</button>
            </div>`
@@ -281,10 +292,10 @@
          the shared data-ga-event/data-ga-tool pair every .tool-primary-
          btn already uses) so GA can tell which of the two a click was,
          not just that "the cleanly primary action" fired. */
-      const actionButtonsHtml = item.stripped
+      const actionButtonsHtml = heicFormatToggle("desktop") + (item.stripped
         ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
         : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
-           <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`;
+           <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`);
 
       el.innerHTML = `
         <div class="exif-file-thumb">${thumbHtml}</div>
@@ -293,21 +304,20 @@
           <div class="exif-file-size">${formatSize(item.file.size)}</div>
           <div class="exif-tags">${tagsHtml}</div>
           ${svgScanNote}
-          ${heicFormatToggleHtml}
+          ${heicFormatToggle("mobile")}
         </div>
         <div class="exif-file-actions">${actionButtonsHtml}</div>
         <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
 
-      const heicFormatToggle = el.querySelector(".ex-heic-format-toggle");
-      if (heicFormatToggle){
-        heicFormatToggle.querySelectorAll("button").forEach(btn => {
+      el.querySelectorAll(".ex-heic-format-toggle").forEach(heicFormatToggleEl => {
+        heicFormatToggleEl.querySelectorAll("button").forEach(btn => {
           btn.addEventListener("click", () => {
             item.heicFormat = btn.dataset.format;
             renderList();
           });
         });
-      }
+      });
 
       const heicPreviewBtn = el.querySelector(".exif-file-heic-preview");
       if (heicPreviewBtn){

@@ -320,12 +320,22 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 /* Local width/margin for the shared .bc-segmented-toggle (shared/site.css,
    CLAUDE.md) — same split every adopter of that class uses, it only owns
-   segment chrome. Shown on both mobile and desktop (the per-row action
-   buttons are what's mobile-only, not this) since the format choice needs
-   making regardless of which button ends up doing the actual cleaning. */
+   segment chrome. Rendered twice per HEIC row (cleanly-tool.js) — once
+   next to "Clean first" in .exif-file-actions (desktop), once in the info
+   column above where the desktop copy used to sit (mobile) — only one is
+   ever visible at a time. The desktop copy disappears on its own below
+   768px since its parent .exif-file-actions is hidden outright there; the
+   mobile copy needs its own explicit hide above that width since it isn't
+   inside anything already hidden. */
 .ex-heic-format-toggle{
   width:140px;
+  flex-shrink:0;
+}
+.ex-heic-format-toggle-mobile{
   margin-top:8px;
+}
+@media (min-width:769px){
+  .ex-heic-format-toggle-mobile{ display:none; }
 }
 </style>
 </head>
@@ -531,6 +541,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=41" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=39" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=40" defer></script>
 </body>
 </html>
