@@ -2271,6 +2271,22 @@ html[data-theme="dark"] .exif-tag{
 .exif-status-icon-clean{ color:#22c55e; }
 .exif-status-icon-warn{ color:#eab308; }
 
+/* Mobile drops both the ✓/⚠ glyph and the pill chrome around it — plain
+   text only, matching the pre-redesign mobile look (see the reference
+   screenshot in Cleanly's own commit history). .exif-status-icon hiding
+   also removes its "- " separator, since that lives inside the same span
+   specifically for this (see cleanly-tool.js) rather than as a bare text
+   node that would otherwise dangle on its own. */
+@media (max-width:768px){
+  .exif-status-icon{ display:none; }
+  .exif-tag{
+    padding:0;
+    border-radius:0;
+    background:none;
+  }
+  html[data-theme="dark"] .exif-tag{ background:none; }
+}
+
 .exif-scan-note{
   margin-top:6px;
   font-size:12px;

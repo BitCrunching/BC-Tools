@@ -226,11 +226,16 @@
       el.className = "exif-file-item result";
 
       const noMetadataText = "No dangerous metadata found";
+      /* The "-" separator lives inside the same span as the icon (not as
+         a bare text node after it) specifically so mobile's
+         .exif-status-icon{display:none} rule (shared/site.css) hides
+         both the emoji and its separator together, rather than leaving
+         a dangling "- Camera metadata found!" behind. */
       const tagsHtml = item.tags.length
         ? item.tags.map((label, idx) => idx === 0
-            ? `<span class="exif-tag"><span class="exif-status-icon exif-status-icon-warn" aria-hidden="true">⚠</span> - ${label}</span>`
+            ? `<span class="exif-tag"><span class="exif-status-icon exif-status-icon-warn" aria-hidden="true">⚠ -</span> ${label}</span>`
             : `<span class="exif-tag">${label}</span>`).join("")
-        : `<span class="exif-tag exif-tag-clean"><span class="exif-status-icon exif-status-icon-clean" aria-hidden="true">✓</span> - ${noMetadataText}</span>`;
+        : `<span class="exif-tag exif-tag-clean"><span class="exif-status-icon exif-status-icon-clean" aria-hidden="true">✓ -</span> ${noMetadataText}</span>`;
 
       const svgScanNote = isSvgFile(item.file)
         ? `<div class="exif-scan-note">Cleanly checks for known patterns — it does not guarantee your file will be completely clean.</div>`
