@@ -186,7 +186,7 @@ Two distinct component families — don't blend them:
      wrapper) is hidden via CSS and `.ex-mobile-download-btn`
      (`#exMobileDownloadBtn`, `cleanly/index.html`) takes over — a single
      `.tool-primary-btn` sitting below `#exFileList`, always reading
-     "Download". Clicking it calls `mobileDownloadAll()`
+     "Clean & download". Clicking it calls `mobileDownloadAll()`
      (`cleanly-tool.js`), which loops every loaded file sequentially
      (cleaning it first via the shared `cleanFile()` helper if it hasn't
      been already, then calling `downloadEntry()`), with a `300ms` pause
