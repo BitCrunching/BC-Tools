@@ -178,6 +178,27 @@ Two distinct component families — don't blend them:
   No ZIP path is needed any more either way, once every file has its own
   independent download.
 
+  5. **Mobile drops the per-row buttons entirely and falls back to one
+     global button below the list.** Two/three buttons plus the row's own
+     remove-× never fit next to a filename/tags column at phone widths —
+     confirmed directly, in every labeling tried (full text, shortened
+     text). Below `768px`, `.exif-file-actions` (each row's button
+     wrapper) is hidden via CSS and `.ex-mobile-download-btn`
+     (`#exMobileDownloadBtn`, `cleanly/index.html`) takes over — a single
+     `.tool-primary-btn` sitting below `#exFileList`, always reading
+     "Download". Clicking it calls `mobileDownloadAll()`
+     (`cleanly-tool.js`), which loops every loaded file sequentially
+     (cleaning it first via the shared `cleanFile()` helper if it hasn't
+     been already, then calling `downloadEntry()`), with a `300ms` pause
+     between downloads so the browser doesn't treat a download burst as
+     spam and block them — this is genuinely the pre-redesign single-
+     global-CTA model, kept alive specifically for the mobile breakpoint
+     while desktop uses the per-row system above. `stripEntry()` and
+     `mobileDownloadAll()` both call the same `cleanFile(item)` (no row/
+     button bookkeeping) rather than duplicating the strip logic — only
+     `stripEntry()` needs to know about row buttons to disable, since
+     mobile has none.
+
 ### Picking a dropdown widget: `.bc-combo` vs `.bc-dropdown`
 
 Two shared, reusable components live in `shared/site.js` /

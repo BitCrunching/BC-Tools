@@ -6,6 +6,7 @@
   const status = document.getElementById("exStatus");
   const afterDrop = document.getElementById("exAfterDrop");
   const toolApp = document.querySelector(".tool-app");
+  const mobileDownloadBtn = document.getElementById("exMobileDownloadBtn");
   if (!drop || !input || !fileList) return;
 
   let files = [];
@@ -18,7 +19,7 @@
     ["WHAT_IT_FINDS", "Once a file's in, we scan it and show exactly what's hiding inside — GPS location, camera model, timestamps, or editor data."],
     ["CHECK_BEFORE_STRIPPING", "Your files show up below once picked — check what was found, and remove any you don't need."],
     ["NOT_SURE_WHY_IT_MATTERS", "Scroll down to the guide further down the page — it explains what metadata actually reveals and why stripping it matters."],
-    ["YOU_ARE_SET", "Each file gets its own Clean first / Clean and download buttons, right next to its remove ×  — Clean first just checks the result, Clean and download saves it right away. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Each file gets its own Clean first / Clean and download buttons, right next to its remove × — Clean first just checks the result, Clean and download saves it right away. (On a phone-width screen, one Download button below the list cleans and saves everything at once instead.) Close this with the red dot and we won't show it again."]
   ]);
 
   /* File list stays hidden until a file is picked — first-time visitors
@@ -41,6 +42,7 @@
     if (afterDrop) afterDrop.hidden = true;
     drop.classList.remove("tool-drop-revealed");
     status.textContent = "";
+    if (mobileDownloadBtn) mobileDownloadBtn.disabled = true;
     bcDbClear(EX_DB_NAME, EX_DB_STORE);
   }
 
@@ -323,6 +325,7 @@
       fileList.appendChild(el);
     });
 
+    if (mobileDownloadBtn) mobileDownloadBtn.disabled = files.length === 0;
     if (files.length === 0) bcDbClear(EX_DB_NAME, EX_DB_STORE);
     else schedulePersist();
   }
@@ -454,24 +457,32 @@
      heic2any/SVG-string work), so it doesn't get its own privacy-check
      pair — only the eventual download does, since that's the step the
      privacy badge is actually about. */
+  /* The actual clean step, with no button/row bookkeeping — shared by
+     stripEntry() (desktop, one row at a time) and mobileDownloadAll()
+     (mobile, looping over every file with no per-row buttons to manage
+     at all). */
+  async function cleanFile(item){
+    const blob = await stripImage(item.file);
+    /* HEIC comes back out as a PNG (see stripHeic above) — swap the
+       extension so the eventual download actually matches its real
+       format instead of a .heic name on a PNG's bytes. */
+    const outputName = isHeicFile(item.file)
+      ? item.file.name.replace(/\.hei[cf]$/i, ".png")
+      : item.file.name;
+
+    item.stripped = true;
+    item.strippedBlob = blob;
+    item.strippedName = outputName;
+    item.tags = [];
+  }
+
   async function stripEntry(item, row, { thenDownload = false } = {}){
     const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn")];
     buttons.forEach(btn => { btn.disabled = true; });
     status.textContent = `Removing metadata from ${item.file.name}…`;
 
     try {
-      const blob = await stripImage(item.file);
-      /* HEIC comes back out as a PNG (see stripHeic above) — swap the
-         extension so the eventual download actually matches its real
-         format instead of a .heic name on a PNG's bytes. */
-      const outputName = isHeicFile(item.file)
-        ? item.file.name.replace(/\.hei[cf]$/i, ".png")
-        : item.file.name;
-
-      item.stripped = true;
-      item.strippedBlob = blob;
-      item.strippedName = outputName;
-      item.tags = [];
+      await cleanFile(item);
 
       if (thenDownload){
         downloadEntry(item, "clean_and_download");
@@ -485,6 +496,34 @@
       buttons.forEach(btn => { btn.disabled = false; });
     }
   }
+
+  /* Mobile's one global button (see the .ex-mobile-download-btn CSS note
+     in index.html for why): no per-row buttons exist to click on mobile,
+     so this cleans (if not already) and downloads every loaded file in
+     one pass instead. Sequential, not parallel — same reasoning Coudio's
+     own batch-ish flows use: this is CPU-bound canvas/heic2any work, so
+     "at once" would just thrash one core rather than actually go faster.
+     A small delay between downloads (matching Combine's/Cleanly's old
+     batch download pacing) keeps the browser from treating a burst of
+     several downloads as spam and blocking them. */
+  async function mobileDownloadAll(){
+    if (!files.length || !mobileDownloadBtn) return;
+    mobileDownloadBtn.disabled = true;
+    for (const item of files){
+      try {
+        if (!item.stripped) await cleanFile(item);
+        if (!item.downloaded){
+          downloadEntry(item, "mobile_download_all");
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      } catch (err){
+        console.error(err);
+        status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+      }
+    }
+    mobileDownloadBtn.disabled = files.length === 0;
+  }
+  if (mobileDownloadBtn) mobileDownloadBtn.addEventListener("click", mobileDownloadAll);
 
   /* Marks the file as downloaded and re-renders so whichever button
      triggered this (the standalone "Download" after Clean first, or
