@@ -257,20 +257,20 @@
          Both stay in sync purely because renderList() rebuilds every row's
          markup from item.heicFormat on every change — there's no separate
          state to keep the two copies aligned. */
-      /* item.cleaning (set by stripEntry()/mobileDownloadAll() while
+      /* Only item.cleaning (set by stripEntry()/mobileDownloadAll() while
          cleanFile() is actually in flight for this item) disables the
-         toggle too, not just item.stripped — otherwise a visitor can
-         flip PNG->JPG mid-decode, after stripHeic() already started
-         encoding to the old format, and end up with a downloaded file
-         whose extension doesn't match its actual bytes. cleanFile()
-         also defends against this itself by capturing item.heicFormat
-         once before its own await, but locking the control is what
-         actually stops the confusing "I picked JPG but nothing
-         changed" experience at the source. */
+         toggle — not item.stripped. Available at all times, even after a
+         file's already been cleaned once: picking the other format then
+         re-cleans it right away (see the toggle's own click handler
+         below) rather than leaving an already-baked blob that no longer
+         matches what the toggle shows. cleanFile() still captures
+         item.heicFormat once before its own await regardless, so a flip
+         mid-decode can't produce a downloaded file whose extension
+         doesn't match its actual bytes even during that brief window. */
       const heicFormatToggle = variant => isHeicFile(item.file)
         ? `<div class="bc-segmented-toggle ex-heic-format-toggle ex-heic-format-toggle-${variant}">
-             <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.stripped || item.cleaning ? "disabled" : ""}>PNG</button>
-             <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.stripped || item.cleaning ? "disabled" : ""}>JPG</button>
+             <button type="button" data-format="png" aria-pressed="${item.heicFormat !== "jpg"}" ${item.cleaning ? "disabled" : ""}>PNG</button>
+             <button type="button" data-format="jpg" aria-pressed="${item.heicFormat === "jpg"}" ${item.cleaning ? "disabled" : ""}>JPG</button>
            </div>`
         : "";
 
@@ -335,8 +335,28 @@
 
       el.querySelectorAll(".ex-heic-format-toggle").forEach(heicFormatToggleEl => {
         heicFormatToggleEl.querySelectorAll("button").forEach(btn => {
-          btn.addEventListener("click", () => {
+          btn.addEventListener("click", async () => {
+            if (item.heicFormat === btn.dataset.format) return;
             item.heicFormat = btn.dataset.format;
+            /* Not stripped yet — nothing to redo, the new format just
+               takes effect whenever Clean first/Clean and download
+               eventually runs. Already stripped, though: item.strippedBlob
+               was baked from the *old* format, so it no longer matches
+               what the toggle now shows — re-clean right away rather than
+               leaving a stale blob behind a toggle that says otherwise. */
+            if (item.stripped){
+              item.cleaning = true;
+              renderList();
+              status.textContent = `Removing metadata from ${item.file.name}…`;
+              try {
+                await cleanFile(item);
+                status.textContent = `Done — ${item.file.name} cleaned.`;
+              } catch (err){
+                console.error(err);
+                status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+              }
+              item.cleaning = false;
+            }
             renderList();
           });
         });

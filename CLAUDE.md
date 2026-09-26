@@ -1081,8 +1081,10 @@ function loadHeic2any(){
   only renders for HEIC rows (`isHeicFile(item.file)` in `renderList()`),
   since every other input format keeps its own original format untouched
   and has nothing to choose. Defaults to PNG (`item.heicFormat`, set in
-  `addFiles()`), disables once the row's been cleaned (the choice can't
-  retroactively change an already-baked `item.strippedBlob`). Unlike the
+  `addFiles()`), and stays available even after the row's been cleaned —
+  picking the other format re-runs `cleanFile()` right away (the toggle's
+  own click handler), rather than leaving the choice pointing at a format
+  the already-baked `item.strippedBlob` no longer matches. Unlike the
   per-row action buttons, the format choice still needs making regardless
   of which button ends up doing the actual cleaning — so it's rendered
   **twice**, not once: `.ex-heic-format-toggle-desktop` sits inside
@@ -1101,11 +1103,16 @@ function loadHeic2any(){
   match rather than shipping the wrong bytes under a mismatched extension.
 
   **A real race condition found and fixed here on audit**: `item.cleaning`
-  (set by `stripEntry()`/`mobileDownloadAll()` for the duration of
-  `cleanFile()`) now also disables the toggle, on top of `item.stripped` —
-  without it, a visitor could flip PNG→JPG mid-decode, after `stripHeic()`
-  had already started encoding to the *old* format, and end up with a
-  downloaded file whose extension doesn't match its actual bytes.
+  (set by `stripEntry()`/`mobileDownloadAll()`, and by the toggle's own
+  re-clean, for the duration of `cleanFile()`) disables the toggle for
+  that duration — without it, a visitor could flip PNG→JPG mid-decode,
+  after `stripHeic()` had already started encoding to the *old* format,
+  and end up with a downloaded file whose extension doesn't match its
+  actual bytes. (The toggle used to also disable permanently once
+  `item.stripped` was true, on the reasoning that the choice couldn't
+  retroactively change an already-baked blob — since revisited: it's
+  available at all times now, and picking a different format after the
+  fact just re-bakes that blob instead of leaving the choice inert.)
   `cleanFile()` also defends against this at the data level regardless of
   whether that UI lock ever has a gap: it captures `item.heicFormat` into
   a local `const` once, before its own `await`, and uses that captured
