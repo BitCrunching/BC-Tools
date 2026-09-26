@@ -119,32 +119,39 @@ Two distinct component families — don't blend them:
   `convertEntry()`:
 
   1. **A row shows one or two buttons before it's cleaned, one after — and
-     that one stays enabled forever.** Before `item.stripped` is true, which
-     button(s) show depends on whether metadata was actually found
-     (`item.tags.length`): if the row's already reading "✓ - No dangerous
-     metadata found" (nothing found — `item.tags` empty), "Clean first" and
-     "Clean and download" both imply something's worth checking or
-     stripping first, which isn't true here, so a single "Clean anyways"
+     that one stays enabled forever.** Which button(s) show before
+     `item.stripped` is true depends on whether metadata was actually found
+     when the file was first added (`item.wasAlreadyClean`, captured once
+     in `addFiles()` from that initial scan — `item.tags` itself gets
+     wiped to `[]` by `cleanFile()` regardless of what it held before, so
+     it can't be read again later to tell): if the row started out already
+     reading "✓ - No dangerous metadata found", "Clean first" and "Clean
+     and download" both imply something's worth checking or stripping
+     first, which isn't true here, so a single "Clean anyways"
      (`.ex-row-clean-anyways-btn`) takes their place instead — same
      `stripEntry(item, row, { thenDownload: true })` call "Clean and
      download" makes, since there's nothing to check first when nothing was
-     found. Otherwise (tags found): "Clean first" (`stripEntry()`, no
-     download) and "Clean and download" (`stripEntry(item, row, {
-     thenDownload: true })`, cleans then immediately calls
-     `downloadEntry()` once) sit side by side — one lets a visitor check
-     the result first, the other is the one-click path for anyone who
-     doesn't care to. Every path lands on the same place once
-     `item.stripped` is true: a single "Download" button
-     (`renderList()`'s `actionButtonsHtml`) that never gets disabled or
-     swapped out — clicking it just re-downloads the same already-cleaned
-     blob (`downloadEntry()`) as many times as wanted. There's no
-     "already downloaded, don't offer it again" state at all: downloading
-     is not a one-shot action here, unlike e.g. Congify's result download.
-     `stripEntry()`'s own `row.querySelectorAll(".ex-row-strip-btn,
-     .ex-row-clean-download-btn, .ex-row-clean-anyways-btn")` disables
-     whichever of these buttons is currently showing only while the clean
-     itself is in flight, re-enabling on failure — this is a working-state
-     disable, not a used-once one.
+     found. Otherwise: "Clean first" (`stripEntry()`, no download) and
+     "Clean and download" (`stripEntry(item, row, { thenDownload: true })`,
+     cleans then immediately calls `downloadEntry()` once) sit side by
+     side — one lets a visitor check the result first, the other is the
+     one-click path for anyone who doesn't care to, and both turn into a
+     single "Download" button once `item.stripped` is true (clicking it
+     just re-downloads the same already-cleaned blob as many times as
+     wanted — there's no "already downloaded, don't offer it again" state
+     here, unlike e.g. Congify's result download). **A row that started
+     already-clean never makes that switch** — `item.wasAlreadyClean`
+     keeps it reading "Clean anyways" even after `item.stripped` flips
+     true, since there was never a first/download choice to shorten it
+     from; that button's own click handler switches to a plain
+     `downloadEntry(item)` once `item.stripped` is already true instead of
+     re-running the clean every time, same effect as the real Download
+     button just under a fixed label. `stripEntry()`'s own
+     `row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn,
+     .ex-row-clean-anyways-btn")` disables whichever of these buttons is
+     currently showing only while the clean itself is in flight,
+     re-enabling on failure — this is a working-state disable, not a
+     used-once one.
   2. **Cleaning and downloading are deliberately separate actions, not
      one**, even from "Clean and download" — that button still calls
      `stripEntry()` first and lets it call `downloadEntry()` internally,

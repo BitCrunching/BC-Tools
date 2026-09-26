@@ -300,15 +300,23 @@
            already-cleaned blob (downloadEntry()) as many times as
            wanted. Nothing here ever permanently disables once a file's
            been downloaded once — re-downloading the same cleaned result
-           is always allowed, not a one-shot action.
+           is always allowed, not a one-shot action. **Exception**: a row
+           that started out already-clean (item.wasAlreadyClean) keeps
+           showing "Clean anyways" forever instead of switching to
+           "Download" once item.stripped flips true — there was never a
+           "Clean first"/"Clean and download" choice to begin with here,
+           so there's nothing for the label to be short for once cleaned;
+           its click handler switches to a plain downloadEntry() once
+           item.stripped is already true, same as the real Download
+           button, rather than re-running the clean every time.
          Each enabled button carries its own data-ga-action (on top of
          the shared data-ga-event/data-ga-tool pair every .tool-primary-
          btn already uses) so GA can tell which of the two a click was,
          not just that "the cleanly primary action" fired. */
-      const actionButtonsHtml = heicFormatToggle("desktop") + (item.stripped
-        ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
-        : item.tags.length === 0
+      const actionButtonsHtml = heicFormatToggle("desktop") + (item.wasAlreadyClean
         ? `<button type="button" class="tool-primary-btn ex-row-clean-anyways-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_anyways">Clean anyways</button>`
+        : item.stripped
+        ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
         : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
            <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`);
 
@@ -369,7 +377,15 @@
       if (cleanDownloadBtn) cleanDownloadBtn.addEventListener("click", () => stripEntry(item, el, { thenDownload: true }));
 
       const cleanAnywaysBtn = el.querySelector(".ex-row-clean-anyways-btn");
-      if (cleanAnywaysBtn) cleanAnywaysBtn.addEventListener("click", () => stripEntry(item, el, { thenDownload: true }));
+      if (cleanAnywaysBtn) cleanAnywaysBtn.addEventListener("click", () => {
+        /* Stays labeled "Clean anyways" forever (see actionButtonsHtml
+           above) instead of turning into "Download" — so once the file's
+           already been cleaned, a further click just re-downloads the
+           existing result, same as the real Download button does,
+           rather than re-running the clean from scratch every time. */
+        if (item.stripped) downloadEntry(item);
+        else stripEntry(item, el, { thenDownload: true });
+      });
 
       fileList.appendChild(el);
     });
@@ -390,6 +406,14 @@
         file,
         src: isHeicFile(file) ? "" : URL.createObjectURL(file),
         tags,
+        /* Captured once, here, before any cleaning ever happens —
+           item.tags gets reset to [] by cleanFile() regardless of what
+           it held before, so this is the only reliable record of
+           whether the row started life already clean. Drives
+           renderList()'s "Clean anyways" button staying put instead of
+           becoming "Download" once item.stripped flips true (see
+           actionButtonsHtml below). */
+        wasAlreadyClean: tags.length === 0,
         heicFormat: "png"
       });
     }
