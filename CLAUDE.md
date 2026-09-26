@@ -769,7 +769,15 @@ unlimited either way, same as before — the cap only slows how many
 estimates are being crunched at once, not what fits in the file list.
 Each entry's own `token` field (already existed, for discarding stale
 results when a level change interrupts an in-flight estimate) still works
-unchanged under the cap. No shared JS module for this — same reasoning as
+unchanged under the cap. **A queued file that hasn't been picked up by one
+of the 5 workers yet shows a `"Waiting..."` label** (`queueEstimates()`,
+set on every entry before the pool starts, only overwritten once
+`updateEstimateForEntry` actually dequeues that entry) — confirmed
+directly (iPhone 13 mini testing) that the cap alone wasn't legible enough
+on its own: without a distinct queued state, a large batch's still-pending
+rows just sat there showing their plain original size with no visual
+difference from an already-finished row, reading as stalled/broken rather
+than "working through these." No shared JS module for this — same reasoning as
 `.bc-resize-handle`/HEIC decode above: cheap enough to duplicate into
 another tool's own `-tool.js` if a similar unbounded-batch performance
 problem shows up there, rather than inventing a shared import for one
