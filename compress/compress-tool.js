@@ -452,6 +452,43 @@
     card.appendChild(btn);
   }
 
+  /* Estimate results are just two small numbers (a byte count and a
+     percent) per file+level, not the file itself — nowhere near
+     localStorage's ~5MB quota the way a HEIC preview blob would be, so
+     unlike heicPreviewCache above this is a fine fit for it. Keyed by
+     name+size+quality rather than the File object (which doesn't survive
+     a reload) so a file that's already had its estimate calculated once
+     for a given level — even in an earlier visit — never re-runs the
+     canvas encode for that same combination again. Capped at
+     ESTIMATE_CACHE_MAX entries, oldest evicted first (insertion order),
+     so this can't grow unbounded across months of everyday use. */
+  const ESTIMATE_CACHE_KEY = "bctools-compress-estimate-cache";
+  const ESTIMATE_CACHE_MAX = 100;
+  function estimateCacheKey(file, quality){
+    return `${file.name}|${file.size}|${quality}`;
+  }
+  function readEstimateCache(){
+    try {
+      return JSON.parse(localStorage.getItem(ESTIMATE_CACHE_KEY)) || {};
+    } catch (e){ return {}; }
+  }
+  function getCachedEstimate(file, quality){
+    return readEstimateCache()[estimateCacheKey(file, quality)] || null;
+  }
+  function setCachedEstimate(file, quality, result){
+    try {
+      const cache = readEstimateCache();
+      const key = estimateCacheKey(file, quality);
+      delete cache[key];
+      cache[key] = result;
+      const keys = Object.keys(cache);
+      if (keys.length > ESTIMATE_CACHE_MAX){
+        keys.slice(0, keys.length - ESTIMATE_CACHE_MAX).forEach(k => delete cache[k]);
+      }
+      localStorage.setItem(ESTIMATE_CACHE_KEY, JSON.stringify(cache));
+    } catch (e){ /* storage unavailable/full — skip */ }
+  }
+
   async function updateEstimateForEntry(entry){
     const originalText = formatSize(entry.file.size);
     if (selectedQuality === null){
@@ -460,6 +497,13 @@
     }
 
     const myToken = ++entry.token;
+
+    const cached = getCachedEstimate(entry.file, selectedQuality);
+    if (cached){
+      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatSize(cached.size)} (-${cached.savedPercent}%)`;
+      return;
+    }
+
     entry.infoEl.innerHTML = `${originalText}<br>Estimate: calculating...`;
 
     try {
@@ -467,6 +511,7 @@
       const compressedBlob = await compressImageFile(entry.file, selectedQuality, outputMimeType);
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
+      setCachedEstimate(entry.file, selectedQuality, { size: compressedBlob.size, savedPercent });
       entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatSize(compressedBlob.size)} (-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
