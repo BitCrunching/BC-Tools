@@ -192,6 +192,14 @@
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   }
 
+  /* Original-size label only — the "Estimated after compression" figure
+     stays plain KB via formatKB above regardless of size, on purpose. */
+  function formatSize(bytes){
+    const kb = bytes / 1024;
+    if (kb > 1000) return `${(kb / 1024).toFixed(1)} MB`;
+    return formatKB(bytes);
+  }
+
   function isHeicFile(f){
     return f.type === "image/heic" || f.type === "image/heif" || /\.(heic|heif)$/i.test(f.name);
   }
@@ -328,7 +336,7 @@
       const card = appendPreviewCard({
         src: heic ? "" : URL.createObjectURL(file),
         name: file.name,
-        info: `Original size: ${formatKB(file.size)}`
+        info: formatSize(file.size)
       });
       if (heic){
         card.classList.add("result-pdf");
@@ -342,7 +350,19 @@
           previewBtn.disabled = true;
           previewBtn.textContent = "Loading...";
           try {
-            const decoded = await decodeHeicFile(file);
+            /* A HEIC preview only ever shows up on screen at thumbnail
+               size, and the file gets compressed on download regardless
+               — decoding it to a full-quality PNG just to display small
+               is pure wasted work. Once a compression level is picked,
+               show the actual compressed result instead (compressImageFile
+               already runs the file through decodeHeicFile internally,
+               which is cache-hit-cheap since this preview click likely
+               already triggered that same decode via queueEstimates).
+               Before a level's picked there's nothing to compress to yet,
+               so it falls back to the plain decode. */
+            const decoded = selectedQuality !== null
+              ? await compressImageFile(file, selectedQuality, getOutputMimeType(file))
+              : await decodeHeicFile(file);
             const img = document.createElement("img");
             img.src = URL.createObjectURL(decoded);
             img.alt = file.name;
@@ -404,7 +424,7 @@
   }
 
   async function updateEstimateForEntry(entry){
-    const originalText = `Original size: ${formatKB(entry.file.size)}`;
+    const originalText = formatSize(entry.file.size);
     if (selectedQuality === null){
       entry.infoEl.textContent = originalText;
       return;
@@ -450,7 +470,7 @@
   function queueEstimates(entries){
     if (selectedQuality !== null){
       entries.forEach(entry => {
-        entry.infoEl.textContent = `Original size: ${formatKB(entry.file.size)} • Waiting...`;
+        entry.infoEl.textContent = `${formatSize(entry.file.size)} • Waiting...`;
       });
     }
     runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
@@ -581,7 +601,7 @@
         const resultCard = appendPreviewCard({
           src: URL.createObjectURL(compressedBlob),
           name: outputName,
-          info: `${formatKB(file.size)} → ${formatKB(compressedBlob.size)} • -${savedPercent}%`
+          info: `${formatSize(file.size)} → ${formatKB(compressedBlob.size)} • -${savedPercent}%`
         });
         addResultRemoveButton(resultCard);
 
