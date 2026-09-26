@@ -298,28 +298,23 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 
 /* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
    .tool-format-select native dropdown (Convert's pattern, for a picker
-   with several options) — Compress never grew that select fallback for
-   its Low/Medium/High buttons, so they just vanished on mobile with
-   nothing standing in for them. Compress's own case doesn't need the
-   select swap: only 3 short one-word labels (their two-line "level-sub"
-   description is already hidden everywhere, not just mobile), so the
-   fix is to keep the real buttons and make the row flexible instead —
-   flex:1 1 100% is Convert's own mobile pill logic (see Coudio's
-   Input/Output/Bitrate row), which forces all 3 buttons to wrap onto
-   their own full-width rows in this row's wrapping flex context.
-   min-width:0 is the standard flex-child fix for the buttons not
-   actually shrinking to fit without it. */
+   with several options) — Compress never grew that select fallback, so
+   the three level buttons just vanished on mobile with nothing standing
+   in for them. Fixed by swapping them ≤768px for the site's existing
+   .option-change-btn (Congify's fps/crop/order pickers) instead of
+   stacking all 3 full-width — a plain Low/Medium/High pick reads better
+   as "tap to advance" on a phone than three repeated buttons. Desktop
+   never sees #cpLevelOptionChangeBtn at all (hidden by default below);
+   mobile hides the real three-button row instead and shows it. */
+.cp-level-option-change-btn{
+  display:none;
+}
 @media (max-width:768px){
   .compress-level-buttons{
-    display:flex;
-    flex-wrap:wrap;
+    display:none;
   }
-  .compress-level-buttons .tool-format-btn{
-    display:flex !important;
-    align-items:center;
-    justify-content:center;
-    flex:1 1 100%;
-    min-width:0;
+  .cp-level-option-change-btn{
+    display:flex;
   }
 }
 
@@ -519,6 +514,10 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
             <span>High</span><span class="level-sub">Lowest quality</span>
           </button>
         </div>
+        <button type="button" class="option-change-btn cp-level-option-change-btn" id="cpLevelOptionChangeBtn" title="Compression level">
+          <span class="option-change-btn-label" id="cpLevelOptionChangeBtnLabel">Low</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
       </div>
 
       <div class="selected-compression" id="cpSelectedCompression"></div>
@@ -632,6 +631,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=41" defer></script>
-<script src="/compress/compress-tool.js?v=35" defer></script>
+<script src="/compress/compress-tool.js?v=37" defer></script>
 </body>
 </html>

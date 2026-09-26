@@ -101,6 +101,34 @@
     if (!compressBtn.disabled || files.length === 0) compressBtn.textContent = compressBtnIdleLabel();
   });
 
+  /* ===== Mobile: shared .option-change-btn instead of three level buttons =====
+     Desktop keeps the real three-button row (#cpLevelButtons) untouched;
+     ≤768px that row hides entirely (compress/index.html's own media
+     query) and #cpLevelOptionChangeBtn takes over instead — the site's
+     existing single-button click-to-advance picker (Congify's fps/crop/
+     order pickers, `.option-change-btn` + `bcRegisterOptionChangeBtn`,
+     shared/site.js), not a bespoke cycle control. LEVEL_OPTIONS is read
+     from the three real buttons' own dataset, not hardcoded a second
+     time, so they stay the single source of truth for what the three
+     levels actually are. */
+  const levelButtonsArr = [...levelButtons];
+  const LEVEL_OPTIONS = levelButtonsArr.map(btn => ({
+    quality: btn.dataset.quality,
+    label: btn.dataset.label,
+    levelKey: btn.dataset.levelKey
+  }));
+  function applyLevelSelection(opt){
+    selectedQuality = Number(opt.quality);
+    levelButtonsArr.forEach(b => b.classList.toggle("active", b.dataset.levelKey === opt.levelKey));
+    selectedCompression.textContent = `Compression level: ${opt.label}`;
+    updateAllEstimates();
+    schedulePersist();
+  }
+  const levelOptionChangeBtn = document.getElementById("cpLevelOptionChangeBtn");
+  const levelOptionChangeControl = levelOptionChangeBtn
+    ? bcRegisterOptionChangeBtn(levelOptionChangeBtn, LEVEL_OPTIONS, applyLevelSelection)
+    : null;
+
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
@@ -173,6 +201,7 @@
     files = [];
     selectedQuality = null;
     levelButtons.forEach(b => b.classList.remove("active"));
+    if (levelOptionChangeControl) levelOptionChangeControl.setIndex(0);
     selectedCompression.textContent = "";
     afterDrop.hidden = true;
     drop.hidden = false;
@@ -195,6 +224,13 @@
       selectedCompression.textContent = `Compression level: ${btn.dataset.label}`;
       updateAllEstimates();
       schedulePersist();
+      /* Keeps the mobile option-change button showing the same level a
+         desktop-width click just picked, so a mid-session resize to
+         mobile doesn't reveal it still on a stale value. */
+      if (levelOptionChangeControl){
+        const idx = LEVEL_OPTIONS.findIndex(o => o.levelKey === btn.dataset.levelKey);
+        if (idx !== -1) levelOptionChangeControl.setIndex(idx);
+      }
     });
   });
 
@@ -774,6 +810,18 @@
         });
         setFiles(restored);
         if (saved.levelKey){
+          /* Keeps both controls in sync regardless of which one's
+             actually visible right now — a viewport resize mid-session
+             shouldn't reveal a level-option-change button still showing
+             whatever it last displayed instead of the level that was
+             actually restored. setIndex() alone doesn't fire onSelect
+             (by design, see bcRegisterOptionChangeBtn's own doc comment),
+             so clicking the matching desktop button is still what
+             actually applies the selection. */
+          if (levelOptionChangeControl){
+            const idx = LEVEL_OPTIONS.findIndex(o => o.levelKey === saved.levelKey);
+            if (idx !== -1) levelOptionChangeControl.setIndex(idx);
+          }
           const matchingBtn = document.querySelector(`#cpLevelButtons .tool-format-btn[data-level-key="${saved.levelKey}"]`);
           if (matchingBtn) matchingBtn.click();
         }

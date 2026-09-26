@@ -233,15 +233,73 @@ options" control, never hand-roll a third copy**:
   stroke-width line sample — stays on `.bc-dropdown` regardless of count,
   since `.bc-combo`'s trigger only has room for a text label + chevron, no
   custom visual. Congify's two color pickers are the reference example.)
-- Compress, Combine, and Cleanly use neither — they have no "pick one of
-  several" control at all (Compress's Low/Medium/High is three plain
-  buttons, not a dropdown). That's a legitimate absence, not a gap to fill.
+- Combine and Cleanly use neither — they have no "pick one of several"
+  control at all. That's a legitimate absence, not a gap to fill.
+- Compress's Low/Medium/High is three plain buttons on desktop (no
+  dropdown there either — three short one-word options read fine
+  side-by-side, no menu needed) but switches to `.option-change-btn`
+  (below) on mobile. See that section for why.
 
 Both close each other's siblings of the same type, close on outside-click
 or Escape, and mark the active option. If you're tempted to copy a
 dropdown's CSS/JS into a new tool "just this once," that's the sign to
 reach for `bcRegisterCombo`/`bcRegisterDropdown` instead (see Lessons
 Learned: "dropdown dedup").
+
+### `.option-change-btn` — single-button click-to-advance picker
+
+For a short, **ordered** list of values where "click to step forward"
+reads better than opening a menu — fps steps, playback speed, anything on
+a numeric ladder, or (Compress's case) a mobile fallback for a row of
+plain buttons that doesn't fit — use `.option-change-btn` +
+`bcRegisterOptionChangeBtn` (`shared/site.js`) rather than
+`.bc-dropdown-trigger` or a hand-rolled cycle button. One click = one step
+forward, wrapping back to the first option after the last; there's no
+menu markup at all, the button itself always shows the current value.
+
+```html
+<button type="button" class="option-change-btn">
+  <span class="option-change-btn-label">...</span>
+  <span class="option-change-btn-icon" aria-hidden="true"></span>
+</button>
+```
+
+```js
+const control = bcRegisterOptionChangeBtn(btn, options, (opt, index) => {
+  // apply opt — fires after the button's already been updated
+}, initialIndex);
+// control.setIndex(i) restores a saved value without simulating a click
+// (and, being separate from a click, does NOT fire the onSelect callback
+// — call whatever onSelect would have done yourself alongside it).
+// control.current reads the currently-selected option.
+```
+
+Same size/shape/flip formula as `.bc-dropdown-trigger` (so it sits flush
+next to a real dropdown in the same settings row), with the chevron
+swapped for a small three-line cycle-arrows glyph in place of the
+"opens a menu" affordance, since nothing opens here.
+
+**Originated in Congify** (fps, crop, and playback-order pickers — see
+`congify-tool.js`'s `FPS_OPTIONS`/`CROP_OPTIONS`/`ORDER_OPTIONS` for the
+reference usage) but was missing from this doc until Compress became its
+second adopter — a reminder to add a component here in the same edit that
+introduces it, not just whenever it happens to get reused. **Compress's
+own adoption is mobile-only**: desktop keeps the real three `.tool-format-btn`
+elements (Low/Medium/High) exactly as they've always been — a plain
+3-button row reads fine at that width — but that row's shared/site.css
+default already hides `.tool-format-btn` entirely ≤768px (built for
+Convert's dropdown-style pickers, which grew a `.tool-format-select`
+native-`<select>` fallback that Compress never did), so its three buttons
+used to just vanish on mobile with nothing standing in for them. Fixed
+with a second, separate `.option-change-btn` element
+(`#cpLevelOptionChangeBtn`) shown only ≤768px in its place — `LEVEL_OPTIONS`
+is read from the three real buttons' own `data-quality`/`data-label`/
+`data-level-key`, not hardcoded a second time, so they stay the single
+source of truth for what the three levels actually are, and both controls
+are kept in sync with each other on every selection (either one's
+`onSelect`/click handler also updates the other's displayed index) so a
+mid-session viewport resize never reveals a stale value on whichever
+control was hidden.
 
 ### Folding a tool's own trigger-shaped pill onto `.bc-dropdown-trigger`
 
@@ -1089,7 +1147,9 @@ first:
   Congify, the always-dark-surface override pattern
   (`.context-fullscreen-overlay .context-tool-btn`).
 - **Congify**: joint origin of the `.bc-obj-*` family with Context; the
-  reference example for the combo-vs-dropdown color-swatch exception.
+  reference example for the combo-vs-dropdown color-swatch exception;
+  originated `.option-change-btn`/`bcRegisterOptionChangeBtn` (fps/crop/
+  order pickers), later adopted by Compress for its mobile level picker.
 - **Codify**: `.bc-editor-input`; joint reference (with Colorfy) for the
   auto-fit resizable-frame conventions.
 - **Cleanly** and **Combine**: independently, byte-identically originated
