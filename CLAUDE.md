@@ -749,6 +749,32 @@ background-image picker, not a drop-target-on-banner pattern, since its
 primary input is typed code rather than a dropped file. That's a
 legitimate absence, not a gap.
 
+## Capping concurrent heavy work: `runWithConcurrencyLimit`
+
+Any per-file operation that's genuinely expensive (a canvas encode, a WASM
+decode) needs a concurrency cap once a tool lets someone load an unbounded
+number of files — firing all of them at once via a plain `forEach`/
+`Promise.all` is fine for a handful of files but can bog down a lower-end
+device once a batch gets into the double digits. **Compress's live
+estimate recalculation** (`updateEstimateForEntry`, run once per loaded
+file on initial load and again on every level-button change) is the
+reference example: it used to fire every file's `compressImageFile` canvas
+encode simultaneously via `previewEntries.forEach(updateEstimateForEntry)`,
+with no cap at all. Fixed with a small local helper,
+`runWithConcurrencyLimit(items, limit, worker)` (`compress-tool.js`) — `limit`
+workers pull from a shared index until the list is exhausted — capped at
+`ESTIMATE_CONCURRENCY = 5`. This only throttles the *calculation* pass;
+the number of files someone can actually load and eventually compress is
+unlimited either way, same as before — the cap only slows how many
+estimates are being crunched at once, not what fits in the file list.
+Each entry's own `token` field (already existed, for discarding stale
+results when a level change interrupts an in-flight estimate) still works
+unchanged under the cap. No shared JS module for this — same reasoning as
+`.bc-resize-handle`/HEIC decode above: cheap enough to duplicate into
+another tool's own `-tool.js` if a similar unbounded-batch performance
+problem shows up there, rather than inventing a shared import for one
+eight-line helper.
+
 ## Editor / resizable-frame conventions (when a tool has one)
 
 - Auto-fit height to content on input (`scrollHeight`-driven), with a
