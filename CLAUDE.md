@@ -783,6 +783,39 @@ another tool's own `-tool.js` if a similar unbounded-batch performance
 problem shows up there, rather than inventing a shared import for one
 eight-line helper.
 
+**Thumbnails get their own, separate concurrency-capped queue** — capping
+the *calculation* pass alone (above) still left the iPhone testing choppy
+on a big batch, because every card's `<img src>` was still assigned
+synchronously in the same `innerHTML` string as its filename/size text,
+so the browser tried to decode and paint every thumbnail at once
+regardless of what the estimate cap was doing. Fixed by splitting
+`appendPreviewCard()`'s markup (the filename/size text, which paints
+immediately, no queue involved) from its thumbnail (an `<img>` with no
+`src` attribute at all at creation time, `loading="lazy"
+decoding="async"` set as extra browser-level hints) — the actual `src`
+is assigned later by a small dedicated pool (`imageLoadQueue`/
+`pumpImageQueue`/`enqueueImageLoad`, `compress-tool.js`), capped at
+`IMAGE_LOAD_CONCURRENCY = 3` (deliberately lower than
+`ESTIMATE_CONCURRENCY`'s 5 — thumbnail decode+paint is the more
+visually-disruptive kind of work on a weak GPU). Stats settle first by
+construction, not by scheduling trickery: they're already real DOM
+content the moment the card is appended, before any thumbnail has even
+been queued.
+
+Kicking off that first pump was tried with `requestIdleCallback` first
+and **rejected** — Safari/iOS has never implemented it at all, and
+worse, it turned out unreliable even in Chrome: confirmed live that a
+whole batch's thumbnails never fired in a backgrounded/hidden tab, since
+Chrome can starve idle callbacks indefinitely there. Replaced with
+`requestAnimationFrame`, universally supported and still guaranteeing at
+least one real paint of the text stats happens before the callback runs
+(next frame, never synchronous) — but rAF has the identical hidden-tab
+failure mode (it depends on the page actually producing frames), so
+`enqueueImageLoad()` pairs it with a `setTimeout(run, 100)` fallback,
+whichever fires first winning (a `done` guard stops the loser from
+double-pumping). A visitor switching tabs mid-batch shouldn't leave
+every thumbnail stuck waiting forever for a frame that isn't coming.
+
 ## Editor / resizable-frame conventions (when a tool has one)
 
 - Auto-fit height to content on input (`scrollHeight`-driven), with a
