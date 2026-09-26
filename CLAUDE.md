@@ -877,6 +877,20 @@ function loadHeic2any(){
   under the already-shared `.exif-*` family) fills the thumb slot with a
   plain "HEIC" label button, replaced in place by a real `<img>` once
   clicked.
+- **Compress's Preview button shows the compressed result, not a raw
+  full-quality decode, once a level's picked.** It used to always call
+  `decodeHeicFile(file)` on click and display that PNG directly — correct,
+  but wasted work: the preview only ever renders at thumbnail size, and
+  the file gets compressed on download regardless, so decoding to full
+  quality just to shrink it back down in CSS was pure overhead for
+  nothing the visitor actually sees. The click handler now branches on
+  `selectedQuality`: once a level's chosen, it calls
+  `compressImageFile(file, selectedQuality, getOutputMimeType(file))`
+  instead — which already calls `decodeHeicFile` internally, so this
+  isn't a second decode, just skipping straight to the same compressed
+  bytes the estimate/download path produces — falling back to the plain
+  `decodeHeicFile` result only when no level's picked yet (nothing to
+  compress to).
 - **Decoding is cached per file** (`WeakMap`) so a preview click and the
   real convert/strip operation that follows don't pay for the same decode
   twice.
