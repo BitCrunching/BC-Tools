@@ -247,15 +247,64 @@
     }
   }
 
+  /* Thumbnails load through a small, separate concurrency-capped queue
+     (like ESTIMATE_CONCURRENCY above, but for <img> decode/paint rather
+     than canvas encode) so a big batch's filename/size text — already
+     in the DOM the instant appendPreviewCard runs, no queue involved —
+     visibly settles first, with photos filling in afterward rather than
+     all trying to decode and paint at once. Confirmed directly (iPhone
+     13 mini) that leaving thumbnails on the plain synchronous
+     `<img src>` path was the remaining source of jank on a big batch
+     even after the estimate calculation itself was capped. */
+  const IMAGE_LOAD_CONCURRENCY = 3;
+  const imageLoadQueue = [];
+  let imageLoadersActive = 0;
+  function loadCardImage(img, src){
+    return new Promise(resolve => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+      img.src = src;
+    });
+  }
+  function pumpImageQueue(){
+    while (imageLoadersActive < IMAGE_LOAD_CONCURRENCY && imageLoadQueue.length){
+      const { img, src } = imageLoadQueue.shift();
+      imageLoadersActive++;
+      loadCardImage(img, src).then(() => {
+        imageLoadersActive--;
+        pumpImageQueue();
+      });
+    }
+  }
+  /* requestAnimationFrame, not requestIdleCallback — Safari/iOS has never
+     implemented the latter. rAF still guarantees the text stats get at
+     least one paint before any thumbnail decode starts, since the
+     callback only runs on the *next* frame, never synchronously. Paired
+     with a 100ms setTimeout fallback because rAF itself never fires at
+     all in a backgrounded/hidden tab (confirmed live: a whole batch's
+     thumbnails silently never loaded while the tab was inactive) — a
+     visitor switching tabs mid-batch shouldn't leave every thumbnail
+     stuck waiting forever for a frame that isn't coming. Whichever
+     fires first runs the pump; the `done` guard just stops the other
+     from running it twice. */
+  function enqueueImageLoad(img, src){
+    imageLoadQueue.push({ img, src });
+    let done = false;
+    const run = () => { if (done) return; done = true; pumpImageQueue(); };
+    requestAnimationFrame(run);
+    setTimeout(run, 100);
+  }
+
   function appendPreviewCard(item){
     const card = document.createElement("div");
     card.className = "result";
     card.innerHTML = `
-      <img src="${item.src}" alt="${item.name}">
+      <img alt="${item.name}" loading="lazy" decoding="async">
       <div class="result-name">${item.name}</div>
       <div class="result-size">${item.info}</div>
     `;
     results.appendChild(card);
+    if (item.src) enqueueImageLoad(card.querySelector("img"), item.src);
     return card;
   }
 
