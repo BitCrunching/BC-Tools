@@ -891,6 +891,30 @@ function loadHeic2any(){
   bytes the estimate/download path produces — falling back to the plain
   `decodeHeicFile` result only when no level's picked yet (nothing to
   compress to).
+- **A generated preview is cached and persisted, not just shown once.**
+  `heicPreviewCache` (`compress-tool.js`, a `Map` keyed by the `File`
+  object) holds the decoded/compressed blob from a Preview click, so a
+  `showSelectedPreviews()` rebuild — triggered by removing a different
+  file from the batch, which currently rebuilds every card from scratch —
+  shows that image immediately instead of resetting back to the Preview
+  button. `showHeicPreviewImage(card, blob, name)` is the shared render
+  step both a live click and a cache-hit re-render call, so the two paths
+  can't drift. The cache also round-trips through the existing "Continue
+  where you left off" IndexedDB record (`persistNow()` adds
+  `previewBytes`/`previewType` alongside a file's own `bytes`/`type` when
+  `heicPreviewCache` has an entry for it; the restore handler recreates
+  the `Blob` and re-populates `heicPreviewCache` keyed to the newly
+  created `File`, before `setFiles()` runs) — a HEIC file that was
+  previewed before a page reload stays previewed after "Continue" restores
+  it, not just within the same page load. Deliberately **not**
+  `localStorage` for this — the compressed blob can still be several
+  hundred KB, comfortably enough to blow `localStorage`'s ~5MB total quota
+  after a couple of files even before the ~33% base64 overhead a
+  string-only store would add; IndexedDB has no such practical ceiling and
+  already handles the exact same shape of data (`bytes`) for the file
+  content itself. `heicPreviewCache.delete(file)`/`.clear()` on a per-file
+  remove and on `resetTool()` keep it from outliving the files it belongs
+  to.
 - **Decoding is cached per file** (`WeakMap`) so a preview click and the
   real convert/strip operation that follows don't pay for the same decode
   twice.
