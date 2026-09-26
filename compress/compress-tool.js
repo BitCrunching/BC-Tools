@@ -335,8 +335,9 @@
 
       const entry = { file, infoEl: card.querySelector(".result-size"), token: 0 };
       previewEntries.push(entry);
-      updateEstimateForEntry(entry);
     });
+
+    runWithConcurrencyLimit(previewEntries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
   }
 
   function addResultRemoveButton(card){
@@ -375,8 +376,27 @@
     }
   }
 
+  /* Estimate recalculation runs a real canvas encode per file — firing
+     every one at once (a plain forEach) is what bogs down lower-end
+     devices once a batch gets past ~10 images. Capped at 5 concurrent
+     encodes instead: still lets a visitor load as many files as they
+     want, just processes the estimates in waves of 5 rather than all at
+     once. Each entry still uses its own token check, so a level change
+     mid-run correctly discards stale results same as before. */
+  const ESTIMATE_CONCURRENCY = 5;
+  async function runWithConcurrencyLimit(items, limit, worker){
+    let index = 0;
+    async function runNext(){
+      while (index < items.length){
+        const item = items[index++];
+        await worker(item);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runNext));
+  }
+
   function updateAllEstimates(){
-    previewEntries.forEach(updateEstimateForEntry);
+    runWithConcurrencyLimit(previewEntries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
   }
 
   /* Appends to the existing selection rather than replacing it, so
