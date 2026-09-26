@@ -337,7 +337,7 @@
       previewEntries.push(entry);
     });
 
-    runWithConcurrencyLimit(previewEntries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
+    queueEstimates(previewEntries);
   }
 
   function addResultRemoveButton(card){
@@ -382,7 +382,10 @@
      encodes instead: still lets a visitor load as many files as they
      want, just processes the estimates in waves of 5 rather than all at
      once. Each entry still uses its own token check, so a level change
-     mid-run correctly discards stale results same as before. */
+     mid-run correctly discards stale results same as before. Every entry
+     not yet picked up by one of the 5 workers shows "Waiting..." instead
+     of sitting there with no feedback at all, so a 20-file batch reads as
+     "working through these" rather than looking stalled. */
   const ESTIMATE_CONCURRENCY = 5;
   async function runWithConcurrencyLimit(items, limit, worker){
     let index = 0;
@@ -395,8 +398,17 @@
     await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runNext));
   }
 
+  function queueEstimates(entries){
+    if (selectedQuality !== null){
+      entries.forEach(entry => {
+        entry.infoEl.textContent = `Original size: ${formatKB(entry.file.size)} • Waiting...`;
+      });
+    }
+    runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
+  }
+
   function updateAllEstimates(){
-    runWithConcurrencyLimit(previewEntries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
+    queueEstimates(previewEntries);
   }
 
   /* Appends to the existing selection rather than replacing it, so
