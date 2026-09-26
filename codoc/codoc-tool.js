@@ -40,12 +40,6 @@
     input.value = "";
   });
 
-  function humanSize(bytes){
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  }
-
   function renderResult(){
     results.innerHTML = "";
     if (!file) return;
@@ -58,7 +52,7 @@
         '<div class="cdc-result-size"></div>' +
       '</div>';
     card.querySelector(".result-name").textContent = file.name;
-    card.querySelector(".cdc-result-size").textContent = humanSize(file.size);
+    card.querySelector(".cdc-result-size").textContent = bcFormatFileSize(file.size);
     results.appendChild(card);
   }
 

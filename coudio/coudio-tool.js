@@ -86,12 +86,6 @@
     return "File";
   }
 
-  function formatKB(bytes){
-    const kb = Math.max(1, Math.round(bytes / 1024));
-    if (kb >= 1000) return `${(kb / 1024).toFixed(1)} MB`;
-    return `${kb} KB`;
-  }
-
   /* Just a plain loaded-file count now that conversion itself is
      per-row (each row's own Convert button), not a single batch
      action — still useful as an at-a-glance "how many files are
@@ -125,7 +119,7 @@
     });
 
     row.querySelector(".cd-row-input-badge").textContent = detectedTypeLabel(entry.file);
-    row.querySelector(".cd-row-size").textContent = formatKB(entry.file.size);
+    row.querySelector(".cd-row-size").textContent = bcFormatFileSize(entry.file.size);
 
     const bitrateDropdownEl = row.querySelector(".cd-row-bitrate-dropdown");
     const formatTrigger = row.querySelector(".cd-row-format-combo .bc-combo-trigger");

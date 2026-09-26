@@ -93,11 +93,6 @@
     return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
   }
 
-  function formatSize(bytes){
-    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  }
-
   async function getThumbnail(file){
     if (thumbnailCache.has(file)) return thumbnailCache.get(file);
     if (!window.pdfjsLib) return null;
@@ -137,7 +132,7 @@
         <span class="combine-file-index">${i + 1}</span>
         <div class="combine-file-thumb"></div>
         <span class="combine-file-name">${file.name}</span>
-        <span class="combine-file-size">${formatSize(file.size)}</span>
+        <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
         <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
 

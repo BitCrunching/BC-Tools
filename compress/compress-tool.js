@@ -234,20 +234,6 @@
     });
   });
 
-  function formatKB(bytes){
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
-  /* Used for every size figure shown to a visitor — original, estimated,
-     and final compressed — so a large file reads the same way (MB above
-     1000KB) everywhere it's mentioned. formatKB stays around as the raw
-     always-KB building block this uses internally. */
-  function formatSize(bytes){
-    const kb = bytes / 1024;
-    if (kb > 1000) return `${(kb / 1024).toFixed(1)} MB`;
-    return formatKB(bytes);
-  }
-
   function isHeicFile(f){
     return f.type === "image/heic" || f.type === "image/heif" || /\.(heic|heif)$/i.test(f.name);
   }
@@ -398,7 +384,7 @@
       const card = appendPreviewCard({
         src: heic ? "" : URL.createObjectURL(file),
         name: file.name,
-        info: formatSize(file.size)
+        info: bcFormatFileSize(file.size)
       });
       if (heic){
         card.classList.add("result-pdf");
@@ -528,7 +514,7 @@
   }
 
   async function updateEstimateForEntry(entry){
-    const originalText = formatSize(entry.file.size);
+    const originalText = bcFormatFileSize(entry.file.size);
     if (selectedQuality === null){
       entry.infoEl.textContent = originalText;
       return;
@@ -538,7 +524,7 @@
 
     const cached = getCachedEstimate(entry.file, selectedQuality);
     if (cached){
-      entry.infoEl.innerHTML = `${originalText}<br>New size: ${formatSize(cached.size)} (-${cached.savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>New size: ${bcFormatFileSize(cached.size)} (-${cached.savedPercent}%)`;
       return;
     }
 
@@ -550,7 +536,7 @@
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
       setCachedEstimate(entry.file, selectedQuality, { size: compressedBlob.size, savedPercent });
-      entry.infoEl.innerHTML = `${originalText}<br>New size: ${formatSize(compressedBlob.size)} (-${savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>New size: ${bcFormatFileSize(compressedBlob.size)} (-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
       entry.infoEl.textContent = originalText;
@@ -582,7 +568,7 @@
   function queueEstimates(entries){
     if (selectedQuality !== null){
       entries.forEach(entry => {
-        entry.infoEl.innerHTML = `${formatSize(entry.file.size)}<br>Waiting...`;
+        entry.infoEl.innerHTML = `${bcFormatFileSize(entry.file.size)}<br>Waiting...`;
       });
     }
     runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
@@ -713,7 +699,7 @@
         const resultCard = appendPreviewCard({
           src: URL.createObjectURL(compressedBlob),
           name: outputName,
-          info: `${formatSize(file.size)} → ${formatSize(compressedBlob.size)} • -${savedPercent}%`
+          info: `${bcFormatFileSize(file.size)} → ${bcFormatFileSize(compressedBlob.size)} • -${savedPercent}%`
         });
         addResultRemoveButton(resultCard);
 

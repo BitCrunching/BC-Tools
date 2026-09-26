@@ -611,6 +611,40 @@ tool-local class that keeps only size/font specifics (`height`, `padding`,
 second editor surface never has to re-derive its own theme-dependent chrome
 from scratch (see Lessons Learned: "editor hover bug").
 
+## Shared file-size formatting: `bcFormatFileSize`
+
+**Any tool displaying a file's size — original, converted, compressed,
+estimated, whatever — calls `bcFormatFileSize(bytes)` (`shared/site.js`),
+never a hand-rolled KB/MB calculation.** This is a non-negotiable rule for
+every tool that shows a file size, current or future, the same weight as
+the cache-busting rule below — not a "reach for this if convenient"
+suggestion.
+
+```js
+bcFormatFileSize(1826231)  // "1.7 MB"
+bcFormatFileSize(2048)     // "2 KB"
+bcFormatFileSize(500)      // "1 KB" — floored at 1, never "0 KB"
+```
+
+Plain KB below 1024KB, one decimal MB at and above — a true 1MiB
+threshold (`bytes < 1024 * 1024`), not 1000KB or 1000000 bytes. There is
+no bytes-level tier (a 500-byte file still reads "1 KB") — every current
+adopter's files are large enough that sub-1KB is not a real case worth a
+third tier for.
+
+**Added 2026-09-26, consolidating four independently-written near-
+duplicates**: Cleanly and Combine had already, independently, arrived at
+the exact same byte-identical formula (proof this is genuinely the right
+shape); Compress, Coudio, and Codoc had each separately written their own
+variant with a slightly different threshold or rounding. Convert had a
+KB-only `formatKB` with no MB conversion at all — the exact kind of
+staleness that happens when a formula isn't shared: nobody thought to add
+MB support there because nobody was looking at four other copies of the
+same problem at once. All six tools (Cleanly, Combine, Compress, Convert,
+Coudio, Codoc) now call `bcFormatFileSize` and carry no local size
+formatter of their own — if you're about to write `Math.round(bytes /
+1024)` anywhere, stop and use this instead.
+
 ## Tool banner color + category texture
 
 - Every tool has one fixed, saturated brand color, no two tools share a
@@ -1134,9 +1168,11 @@ requires for everything else.
    dropdown side by side.
 7. `.bc-toggle-btn`/`.bc-resize-handle` for any pressed-state button or
    drag-to-resize handle, not a hand-rolled one.
-8. Every new/changed script or stylesheet's `?v=` bumped, site-wide for
+8. `bcFormatFileSize` for any file size shown anywhere, not a hand-rolled
+   KB/MB calculation — see its own section above.
+9. Every new/changed script or stylesheet's `?v=` bumped, site-wide for
    shared files.
-9. A live-browser check (both themes) before calling it done — this project
+10. A live-browser check (both themes) before calling it done — this project
    consistently catches real bugs this way (stacking/specificity issues,
    clipped native controls, texture/button collisions) that are easy to miss
    from source alone.
@@ -1159,7 +1195,13 @@ first:
   auto-fit resizable-frame conventions.
 - **Cleanly** and **Combine**: independently, byte-identically originated
   `.bc-file-remove-btn` ("the beta remove btn" — `.exif-file-remove` /
-  `.combine-file-remove`); later also adopted by Colorfy's saved-color
+  `.combine-file-remove`) — and, separately, the exact formula
+  `bcFormatFileSize` was promoted from (each tool's own local `formatSize`
+  was already identical down to the threshold and rounding, before either
+  tool knew the other had one). Two byte-identical duplications between
+  the same pair of tools is a genuine signal that whatever they agree on
+  independently is probably the right shape for a shared component.
+  `.bc-file-remove-btn` was later also adopted by Colorfy's saved-color
   chip and by Convert/Compress/Coudio's per-file remove (moved off
   `.result-remove` for this specific use — see Lessons Learned:
   "beta remove btn adoption"). Cleanly later also adopted Coudio's own

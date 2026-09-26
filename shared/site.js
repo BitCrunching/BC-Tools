@@ -1012,6 +1012,22 @@ function showNavTerminal(text){
 const yearEl = document.getElementById("year");
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+/* ===== SHARED FILE-SIZE FORMATTING =====
+   Any tool displaying a file's size (original, converted, compressed,
+   estimated — whatever) calls this rather than hand-rolling its own KB/MB
+   math. Before this, six tools had independently written four subtly
+   different versions of the same formula (Cleanly/Combine: byte-identical
+   copies of each other; Compress, Coudio, and Codoc each their own,
+   different KB/MB threshold and rounding) — the exact kind of duplication
+   this file's own header says to promote to shared the moment it shows up
+   twice. Threshold is a true 1024KB (1MiB), one decimal on the MB side,
+   and a Math.max(1, ...) floor so a very small file reads "1 KB" rather
+   than "0 KB". */
+function bcFormatFileSize(bytes){
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /* ===== SHARED "CONTINUE WHERE YOU LEFT OFF" PERSISTENCE =====
    IndexedDB helpers shared by every tool that offers a Continue button
    (Convert/Compress/Combine/Cleanly — Context has its own, older,

@@ -170,11 +170,6 @@
     return ["HEIC metadata found!"];
   }
 
-  function formatSize(bytes){
-    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  }
-
   function gpsToDecimal(coords, ref){
     if (!coords || coords.length < 3) return null;
     let decimal = coords[0] + coords[1] / 60 + coords[2] / 3600;
@@ -311,7 +306,7 @@
         <div class="exif-file-thumb">${thumbHtml}</div>
         <div class="exif-file-info">
           <div class="exif-file-name">${item.file.name}</div>
-          <div class="exif-file-size">${formatSize(item.file.size)}</div>
+          <div class="exif-file-size">${bcFormatFileSize(item.file.size)}</div>
           <div class="exif-tags">${tagsHtml}</div>
           ${svgScanNote}
           ${heicFormatToggle("mobile")}

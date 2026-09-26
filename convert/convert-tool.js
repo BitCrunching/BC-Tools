@@ -239,10 +239,6 @@
     return card;
   }
 
-  function formatKB(bytes){
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
   let files = [];
   let selectedFormat = "";
 
@@ -664,7 +660,7 @@
         const card = appendPreviewCard({
           src: "",
           name: file.name,
-          info: `Original size: ${formatKB(file.size)}`
+          info: `Original size: ${bcFormatFileSize(file.size)}`
         });
         card.classList.add("result-pdf");
         card.querySelector("img").remove();
@@ -696,7 +692,7 @@
         const card = appendPreviewCard({
           src: URL.createObjectURL(file),
           name: file.name,
-          info: `Original size: ${formatKB(file.size)}`
+          info: `Original size: ${bcFormatFileSize(file.size)}`
         });
         addRemoveButton(card, file);
       }
@@ -937,7 +933,7 @@
           const resultCard = appendPreviewCard({
             src: URL.createObjectURL(blob),
             name: outputName,
-            info: `${formatKB(blob.size)} • .${extension.toUpperCase()}`
+            info: `${bcFormatFileSize(blob.size)} • .${extension.toUpperCase()}`
           });
           addResultRemoveButton(resultCard);
         });
@@ -974,7 +970,7 @@
           finishedResults.push({
             blob,
             outputName,
-            info: `${formatKB(file.size)} → ${formatKB(blob.size)} • .${extension.toUpperCase()}`
+            info: `${bcFormatFileSize(file.size)} → ${bcFormatFileSize(blob.size)} • .${extension.toUpperCase()}`
           });
 
           if (useZip){
