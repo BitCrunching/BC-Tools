@@ -118,13 +118,22 @@ Two distinct component families — don't blend them:
   own local class. Several genuine differences from Coudio's
   `convertEntry()`:
 
-  1. **A row shows two buttons before it's cleaned, one after — and that
-     one stays enabled forever.** Before `item.stripped` is true: "Clean
-     first" (`stripEntry()`, no download) and "Clean and download"
-     (`stripEntry(item, row, { thenDownload: true })`, cleans then
-     immediately calls `downloadEntry()` once) sit side by side — one lets
-     a visitor check the result first, the other is the one-click path for
-     anyone who doesn't care to. Either path lands on the same place once
+  1. **A row shows one or two buttons before it's cleaned, one after — and
+     that one stays enabled forever.** Before `item.stripped` is true, which
+     button(s) show depends on whether metadata was actually found
+     (`item.tags.length`): if the row's already reading "✓ - No dangerous
+     metadata found" (nothing found — `item.tags` empty), "Clean first" and
+     "Clean and download" both imply something's worth checking or
+     stripping first, which isn't true here, so a single "Clean anyways"
+     (`.ex-row-clean-anyways-btn`) takes their place instead — same
+     `stripEntry(item, row, { thenDownload: true })` call "Clean and
+     download" makes, since there's nothing to check first when nothing was
+     found. Otherwise (tags found): "Clean first" (`stripEntry()`, no
+     download) and "Clean and download" (`stripEntry(item, row, {
+     thenDownload: true })`, cleans then immediately calls
+     `downloadEntry()` once) sit side by side — one lets a visitor check
+     the result first, the other is the one-click path for anyone who
+     doesn't care to. Every path lands on the same place once
      `item.stripped` is true: a single "Download" button
      (`renderList()`'s `actionButtonsHtml`) that never gets disabled or
      swapped out — clicking it just re-downloads the same already-cleaned
@@ -132,10 +141,10 @@ Two distinct component families — don't blend them:
      "already downloaded, don't offer it again" state at all: downloading
      is not a one-shot action here, unlike e.g. Congify's result download.
      `stripEntry()`'s own `row.querySelectorAll(".ex-row-strip-btn,
-     .ex-row-clean-download-btn")` disables whichever of the two clean
-     buttons is currently showing only while the clean itself is in
-     flight, re-enabling on failure — this is a working-state disable, not
-     a used-once one.
+     .ex-row-clean-download-btn, .ex-row-clean-anyways-btn")` disables
+     whichever of these buttons is currently showing only while the clean
+     itself is in flight, re-enabling on failure — this is a working-state
+     disable, not a used-once one.
   2. **Cleaning and downloading are deliberately separate actions, not
      one**, even from "Clean and download" — that button still calls
      `stripEntry()` first and lets it call `downloadEntry()` internally,

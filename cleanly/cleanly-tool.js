@@ -283,10 +283,18 @@
         ? `<button type="button" class="exif-file-heic-preview" aria-label="Preview">HEIC</button>`
         : `<img src="${item.src}" alt="">`;
 
-      /* Two states per row:
-         - not yet cleaned: "Clean first" (processes only, no download —
-           see stripEntry's own doc comment) and "Clean and download"
-           (cleans, then immediately downloads) sit side by side.
+      /* Three states per row:
+         - not yet cleaned, already tagged clean (item.tags.length === 0,
+           the "✓ - No dangerous metadata found" row): "Clean first" and
+           "Clean and download" both imply there's something worth
+           checking or stripping first, which isn't true here — a single
+           "Clean anyways" takes their place instead, behaving like
+           "Clean and download" (clean, then immediately download) since
+           there's nothing to check first when nothing was found.
+         - not yet cleaned, tags found: "Clean first" (processes only, no
+           download — see stripEntry's own doc comment) and "Clean and
+           download" (cleans, then immediately downloads) sit side by
+           side.
          - cleaned (however it got there): a single "Download" button,
            always enabled — clicking it just re-downloads the same
            already-cleaned blob (downloadEntry()) as many times as
@@ -299,6 +307,8 @@
          not just that "the cleanly primary action" fired. */
       const actionButtonsHtml = heicFormatToggle("desktop") + (item.stripped
         ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
+        : item.tags.length === 0
+        ? `<button type="button" class="tool-primary-btn ex-row-clean-anyways-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_anyways">Clean anyways</button>`
         : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
            <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`);
 
@@ -357,6 +367,9 @@
 
       const cleanDownloadBtn = el.querySelector(".ex-row-clean-download-btn");
       if (cleanDownloadBtn) cleanDownloadBtn.addEventListener("click", () => stripEntry(item, el, { thenDownload: true }));
+
+      const cleanAnywaysBtn = el.querySelector(".ex-row-clean-anyways-btn");
+      if (cleanAnywaysBtn) cleanAnywaysBtn.addEventListener("click", () => stripEntry(item, el, { thenDownload: true }));
 
       fileList.appendChild(el);
     });
@@ -522,7 +535,7 @@
   }
 
   async function stripEntry(item, row, { thenDownload = false } = {}){
-    const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn, .ex-heic-format-toggle button")];
+    const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn, .ex-row-clean-anyways-btn, .ex-heic-format-toggle button")];
     buttons.forEach(btn => { btn.disabled = true; });
     item.cleaning = true;
     status.textContent = `Removing metadata from ${item.file.name}…`;
