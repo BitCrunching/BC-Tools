@@ -431,14 +431,14 @@
     }
 
     const myToken = ++entry.token;
-    entry.infoEl.textContent = `${originalText} • Estimate: calculating...`;
+    entry.infoEl.innerHTML = `${originalText}<br>Estimate: calculating...`;
 
     try {
       const outputMimeType = getOutputMimeType(entry.file);
       const compressedBlob = await compressImageFile(entry.file, selectedQuality, outputMimeType);
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
-      entry.infoEl.textContent = `${originalText} • Estimated after compression: ${formatKB(compressedBlob.size)} (-${savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatKB(compressedBlob.size)} (-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
       entry.infoEl.textContent = originalText;
@@ -470,7 +470,7 @@
   function queueEstimates(entries){
     if (selectedQuality !== null){
       entries.forEach(entry => {
-        entry.infoEl.textContent = `${formatSize(entry.file.size)} • Waiting...`;
+        entry.infoEl.innerHTML = `${formatSize(entry.file.size)}<br>Waiting...`;
       });
     }
     runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
