@@ -277,7 +277,11 @@ const control = bcRegisterOptionChangeBtn(btn, options, (opt, index) => {
 Same size/shape/flip formula as `.bc-dropdown-trigger` (so it sits flush
 next to a real dropdown in the same settings row), with the chevron
 swapped for a small three-line cycle-arrows glyph in place of the
-"opens a menu" affordance, since nothing opens here.
+"opens a menu" affordance, since nothing opens here. **`.option-change-btn-lg`**
+is the 74px variant (mirroring `.bc-dropdown-trigger-lg`/`.bc-combo-trigger-lg`)
+for standing in for a `.tool-format-btn`/`.tool-primary-btn`-height control
+instead of a normal 40px settings-row pill — add as a second class
+alongside `.option-change-btn`, same split as the other `-lg` variants.
 
 **Originated in Congify** (fps, crop, and playback-order pickers — see
 `congify-tool.js`'s `FPS_OPTIONS`/`CROP_OPTIONS`/`ORDER_OPTIONS` for the
@@ -291,15 +295,16 @@ default already hides `.tool-format-btn` entirely ≤768px (built for
 Convert's dropdown-style pickers, which grew a `.tool-format-select`
 native-`<select>` fallback that Compress never did), so its three buttons
 used to just vanish on mobile with nothing standing in for them. Fixed
-with a second, separate `.option-change-btn` element
-(`#cpLevelOptionChangeBtn`) shown only ≤768px in its place — `LEVEL_OPTIONS`
-is read from the three real buttons' own `data-quality`/`data-label`/
-`data-level-key`, not hardcoded a second time, so they stay the single
-source of truth for what the three levels actually are, and both controls
-are kept in sync with each other on every selection (either one's
-`onSelect`/click handler also updates the other's displayed index) so a
-mid-session viewport resize never reveals a stale value on whichever
-control was hidden.
+with a second, separate `.option-change-btn.option-change-btn-lg` element
+(`#cpLevelOptionChangeBtn`, 74px to match the row it replaces rather than
+the base class's default 40px) shown only ≤768px in its place —
+`LEVEL_OPTIONS` is read from the three real buttons' own `data-quality`/
+`data-label`/`data-level-key`, not hardcoded a second time, so they stay
+the single source of truth for what the three levels actually are, and
+both controls are kept in sync with each other on every selection
+(either one's `onSelect`/click handler also updates the other's displayed
+index) so a mid-session viewport resize never reveals a stale value on
+whichever control was hidden.
 
 ### Folding a tool's own trigger-shaped pill onto `.bc-dropdown-trigger`
 
