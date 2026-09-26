@@ -816,6 +816,23 @@ whichever fires first winning (a `done` guard stops the loser from
 double-pumping). A visitor switching tabs mid-batch shouldn't leave
 every thumbnail stuck waiting forever for a frame that isn't coming.
 
+**A given file+level's calculated estimate is also cached, in
+`localStorage` this time** — the estimate cache (`ESTIMATE_CACHE_KEY`,
+`compress-tool.js`) is a genuinely good fit for `localStorage`, unlike
+`heicPreviewCache` above: it's just two small numbers per entry (a byte
+count and a percent), not a blob, so there's no realistic path to hitting
+the ~5MB quota. Keyed by `` `${file.name}|${file.size}|${quality}` ``
+rather than the `File` object itself, since — unlike the in-memory
+`heicPreviewCache` — this needs to survive a reload, and a `File` object
+doesn't. `updateEstimateForEntry` checks this cache before doing any
+canvas work at all; a hit skips `compressImageFile` entirely and renders
+straight from the cached numbers. Confirmed live: picking a level a
+second time (even after a full page reload) produces zero additional
+`canvas.toBlob` calls for a file+level combination already seen. Capped
+at `ESTIMATE_CACHE_MAX = 100` entries, oldest evicted first by object-key
+insertion order, so it can't grow without bound across months of everyday
+use the way an unbounded per-file/per-level cache otherwise would.
+
 ## Editor / resizable-frame conventions (when a tool has one)
 
 - Auto-fit height to content on input (`scrollHeight`-driven), with a
