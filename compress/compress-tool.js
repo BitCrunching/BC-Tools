@@ -202,8 +202,10 @@
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   }
 
-  /* Original-size label only — the "Estimated after compression" figure
-     stays plain KB via formatKB above regardless of size, on purpose. */
+  /* Used for every size figure shown to a visitor — original, estimated,
+     and final compressed — so a large file reads the same way (MB above
+     1000KB) everywhere it's mentioned. formatKB stays around as the raw
+     always-KB building block this uses internally. */
   function formatSize(bytes){
     const kb = bytes / 1024;
     if (kb > 1000) return `${(kb / 1024).toFixed(1)} MB`;
@@ -465,7 +467,7 @@
       const compressedBlob = await compressImageFile(entry.file, selectedQuality, outputMimeType);
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
-      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatKB(compressedBlob.size)} (-${savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatSize(compressedBlob.size)} (-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
       entry.infoEl.textContent = originalText;
@@ -628,7 +630,7 @@
         const resultCard = appendPreviewCard({
           src: URL.createObjectURL(compressedBlob),
           name: outputName,
-          info: `${formatSize(file.size)} → ${formatKB(compressedBlob.size)} • -${savedPercent}%`
+          info: `${formatSize(file.size)} → ${formatSize(compressedBlob.size)} • -${savedPercent}%`
         });
         addResultRemoveButton(resultCard);
 
