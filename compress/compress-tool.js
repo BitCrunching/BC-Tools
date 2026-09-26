@@ -25,6 +25,15 @@
   let files = [];
   let selectedQuality = null;
 
+  /* Keyed by File object — holds the decoded/compressed preview a HEIC
+     row's "Preview" button produced, so a full showSelectedPreviews()
+     rebuild (removing a different file, restoring a saved session) shows
+     that image straight away instead of resetting back to the Preview
+     button. Also persisted into IndexedDB (see "Continue where you left
+     off" below) so it survives a page reload, not just a same-session
+     rebuild. */
+  const heicPreviewCache = new Map();
+
   /* ===== Single files / .zip download-mode toggle =====
      Same reasoning/thresholds/solo-segment behavior as Convert's own
      copy of this (see its own comment for the full rationale): stays
@@ -173,6 +182,7 @@
     renderStatus();
     compressBtn.disabled = true;
     compressBtn.textContent = compressBtnIdleLabel();
+    heicPreviewCache.clear();
     bcDbClear(CP_DB_NAME, CP_DB_STORE);
   }
   removeBtn.addEventListener("click", resetTool);
@@ -316,6 +326,20 @@
     return card;
   }
 
+  /* Shared by both the live "Preview" click and a cache-hit re-render
+     (a rebuilt card from showSelectedPreviews, or one restored from a
+     saved session) — same DOM change either way, just triggered from two
+     different places. */
+  function showHeicPreviewImage(card, blob, name){
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(blob);
+    img.alt = name;
+    card.insertBefore(img, card.firstChild);
+    card.classList.remove("result-pdf");
+    const previewBtn = card.querySelector(".result-heic-preview-btn");
+    if (previewBtn) previewBtn.remove();
+  }
+
   let previewEntries = [];
 
   function showSelectedPreviews(){
@@ -342,39 +366,41 @@
         card.classList.add("result-pdf");
         card.querySelector("img").remove();
 
-        const previewBtn = document.createElement("button");
-        previewBtn.type = "button";
-        previewBtn.className = "result-heic-preview-btn";
-        previewBtn.textContent = "Preview";
-        previewBtn.addEventListener("click", async () => {
-          previewBtn.disabled = true;
-          previewBtn.textContent = "Loading...";
-          try {
-            /* A HEIC preview only ever shows up on screen at thumbnail
-               size, and the file gets compressed on download regardless
-               — decoding it to a full-quality PNG just to display small
-               is pure wasted work. Once a compression level is picked,
-               show the actual compressed result instead (compressImageFile
-               already runs the file through decodeHeicFile internally,
-               which is cache-hit-cheap since this preview click likely
-               already triggered that same decode via queueEstimates).
-               Before a level's picked there's nothing to compress to yet,
-               so it falls back to the plain decode. */
-            const decoded = selectedQuality !== null
-              ? await compressImageFile(file, selectedQuality, getOutputMimeType(file))
-              : await decodeHeicFile(file);
-            const img = document.createElement("img");
-            img.src = URL.createObjectURL(decoded);
-            img.alt = file.name;
-            card.insertBefore(img, card.firstChild);
-            card.classList.remove("result-pdf");
-            previewBtn.remove();
-          } catch (err){
-            previewBtn.disabled = false;
-            previewBtn.textContent = "Preview failed — retry";
-          }
-        });
-        card.appendChild(previewBtn);
+        const cachedPreview = heicPreviewCache.get(file);
+        if (cachedPreview){
+          showHeicPreviewImage(card, cachedPreview, file.name);
+        } else {
+          const previewBtn = document.createElement("button");
+          previewBtn.type = "button";
+          previewBtn.className = "result-heic-preview-btn";
+          previewBtn.textContent = "Preview";
+          previewBtn.addEventListener("click", async () => {
+            previewBtn.disabled = true;
+            previewBtn.textContent = "Loading...";
+            try {
+              /* A HEIC preview only ever shows up on screen at thumbnail
+                 size, and the file gets compressed on download regardless
+                 — decoding it to a full-quality PNG just to display small
+                 is pure wasted work. Once a compression level is picked,
+                 show the actual compressed result instead (compressImageFile
+                 already runs the file through decodeHeicFile internally,
+                 which is cache-hit-cheap since this preview click likely
+                 already triggered that same decode via queueEstimates).
+                 Before a level's picked there's nothing to compress to yet,
+                 so it falls back to the plain decode. */
+              const decoded = selectedQuality !== null
+                ? await compressImageFile(file, selectedQuality, getOutputMimeType(file))
+                : await decodeHeicFile(file);
+              heicPreviewCache.set(file, decoded);
+              showHeicPreviewImage(card, decoded, file.name);
+              schedulePersist();
+            } catch (err){
+              previewBtn.disabled = false;
+              previewBtn.textContent = "Preview failed — retry";
+            }
+          });
+          card.appendChild(previewBtn);
+        }
       }
 
       const btn = document.createElement("button");
@@ -384,6 +410,7 @@
       btn.textContent = "×";
       btn.addEventListener("click", () => {
         files = files.filter(f => f !== file);
+        heicPreviewCache.delete(file);
         /* Removing the last file this way used to leave the tool
            stranded in the "revealed" post-upload state — level buttons,
            empty add-tile, disabled Compress button — with no way back to
@@ -655,11 +682,15 @@
     if (files.length === 0 || persistBusy) return;
     persistBusy = true;
     try {
-      const storedFiles = await Promise.all(files.map(async f => ({
-        name: f.name,
-        type: f.type,
-        bytes: await f.arrayBuffer()
-      })));
+      const storedFiles = await Promise.all(files.map(async f => {
+        const record = { name: f.name, type: f.type, bytes: await f.arrayBuffer() };
+        const preview = heicPreviewCache.get(f);
+        if (preview){
+          record.previewBytes = await preview.arrayBuffer();
+          record.previewType = preview.type;
+        }
+        return record;
+      }));
       const activeBtn = document.querySelector("#cpLevelButtons .tool-format-btn.active");
       await bcDbPut(CP_DB_NAME, CP_DB_STORE, {
         files: storedFiles,
@@ -687,7 +718,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        const restored = saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (f.previewBytes) heicPreviewCache.set(file, new Blob([f.previewBytes], { type: f.previewType }));
+          return file;
+        });
         setFiles(restored);
         if (saved.levelKey){
           const matchingBtn = document.querySelector(`#cpLevelButtons .tool-format-btn[data-level-key="${saved.levelKey}"]`);
