@@ -862,6 +862,23 @@ background-image picker, not a drop-target-on-banner pattern, since its
 primary input is typed code rather than a dropped file. That's a
 legitimate absence, not a gap.
 
+**The whole banner being click-to-open-file-picker doesn't mean it should
+look clickable.** Convert/Compress/Combine/Cleanly/Codoc/Colorfy's own
+local `.tool-app{ min-height:...px; cursor:pointer; transition:...; }`
+rule (Context's own equivalent, `#page-context .tool-app:has(#ctEditor
+[hidden]){...}`) used to set `cursor:pointer` on the whole 1100px banner
+— requested directly to remove, keeping the click-anywhere-to-upload
+behavior itself untouched (still wired via each tool's own `toolApp
+.addEventListener("click", ...)`, unrelated to this CSS). A basic/default
+cursor over that much surface reads as "this is just a themed background
+panel," not "click anywhere here" — the actual affordance for that lives
+on `.tool-drop` (the dashed box, which keeps its own `cursor:pointer`)
+and the visible "Click or drop images" copy inside it. Fixed across all
+22 affected pages (7 tools + Convert's 16 SEO route siblings) by deleting
+just the `cursor:pointer;` declaration from each tool's copy of this
+rule, nothing else — no cache-bust version needed since it's a local
+`<style>` block, not a shared file.
+
 ## Capping concurrent heavy work: `runWithConcurrencyLimit`
 
 Any per-file operation that's genuinely expensive (a canvas encode, a WASM
