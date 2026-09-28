@@ -59,9 +59,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<script src="/vendor/jszip.min.js"></script>
-
-<link rel="stylesheet" href="/shared/site.css?v=94">
+<link rel="stylesheet" href="/shared/site.css?v=95">
 <style>
 .tool-app::before{ background:#7ED321; }
 .cs-shape{ background:#4ade80; }
@@ -169,7 +167,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -282,16 +280,64 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 .tool-app.active{
   background:rgba(74,222,128,.08);
 }
-/* Mobile shows just "Download" on the primary action button — the
-   fuller desktop label ("Convert and download", "Strip metadata and
-   download", etc.) doesn't fit well at phone widths, and "Download" is
-   what actually happens from the user's side either way. */
+/* Per-row Clean/Download button(s) — same compact-CTA exception
+   Coudio's own .cd-row-convert-btn documents in CLAUDE.md: N independent
+   per-file actions, not one global CTA, so .tool-primary-btn's 74px
+   height doesn't fit. Only height/padding/font-size are overridden —
+   color/border/flip recipe stay .tool-primary-btn's own. Shared by all
+   four buttons renderList() can put in a row's .exif-file-actions
+   (Clean first / Clean and download / Clean anyways / Download) so they
+   line up at the same size regardless of which one(s) are showing. */
+.ex-row-strip-btn,
+.ex-row-clean-download-btn,
+.ex-row-clean-anyways-btn,
+.ex-row-download-btn{
+  flex-shrink:0;
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.ex-row-strip-btn:disabled,
+.ex-row-clean-download-btn:disabled,
+.ex-row-clean-anyways-btn:disabled{
+  opacity:.5;
+  cursor:default;
+}
+/* Mobile drops the per-row buttons entirely (two/three of them plus
+   remove-× never fit next to a filename/tags column at phone widths, in
+   any labeling) and falls back to one global "Download" button below the
+   list instead — same shape as main's old single #exStripBtn, just
+   renamed/rewired for today's clean-then-download model. Clicking it
+   cleans (if needed) and downloads every loaded file in sequence — see
+   mobileDownloadAll() in cleanly-tool.js. */
+.ex-mobile-download-btn{
+  display:none;
+  width:100%;
+  margin-top:16px;
+}
 @media (max-width:768px){
-  #exStripBtn{ font-size:0; }
-  #exStripBtn::before{
-    content:"Download";
-    font-size:20px;
-  }
+  .exif-file-actions{ display:none; }
+  .ex-mobile-download-btn{ display:block; }
+}
+
+/* Local width/margin for the shared .bc-segmented-toggle (shared/site.css,
+   CLAUDE.md) — same split every adopter of that class uses, it only owns
+   segment chrome. Rendered twice per HEIC row (cleanly-tool.js) — once
+   next to "Clean first" in .exif-file-actions (desktop), once in the info
+   column above where the desktop copy used to sit (mobile) — only one is
+   ever visible at a time. The desktop copy disappears on its own below
+   768px since its parent .exif-file-actions is hidden outright there; the
+   mobile copy needs its own explicit hide above that width since it isn't
+   inside anything already hidden. */
+.ex-heic-format-toggle{
+  width:140px;
+  flex-shrink:0;
+}
+.ex-heic-format-toggle-mobile{
+  margin-top:8px;
+}
+@media (min-width:769px){
+  .ex-heic-format-toggle-mobile{ display:none; }
 }
 </style>
 </head>
@@ -423,18 +469,15 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
         <path d="M11 18l-6-6 6-6"></path>
       </svg>
     </button>
-    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files">×</button>
+    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files" title="Closed project">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, or SVG images</span></div>
-    <input type="file" id="exInput" accept="image/jpeg,image/png,.jpg,.jpeg,.png,.svg,image/svg+xml" multiple hidden>
+    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, HEIC, or SVG images</span></div>
+    <input type="file" id="exInput" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif,.svg,image/svg+xml" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="exAfterDrop" hidden>
       <div class="exif-file-list" id="exFileList"></div>
-
-      <div class="exif-actions">
-        <button class="tool-primary-btn" id="exStripBtn" disabled title="Strip metadata and download (D)" data-ga-event="tool_primary_action" data-ga-tool="cleanly">Strip metadata and download</button>
-      </div>
+      <button type="button" class="tool-primary-btn ex-mobile-download-btn" id="exMobileDownloadBtn" disabled title="Clean and download every loaded file" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="mobile_download_all">Clean &amp; download</button>
     </div>
 
     <div class="tool-status" id="exStatus"></div>
@@ -489,6 +532,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <h3>Get in touch with us</h3>
       <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
       <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
     </div>
   </div>
 </div>
@@ -498,7 +542,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=39" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=14" defer></script>
+<script src="/shared/site.js?v=40" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=15" defer></script>
 </body>
 </html>

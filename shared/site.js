@@ -989,6 +989,17 @@ function showNavTerminal(text){
 const yearEl = document.getElementById("year");
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+/* ===== SHARED FILE-SIZE FORMATTING =====
+   Any tool displaying a file's size (original, converted, compressed,
+   estimated — whatever) calls this rather than hand-rolling its own KB/MB
+   math. Threshold is a true 1024KB (1MiB), one decimal on the MB side,
+   and a Math.max(1, ...) floor so a very small file reads "1 KB" rather
+   than "0 KB". */
+function bcFormatFileSize(bytes){
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /* ===== SHARED "CONTINUE WHERE YOU LEFT OFF" PERSISTENCE =====
    IndexedDB helpers shared by every tool that offers a Continue button
    (Convert/Compress/Combine/Cleanly — Context has its own, older,

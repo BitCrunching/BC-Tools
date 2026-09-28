@@ -2155,6 +2155,27 @@ html[data-theme="light"] .engine-status-error{
   display:block;
 }
 
+/* HEIC's opt-in "Preview" affordance at this row's small 56px thumb
+   size — an <img> pointed at raw HEIC bytes just shows a broken image
+   icon in every browser but Safari, so this fills the thumb slot
+   instead until clicked (see decodeHeicFile in cleanly-tool.js).
+   Replaced in place by a real <img> once decoded. */
+.exif-file-heic-preview{
+  width:100%;
+  height:100%;
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  opacity:.7;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.03em;
+  cursor:pointer;
+  transition:.2s;
+}
+.exif-file-heic-preview:hover{ opacity:1; }
+.exif-file-heic-preview:disabled{ cursor:default; opacity:.5; }
+
 .exif-file-info{
   flex:1;
   min-width:0;
@@ -2196,27 +2217,46 @@ html[data-theme="dark"] .exif-tag{
   background:rgba(0,0,0,.3);
 }
 
-/* Not an actual found-metadata tag like its siblings — just a status
-   line reusing .exif-tag's row/font for layout consistency — so it
-   drops the pill chrome (background/padding/radius) that only makes
-   sense for something you'd click or that represents one of several
-   distinct items. color:var(--text) at full opacity — same shared
-   token .exif-file-name (the filename right above it) uses, so the two
-   lines read at identical weight/brightness instead of one being a
-   one-off literal. */
-.exif-tag-clean{
-  padding:0;
-  border-radius:0;
-  background:none;
-  color:var(--text);
+/* Used to drop .exif-tag's pill chrome entirely (just a plain status
+   line, no background/padding/radius) on the reasoning that it isn't a
+   real found-metadata item like its siblings. Reversed — it now keeps
+   the exact same pill as every other .exif-tag so the ✓/⚠ status glyph
+   (below) reads as one unified chip with its text, not a bare icon
+   floating next to a plain line. .exif-tag-clean is kept as its own
+   class only in case a clean-specific override is ever needed again,
+   not because it currently overrides anything. */
+.exif-tag-clean{}
+
+/* Status glyph merged into the front of a .exif-tag/.exif-tag-clean
+   pill's own text (see cleanly-tool.js) — green check when the scan
+   found nothing, yellow triangle when it found at least one tag. Fixed
+   colors (not the on-banner flip recipe) since green=clean/yellow=warn
+   is a semantic status color, not a themed surface control. Bold to
+   read clearly at this small size. */
+.exif-status-icon{
+  display:inline-flex;
+  align-items:center;
+  font-size:17px;
+  font-weight:700;
+  line-height:1;
 }
-/* html[data-theme="dark"] .exif-tag (above) outranks a plain
-   .exif-tag-clean on specificity — .exif-tag-clean alone isn't enough
-   to actually clear the background in dark theme, it silently lost to
-   that rule. Matching specificity here, same trap as the .result
-   card's own light/dark override earlier. */
-html[data-theme="dark"] .exif-tag-clean{
-  background:none;
+.exif-status-icon-clean{ color:#22c55e; }
+.exif-status-icon-warn{ color:#eab308; }
+
+/* Mobile drops both the ✓/⚠ glyph and the pill chrome around it — plain
+   text only, matching the pre-redesign mobile look (see the reference
+   screenshot in Cleanly's own commit history). .exif-status-icon hiding
+   also removes its "- " separator, since that lives inside the same span
+   specifically for this (see cleanly-tool.js) rather than as a bare text
+   node that would otherwise dangle on its own. */
+@media (max-width:768px){
+  .exif-status-icon{ display:none; }
+  .exif-tag{
+    padding:0;
+    border-radius:0;
+    background:none;
+  }
+  html[data-theme="dark"] .exif-tag{ background:none; }
 }
 
 .exif-scan-note{
@@ -2226,25 +2266,23 @@ html[data-theme="dark"] .exif-tag-clean{
   opacity:.75;
 }
 
+/* Holds this row's own action button(s) — one "Download" once cleaned,
+   or two ("Clean first" / "Clean and download") before that, see
+   cleanly-tool.js's renderList(). flex-shrink:0 on the wrapper itself
+   (not just its buttons) keeps it from being squeezed by the info
+   column's flex:1 in a narrow row. */
+.exif-file-actions{
+  display:flex;
+  flex-shrink:0;
+  gap:8px;
+}
+
 /* .exif-file-remove's own visual recipe now lives in shared
    .bc-file-remove-btn (below, near .bc-remove-btn) — added as a
    second class on the markup (class="exif-file-remove
    bc-file-remove-btn"). Kept as a class only as an addressing hook
    for its own JS listener. */
 
-/* Full-width at every size now, matching Convert's Download button
-   (a .tool-primary-btn sitting directly in .tool-controls, a grid,
-   whose items stretch to fill their column by default) — this one used
-   to only stretch full-width ≤768px via the mobile override below,
-   staying a small right-aligned pill on desktop otherwise. */
-.exif-actions{
-  display:flex;
-  justify-content:stretch;
-  margin-top:24px;
-}
-.exif-actions .tool-primary-btn{
-  width:100%;
-}
 
 /* ===== .content-section-convert p (missed earlier) ===== */
 .content-section-convert p{
