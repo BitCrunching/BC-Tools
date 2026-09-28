@@ -998,6 +998,42 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   bottom:-9px;
 }
 
+/* A basic shape (circle/square/triangle) placed on the page — same
+   drag/resize/remove pattern as .context-signature-box (uniform-scale
+   resize, handle always visible on every viewport), just an inline
+   <svg> instead of an <img>, and a fill color instead of image content.
+   No dashed idle outline the way signature has — the shape itself is
+   already visible, a border around it too would just look like an
+   unwanted stroke. */
+.context-shape-box{
+  position:absolute;
+  cursor:default;
+  -webkit-touch-callout:none;
+}
+.context-shape-box.selected{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
+}
+.context-shape-box svg{
+  display:block;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  user-select:none;
+}
+.context-shape-box .context-text-drag-handle{
+  position:absolute;
+  top:50%;
+  left:-22px;
+  transform:translateY(-50%);
+}
+.context-shape-box .context-text-resize-handle{
+  display:flex;
+  right:-9px;
+  bottom:-9px;
+}
+
 /* ===== Signature capture modal ===== */
 .context-signature-overlay{
   position:fixed;
@@ -1561,6 +1597,19 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Underline (U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Italic (I)" aria-label="Italic" aria-pressed="false"><i>I</i></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Bold (B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Add shape (S)" aria-label="Add shape"><b>S</b></button>
+        </div>
+
+        <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
+          <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctShapeKindTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span id="ctShapeKindTriggerLabel">Circle</span>
+            <span class="context-color-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
+            <button type="button" class="bc-dropdown-option active" data-kind="circle" data-label="Circle" role="option" aria-selected="true">Circle</button>
+            <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Square" role="option" aria-selected="false">Square</button>
+            <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Triangle" role="option" aria-selected="false">Triangle</button>
+          </div>
         </div>
 
         <div class="context-color-dropdown" id="ctColorDropdown">
@@ -1799,6 +1848,6 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=42" defer></script>
-<script src="/context/context-tool.js?v=25" defer></script>
+<script src="/context/context-tool.js?v=26" defer></script>
 </body>
 </html>

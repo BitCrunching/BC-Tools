@@ -865,6 +865,55 @@ box/caption is created, not present as static markup. Use these (not
 `.bc-remove-btn`/`.bc-resize-handle`) for any future in-canvas object
 control.
 
+**Context's shape object (circle/square/triangle, requested directly)
+is a third in-canvas object type, modeled on the signature box rather
+than the text box** — `shapeBoxes` (`context-tool.js`), same shape as
+`signatureBoxes` (`{ id, page, xPt, topPt, widthPt, heightPt, ... }`)
+plus `kind`/`color` in place of `dataUrl`, same uniform-scale resize
+handle always visible on every viewport (not just mobile, unlike text's
+desktop-dropdown/mobile-handle split), same drag/remove wiring —
+`buildShapeBoxEl()` duplicates `buildSignatureBoxEl()`'s structure
+byte-for-byte apart from rendering an inline `<svg>` instead of an
+`<img>`. Kept as its own function rather than parameterizing
+`buildSignatureBoxEl()` itself: a signature is never recolored or
+re-kinded the way a shape is, so folding them into one function would
+mean branching throughout rather than two straightforward reads.
+`shapeSvg(kind, color)` returns one of three fixed 0–100 viewBox shapes
+(`<circle>`/`<rect>`/`<polygon>`) — swapping kind on an already-placed
+shape replaces only that `<svg>` child via `outerHTML` (`oldSvg.outerHTML
+= shapeSvg(...)`), never a full-element rebuild, since that would
+silently drop the drag/remove/resize handles' own JS listeners sitting
+right alongside it in the same element.
+
+**The "S" button** (`#ctShapeBtn`, `.bc-toggle-btn.bc-toggle-btn-icon`,
+requested to sit directly next to Bold in the same group) adds a shape
+the same way "Add text"/"T" adds a text box — not a formatting toggle
+like Bold/Italic/Underline despite sharing their visual class, since
+there's no on/off state to it. Shape kind (Circle/Square/Triangle) is a
+plain `.bc-dropdown` (3 options, CLAUDE.md's own <5-options rule) sitting
+next to the existing color dropdown — **the color dropdown itself is
+reused as-is for shapes**, not duplicated: its click handler now branches
+on whether a text box or a shape is currently selected
+(`selectedBoxId`/`selectedShapeId`) rather than assuming text. Keyboard
+shortcut "S" mirrors "T"'s existing pattern exactly (same modifier/
+editable-target guards).
+
+**Export draws each shape with pdf-lib's own native primitives** — no
+canvas rasterization or embedded image involved, unlike the signature
+(which has no vector representation to begin with, since it originates
+from a camera/upload/drawn PNG). `drawRectangle` for square,
+`drawEllipse` for circle (center + x/y radii, not `drawCircle`'s single
+uniform radius — a shape's `widthPt`/`heightPt` aren't always equal once
+resized), `drawSvgPath("M50 4 L96 96 L4 96 Z", { x, y, scale, color })`
+for triangle — the same path string `shapeSvg()`'s own 0–100-viewBox
+`<polygon>` uses, scaled to the box's real size (`scale: box.widthPt /
+100`) and anchored at its bottom-left corner exactly like
+`drawRectangle`/`drawImage` already do elsewhere in this same export step
+(`y = pageHeight - box.topPt - box.heightPt`) — confirmed live (read the
+downloaded PDF back) that this anchor convention holds for
+`drawSvgPath` too, not just the rectangle/image primitives it was
+already established for.
+
 ## Drag & drop: `bcSetupBannerDropTarget`
 
 Reuse `bcSetupBannerDropTarget(toolApp, opts)` from `shared/site.js`

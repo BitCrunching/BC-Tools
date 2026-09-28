@@ -49,6 +49,10 @@
   const boldBtn = document.getElementById("ctBoldBtn");
   const italicBtn = document.getElementById("ctItalicBtn");
   const underlineBtn = document.getElementById("ctUnderlineBtn");
+  const shapeBtn = document.getElementById("ctShapeBtn");
+  const shapeKindTrigger = document.getElementById("ctShapeKindTrigger");
+  const shapeKindTriggerLabel = document.getElementById("ctShapeKindTriggerLabel");
+  const shapeKindMenu = document.getElementById("ctShapeKindMenu");
   const pageNav = document.getElementById("ctPageNav");
   const pageNavDesktopSlot = document.getElementById("ctPageNavDesktopSlot");
   const prevPageBtn = document.getElementById("ctPrevPage");
@@ -103,6 +107,14 @@
      only at download time). */
   let signatureBoxes = [];
   let sigBoxIdSeq = 0;
+  /* { id, page, xPt, topPt, widthPt, heightPt, kind ("circle"/"square"/
+     "triangle"), color } — a basic shape placed on the page, positioned
+     and resized exactly like a signature (uniform scale, same drag/
+     resize/remove controls), just an inline <svg> instead of an <img>. */
+  let shapeBoxes = [];
+  let shapeBoxIdSeq = 0;
+  let selectedShapeId = null;
+  let activeShapeKind = "circle";
   let currentFileBytes = null;
 
   function isPdfFile(f){
@@ -193,8 +205,10 @@
       pdfBytes: currentFileBytes,
       textBoxes,
       signatureBoxes,
+      shapeBoxes,
       boxIdSeq,
       sigBoxIdSeq,
+      shapeBoxIdSeq,
       currentPage,
       filenameValue: filenameInput.value
     });
@@ -249,8 +263,10 @@
     currentFile = file;
     textBoxes = restoreState ? (restoreState.textBoxes || []) : [];
     signatureBoxes = restoreState ? (restoreState.signatureBoxes || []) : [];
+    shapeBoxes = restoreState ? (restoreState.shapeBoxes || []) : [];
     boxIdSeq = restoreState ? (restoreState.boxIdSeq || 0) : 0;
     sigBoxIdSeq = restoreState ? (restoreState.sigBoxIdSeq || 0) : 0;
+    shapeBoxIdSeq = restoreState ? (restoreState.shapeBoxIdSeq || 0) : 0;
 
     /* Reading/parsing a large PDF blocks the main thread hard enough
        that the browser can skip painting the status text above unless
@@ -433,6 +449,9 @@
     signatureBoxes
       .filter(b => b.page === currentPage)
       .forEach(box => overlay.appendChild(buildSignatureBoxEl(box)));
+    shapeBoxes
+      .filter(b => b.page === currentPage)
+      .forEach(box => overlay.appendChild(buildShapeBoxEl(box)));
     schedulePersist();
   }
 
@@ -445,6 +464,8 @@
      instead of just setting the default for the next new box. */
   function selectBox(id){
     selectedBoxId = id;
+    deselectSignatureBox();
+    deselectShapeBox();
     const box = findBoxById(id);
     if (box){
       bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(Math.round(box.sizePt)));
@@ -670,6 +691,7 @@
     el.addEventListener("pointerdown", () => {
       deselectBox();
       deselectSignatureBox();
+      deselectShapeBox();
       el.classList.add("selected");
     });
 
@@ -705,6 +727,154 @@
     });
 
     return el;
+  }
+
+  function findShapeBoxById(id){
+    return shapeBoxes.find(b => b.id === id);
+  }
+
+  function deselectShapeBox(){
+    selectedShapeId = null;
+    overlay.querySelectorAll(".context-shape-box.selected").forEach(elx => elx.classList.remove("selected"));
+  }
+
+  /* Inline SVG per shape rather than a single reusable markup string —
+     each kind needs different child geometry (circle/rect/polygon), and
+     an SVG scales with its box's own width/height for free the same way
+     the signature's <img> already does, so resizing needs no extra math
+     here beyond what startDrag below already computes. */
+  function shapeSvg(kind, color){
+    const shapes = {
+      circle: '<circle cx="50" cy="50" r="48" />',
+      square: '<rect x="2" y="2" width="96" height="96" />',
+      triangle: '<polygon points="50,4 96,96 4,96" />'
+    };
+    return `<svg viewBox="0 0 100 100" fill="${color}">${shapes[kind] || shapes.circle}</svg>`;
+  }
+
+  /* Byte-for-byte the same drag/resize/remove wiring as
+     buildSignatureBoxEl above — only the visual content (inline <svg>
+     instead of <img>) and what "select" applies to (shapeBoxes instead
+     of signatureBoxes) differ. Kept as its own function rather than
+     parameterizing buildSignatureBoxEl itself: the two are similar today
+     but a signature is never recolored/re-kinded the way a shape is, so
+     folding them into one function would mean branching on "is this a
+     shape" throughout rather than two straightforward reads. */
+  function buildShapeBoxEl(box){
+    const el = document.createElement("div");
+    el.className = "context-shape-box";
+    el.dataset.boxId = box.id;
+    el.style.left = (box.xPt * scale) + "px";
+    el.style.top = (box.topPt * scale) + "px";
+    el.style.width = (box.widthPt * scale) + "px";
+    el.style.height = (box.heightPt * scale) + "px";
+    el.innerHTML = shapeSvg(box.kind, box.color);
+
+    const handle = document.createElement("span");
+    handle.className = "context-text-drag-handle bc-obj-drag-handle";
+    handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
+    el.appendChild(handle);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "context-text-remove bc-obj-remove-btn";
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      shapeBoxes = shapeBoxes.filter(b => b.id !== box.id);
+      if (selectedShapeId === box.id) selectedShapeId = null;
+      renderTextBoxes();
+    });
+    el.appendChild(removeBtn);
+
+    function startDrag(handleEl, onMove){
+      handleEl.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
+        function onPointerMove(ev){
+          onMove(ev.clientX - startX, ev.clientY - startY, start);
+        }
+        function onPointerUp(){
+          document.removeEventListener("pointermove", onPointerMove);
+          document.removeEventListener("pointerup", onPointerUp);
+          document.removeEventListener("pointercancel", onPointerUp);
+          schedulePersist();
+        }
+        document.addEventListener("pointermove", onPointerMove);
+        document.addEventListener("pointerup", onPointerUp);
+        document.addEventListener("pointercancel", onPointerUp);
+      });
+    }
+
+    el.addEventListener("pointerdown", () => {
+      deselectBox();
+      deselectSignatureBox();
+      deselectShapeBox();
+      selectedShapeId = box.id;
+      el.classList.add("selected");
+      bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
+      shapeKindTriggerLabel.textContent = box.kind.charAt(0).toUpperCase() + box.kind.slice(1);
+      activeShapeKind = box.kind;
+      activeColor = box.color;
+      const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
+      bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
+      colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+        o.classList.toggle("active", o === opt);
+        o.setAttribute("aria-selected", String(o === opt));
+      });
+    });
+
+    startDrag(handle, (dx, dy, start) => {
+      const zoom = isFullscreen ? fsZoom : 1;
+      const bounds = getDragBoundsPt(zoom, el);
+      box.xPt = bounds.maxXPt < bounds.minXPt
+        ? (bounds.minXPt + bounds.maxXPt) / 2
+        : Math.min(bounds.maxXPt, Math.max(bounds.minXPt, start.xPt + dx / zoom / scale));
+      box.topPt = bounds.maxTopPt < bounds.minTopPt
+        ? (bounds.minTopPt + bounds.maxTopPt) / 2
+        : Math.min(bounds.maxTopPt, Math.max(bounds.minTopPt, start.topPt + dy / zoom / scale));
+      el.style.left = (box.xPt * scale) + "px";
+      el.style.top = (box.topPt * scale) + "px";
+    });
+
+    const resizeHandle = document.createElement("span");
+    resizeHandle.className = "context-text-resize-handle bc-obj-resize-handle";
+    resizeHandle.setAttribute("aria-hidden", "true");
+    resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
+    el.appendChild(resizeHandle);
+
+    startDrag(resizeHandle, (dx, dy, start) => {
+      const zoom = isFullscreen ? fsZoom : 1;
+      const ratio = start.widthPt / start.heightPt;
+      const growth = (dx + dy) / 2 / zoom / scale;
+      box.widthPt = Math.max(20, start.widthPt + growth);
+      box.heightPt = box.widthPt / ratio;
+      el.style.width = (box.widthPt * scale) + "px";
+      el.style.height = (box.heightPt * scale) + "px";
+    });
+
+    return el;
+  }
+
+  function addShapeBox(){
+    const widthPt = 100;
+    const heightPt = 100;
+    const box = {
+      id: ++shapeBoxIdSeq,
+      page: currentPage,
+      xPt: (overlay.clientWidth / scale / 2) - (widthPt / 2),
+      topPt: (overlay.clientHeight / scale / 2) - (heightPt / 2),
+      widthPt,
+      heightPt,
+      kind: activeShapeKind,
+      color: activeColor
+    };
+    shapeBoxes.push(box);
+    renderTextBoxes();
   }
 
   function dataUrlToBytes(dataUrl){
@@ -788,6 +958,32 @@
   });
 
   addTextBtn.addEventListener("click", addTextBox);
+  shapeBtn.addEventListener("click", addShapeBox);
+
+  /* Shape kind (Circle/Square/Triangle) — shared bcRegisterDropdown
+     (CLAUDE.md's "pick one of several" rule, 3 options so a plain
+     dropdown rather than a searchable combo). Updates activeShapeKind
+     for the *next* new shape regardless of whether one's currently
+     selected, same as font size does for text — and additionally
+     re-kinds the selected shape in place if there is one. */
+  bcRegisterDropdown(shapeKindTrigger, shapeKindMenu, (opt) => {
+    activeShapeKind = opt.dataset.kind;
+    shapeKindTriggerLabel.textContent = opt.dataset.label;
+    if (!selectedShapeId) return;
+    const shape = findShapeBoxById(selectedShapeId);
+    if (!shape || shape.page !== currentPage) return;
+    shape.kind = activeShapeKind;
+    const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
+    const oldSvg = shapeEl && shapeEl.querySelector("svg");
+    if (oldSvg){
+      /* Swap only the <svg> child — the drag/remove/resize handles are
+         separate elements right alongside it and keep their own JS
+         listeners untouched this way, unlike a full innerHTML rebuild
+         which would silently drop all three. */
+      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color);
+    }
+    schedulePersist();
+  });
 
   /* Shared by the "remove file" (×) button and by closing fullscreen on
      mobile — since fullscreen is a mobile-only feature (the expand
@@ -800,7 +996,9 @@
     pdfjsDoc = null;
     textBoxes = [];
     signatureBoxes = [];
+    shapeBoxes = [];
     selectedBoxId = null;
+    selectedShapeId = null;
     drop.hidden = false;
     editor.hidden = true;
     downloadBtn.disabled = true;
@@ -1081,13 +1279,13 @@
     if (isFullscreen && pdfjsDoc) renderPage();
   });
 
-  /* Keyboard shortcuts: "T" adds a text box, "R" opens the rename-file
-     popup (desktop only — no on-screen keyboard to conflict with).
-     Ignored while typing anywhere editable, with a modifier held, or off
-     the Context page. */
+  /* Keyboard shortcuts: "T" adds a text box, "S" adds a shape, "R" opens
+     the rename-file popup (desktop only — no on-screen keyboard to
+     conflict with). Ignored while typing anywhere editable, with a
+     modifier held, or off the Context page. */
   document.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
-    if (key !== "t" && key !== "r") return;
+    if (key !== "t" && key !== "s" && key !== "r") return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (editor.hidden) return;
     if (!document.getElementById("page-context").classList.contains("active")) return;
@@ -1101,6 +1299,7 @@
 
     e.preventDefault();
     if (key === "t") addTextBox();
+    else if (key === "s") addShapeBox();
     else filenameTrigger.click();
   });
 
@@ -1155,6 +1354,15 @@
         const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
         const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
         if (innerEl) innerEl.style.color = activeColor;
+      }
+    } else if (selectedShapeId){
+      const shape = findShapeBoxById(selectedShapeId);
+      if (shape && shape.page === currentPage){
+        shape.color = activeColor;
+        const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
+        const svg = shapeEl && shapeEl.querySelector("svg");
+        if (svg) svg.setAttribute("fill", activeColor);
+        schedulePersist();
       }
     }
   });
@@ -1393,6 +1601,44 @@
         const y = pageHeight - box.topPt - box.heightPt;
         page.drawImage(pngImage, { x, y, width: box.widthPt, height: box.heightPt });
       }
+
+      shapeBoxes.forEach(box => {
+        const page = pages[box.page - 1];
+        if (!page) return;
+        const pageHeight = page.getHeight();
+        const r = parseInt(box.color.slice(1, 3), 16) / 255;
+        const g = parseInt(box.color.slice(3, 5), 16) / 255;
+        const b = parseInt(box.color.slice(5, 7), 16) / 255;
+        const color = rgb(r, g, b);
+        /* Bottom-left anchor, same convention as the signature image
+           above — pageHeight - topPt - heightPt converts this box's
+           top-down on-screen position into pdf-lib's bottom-up one. */
+        const x = box.xPt;
+        const y = pageHeight - box.topPt - box.heightPt;
+        if (box.kind === "square"){
+          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color });
+        } else if (box.kind === "triangle"){
+          /* Same "M50 4 L96 96 L4 96 Z" path as the on-screen <svg> (0-100
+             viewBox), scaled to this box's real size and anchored at its
+             bottom-left corner — drawSvgPath flips the path's own y-axis
+             internally to match its (x,y) anchor sitting at the bottom,
+             the same way drawRectangle/drawImage above already do. */
+          page.drawSvgPath("M50 4 L96 96 L4 96 Z", {
+            x,
+            y,
+            scale: box.widthPt / 100,
+            color
+          });
+        } else {
+          page.drawEllipse({
+            x: x + box.widthPt / 2,
+            y: y + box.heightPt / 2,
+            xScale: box.widthPt / 2,
+            yScale: box.heightPt / 2,
+            color
+          });
+        }
+      });
 
       const outBytes = await pdfDoc.save();
       const blob = new Blob([outBytes], { type: "application/pdf" });
