@@ -747,7 +747,10 @@
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
-      triangle: '<polygon points="50,4 96,96 4,96" />'
+      triangle: '<polygon points="50,4 96,96 4,96" />',
+      /* Plus-shaped 12-point polygon — same 2-unit margin/96-unit span
+         as square/circle above, 30-unit-wide arms (center ±15). */
+      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />'
     };
     return `<svg viewBox="0 0 100 100" fill="${color}">${shapes[kind] || shapes.circle}</svg>`;
   }
@@ -1624,6 +1627,16 @@
              internally to match its (x,y) anchor sitting at the bottom,
              the same way drawRectangle/drawImage above already do. */
           page.drawSvgPath("M50 4 L96 96 L4 96 Z", {
+            x,
+            y,
+            scale: box.widthPt / 100,
+            color
+          });
+        } else if (box.kind === "cross"){
+          /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
+             written as a path string — same anchor/scale convention as
+             the triangle above. */
+          page.drawSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", {
             x,
             y,
             scale: box.widthPt / 100,

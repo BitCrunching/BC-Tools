@@ -878,8 +878,9 @@ byte-for-byte apart from rendering an inline `<svg>` instead of an
 `buildSignatureBoxEl()` itself: a signature is never recolored or
 re-kinded the way a shape is, so folding them into one function would
 mean branching throughout rather than two straightforward reads.
-`shapeSvg(kind, color)` returns one of three fixed 0–100 viewBox shapes
-(`<circle>`/`<rect>`/`<polygon>`) — swapping kind on an already-placed
+`shapeSvg(kind, color)` returns one of four fixed 0–100 viewBox shapes
+(`<circle>`/`<rect>`/two `<polygon>`s — triangle and the 12-point plus/
+cross) — swapping kind on an already-placed
 shape replaces only that `<svg>` child via `outerHTML` (`oldSvg.outerHTML
 = shapeSvg(...)`), never a full-element rebuild, since that would
 silently drop the drag/remove/resize handles' own JS listeners sitting
@@ -889,8 +890,9 @@ right alongside it in the same element.
 requested to sit directly next to Bold in the same group) adds a shape
 the same way "Add text"/"T" adds a text box — not a formatting toggle
 like Bold/Italic/Underline despite sharing their visual class, since
-there's no on/off state to it. Shape kind (Circle/Square/Triangle) is a
-plain `.bc-dropdown` (3 options, CLAUDE.md's own <5-options rule) sitting
+there's no on/off state to it. Shape kind (Circle/Square/Triangle/Cross —
+Cross added after the fact, same pattern, still <5 options) is a
+plain `.bc-dropdown` sitting
 next to the existing color dropdown — **the color dropdown itself is
 reused as-is for shapes**, not duplicated: its click handler now branches
 on whether a text box or a shape is currently selected
@@ -905,14 +907,18 @@ from a camera/upload/drawn PNG). `drawRectangle` for square,
 `drawEllipse` for circle (center + x/y radii, not `drawCircle`'s single
 uniform radius — a shape's `widthPt`/`heightPt` aren't always equal once
 resized), `drawSvgPath("M50 4 L96 96 L4 96 Z", { x, y, scale, color })`
-for triangle — the same path string `shapeSvg()`'s own 0–100-viewBox
-`<polygon>` uses, scaled to the box's real size (`scale: box.widthPt /
-100`) and anchored at its bottom-left corner exactly like
-`drawRectangle`/`drawImage` already do elsewhere in this same export step
-(`y = pageHeight - box.topPt - box.heightPt`) — confirmed live (read the
-downloaded PDF back) that this anchor convention holds for
-`drawSvgPath` too, not just the rectangle/image primitives it was
-already established for.
+for triangle, same `drawSvgPath` approach for cross (a second, longer
+path string — the same 12-point plus polygon `shapeSvg()` uses) once that
+kind was added — every non-native shape (anything past
+rectangle/ellipse) goes through this same path, not a special case per
+shape. Both paths are the same `shapeSvg()` viewBox coordinates verbatim,
+scaled to the box's real size (`scale: box.widthPt / 100`) and anchored
+at its bottom-left corner exactly like `drawRectangle`/`drawImage`
+already do elsewhere in this same export step (`y = pageHeight -
+box.topPt - box.heightPt`) — confirmed live for both shapes (read the
+downloaded PDF back) that this anchor convention holds for `drawSvgPath`
+too, not just the rectangle/ellipse primitives it was already established
+for.
 
 ## Drag & drop: `bcSetupBannerDropTarget`
 
