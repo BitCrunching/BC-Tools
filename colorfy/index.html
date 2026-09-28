@@ -500,6 +500,47 @@ html[data-theme="dark"] .colorfy-save-btn:disabled{
   background:rgba(0,0,0,.25);
 }
 
+/* Terminal readout for Save-to-palette and copy-from-the-unsaved-preview
+   confirmations — same recipe the site's other terminal chips use (dark
+   background, green text, monospace, "> " prompt, blinking cursor), just
+   in normal flow above the saved-colors panel rather than the old
+   position:absolute floating toast this tool used to have
+   (.colorfy-copy-terminal, retired — see CLAUDE.md Lessons Learned:
+   "terminal font fallback"). Copying from an already-saved palette chip
+   keeps using the plain .tool-status line below instead (unchanged) —
+   two separate readouts for two separate places on the page, not one
+   shared between them. */
+.colorfy-save-terminal{
+  width:fit-content;
+  margin-bottom:16px;
+  padding:6px 12px;
+  border-radius:8px;
+  background:rgba(0,0,0,.35);
+  color:#4ade80;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+.colorfy-save-terminal.show{
+  opacity:1;
+}
+.colorfy-save-terminal-prompt{
+  opacity:.7;
+}
+.colorfy-save-terminal-cursor{
+  animation:copy-toast-blink 1s step-end infinite;
+}
+@media (max-width:640px){
+  .colorfy-save-terminal{
+    font-size:12px;
+  }
+}
+
 /* ===== Saved palette — sits outside .tool-after-drop (a sibling, not
    a child) so it stays visible even after removing the current image
    or before one's ever been loaded, since saved colors are meant to
@@ -740,6 +781,11 @@ html[data-theme="light"] .colorfy-palette{
       <div class="colorfy-add-row">
         <button type="button" class="colorfy-add-btn" id="cyAddBtn" aria-label="Add another picker">+</button>
       </div>
+    </div>
+
+    <div class="colorfy-save-terminal" id="cySaveTerminal" aria-live="polite">
+      <span class="colorfy-save-terminal-prompt">&gt;</span>
+      <span id="cySaveTerminalText"></span><span class="colorfy-save-terminal-cursor">_</span>
     </div>
 
     <div class="colorfy-palette" id="cyPalette" hidden>

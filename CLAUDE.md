@@ -739,12 +739,28 @@ there):
 
 Used for: nav copy-link confirmation (`.nav-terminal`), the step-through
 help banners on every tool ("CODIFY_GUIDE: STEP 1/4" etc.), About's/the
-homepage's engine-status card. This is the site's one deliberately
-"technical" visual voice — use it for transient confirmations and
-diagnostic-flavored copy, nowhere else. (Colorfy's copy/save confirmations
-used to have their own separate floating dark-chip toast,
-`.colorfy-copy-terminal` — retired, see Lessons Learned: "terminal font
-fallback"; they're plain `.tool-status` lines now, not this component.)
+homepage's engine-status card, Colorfy's save-terminal (below). This is
+the site's one deliberately "technical" visual voice — use it for
+transient confirmations and diagnostic-flavored copy, nowhere else.
+
+**Colorfy's own copy/save confirmations are split across two different
+readouts, requested directly — not one component doing double duty.**
+`.colorfy-copy-terminal` (this motif, `position:absolute` floating toast)
+was retired in favor of a single plain `.tool-status` line for everything
+(see Lessons Learned: "terminal font fallback") — since revisited:
+`.colorfy-save-terminal` brings a real terminal chip back, but only for
+the two actions that lead to something landing in the saved-colors panel
+— saving a color (`saveToPalette`) and copying a color's code straight
+from the *unsaved* preview row next to Save (`copyCode`) — sitting in
+normal document flow directly above that panel rather than floating
+absolutely over the banner like the old one did. Copying an
+already-saved palette chip (`copySwatch`) still goes to the plain
+`.tool-status` line, untouched — a different action landing in a
+different place on the page, so it keeps its own separate readout rather
+than sharing the new terminal. Saving also no longer disables the Save
+button for a second afterward (`saveToPalette` used to
+`btn.disabled = true` + `setTimeout(…, 1000)` — removed, since saving is
+instant and idempotent, nothing to guard against a second click for).
 
 - **Color**: `#4ade80` (green) on a dark/translucent chip — never used on a
   light chip.

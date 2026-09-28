@@ -17,6 +17,9 @@
   const status = document.getElementById("cyStatus");
   const toolApp = document.querySelector(".tool-app");
   let statusClearTimer = null;
+  const saveTerminal = document.getElementById("cySaveTerminal");
+  const saveTerminalText = document.getElementById("cySaveTerminalText");
+  let saveTerminalTimer = null;
   if (!drop || !input || !afterDrop || !canvas || !pickerList) return;
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -368,7 +371,7 @@
       saveBtn.className = "colorfy-save-btn";
       saveBtn.textContent = "Save";
       saveBtn.title = "Save this color to your palette";
-      saveBtn.addEventListener("click", () => saveToPalette(p.rgb, saveBtn));
+      saveBtn.addEventListener("click", () => saveToPalette(p.rgb));
       row.appendChild(saveBtn);
 
       if (pickers.length > 1){
@@ -449,9 +452,9 @@
 
   /* Plain .tool-status line (shared/site.css already prefixes it "> "
      same as every other tool's status text, e.g. Coudio's own "1 file
-     loaded") — every copy/save confirmation on this page uses this one
-     helper now, including the palette-swatch copy below, which used to
-     show its own separate floating dark-chip terminal instead. */
+     loaded") — used only for copying an already-saved palette chip
+     (copySwatch, below). Saving and copying the unsaved preview's own
+     code both go through flashSaveTerminal instead (next). */
   function flashStatus(message){
     status.textContent = message;
     clearTimeout(statusClearTimer);
@@ -460,15 +463,29 @@
     }, 1600);
   }
 
-  function saveToPalette(rgb, btn){
+  /* Real terminal-chip readout (dark background, green text — see
+     .colorfy-save-terminal, index.html) sitting above the saved-colors
+     panel, for the two actions that lead to something ending up there:
+     saving a color, and copying its code straight from the unsaved
+     preview row (the code button next to Save). Copying an
+     already-saved palette chip is a different place on the page and
+     keeps using the plain status line above instead. */
+  function flashSaveTerminal(message){
+    if (!saveTerminal || !saveTerminalText) return;
+    saveTerminalText.textContent = message;
+    saveTerminal.classList.add("show");
+    clearTimeout(saveTerminalTimer);
+    saveTerminalTimer = setTimeout(() => saveTerminal.classList.remove("show"), 1600);
+  }
+
+  /* No button-disable delay — saving is instant and idempotent (each
+     click just pushes another entry), so there's no real reason to lock
+     the button out for a second afterward. */
+  function saveToPalette(rgb){
     savedColors.push({ id: nextSavedId++, rgb: [...rgb] });
     persistPalette();
     renderPalette();
-    if (btn){
-      btn.disabled = true;
-      setTimeout(() => { btn.disabled = false; }, 1000);
-    }
-    flashStatus(`Saved ${formatColor(rgb)}`);
+    flashSaveTerminal(`Saved ${formatColor(rgb)}`);
   }
 
   function copySwatch(sw, rgb){
@@ -565,14 +582,18 @@
     if (!afterDrop.hidden) updateAllPickerPositions();
   });
 
-  /* ===== copy a code to clipboard ===== */
+  /* ===== copy a code to clipboard =====
+     This is the unsaved preview's own code button, right next to Save —
+     its confirmation goes to the same save-terminal Save does, not the
+     plain status line (that one's reserved for copying an already-saved
+     palette chip instead, see copySwatch above). */
   function copyCode(btn){
     const value = btn.dataset.value;
     if (!value) return;
     navigator.clipboard.writeText(value).then(() => {
       btn.classList.add("copied");
       setTimeout(() => btn.classList.remove("copied"), 1200);
-      flashStatus(`Copied ${value}`);
+      flashSaveTerminal(`Copied ${value}`);
     }).catch(() => {
       status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });
