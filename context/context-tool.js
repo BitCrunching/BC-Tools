@@ -107,8 +107,11 @@
   let sigBoxIdSeq = 0;
   /* { id, page, xPt, topPt, widthPt, heightPt, kind ("circle"/"square"/
      "triangle"), color } — a basic shape placed on the page, positioned
-     and resized exactly like a signature (uniform scale, same drag/
-     resize/remove controls), just an inline <svg> instead of an <img>. */
+     and dragged/removed exactly like a signature, just an inline <svg>
+     instead of an <img>. Resizing differs from a signature's: dragging
+     the handle freely reshapes width/height independently (so a circle
+     can become an ellipse), holding Shift keeps the aspect ratio locked
+     — see buildShapeBoxEl's resizeHandle drag callback. */
   let shapeBoxes = [];
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
@@ -560,7 +563,7 @@
         const startY = e.clientY;
         const start = { xPt: box.xPt, topPt: box.topPt, sizePt: box.sizePt };
         function onPointerMove(ev){
-          onMove(ev.clientX - startX, ev.clientY - startY, start);
+          onMove(ev.clientX - startX, ev.clientY - startY, start, ev.shiftKey);
         }
         function onPointerUp(){
           document.removeEventListener("pointermove", onPointerMove);
@@ -672,7 +675,7 @@
         const startY = e.clientY;
         const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
         function onPointerMove(ev){
-          onMove(ev.clientX - startX, ev.clientY - startY, start);
+          onMove(ev.clientX - startX, ev.clientY - startY, start, ev.shiftKey);
         }
         function onPointerUp(){
           document.removeEventListener("pointermove", onPointerMove);
@@ -750,7 +753,18 @@
          as square/circle above, 30-unit-wide arms (center ±15). */
       cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />'
     };
-    return `<svg viewBox="0 0 100 100" fill="${color}">${shapes[kind] || shapes.circle}</svg>`;
+    return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
+  }
+
+  /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
+     independently — used by the PDF export step below to reproduce a
+     non-uniformly stretched triangle/cross, since drawSvgPath's own
+     `scale` option only takes one uniform number. Only handles the M/L/Z
+     commands this file's own shapeSvg() paths actually use. */
+  function scaleSvgPath(path, sx, sy){
+    return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
+      return cmd + " " + (parseFloat(x) * sx) + " " + (parseFloat(y) * sy);
+    });
   }
 
   /* Byte-for-byte the same drag/resize/remove wiring as
@@ -797,7 +811,7 @@
         const startY = e.clientY;
         const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
         function onPointerMove(ev){
-          onMove(ev.clientX - startX, ev.clientY - startY, start);
+          onMove(ev.clientX - startX, ev.clientY - startY, start, ev.shiftKey);
         }
         function onPointerUp(){
           document.removeEventListener("pointermove", onPointerMove);
@@ -844,15 +858,21 @@
     const resizeHandle = document.createElement("span");
     resizeHandle.className = "context-text-resize-handle bc-obj-resize-handle";
     resizeHandle.setAttribute("aria-hidden", "true");
+    resizeHandle.setAttribute("title", "Drag to resize — hold Shift to keep it symmetric");
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);
 
-    startDrag(resizeHandle, (dx, dy, start) => {
+    startDrag(resizeHandle, (dx, dy, start, shiftKey) => {
       const zoom = isFullscreen ? fsZoom : 1;
-      const ratio = start.widthPt / start.heightPt;
-      const growth = (dx + dy) / 2 / zoom / scale;
-      box.widthPt = Math.max(20, start.widthPt + growth);
-      box.heightPt = box.widthPt / ratio;
+      if (shiftKey){
+        const ratio = start.widthPt / start.heightPt;
+        const growth = (dx + dy) / 2 / zoom / scale;
+        box.widthPt = Math.max(20, start.widthPt + growth);
+        box.heightPt = box.widthPt / ratio;
+      } else {
+        box.widthPt = Math.max(20, start.widthPt + dx / zoom / scale);
+        box.heightPt = Math.max(20, start.heightPt + dy / zoom / scale);
+      }
       el.style.width = (box.widthPt * scale) + "px";
       el.style.height = (box.heightPt * scale) + "px";
     });
@@ -1622,24 +1642,27 @@
           page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color });
         } else if (box.kind === "triangle"){
           /* Same "M50 4 L96 96 L4 96 Z" path as the on-screen <svg> (0-100
-             viewBox), scaled to this box's real size and anchored at its
-             bottom-left corner — drawSvgPath flips the path's own y-axis
-             internally to match its (x,y) anchor sitting at the bottom,
-             the same way drawRectangle/drawImage above already do. */
-          page.drawSvgPath("M50 4 L96 96 L4 96 Z", {
+             viewBox), anchored at its bottom-left corner — drawSvgPath
+             flips the path's own y-axis internally to match its (x,y)
+             anchor sitting at the bottom, the same way
+             drawRectangle/drawImage above already do. drawSvgPath's own
+             `scale` option is a single uniform number, which can't
+             reproduce a non-uniformly stretched box (deforming the shape
+             with the resize handle's non-Shift drag, see buildShapeBoxEl)
+             — so the path's own coordinates are pre-scaled by width/height
+             independently instead, and `scale` stays 1. */
+          page.drawSvgPath(scaleSvgPath("M50 4 L96 96 L4 96 Z", box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
-            scale: box.widthPt / 100,
             color
           });
         } else if (box.kind === "cross"){
           /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
-             written as a path string — same anchor/scale convention as
-             the triangle above. */
-          page.drawSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", {
+             written as a path string — same pre-scaled-coordinates
+             convention as the triangle above. */
+          page.drawSvgPath(scaleSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
-            scale: box.widthPt / 100,
             color
           });
         } else {
