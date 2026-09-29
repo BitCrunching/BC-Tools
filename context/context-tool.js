@@ -15,7 +15,7 @@
   bcSetupHelpBanner("context", "ct", [
     ["WELCOME_TO_CONTEXT", "Context lets you type text or drop in a signature anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
     ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or just click on the page) to drop a text box wherever you need it."],
-    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — or add a signature instead of typed text."],
+    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — or add a signature or a shape (circle, square, triangle) instead of typed text."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — text boxes stay exactly where you placed them."],
     ["YOU_ARE_SET", "Hit Download when you're done. Close this with the red dot and we won't show it again."]
   ]);
@@ -50,8 +50,6 @@
   const italicBtn = document.getElementById("ctItalicBtn");
   const underlineBtn = document.getElementById("ctUnderlineBtn");
   const shapeBtn = document.getElementById("ctShapeBtn");
-  const shapeKindTrigger = document.getElementById("ctShapeKindTrigger");
-  const shapeKindTriggerLabel = document.getElementById("ctShapeKindTriggerLabel");
   const shapeKindMenu = document.getElementById("ctShapeKindMenu");
   const pageNav = document.getElementById("ctPageNav");
   const pageNavDesktopSlot = document.getElementById("ctPageNavDesktopSlot");
@@ -817,7 +815,6 @@
       selectedShapeId = box.id;
       el.classList.add("selected");
       bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
-      shapeKindTriggerLabel.textContent = box.kind.charAt(0).toUpperCase() + box.kind.slice(1);
       activeShapeKind = box.kind;
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
@@ -958,20 +955,23 @@
   });
 
   addTextBtn.addEventListener("click", addTextBox);
-  shapeBtn.addEventListener("click", addShapeBox);
 
-  /* Shape kind (Circle/Square/Triangle) — shared bcRegisterDropdown
-     (CLAUDE.md's "pick one of several" rule, 3 options so a plain
-     dropdown rather than a searchable combo). Updates activeShapeKind
-     for the *next* new shape regardless of whether one's currently
-     selected, same as font size does for text — and additionally
-     re-kinds the selected shape in place if there is one. */
-  bcRegisterDropdown(shapeKindTrigger, shapeKindMenu, (opt) => {
+  /* "S" is now the dropdown's own trigger, not an immediate-add button —
+     clicking it just opens the Circle/Square/Triangle/Cross menu
+     (shared bcRegisterDropdown, CLAUDE.md's "pick one of several" rule),
+     and picking a kind is what actually places the shape. Re-kinds the
+     currently selected shape in place instead, if there is one. */
+  bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
-    shapeKindTriggerLabel.textContent = opt.dataset.label;
-    if (!selectedShapeId) return;
+    if (!selectedShapeId){
+      addShapeBox();
+      return;
+    }
     const shape = findShapeBoxById(selectedShapeId);
-    if (!shape || shape.page !== currentPage) return;
+    if (!shape || shape.page !== currentPage){
+      addShapeBox();
+      return;
+    }
     shape.kind = activeShapeKind;
     const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
     const oldSvg = shapeEl && shapeEl.querySelector("svg");
