@@ -968,7 +968,7 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    return allowed ? "...allowed" : "...disabled & fully anonymous";
+    return allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous";
   }
 
   function renderActionButton(){
