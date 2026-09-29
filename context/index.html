@@ -61,7 +61,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=111">
+<link rel="stylesheet" href="/shared/site.css?v=118">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -496,6 +496,18 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   justify-content:center;
   gap:8px;
   margin-bottom:16px;
+}
+
+/* The shape kind menu's trigger is now the compact 34px "S" icon button
+   itself, not a wide pill — .bc-dropdown-menu's default width:100%
+   would otherwise squeeze "Circle"/"Square"/etc. down to that same
+   34px. Widen it and anchor its right edge to the trigger instead of
+   its left, so it doesn't overflow the toolbar's edge on narrow
+   layouts. */
+#ctShapeKindDropdown .bc-dropdown-menu{
+  width:140px;
+  left:auto;
+  right:0;
 }
 
 /* Add text -> "New", Download's text -> icon: two labels/markers per
@@ -1597,19 +1609,14 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Underline (U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Italic (I)" aria-label="Italic" aria-pressed="false"><i>I</i></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Bold (B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Add shape (S)" aria-label="Add shape"><b>S</b></button>
-        </div>
-
-        <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
-          <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctShapeKindTrigger" aria-haspopup="listbox" aria-expanded="false">
-            <span id="ctShapeKindTriggerLabel">Circle</span>
-            <span class="context-color-chevron" aria-hidden="true"></span>
-          </button>
-          <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
-            <button type="button" class="bc-dropdown-option active" data-kind="circle" data-label="Circle" role="option" aria-selected="true">Circle</button>
-            <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Square" role="option" aria-selected="false">Square</button>
-            <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Triangle" role="option" aria-selected="false">Triangle</button>
-            <button type="button" class="bc-dropdown-option" data-kind="cross" data-label="Cross" role="option" aria-selected="false">Cross</button>
+          <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Add shape (S)" aria-label="Add shape" aria-haspopup="listbox" aria-expanded="false"><b>S</b></button>
+            <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-kind="circle" data-label="Circle" role="option" aria-selected="false">Circle</button>
+              <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Square" role="option" aria-selected="false">Square</button>
+              <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Triangle" role="option" aria-selected="false">Triangle</button>
+              <button type="button" class="bc-dropdown-option" data-kind="cross" data-label="Cross" role="option" aria-selected="false">Cross</button>
+            </div>
           </div>
         </div>
 
@@ -1848,6 +1855,6 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 </div>
 
 <script src="/shared/site.js?v=42" defer></script>
-<script src="/context/context-tool.js?v=27" defer></script>
+<script src="/context/context-tool.js?v=29" defer></script>
 </body>
 </html>
