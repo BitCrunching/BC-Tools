@@ -109,6 +109,7 @@ document.addEventListener("click", (e) => {
   const gotoEl = e.target.closest("[data-goto]");
   if (gotoEl){
     e.preventDefault();
+    if (typeof gtag === "function") gtag("event", "nav_click", { destination: gotoEl.dataset.goto });
     const target = SITE_PATH_MAP[gotoEl.dataset.goto] || "/";
     location.href = target;
     return;
@@ -126,6 +127,28 @@ document.addEventListener("click", (e) => {
     const tool = golden.dataset.tool;
     location.href = tool ? `/golden-rules/?tool=${encodeURIComponent(tool)}` : "/golden-rules/";
   }
+});
+
+/* ===== GA4 click tracking ===== */
+/* Any element (anywhere on the site) can opt into GA4 click tracking by
+   adding data-ga-event="<event_name>" — optionally data-ga-<param>="value"
+   for extra event params (e.g. data-ga-tool="convert"). One delegated
+   listener covers every current and future button; no per-tool JS needed.
+   gtag() itself is defined per-page (each page's own <head> snippet), so
+   this only fires when it exists. */
+document.addEventListener("click", (e) => {
+  const footerLink = e.target.closest(".footer-dash-link");
+  if (footerLink && typeof gtag === "function"){
+    gtag("event", "footer_nav_click", { destination: footerLink.getAttribute("href") });
+  }
+  const gaEl = e.target.closest("[data-ga-event]");
+  if (!gaEl || typeof gtag !== "function") return;
+  const params = {};
+  for (const key in gaEl.dataset){
+    if (key === "gaEvent") continue;
+    if (key.startsWith("ga")) params[key.slice(2).replace(/^./, c => c.toLowerCase())] = gaEl.dataset[key];
+  }
+  gtag("event", gaEl.dataset.gaEvent, params);
 });
 
 /* ===== downloadBlob ===== */
