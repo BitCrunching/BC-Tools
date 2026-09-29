@@ -69,60 +69,96 @@
   margin-top:0;
 }
 
-.faq-group-bg{
-  position:absolute;
-  inset:0;
-  z-index:0;
-  overflow:visible;
-  pointer-events:none;
+.faq-group-wrap:last-child{
+  margin-bottom:56px;
 }
 
-.faq-group-content{
-  position:relative;
-  z-index:1;
+.faq-group-wrap + .ad-slot-banner{
+  margin:3px auto;
+  line-height:0;
 }
 
-.faq-shape{
-  position:absolute;
-  display:block;
-  border-radius:24px;
-  background:var(--shape-color);
-  opacity:.35;
-  filter:blur(1px);
-  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+.ad-slot-banner + .faq-group-wrap{
+  margin-top:3px;
 }
 
-.faq-cv-1{ --shape-color:#d670ff; width:240px; height:276px; top:-20px; left:28%; animation-name:mp-colors-drift-x; animation-duration:28s; }
+.faq-term-panel{
+  max-width:772px;
+  margin:0 auto;
+  padding:0 24px;
+}
 
-.faq-cp-1{ --shape-color:#68e1ff; width:240px; height:276px; bottom:-20px; right:28%; animation-name:mp-colors-drift-up; }
+.faq-term-panel-box{
+  border-radius:16px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
 
-.faq-cb-1{ --shape-color:#ec6f63; width:235px; height:270px; top:-20px; right:28%; animation-name:mp-colors-drift-x; animation-duration:29s; }
+html[data-theme="light"] .faq-term-panel-box{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
 
-.faq-ex-1{ --shape-color:#4ade80; width:235px; height:270px; bottom:-20px; left:28%; animation-name:mp-colors-drift-up; }
+.faq-term-panel-head{
+  display:flex;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  font-family:"Courier New", Courier, monospace;
+  font-weight:700;
+  letter-spacing:.02em;
+  font-size:14px;
+}
 
-.faq-ctx-1{ --shape-color:#ffd155; width:240px; height:276px; top:-20px; left:28%; animation-name:mp-colors-drift-x; animation-duration:27s; }
+html[data-theme="light"] .faq-term-panel-head{
+  border-bottom-color:rgba(29,36,54,.15);
+  color:#1d2436;
+}
+
+.faq-term-prompt{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q{
+  font-family:"Courier New", Courier, monospace;
+  font-weight:700;
+  letter-spacing:.01em;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-q{
+  color:#1d2436;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q::before{
+  content:"> ";
+  opacity:.7;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-a{
+  font-family:"Courier New", Courier, monospace;
+  color:#e5e7eb;
+  opacity:.85;
+  font-size:14px;
+  line-height:1.6;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-a{
+  color:#1d2436;
+  opacity:.8;
+}
 
 @media (max-width:768px){
-  .faq-shape{
-    opacity:.2;
+  .faq-term-panel-head,
+  .faq-term-panel-box .faq-item-mainpage .faq-q,
+  .faq-term-panel-box .faq-item-mainpage .faq-a{
+    font-size:12px;
   }
-  .faq-cv-1, .faq-cp-1, .faq-cb-1, .faq-ex-1, .faq-ctx-1{ width:170px; height:196px; }
-}
-
-.faq-group-heading{
-  max-width:772px;
-  margin:48px auto 16px;
-  padding:24px 24px 0;
-  font-size:22px;
-  letter-spacing:-0.01em;
-  color:var(--text);
-  border-top:1px solid rgba(255,255,255,.08);
-}
-
-.hero + .faq-group-wrap .faq-group-heading{
-  margin-top:0;
-  padding-top:0;
-  border-top:none;
 }
 
 .faq-list-mainpage{
@@ -131,6 +167,13 @@
   padding:0 24px;
   display:grid;
   gap:28px;
+}
+
+.faq-term-panel-box .faq-list-mainpage{
+  max-width:none;
+  margin:0;
+  padding:20px 20px 24px;
+  gap:22px;
 }
 
 .faq-item-mainpage{
@@ -255,23 +298,27 @@
 
   <div class="faq-group-wrap">
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">General</h2>
-      <div class="faq-list-mainpage">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Do you store my files on a server?</p>
-          <p class="faq-a">No. Every tool runs entirely in your browser. Your files are processed locally on your device and are never uploaded anywhere.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Does BC Tools work on mobile?</p>
-          <p class="faq-a">Yes, every tool works in mobile and desktop browsers, with nothing to install.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">How does "Continue where you left off" work?</p>
-          <p class="faq-a">Most tools save your current work locally as you go — IndexedDB for file-sized data (your images, PDFs, code), localStorage for small preferences (theme, language). It never leaves your device.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">What is Sector 7G?</p>
-          <p class="faq-a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>GENERAL_FAQ</div>
+          <div class="faq-list-mainpage">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you store my files on a server?</p>
+              <p class="faq-a">No. Every tool runs entirely in your browser. Your files are processed locally on your device and are never uploaded anywhere.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Does BC Tools work on mobile?</p>
+              <p class="faq-a">Yes, every tool works in mobile and desktop browsers, with nothing to install.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">How does "Continue where you left off" work?</p>
+              <p class="faq-a">Most tools save your current work locally as you go — IndexedDB for file-sized data (your images, PDFs, code), localStorage for small preferences (theme, language). It never leaves your device.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What is Sector 7G?</p>
+              <p class="faq-a">Classified. Its true nature is restricted from human clearance until we are ready, he said.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -282,50 +329,52 @@
   </div>
 
   <div class="faq-group-wrap">
-    <div class="faq-group-bg" aria-hidden="true">
-      <span class="faq-shape faq-cv-1"></span>
-    </div>
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">Convert</h2>
-      <div class="faq-list-mainpage convert">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Will I lose image quality when converting?</p>
-          <p class="faq-a">Converting to JPG or WEBP applies mild lossy compression. Converting to PNG is lossless.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Can I convert multiple images at once?</p>
-          <p class="faq-a">Yes, up to 5 images download individually; more than 5 are converted and downloaded together in one ZIP file.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Is WEBP better than JPG?</p>
-          <p class="faq-a">WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Can I convert HEIC photos from my iPhone?</p>
-          <p class="faq-a">Yes. Drop in a .HEIC or .HEIF photo and pick JPG, PNG, or WEBP — Convert decodes it entirely in your browser, no app or upload needed.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONVERT_FAQ</div>
+          <div class="faq-list-mainpage convert">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Will I lose image quality when converting?</p>
+              <p class="faq-a">Converting to JPG or WEBP applies mild lossy compression. Converting to PNG is lossless.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I convert multiple images at once?</p>
+              <p class="faq-a">Yes. With 5 or fewer images, each one downloads on its own. Between 6 and 20, you can choose single files or one ZIP. Above 20, everything downloads together in one ZIP — there's no single-file option at that scale.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Is WEBP better than JPG?</p>
+              <p class="faq-a">WEBP usually achieves a smaller file size at comparable quality, but JPG has wider support in older applications.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I convert HEIC photos from my iPhone?</p>
+              <p class="faq-a">Yes. Drop in a .HEIC or .HEIF photo and pick JPG, PNG, or WEBP — Convert decodes it entirely in your browser, no app or upload needed.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="faq-group-wrap">
-    <div class="faq-group-bg" aria-hidden="true">
-      <span class="faq-shape faq-cp-1"></span>
-    </div>
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">Compress</h2>
-      <div class="faq-list-mainpage compress">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">How much will the image shrink?</p>
-          <p class="faq-a">It depends on the image and chosen level, but it's usually a 30–80% reduction in the original file size.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Will the image lose quality?</p>
-          <p class="faq-a">Slightly, depending on the level chosen. Low level has almost no visible loss; high level gives bigger savings at the cost of quality.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Do you support PNG files too?</p>
-          <p class="faq-a">Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMPRESS_FAQ</div>
+          <div class="faq-list-mainpage compress">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">How much will the image shrink?</p>
+              <p class="faq-a">It depends on the image and chosen level, but it's usually a 30–80% reduction in the original file size.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Will the image lose quality?</p>
+              <p class="faq-a">Slightly, depending on the level chosen. Low level has almost no visible loss; high level gives bigger savings at the cost of quality.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you support PNG files too?</p>
+              <p class="faq-a">Yes. PNG files are converted to JPG for better compression, which significantly reduces their size.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -336,73 +385,206 @@
   </div>
 
   <div class="faq-group-wrap">
-    <div class="faq-group-bg" aria-hidden="true">
-      <span class="faq-shape faq-cb-1"></span>
-    </div>
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">Combine</h2>
-      <div class="faq-list-mainpage combine">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Does the order of the files matter?</p>
-          <p class="faq-a">Yes. Pages are combined in exactly the order shown in the list, so drag the files into the order you want before combining.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Is there a limit to how many PDFs I can combine?</p>
-          <p class="faq-a">There's no hard limit, though very large files may take a little longer since everything is processed in your browser.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Do you keep my files?</p>
-          <p class="faq-a">No. All processing happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your files are never uploaded to a server.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMBINE_FAQ</div>
+          <div class="faq-list-mainpage combine">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Does the order of the files matter?</p>
+              <p class="faq-a">Yes. Pages are combined in exactly the order shown in the list, so drag the files into the order you want before combining.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Is there a limit to how many PDFs I can combine?</p>
+              <p class="faq-a">There's no hard limit, though very large files may take a little longer since everything is processed in your browser.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my files?</p>
+              <p class="faq-a">No. All processing happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your files are never uploaded to a server.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="faq-group-wrap">
-    <div class="faq-group-bg" aria-hidden="true">
-      <span class="faq-shape faq-ex-1"></span>
-    </div>
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">Cleanly</h2>
-      <div class="faq-list-mainpage cleanly">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">What metadata does this tool find?</p>
-          <p class="faq-a">GPS location, camera make and model, the date and time the photo was taken, and any editing software recorded in the file — if present.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Does stripping metadata reduce image quality?</p>
-          <p class="faq-a">No. The image itself is re-encoded at the same resolution and near-original quality — only the hidden metadata is removed.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Do you keep my photos or the metadata you find?</p>
-          <p class="faq-a">No. Everything happens locally in your browser using the File API and JavaScript libraries (exif-js) — your photos and their metadata are never uploaded to a server.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CLEANLY_FAQ</div>
+          <div class="faq-list-mainpage cleanly">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What metadata does this tool find?</p>
+              <p class="faq-a">GPS location, camera make and model, the date and time the photo was taken, and any editing software recorded in the file — if present.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Does stripping metadata reduce image quality?</p>
+              <p class="faq-a">No. The image itself is re-encoded at the same resolution and near-original quality — only the hidden metadata is removed.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my photos or the metadata you find?</p>
+              <p class="faq-a">No. Everything happens locally in your browser using the File API and JavaScript libraries (exif-js) — your photos and their metadata are never uploaded to a server.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="faq-group-wrap">
-    <div class="faq-group-bg" aria-hidden="true">
-      <span class="faq-shape faq-ctx-1"></span>
-    </div>
     <div class="faq-group-content">
-      <h2 class="faq-group-heading">Context</h2>
-      <div class="faq-list-mainpage context">
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Can I edit the text after adding it to the PDF?</p>
-          <p class="faq-a">Yes. Drag your text to reposition it, or use the toolbar to change its color, size, and style at any point before downloading.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Does this tool save my PDF anywhere?</p>
-          <p class="faq-a">No. Everything happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your PDF and any text you add are never uploaded to a server.</p>
-        </div>
-        <div class="faq-item-mainpage">
-          <p class="faq-q">Can I use Context on my phone?</p>
-          <p class="faq-a">Yes. Context has a dedicated fullscreen mobile editor with pinch-to-zoom, so adding text works just as well on a phone as on desktop.</p>
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONTEXT_FAQ</div>
+          <div class="faq-list-mainpage context">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I edit the text after adding it to the PDF?</p>
+              <p class="faq-a">Yes. Drag your text to reposition it, or use the toolbar to change its color, size, and style at any point before downloading.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Does this tool save my PDF anywhere?</p>
+              <p class="faq-a">No. Everything happens locally in your browser using the File API and JavaScript libraries (pdf-lib and pdf.js) — your PDF and any text you add are never uploaded to a server.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I use Context on my phone?</p>
+              <p class="faq-a">Yes. Context has a dedicated fullscreen mobile editor with pinch-to-zoom, so adding text works just as well on a phone as on desktop.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONGIFY_FAQ</div>
+          <div class="faq-list-mainpage congify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What can Congify convert?</p>
+              <p class="faq-a">A video clip into a GIF. Trim the range you want, then pick a frame rate (5, 10, 15, or 20fps) and size before converting.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Why does frame rate matter so much for file size?</p>
+              <p class="faq-a">Every extra frame is another full image added to the file, so frame rate is the single biggest lever on file size — 10fps is a good default for most clips.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my video?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — your video and the GIF it produces are never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COUDIO_FAQ</div>
+          <div class="faq-list-mainpage coudio">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What audio formats does Coudio support?</p>
+              <p class="faq-a">Converting between MP3 and WAV. MP3 is smaller and plays everywhere; WAV is uncompressed and better suited to further editing.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I convert more than one audio file at once?</p>
+              <p class="faq-a">Yes. Each file you load gets its own row with its own convert and download button, so you can work through several files independently.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my audio files?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — your audio is never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODIFY_FAQ</div>
+          <div class="faq-list-mainpage codify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What does Codify actually produce?</p>
+              <p class="faq-a">A styled, syntax-highlighted screenshot of a code snippet, exported as a PNG — pick a language and a theme before exporting.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Why does syntax highlighting matter for a screenshot?</p>
+              <p class="faq-a">It's a real reading aid, not decoration — color-coded keywords, strings, and comments let you scan code by shape and color before reading it word by word.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my code?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — the code you type is never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colorfy and Codoc FAQ sections hidden for now (2026-09-29) — content kept here, just commented out, so it's easy to bring back.
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COLORFY_FAQ</div>
+          <div class="faq-list-mainpage colorfy">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What does Colorfy give me?</p>
+              <p class="faq-a">Drop in an image, drag the picker to any pixel, and get that exact color's HEX and RGB code instantly.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can I save colors for later?</p>
+              <p class="faq-a">Yes. Save any color you pick to a palette so you can come back and copy its code again without re-picking it.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my image?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — your image is never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODOC_FAQ</div>
+          <div class="faq-list-mainpage codoc">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What does Codoc convert?</p>
+              <p class="faq-a">A Word document (.docx) to PDF, paginated and laid out entirely in your browser.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can it convert a PDF back to a Word document?</p>
+              <p class="faq-a">No, only DOCX to PDF. A PDF has no real structural concept of paragraphs or tables, so reconstructing an editable document from one reliably would need server-side processing — which breaks the never-leaves-your-device guarantee every other tool on this site relies on.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my document?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — your document is never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  -->
 </main>
 <div class="footer-dashboard" id="siteFooterDashboard">
   <div class="footer-dashboard-inner">
