@@ -180,13 +180,31 @@
   function readTags(file){
     return new Promise(resolve => {
       if (!window.EXIF){ resolve({}); return; }
+      /* EXIF.getData reads the file via its own FileReader and can throw
+         from inside that async onload (a corrupt/0-byte file trips this)
+         — that happens on a separate call stack from this function, so
+         the try/catch below never sees it and our callback never runs.
+         Without a fallback, addFiles()'s `await readTags(file)` hangs
+         forever on that one file, silently stalling the whole batch. */
+      let done = false;
+      const finish = tags => {
+        if (done) return;
+        done = true;
+        resolve(tags || {});
+      };
       try {
         EXIF.getData(file, function(){
-          resolve(EXIF.getAllTags(this) || {});
+          try {
+            finish(EXIF.getAllTags(this));
+          } catch (err){
+            finish({});
+          }
         });
       } catch (err){
-        resolve({});
+        finish({});
+        return;
       }
+      setTimeout(() => finish({}), 3000);
     });
   }
 
@@ -416,8 +434,18 @@
   }
 
   async function addFiles(newFiles){
-    const picked = [...newFiles].filter(isImageFile);
-    if (picked.length === 0) return;
+    const incoming = [...newFiles];
+    const picked = incoming.filter(isImageFile);
+    if (picked.length === 0){
+      /* Same fix shape as Convert's applyPickedFiles() — incoming.length
+         distinguishes "nothing was picked" (no message needed) from
+         "something was picked but none of it qualifies" (e.g. a .txt/
+         .exe), which used to be silent. */
+      if (incoming.length > 0){
+        status.textContent = "Cleanly only works with JPEG, PNG, HEIC, or SVG images — none of the selected file(s) qualify.";
+      }
+      return;
+    }
     for (const file of picked){
       const tags = isSvgFile(file) ? await readSvgFindings(file)
         : isHeicFile(file) ? heicFindings()
@@ -439,6 +467,19 @@
     }
     revealAfterDropUI();
     renderList();
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       the picked.length === 0 branch above only covers a wholly-
+       unsupported batch; a mixed batch (e.g. 2 valid images + 1 .nef)
+       used to load the 2 with zero indication the 3rd never made it in.
+       renderList() doesn't touch status itself, so this is safe to
+       append right after it. */
+    if (picked.length < incoming.length){
+      const skipped = incoming.length - picked.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a supported image format and was skipped."
+        : `${skipped} files weren't a supported image format and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
   }
 
   input.addEventListener("change", e => {

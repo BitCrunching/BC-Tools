@@ -440,7 +440,7 @@
     isInScope: isDragEventInScope,
     getEnterTarget: e => (afterDrop.hidden ? toolApp : addTile),
     clearTargets: [toolApp, addTile],
-    onDrop: e => applyPickedFiles([...e.dataTransfer.files].filter(isConvertibleFile))
+    onDrop: e => applyPickedFiles([...e.dataTransfer.files])
   });
 
   function renderStatus(){
@@ -494,6 +494,44 @@
 
   function isImageFile(f){
     return f.type.startsWith("image/") || /\.svg$/i.test(f.name) || isHeicFile(f);
+  }
+
+  /* Every output format here is single-frame — there's no GIF/WEBP-with-
+     animation option, since this tool draws through a plain <canvas>
+     (one frame in, one frame out) rather than anything frame-sequence-
+     aware like Congify. That's invisible for a static image, but an
+     *animated* GIF or WEBP fed in silently loses its animation on the
+     way out — including to WEBP, a format that can itself be animated,
+     so "the output format supports it" doesn't save you here. Confirmed
+     directly: a 3-frame animated GIF converted to WEBP came out static,
+     no warning. These two checks are a best-effort sniff of the raw
+     bytes (not a full parse) so applyPickedFiles() can warn instead of
+     silently discarding motion — false negatives on an unusual encoder
+     are possible, false positives are not (the signatures checked only
+     ever appear in a genuinely-animated file of that format). */
+  async function isAnimatedGif(file){
+    if (file.type !== "image/gif" && !/\.gif$/i.test(file.name)) return false;
+    const buf = new Uint8Array(await file.arrayBuffer());
+    // Each frame is preceded by its own Graphic Control Extension
+    // (21 F9 04) — more than one means more than one frame.
+    let gceCount = 0;
+    for (let i = 0; i < buf.length - 2 && gceCount < 2; i++){
+      if (buf[i] === 0x21 && buf[i + 1] === 0xF9 && buf[i + 2] === 0x04) gceCount++;
+    }
+    return gceCount > 1;
+  }
+  async function isAnimatedWebp(file){
+    if (file.type !== "image/webp" && !/\.webp$/i.test(file.name)) return false;
+    const head = new Uint8Array(await file.slice(0, 21).arrayBuffer());
+    // RIFF container: bytes 0-3 "RIFF", 8-11 "WEBP", then the first
+    // chunk's FourCC at 12-15. Only an extended-format file (VP8X chunk)
+    // can be animated — a plain lossy/lossless WEBP (VP8 /VP8L chunk)
+    // never is. The VP8X flags byte sits right after that chunk's own
+    // 4-byte FourCC + 4-byte size, at offset 20; bit 0x02 is "has ANIM".
+    if (head.length < 21) return false;
+    const fourcc = String.fromCharCode(head[12], head[13], head[14], head[15]);
+    if (fourcc !== "VP8X") return false;
+    return (head[20] & 0x02) !== 0;
   }
 
   function isPdfFile(f){
@@ -705,8 +743,22 @@
      rounds as you like" behavior. Rejects the whole addition (keeping
      the existing files untouched) if mixing it in would create a
      batch that's part-image, part-PDF. */
-  function applyPickedFiles(picked){
-    if (picked.length === 0) return;
+  async function applyPickedFiles(incoming){
+    const picked = incoming.filter(isConvertibleFile);
+    if (picked.length === 0){
+      /* incoming.length check distinguishes "nothing was picked at all"
+         (e.g. the file picker was cancelled) from "something was picked
+         but none of it converts" (e.g. a .txt/.exe) — only the second
+         case is worth a message, since the drop zone's own "Click or
+         drop images or a PDF" copy already sets expectations for the
+         first. Previously this filtering happened before
+         applyPickedFiles was ever called, so this case was silent —
+         confirmed directly (notes.txt/app.exe produced zero feedback). */
+      if (incoming.length > 0){
+        status.textContent = "Convert only works with images or a PDF — none of the selected file(s) qualify.";
+      }
+      return;
+    }
     const combined = files.concat(picked);
     if (!(combined.every(isPdfFile) || combined.every(isImageFile))){
       status.textContent = "Please select either only images or only PDF files, not both at once.";
@@ -715,6 +767,20 @@
     files = combined;
     revealAfterDropUI();
     renderStatus();
+    /* picked.length === 0 above only catches a batch that's wholly
+       unsupported — a *partial* rejection (e.g. 2 valid images + 1
+       .ico Chrome doesn't tag as image/*) used to slip through renderStatus()'s
+       plain "N files loaded" with zero indication anything was dropped.
+       Confirmed directly: an .ico mixed into a 3-file batch loaded 2
+       files with no hint the 3rd never made it in. Same append-after-
+       renderStatus() pattern as Compress's own gifRejected handling. */
+    if (picked.length < incoming.length){
+      const skipped = incoming.length - picked.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a supported image or PDF format and was skipped."
+        : `${skipped} files weren't a supported image or PDF format and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
     if (files.length && !inputSelect.value){
       const detected = detectInputFormatValue(files[0]);
       if (detected){
@@ -728,10 +794,26 @@
     showSelectedPreviews();
     convertBtn.disabled = files.length === 0;
     schedulePersist();
+    /* Checked last, after everything above has already committed and
+       rendered — an animated file is still fully valid input, this is
+       purely an added disclosure, not a gate. */
+    const animatedNames = [];
+    for (const f of picked){
+      if ((await isAnimatedGif(f)) || (await isAnimatedWebp(f))) animatedNames.push(f.name);
+    }
+    if (animatedNames.length){
+      /* No pointer to another tool here on purpose — Congify only takes
+         video input (accept="video/*"), not an already-animated GIF/
+         WEBP, so "use Congify instead" would be steering someone toward
+         a tool that can't actually take this file. Nothing on this site
+         re-encodes an animated image while keeping it animated. */
+      const word = animatedNames.length === 1 ? "is" : "are";
+      status.innerHTML += ` <span style="color:var(--text)">${animatedNames.join(", ")} ${word} animated — Convert only outputs a single still frame, the animation won't carry over.</span>`;
+    }
   }
 
   input.addEventListener("change", e => {
-    applyPickedFiles([...e.target.files].filter(isConvertibleFile));
+    applyPickedFiles([...e.target.files]);
   });
 
 
@@ -805,6 +887,19 @@
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
+        /* JPG has no alpha channel — a canvas starts fully transparent
+           (not white), so drawing a transparent PNG/WEBP straight onto
+           it and then encoding to JPEG leaves every transparent pixel
+           as whatever RGB happened to sit under alpha=0, which defaults
+           to black. Confirmed directly: a fully-transparent corner came
+           back (0,0,0) instead of white. Filling white first (only when
+           the target format can't carry alpha — PNG/WEBP output keeps
+           real transparency untouched) matches what every other image
+           tool does when flattening transparency for a JPEG. */
+        if (mimeType === "image/jpeg"){
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, width, height);
+        }
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob(blob => {

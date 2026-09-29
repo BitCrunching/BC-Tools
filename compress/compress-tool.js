@@ -600,6 +600,12 @@
     if (picked.length === 0){
       if (gifRejected){
         status.textContent = "GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.";
+      } else if (incoming.length > 0){
+        /* Same fix shape as Convert's applyPickedFiles() — a selection
+           that's wholly non-image (e.g. a .txt/.exe) used to be silent;
+           the GIF case above already had its own message, this covers
+           everything else that isn't a GIF either. */
+        status.textContent = "Compress only works with images — none of the selected file(s) qualify.";
       }
       return;
     }
@@ -608,6 +614,19 @@
     renderStatus();
     if (gifRejected){
       status.innerHTML += ` <span style="color:var(--text)">GIFs were skipped — animated images aren't supported here, try Congify instead.</span>`;
+    }
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       GIFs already get their own message above; this covers anything
+       else non-image mixed into an otherwise-valid batch (e.g. 2 valid
+       images + 1 .nef), which used to load silently with zero
+       indication the odd one out never made it in. */
+    const gifCount = incoming.filter(isGifFile).length;
+    const otherSkipped = incoming.length - picked.length - gifCount;
+    if (otherSkipped > 0){
+      const msg = otherSkipped === 1
+        ? "1 file wasn't a supported image format and was skipped."
+        : `${otherSkipped} files weren't a supported image format and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
     showSelectedPreviews();
     compressBtn.disabled = files.length === 0;

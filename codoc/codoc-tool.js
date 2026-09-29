@@ -147,7 +147,14 @@
       downloadBlob(blob, name);
       status.textContent = "Downloaded";
     } catch (err) {
-      status.textContent = err && err.message ? err.message : "Conversion failed — please try a different file.";
+      /* err.message used to be shown verbatim — for a corrupt/0-byte
+         file that's a raw library-internal string straight from
+         mammoth's own zip reader (e.g. "End of data reached (data
+         length = 0, asked index = 4). Corrupted zip ?"), not something
+         a visitor should ever see. Every other tool's catch block shows
+         a plain, friendly line instead — matching that here. */
+      console.error(err);
+      status.textContent = "Couldn't read that document — it may be corrupted or in an unsupported format.";
     } finally {
       convertBtn.disabled = false;
       convertBtn.textContent = "Convert and download";

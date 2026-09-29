@@ -189,10 +189,28 @@
   }
 
   function addFiles(newFiles){
-    const pdfs = [...newFiles].filter(isPdfFile);
+    const incoming = [...newFiles];
+    const pdfs = incoming.filter(isPdfFile);
+    if (pdfs.length === 0 && incoming.length > 0){
+      /* Same fix shape as Convert's applyPickedFiles() — a selection
+         that's wholly non-PDF (e.g. a .txt/.exe) used to be silent. */
+      status.textContent = "Combine only works with PDF files — none of the selected file(s) qualify.";
+      return;
+    }
     files = files.concat(pdfs);
     if (files.length) revealAfterDropUI();
     renderList();
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       the wholly-non-PDF branch above never fires for a mixed batch
+       (e.g. 2 valid PDFs + 1 .cr2), which used to load the 2 with zero
+       indication the odd one out never made it in. */
+    if (pdfs.length < incoming.length && pdfs.length > 0){
+      const skipped = incoming.length - pdfs.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a PDF and was skipped."
+        : `${skipped} files weren't PDFs and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
   }
 
   input.addEventListener("change", (e) => {

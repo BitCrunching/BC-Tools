@@ -1428,6 +1428,214 @@ that had loaded an older `icons.css` earlier in the same session — because
 an `@import`ed file is cached by its own URL, independent of the parent
 stylesheet that imports it.
 
+**Corrupted/0-byte file audit (2026-09-28)**: Manually tested every tool
+with a genuinely 0-byte file of its own expected type (`.pdf`, `.jpg`,
+`.mp4`, `.mp3`, `.docx`) to see how each one fails, not just whether it
+does. Three real bugs turned up, each a different flavor of the same
+underlying mistake — a corrupt-file failure path that was never actually
+exercised before:
+
+1. **Cleanly hung forever, silently.** `EXIF.getData()` reads the file via
+   its own `FileReader` and can throw from inside that async `onload` — on
+   a separate call stack from the `try/catch` wrapping the call site, so
+   the catch never saw it and the callback passed to `EXIF.getData` never
+   ran. `readTags()`'s promise stayed pending forever, and `addFiles()`'s
+   `await readTags(file)` stalled the whole batch with it — no error, no
+   stuck spinner even, just nothing happening. Fixed with a `finish()`
+   guard plus a 3s `setTimeout` fallback in `readTags()`
+   (`cleanly/cleanly-tool.js`) so a file that never calls back still
+   resolves to `{}` (empty tags) instead of hanging the batch.
+2. **Congify's whole banner went blank, permanently.** `setFile()` hides
+   the drop zone immediately (expecting `loadedmetadata` to reveal the
+   editor next), but a 0-byte video can leave the `<video>` element stuck
+   at `readyState 0` forever with **neither** `loadedmetadata` **nor**
+   `error` ever firing (confirmed directly — this isn't hypothetical).
+   With no error handler and no timeout, the banner just stayed
+   permanently blank — no drop zone, no editor (it has no intrinsic size
+   until the video has dimensions), nothing. Fixed with both a
+   `video.addEventListener("error", ...)` handler and an 8s timeout
+   fallback in `setFile()` (`congify/congify-tool.js`), both resetting to
+   the drop zone via the existing `resetGif()` and showing a status
+   message. Also found and fixed a second bug in fixing the first one:
+   `#gifStatus` lived nested inside `#gifVideoWrap`
+   (`display:none` until a video's actually active), so the new error
+   message was being set correctly but rendered invisibly — moved
+   `#gifStatus` in `congify/index.html` to be a sibling of the wrap
+   instead of a child of it, so it stays visible in the drop-zone state
+   too. (Also note: `resetGif()`/`hideDoneView()` unconditionally clear
+   `statusEl.textContent` as part of their general reset — any future
+   status message that should survive one of those calls needs to be set
+   *after* calling it, not before, or it gets wiped immediately.)
+3. **Codoc leaked a raw library error to the user.** Its catch block did
+   `status.textContent = err.message` verbatim — for a corrupt file
+   that's mammoth's own zip-reader internals ("End of data reached (data
+   length = 0, asked index = 4). Corrupted zip ?"), not something a
+   visitor should see. Every other tool's catch block shows a plain,
+   friendly line instead; fixed `codoc/codoc-tool.js` to match
+   (`console.error(err)` + a generic "Couldn't read that document..."
+   message).
+
+Combine, Convert, Compress, Colorfy, and Coudio all already handled this
+correctly (clean try/catch around the actual failure point, a friendly
+status line, no hang) — worth reading as the reference examples for how a
+new tool's own file-load path should fail. Codify's background-image
+picker (a minor, decorative feature, not its core typed-code input) also
+degrades silently with no crash, which is fine as-is. **Lesson: "shows a
+friendly error" and "doesn't hang" are two different properties, and
+a `try/catch` around a call site doesn't catch an exception thrown from
+that call's own async callback on a later tick** — a callback-based API
+(`EXIF.getData`, `<video>`/`<audio>` element loading) needs either a
+proper error-event listener, a timeout fallback, or both, since some
+malformed inputs trip neither the library's error path nor its success
+path.
+
+**Follow-up finding, same audit thread: wrong-file-type selections were
+silently dropped too.** Uploading a `.txt`/`.exe` (nothing image/PDF-like
+at all) to Convert produced zero feedback — `[...e.target.files].filter
+(isConvertibleFile)` ran *before* `applyPickedFiles()`, so a selection
+that filtered down to nothing never reached the one function that could
+have reported it. Fixed by moving the filter inside `applyPickedFiles()`
+itself (`convert/convert-tool.js`) so it can tell "nothing was picked at
+all" (file picker cancelled — no message needed, the drop zone's own
+copy already sets expectations) apart from "something was picked but
+none of it qualifies" (now shows "Convert only works with images or a
+PDF — none of the selected file(s) qualify."). Verified a mixed batch
+(one valid `.jpg` + one `.txt`) still works correctly — the valid file
+gets picked up, the invalid one is dropped with no spurious "select only
+one type" error.
+
+**Swept the same fix across Cleanly, Compress, Combine, and Coudio** in a
+follow-up round — same shape each time, each verified live:
+
+- **Cleanly** (`addFiles`) — was a plain silent `return`; now shows
+  "Cleanly only works with JPEG, PNG, HEIC, or SVG images — none of the
+  selected file(s) qualify."
+- **Compress** (`setFiles`) — already had a message for the GIF-rejected
+  case specifically; added an `else if` for the general case (anything
+  non-image, non-GIF) with "Compress only works with images — none of
+  the selected file(s) qualify." Confirmed the GIF-specific message still
+  fires on its own (not swallowed by the new branch).
+- **Combine** (`addFiles`) — was a plain silent no-op (didn't even
+  early-return, just concatenated an empty array); now shows "Combine
+  only works with PDF files — none of the selected file(s) qualify."
+- **Coudio** (`addFiles`) — same message-shape fix, but with a second,
+  real bug underneath it: `#cdStatus` lived *inside* `#cdEditor`
+  (`coudio/index.html`), which carries the `hidden` attribute until a
+  file's actually accepted — so the new message was being set correctly
+  but rendered invisible, the identical shape to Congify's `#gifStatus`
+  bug above. Fixed by moving `#cdStatus` out to be a sibling of
+  `#cdEditor` instead of a child. That element already had a CSS rule
+  collapsing it to `display:none` pre-upload on purpose (reserves no
+  space until there's something to show) — updated the selector to
+  `#cdStatus:empty` so that rule only applies while the element is
+  genuinely empty; the moment JS sets `textContent`, the element stops
+  matching `:empty` and the collapse rule stops applying, no JS-side
+  guard needed. Confirmed no regression: a valid file still loads
+  normally with no wasted banner space, and in-flight status messages
+  (from a real conversion) still render in their usual spot.
+
+**Lesson, generalized from both rounds of this audit**: a status/message
+element that lives inside a conditionally-hidden container (whether via
+the `hidden` attribute, a `display:none` class, or a CSS rule keyed off
+sibling state) can only ever report on states reachable *after* that
+container becomes visible. Any message that needs to fire *before* that
+point — including "here's why nothing happened" — needs the element
+either moved outside the hidden container, or the hiding condition
+narrowed (like Coudio's `:empty` guard) so it doesn't blanket-suppress
+genuine content.
+
+**Third round, same audit thread: partial-batch rejection was still
+silent, and animated GIF/WEBP input silently lost its animation on
+convert.** Testing an ICO file mixed into a 3-file Convert batch showed
+2 files loaded with zero indication the 3rd (an `.ico` Chrome doesn't tag
+with an `image/*` MIME type) was ever dropped — the existing "0 files
+qualify" message only covered a *wholly*-rejected batch, not a partial
+one. Fixed in `applyPickedFiles()` (`convert/convert-tool.js`) with a
+second check (`picked.length < incoming.length`) appending "N file(s)
+weren't a supported image or PDF format and were skipped" after
+`renderStatus()` runs — same append-after-render pattern Compress's own
+`gifRejected` handling already used, so it doesn't get clobbered by
+`renderStatus()`'s own unconditional `status.textContent =` write.
+
+Separately, and more surprising: converting an animated GIF to **WEBP**
+(a format that fully supports animation) silently produced a static
+single-frame WEBP — confirmed by inspecting the actual output bytes
+(`Image.open(...).is_animated` → `False`, `n_frames` → `1`), not just
+eyeballing it. Root cause: every Convert output goes through a plain
+`<canvas>` draw, which only ever captures whatever the *current* frame
+is — there's no frame-sequence-aware path here at all (that's Congify's
+job, and only in the video→GIF direction). This applies as much to an
+animated GIF→WEBP as to GIF→JPG, where losing animation is obviously
+expected — WEBP being animation-capable doesn't save you, since nothing
+in the encode path re-attaches the other frames. Fixed with a best-effort
+byte-level sniff (`isAnimatedGif`/`isAnimatedWebp`, `convert/
+convert-tool.js`) run after files are added: GIF checks for more than
+one Graphic Control Extension (`21 F9 04`) block; WEBP checks the RIFF
+container's `VP8X` chunk flags byte for the animation bit (`0x02`) — a
+plain `VP8`/`VP8L` WEBP without an extended header is never animated, no
+byte check needed. Appends "`<name(s)>` is/are animated — Convert only
+outputs a single still frame, the animation won't carry over." Confirmed
+no false positive on a genuinely static `.gif`/`.webp` (same byte
+signatures never appear outside a real animated file of that format).
+**Deliberately doesn't suggest Congify as an alternative** — Congify's
+own input is `accept="video/*"` only, it can't take an already-animated
+image at all, so pointing there would send someone to a tool that
+immediately rejects the file; there's genuinely nothing on this site that
+re-encodes an animated image while preserving animation, and the message
+says only what's true (this tool flattens it) rather than implying a
+workaround that doesn't exist.
+
+**Fourth round: RAW/CMYK/Adobe RGB color testing, and closing the
+partial-rejection gap left open across Cleanly, Compress, Combine, and
+Coudio.** Tested a real CMYK JPEG, a real Adobe-RGB-tagged JPEG (genuine
+embedded ICC profile, from macOS's own `AdobeRGB1998.icc`), and files
+under real camera-RAW extensions (`.cr2`/`.nef`/`.dng`/`.arw`) across
+Colorfy, Cleanly, Convert, and Compress:
+
+- **CMYK and Adobe RGB both pass everywhere, no bugs.** Chrome natively
+  decodes CMYK JPEGs and applies embedded ICC profiles on canvas draw, so
+  every tool (which all go through a plain `<canvas>` at some point)
+  gets a correctly color-managed sRGB result for free — confirmed by
+  reading the actual output bytes back (`Image.open(...).getpixel(...)`),
+  not just eyeballing a screenshot.
+- **RAW extensions are correctly rejected everywhere** — Chrome tags a
+  `.cr2`/`.nef`/`.dng`/`.arw` file's `File.type` as `application/octet-
+  stream` (it has no built-in sniffing for camera-RAW containers), so
+  every tool's existing `image/*`-prefix check already excludes it
+  cleanly. No RAW-specific code exists or is needed anywhere on this
+  site.
+
+**But testing RAW files mixed into an otherwise-valid batch exposed that
+the "partial rejection" fix from the previous round had only ever been
+applied to Convert, not to the three other tools swept in that same
+round.** Cleanly, Compress, and Combine each still had the older,
+narrower shape: a message only for "the whole batch is unsupported",
+nothing for "some files loaded fine, one silently didn't" — confirmed
+directly (2 valid images + 1 `.nef` loaded 2 with zero indication of the
+third). Closed the gap in all four (including Coudio, which had the same
+narrower shape and hadn't been separately confirmed broken yet):
+
+- **Cleanly** (`addFiles`) — appended after `renderList()` (which doesn't
+  touch `status` itself, so no clobber risk): "N file(s) weren't a
+  supported image format and were skipped."
+- **Compress** (`setFiles`) — the trickiest one, since GIF rejection
+  already has its own specific message and must keep firing on its own
+  without double-counting: `otherSkipped = incoming.length -
+  picked.length - gifCount` computes only the *non*-GIF unsupported
+  count, so a batch of "2 images + 1 GIF + 1 RAW" would correctly show
+  both messages rather than one swallowing the other. Confirmed no
+  regression on a GIF-only rejection (still shows just its own message).
+- **Combine** (`addFiles`) — "N file(s) weren't a PDF and were skipped."
+- **Coudio** (`addFiles`) — appended after `renderStatus()` (which does
+  overwrite `status`/`statusEl` unconditionally, same as Convert's own
+  `renderStatus()` — this is why the append has to happen *after* that
+  call in every tool that has one, not before).
+
+All four verified live with a real mixed batch (a valid file + a RAW
+file), and Compress additionally verified for the GIF-message
+regression. Same cache-bust-bump-per-file discipline as every other
+round of this audit.
+
 **Colorfy's `frameWidthMax` fix**: When measuring a resizable frame's max
 width, measuring against an element that itself auto-sizes to the thing
 being measured creates a self-referential trap that caps growth short of

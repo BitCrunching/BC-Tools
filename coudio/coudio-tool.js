@@ -229,8 +229,16 @@
   }
 
   function addFiles(fileList){
-    const accepted = [...fileList].filter(isAcceptableFile);
-    if (accepted.length === 0) return;
+    const incoming = [...fileList];
+    const accepted = incoming.filter(isAcceptableFile);
+    if (accepted.length === 0){
+      /* Same fix shape as Convert's applyPickedFiles() — a selection
+         that's wholly unsupported (e.g. a .txt/.exe) used to be silent. */
+      if (incoming.length > 0){
+        statusEl.textContent = "Coudio only works with audio or video files — none of the selected file(s) qualify.";
+      }
+      return;
+    }
     withSmoothHeightChange(() => {
       accepted.forEach(file => {
         const entry = {
@@ -251,6 +259,17 @@
       drop.classList.add("tool-drop-revealed");
     });
     renderStatus();
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       the wholly-unsupported branch above never fires for a mixed batch
+       (e.g. 2 valid audio files + 1 .nef), which used to load the 2
+       with zero indication the odd one out never made it in. */
+    if (accepted.length < incoming.length){
+      const skipped = incoming.length - accepted.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a supported audio or video format and was skipped."
+        : `${skipped} files weren't a supported audio or video format and were skipped.`;
+      statusEl.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
     continueBtn.hidden = true;
     schedulePersist();
   }

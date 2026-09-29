@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=110">
+<link rel="stylesheet" href="/shared/site.css?v=111">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -236,8 +236,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 /* #cdStatus reserves 46px (22px margin-top + 24px min-height) even
    with no message in it, which pre-upload just pushes the fixed
    322.5px banner into overflow for no visible reason — nothing needs
-   that space until a conversion is actually running. */
-#page-coudio:has(#cdDrop:not(.tool-drop-revealed)) #cdStatus{
+   that space until a conversion is actually running (or a rejected
+   file leaves a message here — the :empty guard is what lets that one
+   case through: setting textContent gives the element a text node, so
+   it's no longer :empty and this rule stops matching). */
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)) #cdStatus:empty{
   display:none;
 }
 #page-coudio:has(#cdDrop:not(.tool-drop-revealed)):hover{
@@ -906,9 +909,17 @@ html[data-theme="dark"] .cd-file-row-error{
       </template>
 
       <div class="cd-file-list-vertical" id="cdFileList"></div>
-
-      <div class="tool-status" id="cdStatus"></div>
     </div>
+    <!-- Deliberately outside #cdEditor (unlike everything above) — that
+         element has the `hidden` attribute until a file's actually
+         accepted, so a status message written to it while still on the
+         drop zone (e.g. "none of the selected file(s) qualify") would be
+         set but invisible. Every other statusEl.textContent write only
+         ever happens once a file's already loaded, so moving it out here
+         doesn't change anything about how those already look — see the
+         matching #cdStatus:empty CSS rule above for how the "don't
+         reserve space pre-upload" behavior is preserved regardless. -->
+    <div class="tool-status" id="cdStatus"></div>
   </div>
 </div>
 
@@ -997,7 +1008,6 @@ html[data-theme="dark"] .cd-file-row-error{
       <h3>Get in touch with us</h3>
       <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
       <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
-      <span class="footer-dash-text footer-contact-address">Contactweg 129<br>1014BJ Amsterdam<br>Netherlands</span>
     </div>
   </div>
 </div>
@@ -1008,6 +1018,6 @@ html[data-theme="dark"] .cd-file-row-error{
 </div>
 
 <script src="/shared/site.js?v=42" defer></script>
-<script src="/coudio/coudio-tool.js?v=53" defer></script>
+<script src="/coudio/coudio-tool.js?v=55" defer></script>
 </body>
 </html>
