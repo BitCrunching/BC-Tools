@@ -937,14 +937,11 @@ function showNavTerminal(text){
     applyConsent(prefs);
     try { localStorage.setItem("bc-cookie-consent", JSON.stringify(prefs)); } catch (e) { /* storage unavailable */ }
     refreshConsentState();
-    if (isDocked){
-      /* Recap panel stays visible on the page — just collapse it back
-         to the title bar instead of hiding it like a dismissed prompt. */
-      banner.classList.remove("dock-revealed");
-      if (dockToggle) dockToggle.setAttribute("aria-expanded", "false");
-    } else {
-      banner.hidden = true;
-    }
+    /* The docked recap panel (desktop /cookies/ page) stays exactly as
+       it is — expanded or collapsed — after Accept All/Disable all or a
+       direct checkbox toggle; only the still-floating first-visit
+       prompt actually dismisses itself once a choice is made. */
+    if (!isDocked) banner.hidden = true;
     syncDockPlacement();
   }
 
@@ -998,6 +995,21 @@ function showNavTerminal(text){
 
   saveBtn.addEventListener("click", () => {
     savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
+  });
+
+  /* On the docked recap panel, a category checkbox auto-saves
+     immediately on click, same as Accept All/Confirm choices — no
+     separate confirm step needed for a single-category flip. The
+     floating first-visit prompt is excluded on purpose: docking only
+     ever happens once consent already exists (see syncDockPlacement
+     above), so gating on isDocked already means this never fires for
+     someone who hasn't made a real choice yet. */
+  [analyticsToggle, advertisingToggle].forEach(toggle => {
+    toggle.addEventListener("change", () => {
+      renderStatuses();
+      if (!isDocked) return;
+      savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
+    });
   });
 
   const settingsBtn = document.getElementById("cookieMobileSettingsBtn");
