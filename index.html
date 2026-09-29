@@ -137,25 +137,6 @@
 <link rel="stylesheet" href="/shared/textures.css?v=2">
 
 <style>
-/* Self-hosted terminal-text webfont (shared/site.css carries the same
-   declaration; this SPA doesn't load that file, so it needs its own
-   copy) — see CLAUDE.md's "Terminal text" section for why this replaced
-   a system-font stack. */
-@font-face{
-  font-family:"Space Mono";
-  font-style:normal;
-  font-weight:400;
-  font-display:swap;
-  src:url("/vendor/fonts/space-mono-regular.woff2") format("woff2");
-}
-@font-face{
-  font-family:"Space Mono";
-  font-style:normal;
-  font-weight:700;
-  font-display:swap;
-  src:url("/vendor/fonts/space-mono-bold.woff2") format("woff2");
-}
-
 /* ===== TOKENS ===== */
 :root{
   --context-yellow:#F6D44A;
@@ -339,7 +320,7 @@ html[data-theme="light"] .cookie-toggle-row{
   border:none;
   padding:0;
   font:inherit;
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-weight:700;
   color:#e5e7eb;
   opacity:.6;
@@ -387,7 +368,7 @@ html[data-theme="light"] .cookie-cat-detail{
 }
 
 .cookie-toggle-status{
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-weight:700;
   color:#ff6b6b;
 }
@@ -428,7 +409,7 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-weight:700;
   font-size:12px;
   letter-spacing:.05em;
@@ -446,7 +427,7 @@ html[data-theme="light"] .cookie-banner-saved{
 }
 
 .cookie-banner-saved-cursor{
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-weight:700;
   font-size:11px;
   letter-spacing:.05em;
@@ -622,21 +603,27 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
   padding:14px 16px;
   gap:8px;
   border-radius:16px;
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   letter-spacing:.02em;
 }
 
 /* Terminal look is docked-only — the floating prompt stays plain
-   (system font). Weight matches the rest of the terminal-text motif
-   (nav-terminal, engine-status-row) — regular, not bold. */
+   (system font). */
 .cookie-banner.docked p,
 .cookie-banner.docked .cookie-toggle-row{
   font-size:15px;
-  font-weight:400;
+  font-weight:700;
 }
 
 .cookie-banner.docked p{
   opacity:.8;
+}
+
+/* The per-category explainer text (a <p>, same as the "Choose which
+   categories..." line above it) stays regular weight — only the
+   labels/headings around it are meant to read as bold. */
+.cookie-banner.docked .cookie-cat-detail{
+  font-weight:400;
 }
 
 .cookie-banner.docked .cookie-banner-categories{
@@ -649,14 +636,14 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 }
 
 .cookie-banner.docked .cookie-banner-actions button{
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-size:15px;
   font-weight:400;
   letter-spacing:.02em;
   border-radius:10px;
 }
 
-/* Same reveal logic as the "BC-TOOLS_CLASSIFIED_MEMORY: LEAKED" card:
+/* Same reveal logic as the "BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED" card:
    at first glance only the title bar shows, and clicking the yellow
    dot reveals the rest. Scoped to .docked specifically — this is the
    settings-recap panel on the dedicated Cookies page, not the
@@ -759,7 +746,7 @@ html[data-theme="light"] .cookie-settings-btn-dot{
   top:50%;
   transform:translate(-50%, -50%);
   color:var(--text);
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   font-size:14px;
   font-weight:400;
   letter-spacing:.02em;
@@ -995,7 +982,7 @@ main{
   border:1px solid rgba(255,255,255,.14);
   border-radius:16px;
   overflow:hidden;
-  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
+  font-family:"Courier New", Courier, monospace;
   letter-spacing:.02em;
 }
 
@@ -2453,7 +2440,7 @@ footer a{
             <span class="engine-status-dot engine-status-dot-red" id="engineStatusDot1" aria-hidden="true"></span>
             <button type="button" class="engine-status-dot engine-status-dot-yellow engine-status-dot-toggle" id="engineStatusDot2" aria-label="Toggle classified memory contents" aria-expanded="false"></button>
             <span class="engine-status-dot engine-status-dot-green" id="engineStatusDot3" aria-hidden="true"></span>
-            <span class="engine-status-title">BC-TOOLS_CLASSIFIED_MEMORY: LEAKED</span>
+            <span class="engine-status-title">BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED</span>
           </div>
           <div class="engine-status-body">
             <div class="engine-status-glitch" aria-hidden="true">0x7F3A_&amp;%$#_dGVzdA==_0b1010110_&amp;&amp;NULL&amp;&amp;_0xE4_~~~_#error_stack_corrupted#_¯\_(ツ)_/¯</div>
@@ -2962,7 +2949,7 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    return allowed ? "...allowed" : "...disabled";
+    return allowed ? "...allowed" : "...disabled & fully anonymous";
   }
 
   /* "Accept All" becomes "Disable all" once everything's on, flips back

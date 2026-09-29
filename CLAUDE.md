@@ -764,13 +764,11 @@ instant and idempotent, nothing to guard against a second click for).
 
 - **Color**: `#4ade80` (green) on a dark/translucent chip — never used on a
   light chip.
-- **Font**: `"Space Mono","Courier New", Courier, "Liberation Mono",
-  "DejaVu Sans Mono", Consolas, Menlo, monospace` — a self-hosted webfont
-  (`@font-face` in `shared/site.css`, files in `vendor/fonts/`) leads the
-  stack now, with the old system-font names kept only as a fallback for
-  the vanishingly rare case the webfont fails to load. See Lessons
-  Learned: "terminal font fallback" for why a system-font stack alone
-  wasn't reliable enough.
+- **Font**: `"Courier New", Courier, monospace` — plain system-font stack,
+  used site-wide by deliberate choice (2026-09-29, reverting the
+  self-hosted Space Mono webfont this section used to specify — see
+  Lessons Learned: "terminal font fallback" for the bug that webfont was
+  chasing and why it's no longer in use).
 - **Size**: 14px desktop, drop to 12px under ~640-768px. Never smaller than
   12px, never larger than 14px — it's a readout, not a heading.
 - **Weight/spacing**: `font-weight:700; letter-spacing:.02em;`.
@@ -1726,6 +1724,13 @@ check whether the report is actually about a *different element* than
 the one being patched — chasing a font-rendering theory across two
 escalations here was solving a real problem (the font stack was
 genuinely worth hardening) that just wasn't *this* bug.
+
+**Update, 2026-09-29**: the Space Mono self-hosting from this entry was
+reverted, on request — the whole site's Terminal text motif is back to
+the plain `"Courier New", Courier, monospace` stack (the `@font-face`
+declarations and `vendor/fonts/space-mono-*.woff2` files were removed
+too). The font-availability risk this section describes is a real
+tradeoff being knowingly accepted, not an oversight, if it resurfaces.
 
 **Beta remove btn adoption (`.bc-file-remove-btn`) on Convert/Compress/
 Coudio**: requested directly — reuse Cleanly's non-red file-remove button

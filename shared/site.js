@@ -885,11 +885,30 @@ function showNavTerminal(text){
     }, 180);
   }
 
+  /* Docked titlebar's yellow dot: same reveal logic as the classified-
+     memory card — only visible/clickable while docked in the first
+     place (the dot itself is display:none otherwise), so no separate
+     guard needed here for the floating consent banner. One real
+     exception: if this visitor hasn't actually made a consent choice
+     yet (readSaved() below returns null), the categories/buttons are
+     the real required controls, not a fun extra — force them visible
+     regardless of the toggle rather than gating consent behind an
+     easter egg. Only returning visitors who've already chosen get the
+     hide-until-clicked treatment. Remembered across visits via
+     localStorage, same as the consent choice itself. */
   if (dockToggle){
-    dockToggle.addEventListener("click", () => {
-      const revealed = banner.classList.toggle("dock-revealed");
+    let dockRevealed = false;
+    try { dockRevealed = localStorage.getItem("bc-cookie-dock-revealed") === "1"; } catch (e) { /* storage unavailable */ }
+
+    function setDockRevealed(revealed){
+      dockRevealed = revealed;
+      banner.classList.toggle("dock-revealed", revealed || !readSaved());
       dockToggle.setAttribute("aria-expanded", String(revealed));
-    });
+      try { localStorage.setItem("bc-cookie-dock-revealed", revealed ? "1" : "0"); } catch (e) { /* storage unavailable */ }
+    }
+    setDockRevealed(dockRevealed);
+
+    dockToggle.addEventListener("click", () => setDockRevealed(!dockRevealed));
   }
 
   desktopQuery.addEventListener("change", syncDockPlacement);
@@ -949,7 +968,7 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    return allowed ? "...allowed" : "...disabled";
+    return allowed ? "...allowed" : "...disabled & fully anonymous";
   }
 
   function renderActionButton(){
