@@ -19,6 +19,11 @@
    @import's target URL never changed. Bump this alongside icons.css's
    own <link> in index.html whenever icons.css's content changes. */
 @import url("icons.css?v=4");
+/* Same reasoning again: the top nav bar's own chrome (background,
+   height/padding, the light/dark flip, its responsive sizing) lives in
+   nav.css so both this file and index.html point at one real source —
+   see nav.css's own header comment. */
+@import url("nav.css?v=1");
 /* Same reasoning: the 4 category texture recipes (image/video/sound/
    code) live in textures.css so any tool's own .tool-app banner can opt
    into the same treatment its homepage card uses via data-category,
@@ -326,7 +331,7 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-weight:700;
   font-size:12px;
   letter-spacing:.05em;
@@ -405,13 +410,15 @@ html[data-theme="light"] .cookie-banner-actions button:hover{
 }
 
 html[data-theme="light"] #cookieBannerAcceptAll{
-  background:#16a34a;
+  /* #16a34a only gave white text a 3.30:1 ratio against it (fails
+     WCAG AA's 4.5:1) — darkened until it actually passes. */
+  background:#15803d;
   color:#fff;
-  border-color:#16a34a;
+  border-color:#15803d;
 }
 
 html[data-theme="light"] #cookieBannerAcceptAll:hover{
-  background:#15803d;
+  background:#166534;
 }
 
 /* "Accept All" flips to "Disable all" once everything's on, and back
@@ -458,6 +465,9 @@ html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
 
 .cookie-dock-title{
   margin-left:6px;
+  /* Heading stays bold against the regular-weight body text below it,
+     same title/body split as .engine-status-title/.engine-status-row. */
+  font-weight:700;
 }
 
 /* Re-parent target for the cookie banner on the Cookies page */
@@ -520,11 +530,12 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 }
 
 /* Terminal look is docked-only — the floating prompt stays plain
-   (system font). */
+   (system font). Weight matches the rest of the terminal-text motif
+   (nav-terminal, engine-status-row) — regular, not bold. */
 .cookie-banner.docked p,
 .cookie-banner.docked .cookie-toggle-row{
   font-size:15px;
-  font-weight:700;
+  font-weight:400;
 }
 
 .cookie-banner.docked p{
@@ -543,6 +554,7 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 .cookie-banner.docked .cookie-banner-actions button{
   font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:15px;
+  font-weight:400;
   letter-spacing:.02em;
   border-radius:10px;
 }
@@ -661,24 +673,6 @@ html[data-theme="light"] .cookie-settings-btn-dot{
 }
 
 
-.site-nav{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  height:88px;
-  padding:0 28px;
-  background:#1d2436;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-
-html[data-theme="light"] .site-nav{
-  background:#d4dbee;
-}
-
 /* Central confirmation display for nav actions (theme, language,
    copy link) — terminal-styled to match the site's other terminal
    banners. Desktop only: there's no room for it once the nav collapses
@@ -689,11 +683,10 @@ html[data-theme="light"] .site-nav{
   left:50%;
   top:50%;
   transform:translate(-50%, -50%);
-  padding:8px 16px;
-  color:#4ade80;
+  color:var(--text);
   font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:14px;
-  font-weight:700;
+  font-weight:400;
   letter-spacing:.02em;
   white-space:nowrap;
   opacity:0;
@@ -771,7 +764,6 @@ span.gfx-md, span.gfx-lg{
 }
 
 @media (max-width:768px){
-  .site-nav{height:72px;padding:0 16px;}
   .site-nav-brand{font-size:30px;}
   .site-logo{width:34px;height:34px;}
   .nav-close-btn,
@@ -787,7 +779,6 @@ span.gfx-md, span.gfx-lg{
    390px, as an earlier pass did) so this ONLY kicks in for phones that
    actually need it — 375px+ devices keep full-size everything. */
 @media (max-width:370px){
-  .site-nav{gap:10px; padding:0 12px;}
   .site-nav-brand{font-size:23px; gap:9px;}
   .site-logo{width:26px;height:26px;}
   .nav-right{gap:6px;}
@@ -928,6 +919,18 @@ html[data-theme="light"] .footer-dashboard{
 
 .footer-dash-text a:hover{
   color:#7cc0ff;
+}
+
+/* #4da6ff (this file's own default, just above) only gives a 1.85:1
+   ratio against the light-theme footer's pale background — nowhere
+   close to WCAG AA's 4.5:1. Dark theme's own navy background is fine
+   at 6.05:1 and stays unguarded/unchanged. */
+html[data-theme="light"] .footer-dash-text a{
+  color:#1d4ed8;
+}
+
+html[data-theme="light"] .footer-dash-text a:hover{
+  color:#1e40af;
 }
 
 footer a{
@@ -1379,7 +1382,7 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   min-height:24px;
   font-size:12px;
   font-weight:700;
-  font-family:monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
 }
 
 /* Terminal-style "> " prefix on any status message (ready/progress/
@@ -1794,7 +1797,7 @@ html[data-theme="light"] .engine-status-title{
 
 .engine-status-row{
   font-size:15px;
-  font-weight:700;
+  font-weight:400;
   color:#e5e7eb;
   opacity:.8;
   white-space:pre-wrap;
@@ -1819,7 +1822,9 @@ html[data-theme="light"] .engine-status-value{
 }
 
 html[data-theme="light"] .engine-status-error{
-  color:#dc2626;
+  /* #dc2626 only gave 3.97:1 against .engine-status-card's light bg
+     (fails WCAG AA's 4.5:1) — darkened until it actually passes. */
+  color:#b91c1c;
 }
 
 .backlog-coms-row{
@@ -1978,7 +1983,7 @@ html[data-theme="light"] .engine-status-error{
    colored trust-badge, matching the terminal aesthetic used elsewhere. */
 .privacy-check-badge{
   display:none;
-  font-family:monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
   font-size:12px;
   font-weight:700;
   color:var(--text);
@@ -2403,7 +2408,7 @@ html[data-theme="dark"] .exif-tag{
   color:var(--text);
   font-size:12px;
   font-weight:700;
-  font-family:monospace;
+  font-family:"Space Mono","Courier New", Courier, "Liberation Mono", "DejaVu Sans Mono", Consolas, Menlo, monospace;
 }
 
 .selected-compression:not(:empty)::before{
