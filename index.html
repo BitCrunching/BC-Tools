@@ -128,7 +128,7 @@
      shared/site.css) — index.html links it directly here rather than
      duplicating the block inline, since this page otherwise keeps all
      its own CSS inline and doesn't load the rest of shared/site.css. -->
-<link rel="stylesheet" href="/shared/icons.css?v=4">
+<link rel="stylesheet" href="/shared/icons.css?v=5">
 <!-- Same reasoning, same pattern: the 4 category texture recipes
      (image/video/sound/code) live in shared/textures.css so a tool's
      own banner can opt into the same treatment its homepage card uses,
@@ -1335,33 +1335,6 @@ html[data-theme="light"] .tool-card-star{
 .tool-card-star:nth-child(7){ top:182px; left:58px;  animation-delay:-.8s; }
 .tool-card-star:nth-child(8){ top:22px;  left:114px; width:3px; height:3px; animation-delay:-2s; }
 
-.tool-card-snapshot-btn{
-  position:absolute;
-  inset:0;
-  z-index:2;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  height:100%;
-  margin:0;
-  padding:0;
-  border:0;
-  background:rgba(15,23,42,.55);
-  color:#fff;
-  font-family:"Courier New", Courier, monospace;
-  font-weight:700;
-  font-size:13px;
-  letter-spacing:.03em;
-  cursor:pointer;
-  opacity:0;
-  transition:opacity .2s ease;
-}
-
-.tool-card-blueprint:hover .tool-card-snapshot-btn,
-.tool-card-snapshot-btn:focus-visible{
-  opacity:1;
-}
 
 @media (max-width:768px){
   .next-tools-preview{display:none;}
@@ -2407,7 +2380,7 @@ footer a{
     </div>
 
     <div class="next-tools-preview">
-      <p class="next-tools-preview-text">We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.<br><br>You can see the cosmos as we speak on the right. Look, there is a comet flying by! Capture it before it's gone and get our certificate of authenticity.</p>
+      <p class="next-tools-preview-text">We are developing multiple new tools as we speak. Only those that survive our harsh cosmic testing are cleared for human use.<br><br>You can see the cosmos as we speak on the right. Look, there is a comet flying by!</p>
       <div class="tool-card-blueprint" id="nextToolSvgSlot">
         <span class="tool-card-star" aria-hidden="true"></span>
         <span class="tool-card-star" aria-hidden="true"></span>
@@ -2417,7 +2390,6 @@ footer a{
         <span class="tool-card-star" aria-hidden="true"></span>
         <span class="tool-card-star" aria-hidden="true"></span>
         <span class="tool-card-star" aria-hidden="true"></span>
-        <button type="button" class="tool-card-snapshot-btn" id="toolCardSnapshotBtn">Take a snapshot</button>
       </div>
     </div>
 
@@ -2758,134 +2730,6 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   sync();
 })();
 
-/* "Take a snapshot" — renders the asteroid field's current positions
-   (read live from getBoundingClientRect, so it matches whatever the
-   Web Animations API is showing at the moment of the click) onto a
-   canvas as a joke "certificate", then downloads it as a PNG. If a
-   comet happens to be mid-flight at that exact moment, the whole
-   certificate switches to a comet-specific variant instead of the
-   generic asteroid-formation one. */
-(function(){
-  const slot = document.getElementById("nextToolSvgSlot");
-  const btn = document.getElementById("toolCardSnapshotBtn");
-  if (!slot || !btn) return;
-
-  btn.addEventListener("click", () => {
-    const slotRect = slot.getBoundingClientRect();
-    const scale = 440 / slotRect.width;
-    /* Read live, same as the rock positions below — whether a comet
-       happens to be mid-flight at the exact moment of the click
-       decides which certificate copy gets drawn. */
-    const hasComet = !!slot.querySelector(".tool-card-asteroid.is-comet");
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 520;
-    canvas.height = 640;
-    const ctx = canvas.getContext("2d");
-
-    ctx.fillStyle = "#0f172a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const photoX = 40, photoY = 70, photoW = 440, photoH = 340;
-    ctx.fillStyle = "#1d2436";
-    ctx.fillRect(photoX, photoY, photoW, photoH);
-    ctx.strokeStyle = "rgba(255,255,255,.25)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(photoX, photoY, photoW, photoH);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(photoX, photoY, photoW, photoH);
-    ctx.clip();
-
-    slot.querySelectorAll(".tool-card-star").forEach(el => {
-      const r = el.getBoundingClientRect();
-      const x = photoX + (r.left - slotRect.left + r.width / 2) * scale;
-      const y = photoY + (r.top - slotRect.top + r.height / 2) * scale;
-      ctx.fillStyle = "rgba(255,255,255,.6)";
-      ctx.beginPath();
-      ctx.arc(x, y, Math.max(1, (r.width / 2) * scale), 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    slot.querySelectorAll(".tool-card-asteroid").forEach(el => {
-      const r = el.getBoundingClientRect();
-      const x = photoX + (r.left - slotRect.left) * scale;
-      const y = photoY + (r.top - slotRect.top) * scale;
-      const w = r.width * scale, h = r.height * scale;
-      const isComet = el.classList.contains("is-comet");
-      if (isComet){
-        const cx = x + w / 2, cy = y + h / 2;
-        const tailAngleDeg = (parseFloat(el.dataset.tailAngle) || 40) + 180;
-        const tailLen = 26 * scale, angle = tailAngleDeg * Math.PI / 180;
-        const tx = cx + Math.cos(angle) * tailLen, ty = cy + Math.sin(angle) * tailLen;
-        const grad = ctx.createLinearGradient(cx, cy, tx, ty);
-        grad.addColorStop(0, "rgba(255,255,255,.75)");
-        grad.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = Math.max(1, 2 * scale);
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(tx, ty);
-        ctx.stroke();
-      }
-      ctx.fillStyle = isComet ? "#ffffff" : "#9ca3af";
-      ctx.beginPath();
-      if (isComet){
-        ctx.arc(x + w / 2, y + h / 2, Math.max(w, h) / 2, 0, Math.PI * 2);
-      } else {
-        ctx.roundRect(x, y, w, h, Math.min(w, h) / 3);
-      }
-      ctx.fill();
-    });
-    ctx.restore();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 26px 'Courier New', monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("SOMEWHERE IN SPACE", canvas.width / 2, 45);
-
-    const serial = "SECTOR-7G-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    const stamp = new Date().toLocaleString();
-
-    ctx.strokeStyle = "rgba(255,255,255,.3)";
-    ctx.setLineDash([4, 4]);
-    ctx.strokeRect(40, 440, 440, 150);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#4ade80";
-    ctx.font = "bold 15px 'Courier New', monospace";
-    ctx.fillText("CERTIFICATE OF AUTHENTICITY", canvas.width / 2, 475);
-
-    ctx.fillStyle = "#e5e7eb";
-    ctx.font = "13px 'Courier New', monospace";
-    if (hasComet){
-      ctx.fillText("You caught a rare comet passing through", canvas.width / 2, 505);
-      ctx.fillText("this exact sector. Nice reflexes.", canvas.width / 2, 522);
-    } else {
-      ctx.fillText("This exact asteroid formation is unique", canvas.width / 2, 505);
-      ctx.fillText("and will never occur again. Probably.", canvas.width / 2, 522);
-    }
-    ctx.fillText("Serial: " + serial, canvas.width / 2, 552);
-    ctx.fillText("Captured: " + stamp, canvas.width / 2, 570);
-
-    ctx.fillStyle = "rgba(255,255,255,.5)";
-    ctx.font = "11px 'Courier New', monospace";
-    ctx.fillText("BC Tools — Creative Hub", canvas.width / 2, 615);
-
-    canvas.toBlob(blob => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "somewhere-in-space-" + serial + ".png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-  });
-})();
 
 /* Intro terminal: only the header (traffic-light dots + title) shows
    at first — the classified body is genuinely hidden, not just
