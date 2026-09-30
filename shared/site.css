@@ -49,6 +49,13 @@
   --text:#1a1a1a;
   --accent:#1e293b;
   --accent2:#475569;
+  /* The site's one "terminal readout" font stack — every terminal-styled
+     element (nav-terminal, help banners, engine-status-card, .tool-status,
+     the cookie banner's own readout bits) used to hand-declare this same
+     literal string separately (32 copies across the codebase). One token
+     now, so a future font-stack change (see Lessons Learned: "terminal
+     font fallback") only needs to happen once. */
+  --bc-mono:"Courier New", Courier, monospace;
 }
 
 :root[data-theme="dark"]{
@@ -214,7 +221,7 @@ html[data-theme="light"] .cookie-toggle-row{
   border:none;
   padding:0;
   font:inherit;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#e5e7eb;
   opacity:.6;
@@ -262,7 +269,7 @@ html[data-theme="light"] .cookie-cat-detail{
 }
 
 .cookie-toggle-status{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#ff6b6b;
 }
@@ -303,7 +310,7 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:12px;
   letter-spacing:.05em;
@@ -321,7 +328,7 @@ html[data-theme="light"] .cookie-banner-saved{
 }
 
 .cookie-banner-saved-cursor{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:11px;
   letter-spacing:.05em;
@@ -497,7 +504,7 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
   padding:14px 16px;
   gap:8px;
   border-radius:16px;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -530,7 +537,7 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 }
 
 .cookie-banner.docked .cookie-banner-actions button{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:15px;
   font-weight:400;
   letter-spacing:.02em;
@@ -662,7 +669,7 @@ html[data-theme="light"] .cookie-settings-btn-dot{
   top:50%;
   transform:translate(-50%, -50%);
   color:var(--text);
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:14px;
   font-weight:400;
   letter-spacing:.02em;
@@ -1360,7 +1367,7 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   min-height:24px;
   font-size:12px;
   font-weight:700;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
 }
 
 /* Terminal-style "> " prefix on any status message (ready/progress/
@@ -1371,30 +1378,24 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   font-weight:700;
 }
 
-/* ===== Shared typography — .bc-label / .bc-heading / .bc-body =====
+/* ===== Shared typography — .bc-label / .bc-body =====
    Every tool independently grew its own small-caps "eyebrow" label
-   (Convert's .tool-io-label, Colorfy's .colorfy-palette-heading — same
-   13px/800/uppercase/letter-spaced recipe, hand-copied with slightly
-   different values each time) and Coudio's "Output format"/"Bitrate"
-   never got styled at all, just a bare <label>. These three classes are
-   the shared alternative — add one alongside whatever local class still
-   holds genuinely tool-specific layout (margin, flex, text-align), the
-   same split every other shared component in this file uses.
-   .bc-label   — small uppercase eyebrow above a control (a dropdown
-                 group, a setting). .tool-io-label/.colorfy-palette-
-                 heading now extend this rather than repeating it.
-   .bc-heading — a real section heading inside a tool banner (Colorfy's
-                 "Saved colors" is an <h3>, not just a label — same
-                 visual weight as .bc-label but semantically a heading,
-                 kept distinct so screen readers still get real heading
-                 structure, not a mislabeled <span>).
-   .bc-body    — normal-weight banner body text (a helper line, a short
-                 instruction) at the tool's own text color/opacity,
-                 for anything that isn't the drop-zone prompt
-                 (.tool-drop) or the terminal-style status line
-                 (.tool-status), both already shared above. */
-.bc-label,
-.bc-heading{
+   (Convert's .tool-io-label — same 13px/800/uppercase/letter-spaced
+   recipe, hand-copied with slightly different values each time) and
+   Coudio's "Output format"/"Bitrate" never got styled at all, just a
+   bare <label>. These two classes are the shared alternative — add one
+   alongside whatever local class still holds genuinely tool-specific
+   layout (margin, flex, text-align), the same split every other shared
+   component in this file uses.
+   .bc-label — small uppercase eyebrow above a control (a dropdown
+               group, a setting). .tool-io-label now extends this
+               rather than repeating it.
+   .bc-body  — normal-weight banner body text (a helper line, a short
+               instruction) at the tool's own text color/opacity,
+               for anything that isn't the drop-zone prompt
+               (.tool-drop) or the terminal-style status line
+               (.tool-status), both already shared above. */
+.bc-label{
   font-size:13px;
   font-weight:800;
   letter-spacing:.04em;
@@ -1712,7 +1713,7 @@ html[data-theme="light"] .tool-results::-webkit-scrollbar-thumb{
   border:1px solid rgba(255,255,255,.14);
   border-radius:16px;
   overflow:hidden;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -1961,7 +1962,7 @@ html[data-theme="light"] .engine-status-error{
    colored trust-badge, matching the terminal aesthetic used elsewhere. */
 .privacy-check-badge{
   display:none;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:12px;
   font-weight:700;
   color:var(--text);
@@ -2386,7 +2387,7 @@ html[data-theme="dark"] .exif-tag{
   color:var(--text);
   font-size:12px;
   font-weight:700;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
 }
 
 .selected-compression:not(:empty)::before{

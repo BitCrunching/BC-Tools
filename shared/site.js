@@ -1198,3 +1198,48 @@ function bcCreateQuickCycleGesture({ thresholdMs = 200, getState, cycle, revert,
     cycle(e);
   };
 }
+
+/* ===== Shift+click on any "beta remove btn" (.bc-file-remove-btn) clears
+   every OTHER row in the tool, keeping just the one clicked — a single
+   delegated listener here, so every current and future adopter (Cleanly/
+   Combine's file rows, Convert/Compress/Coudio's per-file remove,
+   Colorfy's saved-color chips, ...) gets this for free with zero
+   per-tool wiring, the same "add the shared class, done" deal the rest
+   of .bc-file-remove-btn already is.
+
+   Deliberately index-based, not DOM-reference-based: every adopter's own
+   click handler re-renders its list from scratch on removal (`innerHTML
+   = ""` + rebuild), so the exact button element a visitor shift-clicked
+   stops being attached to the document after the very first other row is
+   removed. Position in reading order survives a rebuild (removing item
+   never reorders the rest), so tracking "the Nth remove button" and
+   re-querying live buttons before every step is what actually holds up
+   across every adopter's own render pattern, not "the same node twice."
+
+   Capture-phase on `document` so this runs before the target's own
+   bubble-phase click handler — `stopPropagation()` here is what stops
+   that handler from also firing and removing the very row a shift-click
+   means to keep. Every subsequent removal is a plain, unmodified
+   `.click()` on some *other* button, which has no shiftKey set, so it
+   sails through this same listener untouched and hits each tool's own
+   real remove logic normally — no shared "remove one item" API needed,
+   this only ever drives the buttons that already exist. */
+document.addEventListener("click", (e) => {
+  if (!e.shiftKey) return;
+  const keepBtn = e.target.closest(".bc-file-remove-btn");
+  if (!keepBtn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const initial = Array.from(document.querySelectorAll(".bc-file-remove-btn"));
+  let keepIndex = initial.indexOf(keepBtn);
+  if (keepIndex === -1 || initial.length <= 1) return;
+  let guard = 0;
+  while (guard++ < 1000){
+    const btns = Array.from(document.querySelectorAll(".bc-file-remove-btn"));
+    if (btns.length <= 1) break;
+    if (keepIndex >= btns.length) keepIndex = btns.length - 1;
+    const targetIndex = keepIndex === 0 ? 1 : 0;
+    if (targetIndex < keepIndex) keepIndex--;
+    btns[targetIndex].click();
+  }
+}, true);

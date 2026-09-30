@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=122">
+<link rel="stylesheet" href="/shared/site.css?v=131">
 <style>
 #page-colorfy::before{
   background:#FF8A4C;
@@ -159,7 +159,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -414,11 +414,34 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   gap:12px;
 }
 .colorfy-swatch{
+  position:relative;
   width:40px;
   height:40px;
   border-radius:10px;
   border:1px solid rgba(0,0,0,.4);
   flex-shrink:0;
+}
+/* Mirrors .colorfy-picker-num's ring on the image (same numbering, same
+   look) so it's obvious at a glance which row below belongs to which
+   marker on the preview. */
+.colorfy-swatch-num{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#1d2436;
+  border:2px solid #fff;
+  box-sizing:border-box;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:10px;
+  font-weight:700;
+  color:#fff;
 }
 /* Flips light/dark same as every other on-banner control — see
    "On-banner controls flip with theme" in shared/site.css's header
@@ -448,10 +471,10 @@ html[data-theme="dark"] .colorfy-code-btn{
 html[data-theme="dark"] .colorfy-code-btn:hover{
   background:rgba(0,0,0,.35);
 }
-.colorfy-code-btn.copied{
-  border-color:#4ade80;
-  color:#4ade80;
-}
+/* No .copied color change on this button — removed on request (the
+   green border/text accent read as unwanted). The shared .bc-terminal-
+   chip confirmation above the saved-colors panel is the only "copied"
+   feedback now. */
 /* Only shown on pickers beyond the first — there's always at least
    one active picker, so it can't be removed down to zero. */
 /* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
@@ -500,47 +523,6 @@ html[data-theme="dark"] .colorfy-save-btn:disabled{
   background:rgba(0,0,0,.25);
 }
 
-/* Terminal readout for Save-to-palette and copy-from-the-unsaved-preview
-   confirmations — same recipe the site's other terminal chips use (dark
-   background, green text, monospace, "> " prompt, blinking cursor), just
-   in normal flow above the saved-colors panel rather than the old
-   position:absolute floating toast this tool used to have
-   (.colorfy-copy-terminal, retired — see CLAUDE.md Lessons Learned:
-   "terminal font fallback"). Copying from an already-saved palette chip
-   keeps using the plain .tool-status line below instead (unchanged) —
-   two separate readouts for two separate places on the page, not one
-   shared between them. */
-.colorfy-save-terminal{
-  width:fit-content;
-  margin-bottom:16px;
-  padding:6px 12px;
-  border-radius:8px;
-  background:rgba(0,0,0,.35);
-  color:#4ade80;
-  font-family:"Courier New", Courier, monospace;
-  font-size:14px;
-  font-weight:700;
-  letter-spacing:.02em;
-  white-space:nowrap;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .2s ease;
-}
-.colorfy-save-terminal.show{
-  opacity:1;
-}
-.colorfy-save-terminal-prompt{
-  opacity:.7;
-}
-.colorfy-save-terminal-cursor{
-  animation:copy-toast-blink 1s step-end infinite;
-}
-@media (max-width:640px){
-  .colorfy-save-terminal{
-    font-size:12px;
-  }
-}
-
 /* ===== Saved palette — sits outside .tool-after-drop (a sibling, not
    a child) so it stays visible even after removing the current image
    or before one's ever been loaded, since saved colors are meant to
@@ -548,40 +530,41 @@ html[data-theme="dark"] .colorfy-save-btn:disabled{
 .colorfy-palette[hidden]{ display:none; }
 .colorfy-palette{
   margin-top:24px;
-  padding-top:20px;
-  border-top:1px dashed rgba(255,255,255,.3);
-}
-html[data-theme="light"] .colorfy-palette{
-  border-top-color:rgba(0,0,0,.2);
-}
-.colorfy-palette-heading{
-  margin:0 0 12px;
-  text-align:center;
 }
 /* Row-gap widened to 34px (column-gap stays 10px) — the remove btn now
    floats above each chip (see .colorfy-palette-remove-btn) instead of
    overlapping its corner, so a wrapped row needs real clearance from
    the row above it or the buttons would sit on top of those chips.
-   The extra top margin gives the first row the same clearance from the
-   "Saved colors" heading above it. */
+   The extra top margin gives the first row clearance from the panel's
+   own top edge.
+   Left-aligned (not centered) on purpose — removing a chip from a
+   centered row re-centers everything else too, so a chip a visitor was
+   about to click next silently moves out from under their cursor.
+   Left-anchored, every chip after the removed one just slides back by
+   one slot in reading order, so removing several in a row (click,
+   click, click on the same spot) behaves the way visitors expect. */
 .colorfy-palette-list{
   display:flex;
   flex-wrap:wrap;
-  justify-content:center;
+  justify-content:flex-start;
   gap:34px 10px;
   margin-top:44px;
 }
 .colorfy-palette-chip{
   position:relative;
   width:40px;
-  height:80px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
 }
 /* A "strip" rather than the old square chip — taller so a saved color
    reads more like a real paint sample than a tiny dot, still narrow
    enough that a full row of 4 pickers' worth of saves stays compact. */
 .colorfy-palette-swatch{
   width:100%;
-  height:100%;
+  height:80px;
+  flex-shrink:0;
   padding:0;
   border-radius:10px;
   border:1px solid rgba(0,0,0,.4);
@@ -591,10 +574,29 @@ html[data-theme="light"] .colorfy-palette{
 .colorfy-palette-swatch:hover{
   transform:scale(1.05);
 }
-.colorfy-palette-swatch.copied{
-  outline:2px solid #4ade80;
-  outline-offset:2px;
+/* The optional short name/tag a visitor can give a saved color
+   (double-click to rename, max 25 chars) — kept in the swatch's own
+   title tooltip only, not shown as a visible label under the chip
+   (requested directly). This input is the only visible UI for it,
+   appearing in place for the moment of renaming. */
+.colorfy-palette-name-input{
+  width:100%;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  text-align:center;
+  color:var(--text);
+  background:rgba(255,255,255,.35);
+  border:1px solid rgba(0,0,0,.4);
+  border-radius:4px;
+  padding:2px 4px;
 }
+html[data-theme="dark"] .colorfy-palette-name-input{
+  background:rgba(0,0,0,.25);
+  border-color:rgba(0,0,0,.4);
+}
+/* No .copied outline on a saved swatch — removed on request (the green
+   accent read as unwanted). */
 /* Shape/color is the shared .bc-file-remove-btn (shared/site.css,
    the "beta remove btn" — translucent white/black flip, not
    .bc-remove-btn's bold red) — only size/position stay here. */
@@ -783,17 +785,12 @@ html[data-theme="light"] .colorfy-palette{
       </div>
     </div>
 
-    <div class="colorfy-save-terminal" id="cySaveTerminal" aria-live="polite">
-      <span class="colorfy-save-terminal-prompt">&gt;</span>
-      <span id="cySaveTerminalText"></span><span class="colorfy-save-terminal-cursor">_</span>
-    </div>
+    <div class="tool-status" id="cyStatus"></div>
 
     <div class="colorfy-palette" id="cyPalette" hidden>
-      <h3 class="colorfy-palette-heading bc-heading">Saved colors</h3>
       <div class="colorfy-palette-list" id="cyPaletteList"></div>
+      <div class="tool-status" id="cyPaletteStatus"></div>
     </div>
-
-    <div class="tool-status" id="cyStatus"></div>
   </div>
 </div>
 
@@ -837,6 +834,7 @@ html[data-theme="light"] .colorfy-palette{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
         </div>
       </div>
     </div>
@@ -853,7 +851,7 @@ html[data-theme="light"] .colorfy-palette{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=46" defer></script>
-<script src="/colorfy/colorfy-tool.js?v=24" defer></script>
+<script src="/shared/site.js?v=47" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=35" defer></script>
 </body>
 </html>

@@ -15,11 +15,10 @@
   const removeBtn = document.getElementById("cyRemoveBtn");
   const resizeHandle = document.getElementById("cyResizeHandle");
   const status = document.getElementById("cyStatus");
+  const paletteStatus = document.getElementById("cyPaletteStatus");
   const toolApp = document.querySelector(".tool-app");
   let statusClearTimer = null;
-  const saveTerminal = document.getElementById("cySaveTerminal");
-  const saveTerminalText = document.getElementById("cySaveTerminalText");
-  let saveTerminalTimer = null;
+  let paletteStatusClearTimer = null;
   if (!drop || !input || !afterDrop || !canvas || !pickerList) return;
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -352,6 +351,12 @@
       const sw = document.createElement("span");
       sw.className = "colorfy-swatch";
       sw.style.background = `rgb(${p.rgb[0]}, ${p.rgb[1]}, ${p.rgb[2]})`;
+      if (pickers.length > 1){
+        const num = document.createElement("span");
+        num.className = "colorfy-swatch-num";
+        num.textContent = String(i + 1);
+        sw.appendChild(num);
+      }
       row.appendChild(sw);
 
       const codeBtn = document.createElement("button");
@@ -397,6 +402,7 @@
   let savedColors = [];
   let nextSavedId = 1;
 
+  const SAVED_COLOR_NAME_MAX = 25;
   function loadPalette(){
     try {
       const raw = localStorage.getItem(PALETTE_STORAGE_KEY);
@@ -404,7 +410,10 @@
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)){
         savedColors = parsed.filter(c => c && Array.isArray(c.rgb));
-        savedColors.forEach(c => { c.id = nextSavedId++; });
+        savedColors.forEach(c => {
+          c.id = nextSavedId++;
+          c.name = typeof c.name === "string" ? c.name.slice(0, SAVED_COLOR_NAME_MAX) : "";
+        });
       }
     } catch (err){
       /* corrupted or storage unavailable — start with an empty palette */
@@ -412,10 +421,46 @@
   }
   function persistPalette(){
     try {
-      localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(savedColors.map(c => ({ rgb: c.rgb }))));
+      localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(savedColors.map(c => ({ rgb: c.rgb, name: c.name || "" }))));
     } catch (err){
       /* storage unavailable — palette just won't survive a reload */
     }
+  }
+
+  /* Opens a text input in place over the chip — double-click on the
+     swatch starts this. Enter/blur commits (trimmed, capped at
+     SAVED_COLOR_NAME_MAX), Escape cancels without saving. Re-runs
+     renderPalette() on commit/cancel rather than patching the DOM in
+     place, same rebuild-from-data approach every other list on this
+     page already uses. */
+  function startRenameSwatch(chip, c){
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "colorfy-palette-name-input";
+    input.maxLength = SAVED_COLOR_NAME_MAX;
+    input.value = c.name || "";
+    input.setAttribute("aria-label", "Name this saved color");
+    let done = false;
+    function commit(){
+      if (done) return;
+      done = true;
+      c.name = input.value.trim().slice(0, SAVED_COLOR_NAME_MAX);
+      persistPalette();
+      renderPalette();
+    }
+    function cancel(){
+      if (done) return;
+      done = true;
+      renderPalette();
+    }
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){ e.preventDefault(); input.blur(); }
+      else if (e.key === "Escape"){ e.preventDefault(); cancel(); }
+    });
+    input.addEventListener("blur", commit);
+    chip.appendChild(input);
+    input.focus();
+    input.select();
   }
 
   function renderPalette(){
@@ -429,8 +474,9 @@
       sw.type = "button";
       sw.className = "colorfy-palette-swatch";
       sw.style.background = `rgb(${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]})`;
-      sw.title = formatColor(c.rgb) + " — click to copy";
+      sw.title = (c.name ? c.name + " — " : "") + formatColor(c.rgb) + " — click to copy, double-click to rename";
       sw.addEventListener("click", () => copySwatch(sw, c.rgb));
+      sw.addEventListener("dblclick", (e) => { e.preventDefault(); startRenameSwatch(chip, c); });
       chip.appendChild(sw);
 
       const rm = document.createElement("button");
@@ -450,11 +496,32 @@
     });
   }
 
+  /* Shift+click on a saved color's remove btn clears the WHOLE palette,
+     including the one clicked — unlike shared/site.js's generic "keep
+     this one" behavior every other .bc-file-remove-btn adopter gets.
+     Saved colors are a flat, order-agnostic bag (not files being worked
+     through one at a time), so "start over empty" reads as the more
+     useful shift-click meaning here. Registered after site.js's own
+     document-capture listener (script order in index.html), so it runs
+     after that one has already done its "keep the clicked chip" pass —
+     this just finishes the job by also clearing the survivor, rather
+     than fighting the shared listener for who handles the click first. */
+  document.addEventListener("click", (e) => {
+    if (!e.shiftKey) return;
+    if (!e.target.closest(".colorfy-palette-remove-btn")) return;
+    savedColors = [];
+    persistPalette();
+    renderPalette();
+  }, true);
+
   /* Plain .tool-status line (shared/site.css already prefixes it "> "
-     same as every other tool's status text, e.g. Coudio's own "1 file
-     loaded") — used only for copying an already-saved palette chip
-     (copySwatch, below). Saving and copying the unsaved preview's own
-     code both go through flashSaveTerminal instead (next). */
+     same as every other tool's status text, e.g. Codify's own "PNG
+     copied to clipboard.") — used for saving a color and copying its
+     code from the unsaved preview row. Used to have a separate bespoke
+     filled "terminal chip" element for these, but that never matched
+     this already-shared, already-correct plain-text convention —
+     retired in favor of just using .tool-status like every other tool
+     already does. */
   function flashStatus(message){
     status.textContent = message;
     clearTimeout(statusClearTimer);
@@ -463,29 +530,32 @@
     }, 1600);
   }
 
-  /* Real terminal-chip readout (dark background, green text — see
-     .colorfy-save-terminal, index.html) sitting above the saved-colors
-     panel, for the two actions that lead to something ending up there:
-     saving a color, and copying its code straight from the unsaved
-     preview row (the code button next to Save). Copying an
-     already-saved palette chip is a different place on the page and
-     keeps using the plain status line above instead. */
-  function flashSaveTerminal(message){
-    if (!saveTerminal || !saveTerminalText) return;
-    saveTerminalText.textContent = message;
-    saveTerminal.classList.add("show");
-    clearTimeout(saveTerminalTimer);
-    saveTerminalTimer = setTimeout(() => saveTerminal.classList.remove("show"), 1600);
+  /* Its own separate .tool-status line, sitting below the saved-colors
+     preview instead of up with the pickers — copying an already-saved
+     palette chip is a different action in a different part of the page,
+     so it gets its own readout rather than sharing the one above. */
+  function flashPaletteStatus(message){
+    if (!paletteStatus) return;
+    paletteStatus.textContent = message;
+    clearTimeout(paletteStatusClearTimer);
+    paletteStatusClearTimer = setTimeout(() => {
+      if (paletteStatus.textContent === message) paletteStatus.textContent = "";
+    }, 1600);
   }
 
   /* No button-disable delay — saving is instant and idempotent (each
      click just pushes another entry), so there's no real reason to lock
      the button out for a second afterward. */
+  const SAVED_COLORS_MAX = 20;
   function saveToPalette(rgb){
-    savedColors.push({ id: nextSavedId++, rgb: [...rgb] });
+    if (savedColors.length >= SAVED_COLORS_MAX){
+      flashStatus("Chamber with saved colors is full  — remove one first.");
+      return;
+    }
+    savedColors.push({ id: nextSavedId++, rgb: [...rgb], name: "" });
     persistPalette();
     renderPalette();
-    flashSaveTerminal(`Saved ${formatColor(rgb)}`);
+    flashStatus(`Saved ${formatColor(rgb)}`);
   }
 
   function copySwatch(sw, rgb){
@@ -493,9 +563,9 @@
     navigator.clipboard.writeText(value).then(() => {
       sw.classList.add("copied");
       setTimeout(() => sw.classList.remove("copied"), 1000);
-      flashStatus(`Copied ${value}`);
+      flashPaletteStatus(`Copied ${value}`);
     }).catch(() => {
-      status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
+      if (paletteStatus) paletteStatus.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });
   }
 
@@ -516,6 +586,19 @@
      picker (the one most recently clicked or dragged) there directly,
      a faster alternative to dragging it over. */
   canvas.addEventListener("click", (e) => {
+    /* Shift+click drops a brand-new picker at that spot instead of
+       moving the active one — a quicker path to a second/third/fourth
+       sample point than reaching for the "+" button below. Silently
+       no-ops past MAX_PICKERS, same as the "+" button hiding itself
+       there — nothing to add, no error needed for a shortcut. */
+    if (e.shiftKey){
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const fx = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      const fy = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+      addPicker(fx, fy);
+      return;
+    }
     if (!activePicker) return;
     setFracFromClientPoint(activePicker, e.clientX, e.clientY);
   });
@@ -583,17 +666,14 @@
   });
 
   /* ===== copy a code to clipboard =====
-     This is the unsaved preview's own code button, right next to Save —
-     its confirmation goes to the same save-terminal Save does, not the
-     plain status line (that one's reserved for copying an already-saved
-     palette chip instead, see copySwatch above). */
+     The unsaved preview's own code button, right next to Save. */
   function copyCode(btn){
     const value = btn.dataset.value;
     if (!value) return;
     navigator.clipboard.writeText(value).then(() => {
       btn.classList.add("copied");
       setTimeout(() => btn.classList.remove("copied"), 1200);
-      flashSaveTerminal(`Copied ${value}`);
+      flashStatus(`Copied ${value}`);
     }).catch(() => {
       status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });

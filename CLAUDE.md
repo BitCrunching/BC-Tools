@@ -737,51 +737,62 @@ there):
 
 ## Terminal text — the site's one recurring "readout" motif
 
-Used for: nav copy-link confirmation (`.nav-terminal`), the step-through
-help banners on every tool ("CODIFY_GUIDE: STEP 1/4" etc.), About's/the
-homepage's engine-status card, Colorfy's save-terminal (below). This is
-the site's one deliberately "technical" visual voice — use it for
-transient confirmations and diagnostic-flavored copy, nowhere else.
+Every terminal-flavored element shares one font token, `--bc-mono`
+(`:root` in `shared/site.css`; mirrored as a local copy in `index.html`'s
+own `:root` since the SPA doesn't load that file, same reason
+`--context-yellow` is duplicated there) — `"Courier New", Courier,
+monospace`, used site-wide by deliberate choice (2026-09-29, reverting
+the self-hosted Space Mono webfont this token used to hold — see Lessons
+Learned: "terminal font fallback"). Added 2026-09-30, consolidating 32
+independent hand-written copies of the same literal font stack across
+`shared/site.css` and every tool page — every terminal-styled rule now
+writes `font-family:var(--bc-mono);` instead of re-declaring the string,
+so a future font-stack change only happens once.
 
-**Colorfy's own copy/save confirmations are split across two different
-readouts, requested directly — not one component doing double duty.**
-`.colorfy-copy-terminal` (this motif, `position:absolute` floating toast)
-was retired in favor of a single plain `.tool-status` line for everything
-(see Lessons Learned: "terminal font fallback") — since revisited:
-`.colorfy-save-terminal` brings a real terminal chip back, but only for
-the two actions that lead to something landing in the saved-colors panel
-— saving a color (`saveToPalette`) and copying a color's code straight
-from the *unsaved* preview row next to Save (`copyCode`) — sitting in
-normal document flow directly above that panel rather than floating
-absolutely over the banner like the old one did. Copying an
-already-saved palette chip (`copySwatch`) still goes to the plain
-`.tool-status` line, untouched — a different action landing in a
-different place on the page, so it keeps its own separate readout rather
-than sharing the new terminal. Saving also no longer disables the Save
-button for a second afterward (`saveToPalette` used to
-`btn.disabled = true` + `setTimeout(…, 1000)` — removed, since saving is
-instant and idempotent, nothing to guard against a second click for).
+Three genuinely different flavors share this one font, not three copies
+of one component — know which one a new readout actually needs:
 
-- **Color**: `#4ade80` (green) on a dark/translucent chip — never used on a
-  light chip.
-- **Font**: `"Courier New", Courier, monospace` — plain system-font stack,
-  used site-wide by deliberate choice (2026-09-29, reverting the
-  self-hosted Space Mono webfont this section used to specify — see
-  Lessons Learned: "terminal font fallback" for the bug that webfont was
-  chasing and why it's no longer in use).
-- **Size**: 14px desktop, drop to 12px under ~640-768px. Never smaller than
-  12px, never larger than 14px — it's a readout, not a heading.
-- **Weight/spacing**: `font-weight:700; letter-spacing:.02em;`.
-- **Cursor**: a trailing `_` or block with
-  `animation: copy-toast-blink 1s step-end infinite;` (keyframe already in
-  `shared/site.css`) for anything simulating a live terminal line — skip it
-  for static readouts like the engine-status card.
-- **Chip background**: `rgba(0,0,0,.35)` translucent over whatever's behind
-  it — does NOT flip for light/dark site theme (see the flip-rule section
-  above for why this is the one deliberate exception).
-- **Prompt convention**: prefix the line with `>` in its own
-  `opacity:.7` span when it reads like a command result (e.g.
-  `> copied #F44CCF`).
+- **`.nav-terminal`** — nav-bar copy-link confirmation. Plain text, no
+  chip: `color:var(--text)` (flips with theme), no background/padding.
+- **`.tool-status`** — every tool's own status line (ready/progress/done/
+  error/copy-confirmation). Also plain text, `color:var(--text)`,
+  CSS-generated `"> "` prefix via `::not(:empty)::before`. This is the
+  **default choice for any new confirmation or status message** — every
+  tool uses it for everything from "Couldn't copy…" errors to Codify's
+  "PNG copied to clipboard." to Colorfy's "Saved #hex"/"Copied #hex"
+  (two instances on that page, `#cyStatus` above the saved-colors panel
+  and `#cyPaletteStatus` below it, purely because they report on two
+  different actions in two different places — same shared class both
+  times, not a second component).
+- **`.engine-status-card`** — the one real *filled chip* variant: fixed
+  dark background (`#1d2436` / light-theme `#e4e9f5`, does NOT flip with
+  site theme the way normal chips do), green `.engine-status-value`
+  accent (`#4ade80` dark / `#16a34a` light, contrast-checked). Used for
+  About's/the homepage's status card **and every tool's step-through help
+  banner** ("CODIFY_GUIDE: STEP 1/4" etc. — every tool's help banner
+  literally reuses this same class, see `bcSetupHelpBanner` below).
+
+**Colorfy does not have, and should not grow, its own bespoke terminal
+component.** It used to (`.colorfy-copy-terminal`, then later
+`.colorfy-save-terminal`/`.bc-terminal-chip`) — both retired, most
+recently 2026-09-30, after repeated contrast/padding/border-radius bugs
+that a one-off filled-chip element kept reintroducing. All of Colorfy's
+confirmations (`saveToPalette`, `copyCode`, `copySwatch`) now go through
+plain `.tool-status`, identically to every other tool. If a future
+confirmation anywhere on the site seems to need its own readout styling,
+default to `.tool-status` first and reach for `.engine-status-card` only
+if it's genuinely a persistent status *panel*, not a transient line —
+don't invent a fourth flavor.
+
+**Cursor convention**: a trailing `_` or block with `animation:
+copy-toast-blink 1s step-end infinite;` (keyframe in `shared/site.css`)
+for anything simulating a live terminal line — skip it for static
+readouts like the engine-status card body text.
+
+**Prompt convention**: prefix a line with `>` in its own `opacity:.7`
+span when it reads like a command result (`.tool-status`'s own `> `
+prefix is CSS-generated automatically; `.nav-terminal`/
+`.engine-status-card` markup adds the `>` span by hand).
 
 ## Help banner (step-through intro): `bcSetupHelpBanner`
 
@@ -1303,20 +1314,15 @@ first:
 - **Codify**: `.bc-editor-input`; joint reference (with Colorfy) for the
   auto-fit resizable-frame conventions.
 - **Cleanly** and **Combine**: independently, byte-identically originated
-  `.bc-file-remove-btn` ("the beta remove btn" — `.exif-file-remove` /
-  `.combine-file-remove`) — and, separately, the exact formula
-  `bcFormatFileSize` was promoted from (each tool's own local `formatSize`
-  was already identical down to the threshold and rounding, before either
-  tool knew the other had one). Two byte-identical duplications between
-  the same pair of tools is a genuine signal that whatever they agree on
-  independently is probably the right shape for a shared component.
-  `.bc-file-remove-btn` was later also adopted by Colorfy's saved-color
-  chip and by Convert/Compress/Coudio's per-file remove (moved off
-  `.result-remove` for this specific use — see Lessons Learned:
-  "beta remove btn adoption"). Cleanly later also adopted Coudio's own
-  per-row `.tool-primary-btn` variant (`.ex-row-strip-btn`, mirroring
-  `.cd-row-convert-btn`) once its Strip action moved from one global CTA
-  to one independent button per file (see `.tool-primary-btn` above).
+  `.bc-file-remove-btn` ("the beta remove btn") and, separately,
+  `bcFormatFileSize` — two byte-identical duplications between the same
+  pair of tools is a genuine signal that whatever they agree on
+  independently is probably the right shape for a shared component (full
+  adoption history in Lessons Learned: "beta remove btn"). Cleanly later
+  also adopted Coudio's own per-row `.tool-primary-btn` variant
+  (`.ex-row-strip-btn`, mirroring `.cd-row-convert-btn`) once its Strip
+  action moved from one global CTA to one independent button per file
+  (see `.tool-primary-btn` above).
 - **Coudio**: originated the per-row `.tool-primary-btn` variant pattern
   (`.cd-row-convert-btn`) for tools with N independent per-item actions
   instead of one global CTA — see `.tool-primary-btn` above; later
@@ -1732,31 +1738,36 @@ declarations and `vendor/fonts/space-mono-*.woff2` files were removed
 too). The font-availability risk this section describes is a real
 tradeoff being knowingly accepted, not an oversight, if it resurfaces.
 
-**Beta remove btn adoption (`.bc-file-remove-btn`) on Convert/Compress/
-Coudio**: requested directly — reuse Cleanly's non-red file-remove button
-("the beta remove btn") for Colorfy's saved-color chip, and connect
-Convert/Compress/Coudio's own per-file remove "×" to the same shared
-class. The first part (Colorfy) was a straightforward class swap
-(`bc-remove-btn` → `bc-file-remove-btn`, keeping the tool's own 25×25px
-local size override). The second part was a real, deliberate design
-change, not just a rename: Convert/Compress/Coudio's per-file remove had
-always been `.result-remove` — a *different* shared class, documented
-above as the on-purpose exception that stays a fixed dark circle and
-fades in only on hover, because it overlays a thumbnail image rather
-than sitting on a card's own themed background. Switching to
-`.bc-file-remove-btn` makes it always-visible and theme-flipping instead
-of hover-reveal-and-fixed-dark. Went ahead with it since it was asked
-for directly and by name across all three tools, but flagging the
-tradeoff here since it reverses that earlier documented reasoning:
-Convert/Compress's remove button no longer stays out of the way until
-hovered, and now visually competes with the thumbnail underneath it more
-than before. `.result-remove` itself is untouched and still exists for
-any future on-image-overlay use — only these three tools' specific
-buttons moved to the new class, each keeping a local class
-(`.cv-file-remove-btn` / `.cp-file-remove-btn` / `.cd-file-remove-btn`)
-purely for the position override (`.bc-file-remove-btn` isn't
-`position:absolute` by default, since Cleanly/Combine use it inline in a
-flex row, not overlaid on a card).
+**Update, 2026-09-30**: the `flashStatus()`/`#cyStatus` fix from this
+entry didn't stick — a bespoke filled chip (`.colorfy-save-terminal`/
+`.bc-terminal-chip`) got reintroduced for Colorfy's Save/copy-from-preview
+confirmations, then spent a whole session fighting padding/border-radius/
+contrast bugs a plain text line never has. Retired for good this time —
+see `## Terminal text` above for the current (and intended-to-be-final)
+three-flavor breakdown. Also consolidated the literal `"Courier New",
+Courier, monospace` string, which by this point had been hand-copied into
+32 separate rules across the codebase, into one `--bc-mono` custom
+property.
+
+**Beta remove btn** (`.bc-file-remove-btn` — full current spec/adopter
+list under `.result` above; originated independently and byte-identically
+in Cleanly/Combine, see Provenance). Convert/Compress/Coudio's per-file
+remove "×" used to be a *different* shared class, `.result-remove` — the
+on-purpose exception that stays a fixed dark circle and fades in only on
+hover, because it overlays a thumbnail image rather than sitting on a
+card's own themed background. Switching those three to
+`.bc-file-remove-btn` (requested directly, by name) makes it
+always-visible and theme-flipping instead of hover-reveal-and-fixed-dark
+— a real, deliberate tradeoff, not just a rename: Convert/Compress's
+remove button no longer stays out of the way until hovered, and now
+visually competes with the thumbnail underneath it more than before.
+`.result-remove` itself is untouched and still exists for any future
+on-image-overlay use — only these three tools' specific buttons moved to
+the new class, each keeping a local class (`.cv-file-remove-btn` /
+`.cp-file-remove-btn` / `.cd-file-remove-btn`) purely for the position
+override (`.bc-file-remove-btn` isn't `position:absolute` by default,
+since Cleanly/Combine use it inline in a flex row, not overlaid on a
+card).
 
 **Remove-all button position standardization (`.bc-remove-btn`/
 `.bc-canvas-back-btn`)**: requested directly — visually match Cleanly's
