@@ -26,6 +26,6 @@ BitCrunching is designed to evolve over time into a full suite of digital file u
 - [x] **Images:** Conversion, compression, combining, metadata clearing and more coming soon
 - [x] **Audio:** In-browser audio trimming, conversion, and bitrate adjustment
 - [x] **Video:** Fast clips processing and GIF creation
-- [ ] **Code:** Formatting and minification tools
+- [x] **Code:** Formatting and minification tools
 
 ---
