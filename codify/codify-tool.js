@@ -62,8 +62,8 @@
   bcSetupHelpBanner("codify", "cf", [
     ["WELCOME_TO_CODIFY", "Paste or type your code on the left — the styled screenshot on the right updates live as you type."],
     ["PICK_A_LANGUAGE", "Codify highlights JavaScript, Python, Rust, and a dozen more — pick yours from the Language dropdown, or just start typing and it'll still render."],
-    ["TRY_A_THEME_OR_TEMPLATE", "Switch between Dracula, VS Code Dark, Monokai, and GitHub Light from Theme — or pick a ready-made snippet from Template to see it in action."],
-    ["YOU_ARE_SET", "Hit Download PNG to save the screenshot. Close this with the red dot and we won't show it again."]
+    ["TRY_A_THEME_OR_TEMPLATE", "Switch between Dracula, VS Code Dark, Monokai, One Dark, and GitHub Light from Theme — or pick a ready-made snippet from Template to see it in action."],
+    ["YOU_ARE_SET", "Pick PNG or SVG, then hit the Download button (D) to save it — or hit Copy to put the PNG on your clipboard. Close this with the red dot and we won't show it again."]
   ]);
 
   const themeInput = document.getElementById("cfThemeInput");
@@ -398,9 +398,11 @@ console.log(a.next.value);`
      that opens a small popover panel (.cf-macnav-panel), same
      trigger+panel shape as Shadow's/Background's own controls. The
      on/off switch moves inside the panel (same .cf-toggle-switch shape
-     Shadow's own panel already uses for its "On" switch); two style
-     options join it — Classic (the original fixed red/yellow/green)
-     and Monochrome (one neutral gray for all three dots).
+     Shadow's own panel already uses for its "On" switch); three style
+     options join it — Classic (the original fixed red/yellow/green),
+     Monochrome (one neutral gray for all three dots), and Red/Green
+     (red and green stay their normal colors, yellow goes gray/
+     nonchromatic).
      applyMacNavDots() is the one place that actually writes dot
      colors, onto the real .cf-dot elements — buildSvgString() further
      down reads those same elements' computed colors for SVG export
@@ -416,10 +418,13 @@ console.log(a.next.value);`
 
   const MACNAV_CLASSIC = ["#ff5f56", "#ffbd2e", "#27c93f"];
   const MACNAV_MONOCHROME = "#9ca3af";
+  const MACNAV_RG_ONLY = ["#ff5f56", "#9ca3af", "#27c93f"];
   let macNavStyle = "classic";
 
   function applyMacNavDots(){
-    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME] : MACNAV_CLASSIC;
+    const colors = macNavStyle === "monochrome" ? [MACNAV_MONOCHROME, MACNAV_MONOCHROME, MACNAV_MONOCHROME]
+      : macNavStyle === "rg-only" ? MACNAV_RG_ONLY
+      : MACNAV_CLASSIC;
     cfWindow.querySelectorAll(".cf-dot").forEach((dot, i) => { dot.style.background = colors[i]; });
     macNavTriggerDots.forEach((dot, i) => { dot.style.background = colors[i]; });
   }

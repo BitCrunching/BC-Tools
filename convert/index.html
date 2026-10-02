@@ -62,10 +62,10 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=101">
+<link rel="stylesheet" href="/shared/site.css?v=134">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
-.tool-app{ min-height:322.5px; cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #cvAfterDrop is revealed, so it never fights the dropdowns
@@ -235,7 +235,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -301,37 +301,39 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   background:rgba(118,38,245,.08);
 }
 
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here, same split as Coudio's .cd-remove-btn. Sits
-   inside #cvAfterDrop (position:relative below) rather than directly on
-   .tool-app, so it only shows once a file's loaded and #cvAfterDrop is
-   revealed — same visibility-via-hidden-ancestor trick as Coudio's own
-   button inside #cdEditor, no separate hidden toggle needed here. The
-   negative top/right (rather than a plain 10px/10px inset) is
-   deliberate: it pulls the button up out of #cvAfterDrop's own box
-   (which starts below the header) so it lands at the true top-right
-   corner of the whole card next to the "Convert" logo — exactly the
-   same fix Coudio's .cd-remove-btn needed for the same reason (its
-   positioned ancestor, #cdEditor, also starts below the header). */
 .tool-after-drop{
   position:relative;
 }
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cvAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. Was previously
+   nested inside #cvAfterDrop with a large negative top pulling it up
+   out of that box — worked, but was a one-off recipe instead of the
+   same positioning every other tool uses. */
 .cv-remove-btn{
   position:absolute;
-  top:-85px;
-  right:-25px;
+  top:16px;
+  right:16px;
   z-index:6;
   font-size:18px;
+  display:none;
 }
+.tool-app:has(#cvAfterDrop:not([hidden])) .cv-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position stay here, same split as
-   .cv-remove-btn/.bc-remove-btn above. Sits just to the left of
-   Remove, same corner. */
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cv-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
 .cv-back-btn{
   position:absolute;
-  top:-85px;
-  right:11px;
+  top:16px;
+  right:52px;
   z-index:6;
+}
+@media (max-width:768px){
+  .cv-back-btn{ display:none; }
+  .tool-app:has(#cvAfterDrop:not([hidden])) .cv-back-btn{ display:flex; }
 }
 
 .tool-io-row{
@@ -599,18 +601,19 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
       <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images or a PDF</span></div>
     <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cvAfterDrop" hidden>
-      <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5"></path>
-          <path d="M11 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-      <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-io-row">
         <div class="tool-io-group">
           <span class="tool-io-label bc-label">
@@ -829,7 +832,7 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=45" defer></script>
-<script src="/convert/convert-tool.js?v=28" defer></script>
+<script src="/shared/site.js?v=53" defer></script>
+<script src="/convert/convert-tool.js?v=39" defer></script>
 </body>
 </html>

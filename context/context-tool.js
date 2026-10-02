@@ -762,7 +762,10 @@
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
-      triangle: '<polygon points="50,4 96,96 4,96" />'
+      triangle: '<polygon points="50,4 96,96 4,96" />',
+      /* Plus-shaped 12-point polygon — same 2-unit margin/96-unit span
+         as square/circle above, 30-unit-wide arms (center ±15). */
+      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />'
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
@@ -776,8 +779,8 @@
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
      independently — used by the PDF export step below to reproduce a
-     non-uniformly stretched triangle, since drawSvgPath's own `scale`
-     option only takes one uniform number. Only handles the M/L/Z
+     non-uniformly stretched triangle/cross, since drawSvgPath's own
+     `scale` option only takes one uniform number. Only handles the M/L/Z
      commands this file's own shapeSvg() paths actually use. */
   function scaleSvgPath(path, sx, sy){
     return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
@@ -1668,6 +1671,15 @@
              — so the path's own coordinates are pre-scaled by width/height
              independently instead, and `scale` stays 1. */
           page.drawSvgPath(scaleSvgPath("M50 4 L96 96 L4 96 Z", box.widthPt / 100, box.heightPt / 100), {
+            x,
+            y,
+            color
+          });
+        } else if (box.kind === "cross"){
+          /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
+             written as a path string — same pre-scaled-coordinates
+             convention as the triangle above. */
+          page.drawSvgPath(scaleSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
             color

@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=101">
+<link rel="stylesheet" href="/shared/site.css?v=134">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -160,7 +160,7 @@ html[data-theme="light"] .help-banner-header{
   background:none;
   color:#e5e7eb;
   opacity:.8;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:13px;
   font-weight:700;
   letter-spacing:.02em;
@@ -236,8 +236,11 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
 /* #cdStatus reserves 46px (22px margin-top + 24px min-height) even
    with no message in it, which pre-upload just pushes the fixed
    322.5px banner into overflow for no visible reason — nothing needs
-   that space until a conversion is actually running. */
-#page-coudio:has(#cdDrop:not(.tool-drop-revealed)) #cdStatus{
+   that space until a conversion is actually running (or a rejected
+   file leaves a message here — the :empty guard is what lets that one
+   case through: setting textContent gives the element a text node, so
+   it's no longer :empty and this rule stops matching). */
+#page-coudio:has(#cdDrop:not(.tool-drop-revealed)) #cdStatus:empty{
   display:none;
 }
 #page-coudio:has(#cdDrop:not(.tool-drop-revealed)):hover{
@@ -477,23 +480,32 @@ html[data-theme="dark"] .cd-file-row-error{
 }
 
 /* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here. */
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cdEditor), shown via the same :has() toggle those two
+   use instead of relying on a hidden ancestor. */
 .cd-remove-btn{
   position:absolute;
-  top:-160px;
-  right:-25px;
+  top:16px;
+  right:16px;
   z-index:6;
   font-size:18px;
+  display:none;
 }
+#page-coudio:has(#cdEditor:not([hidden])) .cd-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position stay here, same split as
-   .cd-remove-btn/.bc-remove-btn above. Sits just to the left of
-   Remove, same corner. */
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cd-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
 .cd-back-btn{
   position:absolute;
-  top:-160px;
-  right:11px;
+  top:16px;
+  right:52px;
   z-index:6;
+}
+@media (max-width:768px){
+  .cd-back-btn{ display:none; }
+  #page-coudio:has(#cdEditor:not([hidden])) .cd-back-btn{ display:flex; }
 }
 .cd-editor{
   position:relative;
@@ -802,18 +814,19 @@ html[data-theme="dark"] .cd-file-row-error{
       <span class="privacy-check-badge" id="cdPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cd-back-btn bc-canvas-back-btn" id="cdBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cd-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop tool-drop-addpill" id="cdDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">one or more audio or video files</span></div>
     <input type="file" id="cdInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.mp4,.m4v,.webm,.mov,.ogv" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cdContinueBtn" hidden>Continue where you left off</button>
 
     <div class="cd-editor" id="cdEditor" hidden>
-      <button type="button" class="cd-back-btn bc-canvas-back-btn" id="cdBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5"></path>
-          <path d="M11 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-      <button type="button" class="cd-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdRemoveBtn" aria-label="Remove all files">×</button>
 
       <!-- One fully independent row per loaded file — own player, own
            detected Input, own Output format/Bitrate, own output
@@ -834,7 +847,7 @@ html[data-theme="dark"] .cd-file-row-error{
            wires up independently with no id collisions to worry about. -->
       <template id="cdFileRowTemplate">
         <div class="result cd-file-row">
-          <button type="button" class="cd-file-remove-btn bc-file-remove-btn" aria-label="Remove file">×</button>
+          <button type="button" class="cd-file-remove-btn bc-file-remove-btn" aria-label="Remove file" title="Remove file">×</button>
 
           <div class="cd-row-name">
             <!-- Renames this row's OUTPUT, not the source file itself
@@ -896,9 +909,17 @@ html[data-theme="dark"] .cd-file-row-error{
       </template>
 
       <div class="cd-file-list-vertical" id="cdFileList"></div>
-
-      <div class="tool-status" id="cdStatus"></div>
     </div>
+    <!-- Deliberately outside #cdEditor (unlike everything above) — that
+         element has the `hidden` attribute until a file's actually
+         accepted, so a status message written to it while still on the
+         drop zone (e.g. "none of the selected file(s) qualify") would be
+         set but invisible. Every other statusEl.textContent write only
+         ever happens once a file's already loaded, so moving it out here
+         doesn't change anything about how those already look — see the
+         matching #cdStatus:empty CSS rule above for how the "don't
+         reserve space pre-upload" behavior is preserved regardless. -->
+    <div class="tool-status" id="cdStatus"></div>
   </div>
 </div>
 
@@ -996,7 +1017,7 @@ html[data-theme="dark"] .cd-file-row-error{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=45" defer></script>
-<script src="/coudio/coudio-tool.js?v=52" defer></script>
+<script src="/shared/site.js?v=53" defer></script>
+<script src="/coudio/coudio-tool.js?v=57" defer></script>
 </body>
 </html>

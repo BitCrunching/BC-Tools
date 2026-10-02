@@ -101,6 +101,34 @@
     if (!compressBtn.disabled || files.length === 0) compressBtn.textContent = compressBtnIdleLabel();
   });
 
+  /* ===== Mobile: shared .option-change-btn instead of three level buttons =====
+     Desktop keeps the real three-button row (#cpLevelButtons) untouched;
+     ≤768px that row hides entirely (compress/index.html's own media
+     query) and #cpLevelOptionChangeBtn takes over instead — the site's
+     existing single-button click-to-advance picker (Congify's fps/crop/
+     order pickers, `.option-change-btn` + `bcRegisterOptionChangeBtn`,
+     shared/site.js), not a bespoke cycle control. LEVEL_OPTIONS is read
+     from the three real buttons' own dataset, not hardcoded a second
+     time, so they stay the single source of truth for what the three
+     levels actually are. */
+  const levelButtonsArr = [...levelButtons];
+  const LEVEL_OPTIONS = levelButtonsArr.map(btn => ({
+    quality: btn.dataset.quality,
+    label: btn.dataset.label,
+    levelKey: btn.dataset.levelKey
+  }));
+  function applyLevelSelection(opt){
+    selectedQuality = Number(opt.quality);
+    levelButtonsArr.forEach(b => b.classList.toggle("active", b.dataset.levelKey === opt.levelKey));
+    selectedCompression.textContent = `Compression level: ${opt.label}`;
+    updateAllEstimates();
+    schedulePersist();
+  }
+  const levelOptionChangeBtn = document.getElementById("cpLevelOptionChangeBtn");
+  const levelOptionChangeControl = levelOptionChangeBtn
+    ? bcRegisterOptionChangeBtn(levelOptionChangeBtn, LEVEL_OPTIONS, applyLevelSelection)
+    : null;
+
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
@@ -109,7 +137,7 @@
     ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows a live estimate of the resulting file size before you commit."],
     ["CHECK_BEFORE_COMPRESSING", "Your files show up below once picked — check them before compressing, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the level guide further down the page — it explains what each level is actually good for."],
-    ["YOU_ARE_SET", "Hit Compress and the files download automatically — as a ZIP once you've got more than 5 (you can switch back to single files up to 20). Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit the Download button (D) and the files are compressed and saved automatically — as a ZIP once you've got more than 5 (you can switch back to single files up to 20). Close this with the red dot and we won't show it again."]
   ]);
 
   /* Level buttons + Compress button stay hidden until a file is
@@ -173,6 +201,7 @@
     files = [];
     selectedQuality = null;
     levelButtons.forEach(b => b.classList.remove("active"));
+    if (levelOptionChangeControl) levelOptionChangeControl.setIndex(0);
     selectedCompression.textContent = "";
     afterDrop.hidden = true;
     drop.hidden = false;
@@ -195,22 +224,15 @@
       selectedCompression.textContent = `Compression level: ${btn.dataset.label}`;
       updateAllEstimates();
       schedulePersist();
+      /* Keeps the mobile option-change button showing the same level a
+         desktop-width click just picked, so a mid-session resize to
+         mobile doesn't reveal it still on a stale value. */
+      if (levelOptionChangeControl){
+        const idx = LEVEL_OPTIONS.findIndex(o => o.levelKey === btn.dataset.levelKey);
+        if (idx !== -1) levelOptionChangeControl.setIndex(idx);
+      }
     });
   });
-
-  function formatKB(bytes){
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
-  /* Used for every size figure shown to a visitor — original, estimated,
-     and final compressed — so a large file reads the same way (MB above
-     1000KB) everywhere it's mentioned. formatKB stays around as the raw
-     always-KB building block this uses internally. */
-  function formatSize(bytes){
-    const kb = bytes / 1024;
-    if (kb > 1000) return `${(kb / 1024).toFixed(1)} MB`;
-    return formatKB(bytes);
-  }
 
   function isHeicFile(f){
     return f.type === "image/heic" || f.type === "image/heif" || /\.(heic|heif)$/i.test(f.name);
@@ -362,7 +384,7 @@
       const card = appendPreviewCard({
         src: heic ? "" : URL.createObjectURL(file),
         name: file.name,
-        info: formatSize(file.size)
+        info: bcFormatFileSize(file.size)
       });
       if (heic){
         card.classList.add("result-pdf");
@@ -409,6 +431,7 @@
       btn.type = "button";
       btn.className = "cp-file-remove-btn bc-file-remove-btn";
       btn.setAttribute("aria-label", "Remove");
+      btn.title = "Remove file";
       btn.textContent = "×";
       btn.addEventListener("click", () => {
         files = files.filter(f => f !== file);
@@ -443,6 +466,7 @@
     btn.type = "button";
     btn.className = "cp-file-remove-btn bc-file-remove-btn";
     btn.setAttribute("aria-label", "Remove");
+    btn.title = "Remove file";
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       const img = card.querySelector("img");
@@ -490,7 +514,7 @@
   }
 
   async function updateEstimateForEntry(entry){
-    const originalText = formatSize(entry.file.size);
+    const originalText = bcFormatFileSize(entry.file.size);
     if (selectedQuality === null){
       entry.infoEl.textContent = originalText;
       return;
@@ -500,7 +524,7 @@
 
     const cached = getCachedEstimate(entry.file, selectedQuality);
     if (cached){
-      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatSize(cached.size)} (-${cached.savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>New size: ${bcFormatFileSize(cached.size)} (-${cached.savedPercent}%)`;
       return;
     }
 
@@ -512,7 +536,7 @@
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
       setCachedEstimate(entry.file, selectedQuality, { size: compressedBlob.size, savedPercent });
-      entry.infoEl.innerHTML = `${originalText}<br>Estimated after compression: ${formatSize(compressedBlob.size)} (-${savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText}<br>New size: ${bcFormatFileSize(compressedBlob.size)} (-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
       entry.infoEl.textContent = originalText;
@@ -544,7 +568,7 @@
   function queueEstimates(entries){
     if (selectedQuality !== null){
       entries.forEach(entry => {
-        entry.infoEl.innerHTML = `${formatSize(entry.file.size)}<br>Waiting...`;
+        entry.infoEl.innerHTML = `${bcFormatFileSize(entry.file.size)}<br>Waiting...`;
       });
     }
     runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
@@ -576,6 +600,12 @@
     if (picked.length === 0){
       if (gifRejected){
         status.textContent = "GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.";
+      } else if (incoming.length > 0){
+        /* Same fix shape as Convert's applyPickedFiles() — a selection
+           that's wholly non-image (e.g. a .txt/.exe) used to be silent;
+           the GIF case above already had its own message, this covers
+           everything else that isn't a GIF either. */
+        status.textContent = "Compress only works with images — none of the selected file(s) qualify.";
       }
       return;
     }
@@ -584,6 +614,19 @@
     renderStatus();
     if (gifRejected){
       status.innerHTML += ` <span style="color:var(--text)">GIFs were skipped — animated images aren't supported here, try Congify instead.</span>`;
+    }
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       GIFs already get their own message above; this covers anything
+       else non-image mixed into an otherwise-valid batch (e.g. 2 valid
+       images + 1 .nef), which used to load silently with zero
+       indication the odd one out never made it in. */
+    const gifCount = incoming.filter(isGifFile).length;
+    const otherSkipped = incoming.length - picked.length - gifCount;
+    if (otherSkipped > 0){
+      const msg = otherSkipped === 1
+        ? "1 file wasn't a supported image format and was skipped."
+        : `${otherSkipped} files weren't a supported image format and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
     showSelectedPreviews();
     compressBtn.disabled = files.length === 0;
@@ -675,7 +718,7 @@
         const resultCard = appendPreviewCard({
           src: URL.createObjectURL(compressedBlob),
           name: outputName,
-          info: `${formatSize(file.size)} → ${formatSize(compressedBlob.size)} • -${savedPercent}%`
+          info: `${bcFormatFileSize(file.size)} → ${bcFormatFileSize(compressedBlob.size)} • -${savedPercent}%`
         });
         addResultRemoveButton(resultCard);
 
@@ -772,6 +815,18 @@
         });
         setFiles(restored);
         if (saved.levelKey){
+          /* Keeps both controls in sync regardless of which one's
+             actually visible right now — a viewport resize mid-session
+             shouldn't reveal a level-option-change button still showing
+             whatever it last displayed instead of the level that was
+             actually restored. setIndex() alone doesn't fire onSelect
+             (by design, see bcRegisterOptionChangeBtn's own doc comment),
+             so clicking the matching desktop button is still what
+             actually applies the selection. */
+          if (levelOptionChangeControl){
+            const idx = LEVEL_OPTIONS.findIndex(o => o.levelKey === saved.levelKey);
+            if (idx !== -1) levelOptionChangeControl.setIndex(idx);
+          }
           const matchingBtn = document.querySelector(`#cpLevelButtons .tool-format-btn[data-level-key="${saved.levelKey}"]`);
           if (matchingBtn) matchingBtn.click();
         }
