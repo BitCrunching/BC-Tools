@@ -1,0 +1,36 @@
+/* shared/nav.css — the top nav bar's own chrome (background, height,
+   padding, the light/dark flip, and its responsive sizing). Split out of
+   shared/site.css so both that file (every standalone tool page, via
+   its own @import below) and index.html (via its own separate <link>,
+   since it doesn't load the rest of site.css) point at one real source
+   instead of each keeping a hand-duplicated copy — same reasoning as
+   icons.css/textures.css. Everything that lives INSIDE the bar (brand
+   text, nav buttons, the share menu, the nav-terminal readout) stays in
+   site.css/index.html's own copies for now — only the bar itself moved
+   here. Bump this file's own ?v=N (on both site.css's @import line and
+   index.html's <link>) whenever its content changes. */
+.site-nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  height:88px;
+  padding:0 28px;
+  background:#1d2436;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+html[data-theme="light"] .site-nav{
+  background:#d4dbee;
+}
+
+@media (max-width:768px){
+  .site-nav{height:72px;padding:0 16px;}
+}
+
+@media (max-width:370px){
+  .site-nav{gap:10px; padding:0 12px;}
+}

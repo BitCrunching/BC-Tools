@@ -128,12 +128,13 @@
      shared/site.css) — index.html links it directly here rather than
      duplicating the block inline, since this page otherwise keeps all
      its own CSS inline and doesn't load the rest of shared/site.css. -->
-<link rel="stylesheet" href="/shared/icons.css?v=5">
+<link rel="stylesheet" href="/shared/icons.css?v=4">
+<link rel="stylesheet" href="/shared/nav.css?v=1">
 <!-- Same reasoning, same pattern: the 4 category texture recipes
      (image/video/sound/code) live in shared/textures.css so a tool's
      own banner can opt into the same treatment its homepage card uses,
      instead of the homepage keeping a private copy only it can see. -->
-<link rel="stylesheet" href="/shared/textures.css?v=1">
+<link rel="stylesheet" href="/shared/textures.css?v=2">
 
 <style>
 /* ===== TOKENS ===== */
@@ -154,6 +155,11 @@
   --text:#1a1a1a;
   --accent:#1e293b;
   --accent2:#475569;
+  /* Manually synced with shared/site.css's own --bc-mono — same reason
+     --context-yellow is a local copy here (this page doesn't load
+     shared/site.css). See that file's :root comment for what this
+     unifies. */
+  --bc-mono:"Courier New", Courier, monospace;
 }
 
 :root[data-theme="dark"]{
@@ -319,7 +325,7 @@ html[data-theme="light"] .cookie-toggle-row{
   border:none;
   padding:0;
   font:inherit;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#e5e7eb;
   opacity:.6;
@@ -367,7 +373,7 @@ html[data-theme="light"] .cookie-cat-detail{
 }
 
 .cookie-toggle-status{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#ff6b6b;
 }
@@ -408,7 +414,7 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:12px;
   letter-spacing:.05em;
@@ -426,7 +432,7 @@ html[data-theme="light"] .cookie-banner-saved{
 }
 
 .cookie-banner-saved-cursor{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:11px;
   letter-spacing:.05em;
@@ -552,6 +558,9 @@ html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
 
 .cookie-dock-title{
   margin-left:6px;
+  /* Heading stays bold against the regular-weight body text below it,
+     same title/body split as .engine-status-title/.engine-status-row. */
+  font-weight:700;
 }
 
 /* Re-parent target for the cookie banner on the Cookies page */
@@ -609,7 +618,7 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
   padding:14px 16px;
   gap:8px;
   border-radius:16px;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -642,8 +651,9 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 }
 
 .cookie-banner.docked .cookie-banner-actions button{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:15px;
+  font-weight:400;
   letter-spacing:.02em;
   border-radius:10px;
 }
@@ -736,23 +746,9 @@ html[data-theme="light"] .cookie-settings-btn-dot{
 }
 
 /* ===== TABS NAV ===== */
-.site-nav{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  height:88px;
-  padding:0 28px;
-  background:#1d2436;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-
-html[data-theme="light"] .site-nav{
-  background:#d4dbee;
-}
+/* .site-nav's own chrome (background/height/padding/flip/responsive
+   sizing) now lives in shared/nav.css, linked above — see that file's
+   header comment. */
 
 /* Central confirmation display for nav actions (theme, language,
    copy link) — terminal-styled to match the site's other terminal
@@ -765,7 +761,7 @@ html[data-theme="light"] .site-nav{
   top:50%;
   transform:translate(-50%, -50%);
   color:var(--text);
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:14px;
   font-weight:400;
   letter-spacing:.02em;
@@ -845,7 +841,6 @@ span.gfx-md, span.gfx-lg{
 }
 
 @media (max-width:768px){
-  .site-nav{height:72px;padding:0 16px;}
   .site-nav-brand{font-size:30px;}
   .site-logo{width:34px;height:34px;}
 }
@@ -859,7 +854,6 @@ span.gfx-md, span.gfx-lg{
    390px, as an earlier pass did) so this ONLY kicks in for phones that
    actually need it — 375px+ devices keep full-size everything. */
 @media (max-width:370px){
-  .site-nav{gap:10px; padding:0 12px;}
   .site-nav-brand{font-size:23px; gap:9px;}
   .site-logo{width:26px;height:26px;}
   .nav-right{gap:6px;}
@@ -1003,7 +997,7 @@ main{
   border:1px solid rgba(255,255,255,.14);
   border-radius:16px;
   overflow:hidden;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -1354,7 +1348,6 @@ html[data-theme="light"] .tool-card-star{
 .tool-card-star:nth-child(6){ top:150px; left:140px; animation-delay:-2.8s; }
 .tool-card-star:nth-child(7){ top:182px; left:58px;  animation-delay:-.8s; }
 .tool-card-star:nth-child(8){ top:22px;  left:114px; width:3px; height:3px; animation-delay:-2s; }
-
 
 @media (max-width:768px){
   .next-tools-preview{display:none;}
@@ -2291,8 +2284,8 @@ footer a{
     <div class="hero hero-intro">
       <h1>Setting a new standard for creators!</h1>
       <p class="hero-p1-desktop">Get working with Creative Hub... a place where creativity travels faster than the speed of light.</p>
-      <p class="hero-p1-desktop">A growing collection of browser-based tools for images, video, audio, and code.</p>
-      <p class="hero-p1-mobile">Creative Hub — a growing collection of browser-based tools for images, video, audio, and code.</p>
+      <p class="hero-p1-desktop">Ever-growing collection of browser-based tools for images, video, audio, and code.</p>
+      <p class="hero-p1-mobile">Creative Hub — an ever-growing collection of browser-based tools for images, video, audio, and code.</p>
     </div>
 
     <h2 class="cards-heading">Start with Creative Hub:</h2>
@@ -2303,6 +2296,7 @@ footer a{
       <button type="button" class="category-filter-btn" data-category="video" aria-pressed="false">Video</button>
       <button type="button" class="category-filter-btn" data-category="sound" aria-pressed="false">Sound</button>
       <button type="button" class="category-filter-btn" data-category="code" aria-pressed="false">Code</button>
+      <button type="button" class="category-filter-btn" data-category="special" aria-pressed="false">Special</button>
     </div>
 
     <div class="cards" id="cardsGrid">
@@ -2323,7 +2317,7 @@ footer a{
             <span class="gfx-lg card-icon icon-compress" role="img" aria-label="Compress icon"></span>
             <h2>Compress</h2>
           </div>
-          <p>Reduce image file size while keeping quality. Choose a compression level and download the compressed files as a ZIP.</p>
+          <p>Reduce image file size while keeping quality.</p>
         </a>
         <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/compress-dark.mp4?v=1" data-preview-img-light="/shared/previews/compress-light.mp4?v=1" data-preview-name="Compress" data-preview-desc="Shrink your photos without wrecking the quality. Pick Low, Medium, or High, and download — one file or a whole batch, done in seconds, no upload to servers necessary." data-preview-href="/compress/">Read more</button>
       </div>
@@ -2393,7 +2387,6 @@ footer a{
         </a>
         <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/codify-dark.mp4?v=3" data-preview-img-light="/shared/previews/codify-light.mp4?v=3" data-preview-name="Codify" data-preview-desc="Turn a code snippet into a beautiful, styled screenshot — pick a language and theme, or start from a template, then download. Instantly, right in your browser, no upload to servers necessary." data-preview-href="/codify/">Read more</button>
       </div>
-
     </div>
 
     <div class="engine-status-card loading_tools_banner">
@@ -2515,7 +2508,7 @@ footer a{
     <div class="footer-dashboard-col" id="footerContactSection">
       <h3>Get in touch with us</h3>
       <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
-      <span class="footer-dash-text"><a href="https://discord.gg/wWZ4jQdkH" target="_blank" rel="noopener">Join our discord</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/FqKdCc99t" target="_blank" rel="noopener">Join our discord</a></span>
     </div>
   </div>
 </div>
@@ -2761,7 +2754,6 @@ document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
   desktopQuery.addEventListener("change", sync);
   sync();
 })();
-
 
 /* Intro terminal: only the header (traffic-light dots + title) shows
    at first — the classified body is genuinely hidden, not just

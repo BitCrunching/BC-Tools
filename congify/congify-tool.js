@@ -51,7 +51,7 @@
     ["TRIM_YOUR_CLIP", "Once a video's in, drag the two handles on the filmstrip to pick exactly which part becomes the GIF."],
     ["ADD_TEXT_IF_YOU_WANT", "Hit Add text to drop a caption on the frame — style it, drag it around, resize it right from its own corner handle."],
     ["PICK_FRAME_RATE_AND_SIZE", "Frame rate trades smoothness for file size; pick the Resolution dropdown to set the actual export size — the corner handle only resizes the preview on screen."],
-    ["YOU_ARE_SET", "Hit Convert to GIF, then Download once you see the result. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit Convert to GIF, then the Download button (D) once you see the result. Close this with the red dot and we won't show it again."]
   ]);
 
   const convertBtn = document.getElementById("gifConvertBtn");
@@ -234,6 +234,7 @@
     resultsHeader.hidden = false;
   }
   doneContinueBtn.addEventListener("click", hideDoneView);
+  bcRegisterEscapable(() => !doneActions.hidden, hideDoneView, 40);
 
   /* Download button in the done view — conversion itself no longer
      downloads automatically (see the "finished" handler below), this is
@@ -290,6 +291,7 @@
 
   /* ===== file loading ===== */
   let currentFile = null;
+  let fileLoadToken = 0;
   function setFile(file){
     if (!file || !file.type.startsWith("video/")) return;
     stopPreviewPlayback();
@@ -297,6 +299,16 @@
     currentFile = file;
     objectUrl = URL.createObjectURL(file);
     video.src = objectUrl;
+    /* Fallback for a corrupt/0-byte file that never fires "loadedmetadata"
+       OR "error" (confirmed directly — some malformed files just stall at
+       readyState 0 forever) — without this, setFile() has already hidden
+       the drop zone with nothing left to reveal it again. */
+    const token = ++fileLoadToken;
+    setTimeout(() => {
+      if (token !== fileLoadToken || video.readyState > 0) return;
+      resetGif();
+      statusEl.textContent = "Couldn't read that video — it may be corrupted or in an unsupported format.";
+    }, 8000);
     videoWrap.classList.remove("active");
     scrubberFileName.value = file.name.replace(/\.[^.]+$/, "");
     convertBtn.disabled = true;
@@ -1261,6 +1273,7 @@
      preview never renders and the editor looks "stuck" right after
      clicking Continue, with no error anywhere. */
   video.addEventListener("loadedmetadata", () => {
+    fileLoadToken++; // this load succeeded — invalidate its own failure timeout
     duration = video.duration;
     drop.hidden = true;
     videoWrap.classList.add("active");
@@ -1271,6 +1284,27 @@
     layoutScrubber();
     buildFilmstrip();
     schedulePersist();
+  });
+
+  /* A corrupt/0-byte video can leave the <video> element stuck at
+     readyState 0 forever with no "error" event ever firing (confirmed
+     directly — not every malformed file trips the browser's own error
+     path) — setFile()'s timeout below is what actually catches that
+     case; this listener only covers the browsers/files that do fire it.
+     Without either, setFile() has already hidden the drop zone
+     (hideDoneView()) expecting loadedmetadata to reveal the editor next,
+     so a file that never loads and never errors leaves a permanently
+     blank banner — no drop zone, no editor (it has no intrinsic size
+     until the video has dimensions), no error message, no way to
+     recover short of a page reload. */
+  video.addEventListener("error", () => {
+    if (!currentFile) return;
+    fileLoadToken++;
+    /* resetGif() itself clears statusEl (it's the general-purpose
+       "back to a blank slate" reset) — set the message after calling it,
+       not before, or resetGif() immediately wipes it back out. */
+    resetGif();
+    statusEl.textContent = "Couldn't read that video — it may be corrupted or in an unsupported format.";
   });
 
   /* Same "×" remove pattern as Context's ctRemoveBtn — clears the

@@ -26,7 +26,7 @@
     ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF."],
     ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail of its first page and its size — check them before combining, and remove any you don't need."],
     ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],
-    ["YOU_ARE_SET", "Hit Combine and the merged PDF downloads automatically. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit the Download button (D) and your merged PDF is saved automatically. Close this with the red dot and we won't show it again."]
   ]);
 
   /* The file list + Combine button stay hidden until a file is
@@ -93,11 +93,6 @@
     return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
   }
 
-  function formatSize(bytes){
-    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  }
-
   async function getThumbnail(file){
     if (thumbnailCache.has(file)) return thumbnailCache.get(file);
     if (!window.pdfjsLib) return null;
@@ -137,8 +132,8 @@
         <span class="combine-file-index">${i + 1}</span>
         <div class="combine-file-thumb"></div>
         <span class="combine-file-name">${file.name}</span>
-        <span class="combine-file-size">${formatSize(file.size)}</span>
-        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove">×</button>
+        <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
+        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
       `;
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
@@ -194,10 +189,28 @@
   }
 
   function addFiles(newFiles){
-    const pdfs = [...newFiles].filter(isPdfFile);
+    const incoming = [...newFiles];
+    const pdfs = incoming.filter(isPdfFile);
+    if (pdfs.length === 0 && incoming.length > 0){
+      /* Same fix shape as Convert's applyPickedFiles() — a selection
+         that's wholly non-PDF (e.g. a .txt/.exe) used to be silent. */
+      status.textContent = "Combine only works with PDF files — none of the selected file(s) qualify.";
+      return;
+    }
     files = files.concat(pdfs);
     if (files.length) revealAfterDropUI();
     renderList();
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       the wholly-non-PDF branch above never fires for a mixed batch
+       (e.g. 2 valid PDFs + 1 .cr2), which used to load the 2 with zero
+       indication the odd one out never made it in. */
+    if (pdfs.length < incoming.length && pdfs.length > 0){
+      const skipped = incoming.length - pdfs.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a PDF and was skipped."
+        : `${skipped} files weren't PDFs and were skipped.`;
+      status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
   }
 
   input.addEventListener("change", (e) => {

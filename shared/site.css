@@ -18,13 +18,18 @@
    site.css's version changes and a new icon gets added, since the
    @import's target URL never changed. Bump this alongside icons.css's
    own <link> in index.html whenever icons.css's content changes. */
-@import url("icons.css?v=5");
+@import url("icons.css?v=4");
+/* Same reasoning again: the top nav bar's own chrome (background,
+   height/padding, the light/dark flip, its responsive sizing) lives in
+   nav.css so both this file and index.html point at one real source —
+   see nav.css's own header comment. */
+@import url("nav.css?v=1");
 /* Same reasoning: the 4 category texture recipes (image/video/sound/
    code) live in textures.css so any tool's own .tool-app banner can opt
    into the same treatment its homepage card uses via data-category,
    instead of that logic staying private to index.html's card grid.
    Versioned for the same cache-busting reason as icons.css above. */
-@import url("textures.css?v=1");
+@import url("textures.css?v=2");
 
 /* ===== TOKENS ===== */
 :root{
@@ -44,6 +49,13 @@
   --text:#1a1a1a;
   --accent:#1e293b;
   --accent2:#475569;
+  /* The site's one "terminal readout" font stack — every terminal-styled
+     element (nav-terminal, help banners, engine-status-card, .tool-status,
+     the cookie banner's own readout bits) used to hand-declare this same
+     literal string separately (32 copies across the codebase). One token
+     now, so a future font-stack change (see Lessons Learned: "terminal
+     font fallback") only needs to happen once. */
+  --bc-mono:"Courier New", Courier, monospace;
 }
 
 :root[data-theme="dark"]{
@@ -209,7 +221,7 @@ html[data-theme="light"] .cookie-toggle-row{
   border:none;
   padding:0;
   font:inherit;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#e5e7eb;
   opacity:.6;
@@ -257,7 +269,7 @@ html[data-theme="light"] .cookie-cat-detail{
 }
 
 .cookie-toggle-status{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   color:#ff6b6b;
 }
@@ -298,7 +310,7 @@ html[data-theme="light"] .cookie-toggle-status.is-allowed{
    itself, so this is the only visible response. */
 .cookie-banner-saved{
   margin-right:auto;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:12px;
   letter-spacing:.05em;
@@ -316,7 +328,7 @@ html[data-theme="light"] .cookie-banner-saved{
 }
 
 .cookie-banner-saved-cursor{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-weight:700;
   font-size:11px;
   letter-spacing:.05em;
@@ -432,6 +444,9 @@ html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
 
 .cookie-dock-title{
   margin-left:6px;
+  /* Heading stays bold against the regular-weight body text below it,
+     same title/body split as .engine-status-title/.engine-status-row. */
+  font-weight:700;
 }
 
 /* Re-parent target for the cookie banner on the Cookies page */
@@ -489,7 +504,7 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
   padding:14px 16px;
   gap:8px;
   border-radius:16px;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -522,8 +537,9 @@ html[data-theme="light"] .cookie-mobile-settings-btn{
 }
 
 .cookie-banner.docked .cookie-banner-actions button{
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:15px;
+  font-weight:400;
   letter-spacing:.02em;
   border-radius:10px;
 }
@@ -652,24 +668,6 @@ html[data-theme="light"] .cookie-settings-btn-dot{
 }
 
 
-.site-nav{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  height:88px;
-  padding:0 28px;
-  background:#1d2436;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-
-html[data-theme="light"] .site-nav{
-  background:#d4dbee;
-}
-
 /* Central confirmation display for nav actions (theme, language,
    copy link) — terminal-styled to match the site's other terminal
    banners. Desktop only: there's no room for it once the nav collapses
@@ -681,7 +679,7 @@ html[data-theme="light"] .site-nav{
   top:50%;
   transform:translate(-50%, -50%);
   color:var(--text);
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:14px;
   font-weight:400;
   letter-spacing:.02em;
@@ -761,7 +759,6 @@ span.gfx-md, span.gfx-lg{
 }
 
 @media (max-width:768px){
-  .site-nav{height:72px;padding:0 16px;}
   .site-nav-brand{font-size:30px;}
   .site-logo{width:34px;height:34px;}
   .nav-close-btn,
@@ -781,7 +778,6 @@ span.gfx-md, span.gfx-lg{
    390px, as an earlier pass did) so this ONLY kicks in for phones that
    actually need it — 375px+ devices keep full-size everything. */
 @media (max-width:370px){
-  .site-nav{gap:10px; padding:0 12px;}
   .site-nav-brand{font-size:23px; gap:9px;}
   .site-logo{width:26px;height:26px;}
   .nav-right{gap:6px;}
@@ -1385,7 +1381,7 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   min-height:24px;
   font-size:12px;
   font-weight:700;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
 }
 
 /* Terminal-style "> " prefix on any status message (ready/progress/
@@ -1396,30 +1392,24 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   font-weight:700;
 }
 
-/* ===== Shared typography — .bc-label / .bc-heading / .bc-body =====
+/* ===== Shared typography — .bc-label / .bc-body =====
    Every tool independently grew its own small-caps "eyebrow" label
-   (Convert's .tool-io-label, Colorfy's .colorfy-palette-heading — same
-   13px/800/uppercase/letter-spaced recipe, hand-copied with slightly
-   different values each time) and Coudio's "Output format"/"Bitrate"
-   never got styled at all, just a bare <label>. These three classes are
-   the shared alternative — add one alongside whatever local class still
-   holds genuinely tool-specific layout (margin, flex, text-align), the
-   same split every other shared component in this file uses.
-   .bc-label   — small uppercase eyebrow above a control (a dropdown
-                 group, a setting). .tool-io-label/.colorfy-palette-
-                 heading now extend this rather than repeating it.
-   .bc-heading — a real section heading inside a tool banner (Colorfy's
-                 "Saved colors" is an <h3>, not just a label — same
-                 visual weight as .bc-label but semantically a heading,
-                 kept distinct so screen readers still get real heading
-                 structure, not a mislabeled <span>).
-   .bc-body    — normal-weight banner body text (a helper line, a short
-                 instruction) at the tool's own text color/opacity,
-                 for anything that isn't the drop-zone prompt
-                 (.tool-drop) or the terminal-style status line
-                 (.tool-status), both already shared above. */
-.bc-label,
-.bc-heading{
+   (Convert's .tool-io-label — same 13px/800/uppercase/letter-spaced
+   recipe, hand-copied with slightly different values each time) and
+   Coudio's "Output format"/"Bitrate" never got styled at all, just a
+   bare <label>. These two classes are the shared alternative — add one
+   alongside whatever local class still holds genuinely tool-specific
+   layout (margin, flex, text-align), the same split every other shared
+   component in this file uses.
+   .bc-label — small uppercase eyebrow above a control (a dropdown
+               group, a setting). .tool-io-label now extends this
+               rather than repeating it.
+   .bc-body  — normal-weight banner body text (a helper line, a short
+               instruction) at the tool's own text color/opacity,
+               for anything that isn't the drop-zone prompt
+               (.tool-drop) or the terminal-style status line
+               (.tool-status), both already shared above. */
+.bc-label{
   font-size:13px;
   font-weight:800;
   letter-spacing:.04em;
@@ -1737,7 +1727,7 @@ html[data-theme="light"] .tool-results::-webkit-scrollbar-thumb{
   border:1px solid rgba(255,255,255,.14);
   border-radius:16px;
   overflow:hidden;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   letter-spacing:.02em;
 }
 
@@ -1986,7 +1976,7 @@ html[data-theme="light"] .engine-status-error{
    colored trust-badge, matching the terminal aesthetic used elsewhere. */
 .privacy-check-badge{
   display:none;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
   font-size:12px;
   font-weight:700;
   color:var(--text);
@@ -2411,7 +2401,7 @@ html[data-theme="dark"] .exif-tag{
   color:var(--text);
   font-size:12px;
   font-weight:700;
-  font-family:"Courier New", Courier, monospace;
+  font-family:var(--bc-mono);
 }
 
 .selected-compression:not(:empty)::before{
@@ -2844,6 +2834,20 @@ html[data-theme="dark"] .option-change-btn:hover{
   background-size:100% 1.5px;
   background-repeat:no-repeat;
   background-position:0 0, 0 50%, 0 100%;
+}
+
+/* .option-change-btn-lg — 74px variant, mirroring .bc-dropdown-trigger-lg/
+   .bc-combo-trigger-lg: for standing in for a 74px control (Compress's
+   .tool-format-btn row) rather than a normal 40px settings-row pill. Add
+   as a second class alongside .option-change-btn; everything but size/
+   type stays inherited from the base rule. Originated on Compress's
+   mobile level picker. */
+.option-change-btn-lg{
+  height:74px;
+  padding:0 20px;
+  border-radius:26px;
+  font-size:18px;
+  font-weight:800;
 }
 
 /* ===== .bc-color-dot — plain preset-swatch dot =====
@@ -3560,6 +3564,7 @@ html[data-theme="dark"] audio,
 html[data-theme="dark"] video{
   color-scheme:dark;
 }
+
 
 /* ===== .bc-color-panel — shared free-form color picker (swatches, SV
    square, hue strip, hex field); built by bcCreateColorPanel() in

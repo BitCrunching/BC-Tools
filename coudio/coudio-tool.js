@@ -19,7 +19,7 @@
     ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click or drop one or more files below to get started."],
     ["PICK_YOUR_FORMAT", "Every file is fully independent — pick its own Output format (MP3/OGG also let you pick a bitrate) and its own output name, right on its row."],
     ["CHECK_BEFORE_CONVERTING", "Each row has its own player — give a file a quick listen before hitting its own Convert button."],
-    ["YOU_ARE_SET", "Each row converts and downloads on its own — no need to wait for the others. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit a row's Download button to convert and save that file — no need to wait for the others — or press D to download every file in turn. Close this with the red dot and we won't show it again."]
   ]);
 
   /* Each entry: {
@@ -86,12 +86,6 @@
     return "File";
   }
 
-  function formatKB(bytes){
-    const kb = Math.max(1, Math.round(bytes / 1024));
-    if (kb >= 1000) return `${(kb / 1024).toFixed(1)} MB`;
-    return `${kb} KB`;
-  }
-
   /* Just a plain loaded-file count now that conversion itself is
      per-row (each row's own Convert button), not a single batch
      action — still useful as an at-a-glance "how many files are
@@ -125,7 +119,7 @@
     });
 
     row.querySelector(".cd-row-input-badge").textContent = detectedTypeLabel(entry.file);
-    row.querySelector(".cd-row-size").textContent = formatKB(entry.file.size);
+    row.querySelector(".cd-row-size").textContent = bcFormatFileSize(entry.file.size);
 
     const bitrateDropdownEl = row.querySelector(".cd-row-bitrate-dropdown");
     const formatTrigger = row.querySelector(".cd-row-format-combo .bc-combo-trigger");
@@ -235,8 +229,16 @@
   }
 
   function addFiles(fileList){
-    const accepted = [...fileList].filter(isAcceptableFile);
-    if (accepted.length === 0) return;
+    const incoming = [...fileList];
+    const accepted = incoming.filter(isAcceptableFile);
+    if (accepted.length === 0){
+      /* Same fix shape as Convert's applyPickedFiles() — a selection
+         that's wholly unsupported (e.g. a .txt/.exe) used to be silent. */
+      if (incoming.length > 0){
+        statusEl.textContent = "Coudio only works with audio or video files — none of the selected file(s) qualify.";
+      }
+      return;
+    }
     withSmoothHeightChange(() => {
       accepted.forEach(file => {
         const entry = {
@@ -257,6 +259,17 @@
       drop.classList.add("tool-drop-revealed");
     });
     renderStatus();
+    /* Same partial-rejection gap Convert's applyPickedFiles() closed —
+       the wholly-unsupported branch above never fires for a mixed batch
+       (e.g. 2 valid audio files + 1 .nef), which used to load the 2
+       with zero indication the odd one out never made it in. */
+    if (accepted.length < incoming.length){
+      const skipped = incoming.length - accepted.length;
+      const msg = skipped === 1
+        ? "1 file wasn't a supported audio or video format and was skipped."
+        : `${skipped} files weren't a supported audio or video format and were skipped.`;
+      statusEl.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
+    }
     continueBtn.hidden = true;
     schedulePersist();
   }
@@ -780,4 +793,19 @@
       }, 1800);
     }
   }
+
+  /* D: convert (and download) every loaded file, one after another — the
+     per-row Convert buttons stay fully independent, this just presses
+     each idle one in turn. */
+  let convertAllRunning = false;
+  bcRegisterKeyShortcut("d", { async click(){
+    if (convertAllRunning || !loaded.length) return;
+    convertAllRunning = true;
+    try {
+      for (const entry of [...loaded]){
+        const btn = entry.row.querySelector(".cd-row-convert-btn");
+        if (btn && !btn.disabled) await convertEntry(entry);
+      }
+    } finally { convertAllRunning = false; }
+  } });
 })();
