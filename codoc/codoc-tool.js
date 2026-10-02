@@ -15,7 +15,7 @@
   bcSetupHelpBanner("codoc", "cdc", [
     ["WELCOME_TO_CODOC", "Codoc turns a Word document into a PDF — click or drop a .docx file below to get started."],
     ["CHECK_BEFORE_CONVERTING", "Your file shows up below once picked — check it, or remove it and pick a different one."],
-    ["YOU_ARE_SET", "Hit Convert and the PDF downloads automatically. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit Convert and download and the PDF downloads automatically. Close this with the red dot and we won't show it again."]
   ]);
 
   function isDocx(f){

@@ -26,7 +26,7 @@
     ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF."],
     ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail of its first page and its size — check them before combining, and remove any you don't need."],
     ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],
-    ["YOU_ARE_SET", "Hit Combine and the merged PDF downloads automatically. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit Combine and download PDF and the merged PDF downloads automatically. Close this with the red dot and we won't show it again."]
   ]);
 
   /* The file list + Combine button stay hidden until a file is

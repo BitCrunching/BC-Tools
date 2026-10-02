@@ -43,10 +43,11 @@
      content lives here now. */
   bcSetupHelpBanner("colorfy", "cy", [
     ["WELCOME_TO_COLORFY", "Colorfy reads the exact color of any pixel in an image. Click or drop an image below to get started."],
-    ["A_PIXEL_IS_PICKED_FOR_YOU", "Two spots are sampled automatically as soon as you drop an image — drag either ring, or just click anywhere on the image, to sample a different spot."],
-    ["ADD_MORE_PICKERS", "Hit the + in the corner to add up to 4 pickers at once, each with its own row below — handy for comparing a few spots side by side."],
+    ["A_PIXEL_IS_PICKED_FOR_YOU", "Two spots are sampled automatically as soon as you drop an image — drag either ring, or click anywhere on the image to move the active one to a different spot."],
+    ["ADD_MORE_PICKERS", "Hit the + button, or hold Shift and click the image, to add up to 4 pickers at once, each with its own row below — handy for comparing a few spots side by side."],
     ["READ_THE_CODE", "The swatch and the code below update live as you move a picker. Switch between HEX, RGB, HSB, and HSL from the dropdown, and click any code to copy it."],
-    ["YOU_ARE_SET", "Drop a new image any time to start over. Close this with the red dot and we won't show it again."]
+    ["SAVE_COLORS_FOR_LATER", "Hit Save to keep a color (up to 20). Click a saved color to copy it, double-click to name it, and hold Shift while clicking its × to clear them all."],
+    ["YOU_ARE_SET", "Your image and pickers are remembered — use Continue where you left off next time. Drop a new image any time to start over. Close this with the red dot and we won't show it again."]
   ]);
 
   function isImageFile(f){
