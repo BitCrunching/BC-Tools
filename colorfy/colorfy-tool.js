@@ -16,10 +16,15 @@
   const resizeHandle = document.getElementById("cyResizeHandle");
   const status = document.getElementById("cyStatus");
   const paletteStatus = document.getElementById("cyPaletteStatus");
+  const continueBtn = document.getElementById("cyContinueBtn");
   const toolApp = document.querySelector(".tool-app");
   let statusClearTimer = null;
   let paletteStatusClearTimer = null;
   if (!drop || !input || !afterDrop || !canvas || !pickerList) return;
+
+  const CY_DB_NAME = "bctools-colorfy";
+  const CY_DB_STORE = "session";
+  let isRestoringSession = false;
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   let currentFile = null;
@@ -96,6 +101,7 @@
     }
     p.rgb = [data[0], data[1], data[2]];
     renderList();
+    schedulePersist();
   }
 
   function setFracFromClientPoint(p, clientX, clientY){
@@ -193,6 +199,7 @@
     renumberPickers();
     updateAddBtnState();
     renderList();
+    schedulePersist();
   }
 
   function clearPickers(){
@@ -214,14 +221,23 @@
     status.textContent = "";
     clearPickers();
     pickerList.innerHTML = "";
+    bcDbClear(CY_DB_NAME, CY_DB_STORE);
   }
   removeBtn.addEventListener("click", resetTool);
 
-  function setFile(file){
+  /* restoreFracs, when given, seeds the pickers at their exact saved
+     spots instead of the usual two-default-pickers behavior — used only
+     by the "Continue where you left off" restore below. */
+  function setFile(file, restoreFracs){
     if (!isImageFile(file)){
       status.textContent = "Please pick an image file.";
       return;
     }
+    /* Already hidden by its own click handler during an actual restore —
+       this also covers picking/dropping a brand-new image directly,
+       which should never leave a stale "Continue where you left off"
+       pointing at a now-unrelated saved session on screen. */
+    if (continueBtn) continueBtn.hidden = true;
     currentFile = file;
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -232,18 +248,25 @@
       URL.revokeObjectURL(url);
       revealAfterDropUI();
       clearPickers();
-      /* Two pickers by default, at diagonally opposite rule-of-thirds
-         points rather than both starting near the center — spread
-         apart like this, they land on two different parts of the
-         image (and so, in practice, two different colors) far more
-         reliably than two nearby default positions would. */
-      addPicker(DEFAULT_FRACS[0][0], DEFAULT_FRACS[0][1]);
-      addPicker(DEFAULT_FRACS[1][0], DEFAULT_FRACS[1][1]);
+      if (restoreFracs && restoreFracs.length){
+        restoreFracs.slice(0, MAX_PICKERS).forEach(([fx, fy]) => addPicker(fx, fy));
+      } else {
+        /* Two pickers by default, at diagonally opposite rule-of-thirds
+           points rather than both starting near the center — spread
+           apart like this, they land on two different parts of the
+           image (and so, in practice, two different colors) far more
+           reliably than two nearby default positions would. */
+        addPicker(DEFAULT_FRACS[0][0], DEFAULT_FRACS[0][1]);
+        addPicker(DEFAULT_FRACS[1][0], DEFAULT_FRACS[1][1]);
+      }
       status.textContent = "";
+      isRestoringSession = false;
+      schedulePersist();
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
       status.textContent = "Couldn't read that image — it may be corrupted or an unsupported format.";
+      isRestoringSession = false;
     };
     img.src = url;
   }
@@ -552,10 +575,18 @@
       flashStatus("Chamber with saved colors is full  — remove one first.");
       return;
     }
+    /* Colorfy's one real "produces something that persists" action —
+       same shared BC_Tools_bot check every other tool runs around its
+       own download/convert step, just confirming this save (to
+       localStorage, never a server) didn't touch the network either.
+       Synchronous start/finish pair since persistPalette() itself is a
+       plain localStorage.setItem, not an async operation to await. */
+    startPrivacyCheck();
     savedColors.push({ id: nextSavedId++, rgb: [...rgb], name: "" });
     persistPalette();
     renderPalette();
     flashStatus(`Saved ${formatColor(rgb)}`);
+    finishPrivacyCheck(document.getElementById("cyPrivacyBadge"), "save");
   }
 
   function copySwatch(sw, rgb){
@@ -580,6 +611,7 @@
     currentFormat = opt.dataset.format;
     formatTriggerLabel.textContent = opt.dataset.label;
     renderList();
+    schedulePersist();
   });
 
   /* Click-to-place — clicking anywhere on the image jumps the active
@@ -678,4 +710,64 @@
       status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
     });
   }
+
+  /* ===== "Continue where you left off" ===== persists the loaded
+     image's bytes plus every picker's exact position and the chosen
+     code format, so "Continue" restores the same sample points, not
+     just the file. Same shared IndexedDB pattern as Convert/Compress/
+     Combine/Cleanly/Congify (bcDbPut/bcDbGet/bcDbClear, shared/site.js)
+     — saved colors themselves are a separate, simpler localStorage
+     palette (see loadPalette/persistPalette above) that already outlives
+     any one loaded image on its own, so they're untouched by this. */
+  let persistTimer = null;
+  let persistBusy = false;
+  function schedulePersist(){
+    if (!currentFile || isRestoringSession) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 400);
+  }
+
+  async function persistNow(){
+    if (!currentFile || persistBusy) return;
+    persistBusy = true;
+    try {
+      const bytes = await currentFile.arrayBuffer();
+      await bcDbPut(CY_DB_NAME, CY_DB_STORE, {
+        file: { name: currentFile.name, type: currentFile.type, bytes },
+        pickerFracs: pickers.map(p => [p.fracX, p.fracY]),
+        format: currentFormat
+      });
+    } catch (err){ /* storage unavailable — skip */
+    } finally { persistBusy = false; }
+  }
+
+  setInterval(() => { if (currentFile) persistNow(); }, 4000);
+
+  (async () => {
+    const saved = await bcDbGet(CY_DB_NAME, CY_DB_STORE);
+    document.dispatchEvent(new Event("bc:session-check-done"));
+    if (!saved || !saved.file || !continueBtn) return;
+    if (currentFile) return;
+    continueBtn.hidden = false;
+    continueBtn.addEventListener("click", () => {
+      continueBtn.hidden = true;
+      try {
+        if (saved.format){
+          const opt = [...formatMenu.children].find(b => b.dataset.format === saved.format);
+          if (opt){
+            currentFormat = saved.format;
+            bcSetDropdownActive(formatMenu, opt);
+            formatTriggerLabel.textContent = opt.dataset.label;
+          }
+        }
+        isRestoringSession = true;
+        const restored = new File([saved.file.bytes], saved.file.name, { type: saved.file.type });
+        setFile(restored, Array.isArray(saved.pickerFracs) ? saved.pickerFracs : null);
+      } catch (err){
+        console.error(err);
+        isRestoringSession = false;
+        continueBtn.hidden = false;
+      }
+    });
+  })();
 })();

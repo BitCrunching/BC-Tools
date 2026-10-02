@@ -686,19 +686,23 @@ function startPrivacyCheck(){
    separate convert-then-download flow (Congify: converting produces
    the result, a later, separate click actually downloads it), so the
    badge reports whichever step just finished instead of always saying
-   "download" for a step that didn't download anything yet. */
+   "download" for a step that didn't download anything yet. "save" is
+   for a tool with no file output at all (Colorfy: saving a color to
+   the palette is the one thing it actually persists, so that's the
+   action worth confirming stayed local, not a download that never
+   happens here). Unrecognized/missing values fall back to "download",
+   same as before this list existed. */
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
   if (!badgeEl) return;
+  const actionWord = action === "convert" ? "convert" : action === "save" ? "save" : "download";
   if (privacyCheckExternalCount === 0){
-    const label = action === "convert" ? "convert local & private" : "download local & private";
-    badgeEl.textContent = "> BC_Tools_bot: " + label;
+    badgeEl.textContent = "> BC_Tools_bot: " + actionWord + " local & private";
   } else {
     /* {action} names which step actually leaked, not just that one did
        — a tool with a separate convert-then-download flow (Congify)
        can have a breach happen during either, and just saying "privacy
        breach" without saying which wouldn't tell you where to look. */
-    const actionWord = action === "convert" ? "convert" : "download";
     const template = "ATTENTION! - ({count}) privacy breach during {action} - {host}";
     const text = template.replace("{count}", privacyCheckExternalCount).replace("{action}", actionWord).replace("{host}", privacyCheckExternalHosts.join(", "));
     badgeEl.textContent = "> " + text;
