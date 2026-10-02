@@ -103,7 +103,7 @@
     ["PICK_YOUR_FORMATS", "Once a file's in, we select the Input format for you — you just choose what you want as Output."],
     ["CHECK_BEFORE_CONVERTING", "Your files show up below once picked — check them before converting, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the format guide further down the page — it explains what each format (JPG, PNG, WEBP, HEIC, PDF) is actually good for."],
-    ["YOU_ARE_SET", "Hit Convert and download and the files download automatically — with more than 5 you can choose Single files or a .zip. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit the Download button (D) and the files are converted and saved automatically — with more than 5 you can choose Single files or a .zip. Close this with the red dot and we won't show it again."]
   ]);
 
   const inputInfoBtn = document.getElementById("cvInputInfoBtn");

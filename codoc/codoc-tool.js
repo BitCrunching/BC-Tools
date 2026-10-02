@@ -6,6 +6,7 @@
   const results = document.getElementById("cdcResults");
   const controls = document.getElementById("cdcControls");
   const convertBtn = document.getElementById("cdcConvertBtn");
+  bcRegisterKeyShortcut("d", convertBtn);
   const removeBtn = document.getElementById("cdcRemoveBtn");
   const status = document.getElementById("cdcStatus");
   const privacyBadge = document.getElementById("cdcPrivacyBadge");
@@ -15,7 +16,7 @@
   bcSetupHelpBanner("codoc", "cdc", [
     ["WELCOME_TO_CODOC", "Codoc turns a Word document into a PDF — click or drop a .docx file below to get started."],
     ["CHECK_BEFORE_CONVERTING", "Your file shows up below once picked — check it, or remove it and pick a different one."],
-    ["YOU_ARE_SET", "Hit Convert and download and the PDF downloads automatically. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit the Download button (D) and your PDF is converted and saved automatically. Close this with the red dot and we won't show it again."]
   ]);
 
   function isDocx(f){

@@ -13,11 +13,12 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
-    ["WELCOME_TO_CONTEXT", "Context lets you type text or drop in a signature anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
-    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, or use the Signature (S) or Shape (H) button to drop one in."],
-    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — or add a signature or a shape (circle, square, triangle, cross) instead of typed text."],
-    ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — text boxes stay exactly where you placed them."],
-    ["YOU_ARE_SET", "Hit Download when you're done. Close this with the red dot and we won't show it again."]
+    ["WELCOME_TO_CONTEXT", "Context lets you type text, sign, or drop shapes anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
+    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to pick a circle, square, triangle, or cross."],
+    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — drag a box's handles to move or resize it, and use its red × to remove it."],
+    ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
+    ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — everything stays exactly where you placed it."],
+    ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
   ]);
 
   /* Just a fun double-click easter egg — skips buttons/selects/etc. so

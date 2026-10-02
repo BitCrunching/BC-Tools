@@ -19,7 +19,7 @@
     ["WHAT_IT_FINDS", "Once a file's in, we scan it and show exactly what's hiding inside — GPS location, camera model, timestamps, or editor data."],
     ["CHECK_BEFORE_STRIPPING", "Your files show up below once picked — check what was found, and remove any you don't need."],
     ["NOT_SURE_WHY_IT_MATTERS", "Scroll down to the guide further down the page — it explains what metadata actually reveals and why stripping it matters."],
-    ["YOU_ARE_SET", "Each file gets its own Clean first / Clean and download buttons, right next to its remove × — Clean first just checks the result, Clean and download saves it right away. (On a phone-width screen, one Clean & download button below the list cleans and saves everything at once instead.) Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Every file has a Clean first button (removes the hidden data so you can check the result) and a Download button (cleans it and saves it straight away). Press D to download all files at once — on a phone, use the Download button below the list. Close this with the red dot and we won't show it again."]
   ]);
 
   /* File list stays hidden until a file is picked — first-time visitors
@@ -690,6 +690,8 @@
     }
   }
   if (mobileDownloadBtn) mobileDownloadBtn.addEventListener("click", mobileDownloadAll);
+  /* D: clean & download every loaded file (same as the phone-width button). */
+  bcRegisterKeyShortcut("d", { click(){ mobileDownloadAll(); } });
 
   /* Re-renders after downloading purely so a row that just got cleaned
      via "Clean and download" immediately shows the post-clean single

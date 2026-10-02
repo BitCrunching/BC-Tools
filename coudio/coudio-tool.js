@@ -19,7 +19,7 @@
     ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click or drop one or more files below to get started."],
     ["PICK_YOUR_FORMAT", "Every file is fully independent — pick its own Output format (MP3/OGG also let you pick a bitrate) and its own output name, right on its row."],
     ["CHECK_BEFORE_CONVERTING", "Each row has its own player — give a file a quick listen before hitting its own Convert button."],
-    ["YOU_ARE_SET", "Each row converts and downloads on its own — no need to wait for the others. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit a row's Download button to convert and save that file — no need to wait for the others — or press D to download every file in turn. Close this with the red dot and we won't show it again."]
   ]);
 
   /* Each entry: {
@@ -793,4 +793,19 @@
       }, 1800);
     }
   }
+
+  /* D: convert (and download) every loaded file, one after another — the
+     per-row Convert buttons stay fully independent, this just presses
+     each idle one in turn. */
+  let convertAllRunning = false;
+  bcRegisterKeyShortcut("d", { async click(){
+    if (convertAllRunning || !loaded.length) return;
+    convertAllRunning = true;
+    try {
+      for (const entry of [...loaded]){
+        const btn = entry.row.querySelector(".cd-row-convert-btn");
+        if (btn && !btn.disabled) await convertEntry(entry);
+      }
+    } finally { convertAllRunning = false; }
+  } });
 })();

@@ -63,7 +63,7 @@
     ["WELCOME_TO_CODIFY", "Paste or type your code on the left — the styled screenshot on the right updates live as you type."],
     ["PICK_A_LANGUAGE", "Codify highlights JavaScript, Python, Rust, and a dozen more — pick yours from the Language dropdown, or just start typing and it'll still render."],
     ["TRY_A_THEME_OR_TEMPLATE", "Switch between Dracula, VS Code Dark, Monokai, One Dark, and GitHub Light from Theme — or pick a ready-made snippet from Template to see it in action."],
-    ["YOU_ARE_SET", "Pick PNG or SVG, then hit Download to save it — or hit Copy to put the PNG on your clipboard. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Pick PNG or SVG, then hit the Download button (D) to save it — or hit Copy to put the PNG on your clipboard. Close this with the red dot and we won't show it again."]
   ]);
 
   const themeInput = document.getElementById("cfThemeInput");

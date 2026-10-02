@@ -51,7 +51,7 @@
     ["TRIM_YOUR_CLIP", "Once a video's in, drag the two handles on the filmstrip to pick exactly which part becomes the GIF."],
     ["ADD_TEXT_IF_YOU_WANT", "Hit Add text to drop a caption on the frame — style it, drag it around, resize it right from its own corner handle."],
     ["PICK_FRAME_RATE_AND_SIZE", "Frame rate trades smoothness for file size; pick the Resolution dropdown to set the actual export size — the corner handle only resizes the preview on screen."],
-    ["YOU_ARE_SET", "Hit Convert to GIF, then Download once you see the result. Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit Convert to GIF, then the Download button (D) once you see the result. Close this with the red dot and we won't show it again."]
   ]);
 
   const convertBtn = document.getElementById("gifConvertBtn");

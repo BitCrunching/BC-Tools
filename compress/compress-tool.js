@@ -137,7 +137,7 @@
     ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows a live estimate of the resulting file size before you commit."],
     ["CHECK_BEFORE_COMPRESSING", "Your files show up below once picked — check them before compressing, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the level guide further down the page — it explains what each level is actually good for."],
-    ["YOU_ARE_SET", "Hit Compress and download and the files download automatically — as a ZIP once you've got more than 5 (you can switch back to single files up to 20). Close this with the red dot and we won't show it again."]
+    ["YOU_ARE_SET", "Hit the Download button (D) and the files are compressed and saved automatically — as a ZIP once you've got more than 5 (you can switch back to single files up to 20). Close this with the red dot and we won't show it again."]
   ]);
 
   /* Level buttons + Compress button stay hidden until a file is
