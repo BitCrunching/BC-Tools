@@ -61,7 +61,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=132">
+<link rel="stylesheet" href="/shared/site.css?v=134">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -371,6 +371,64 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   display:flex;
   flex-direction:column;
 }
+.context-fullscreen-header{
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  height:72px;
+  box-sizing:border-box;
+  padding:0 16px 0 22px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.context-fullscreen-header .site-logo{
+  width:34px;
+  height:34px;
+}
+/* Header follows the site theme exactly like the top nav (shared/nav.css
+   values) — only the editor area below it stays always-dark. */
+html[data-theme="light"] .context-fullscreen-header{
+  background:#d4dbee;
+  border-bottom-color:rgba(18,23,39,.12);
+}
+html[data-theme="light"] .context-fullscreen-brand{
+  color:#121727;
+}
+html[data-theme="light"] .context-fullscreen-nav-btn{
+  color:var(--text);
+  border-color:var(--border);
+}
+html[data-theme="light"] .context-fullscreen-nav-btn:hover{
+  color:var(--text);
+  border-color:var(--border-strong);
+}
+.context-fullscreen-home{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+.context-fullscreen-actions{
+  margin-left:auto;
+}
+.context-fullscreen-nav-btn{
+  color:#E3E8F8;
+  border-color:rgba(255,255,255,.14);
+}
+.context-fullscreen-nav-btn:hover{
+  color:#E3E8F8;
+  border-color:rgba(255,255,255,.4);
+}
+.context-fullscreen-brand{
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:-0.02em;
+  color:#E3E8F8;
+}
 .context-fullscreen-overlay[hidden]{
   display:none;
 }
@@ -504,10 +562,24 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
    34px. Widen it and anchor its right edge to the trigger instead of
    its left, so it doesn't overflow the toolbar's edge on narrow
    layouts. */
+.ct-shape-btn-icon{
+  width:16px;
+  height:16px;
+  display:block;
+  margin:auto;
+}
 #ctShapeKindDropdown .bc-dropdown-menu{
   width:140px;
   left:auto;
   right:0;
+}
+/* On mobile the toolbar sits at the bottom of the screen, so the menu
+   opens upward — below it would be off-screen. */
+@media (max-width:768px){
+  #ctShapeKindDropdown .bc-dropdown-menu{
+    top:auto;
+    bottom:calc(100% + 6px);
+  }
 }
 
 /* Add text -> "New", Download's text -> icon: two labels/markers per
@@ -572,6 +644,9 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
     font-size:12px;
     gap:7px;
   }
+  :is(#page-context, .context-fullscreen-overlay) #ctSignatureBtn{
+    font-size:13px;
+  }
   /* "Rename file" -> "R" — the label always gets reset to "Rename file"
      by JS (kept that way for accessibility/consistency), so swap the
      visible text in CSS only instead of touching the JS string. */
@@ -580,11 +655,17 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   }
   :is(#page-context, .context-fullscreen-overlay) #ctFilenameTriggerLabel::after{
     content:"R";
-    font-size:12px;
+    font-size:13px;
   }
   :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger{
     max-width:none;
-    padding:0 6px;
+    width:34px;
+    padding:0;
+    gap:0;
+    justify-content:center;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger .context-color-chevron{
+    display:none;
   }
   /* Font-size nav replaced by dragging each box's own resize handle. */
   :is(#page-context, .context-fullscreen-overlay) .context-font-size-combo{
@@ -1074,9 +1155,20 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   border-radius:24px;
   padding:24px;
   box-sizing:border-box;
-  color:#ffffff;
+  color:var(--text);
+}
+html[data-theme="light"] .context-signature-modal{
+  background:#e4e9f5;
 }
 
+/* Phone: give the fine-tune preview as much width as possible — the
+   modal's side margins and padding are what cap it, and its height
+   follows the signature's aspect ratio. */
+@media (max-width:768px){
+  .context-signature-overlay{ padding:8px; }
+  .context-signature-modal{ padding:14px; max-height:96vh; border-radius:22px; }
+  .context-signature-header{ margin-bottom:12px; }
+}
 .context-signature-header{
   display:flex;
   align-items:center;
@@ -1086,16 +1178,30 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   margin-bottom:16px;
 }
 
-.context-signature-close{
-  width:32px;
-  height:32px;
+.context-signature-header-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.context-signature-back{
+  width:28px;
+  height:28px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border-radius:50%;
   border:none;
-  background:rgba(255,255,255,.1);
-  color:#fff;
-  font-size:18px;
+  background:rgba(255,255,255,.35);
+  color:var(--text);
   cursor:pointer;
+  transition:.2s;
 }
+.context-signature-back[hidden]{ display:none; }
+.context-signature-back svg{ width:16px; height:16px; }
+.context-signature-back:hover{ background:rgba(255,255,255,.5); }
+html[data-theme="dark"] .context-signature-back{ background:rgba(0,0,0,.3); }
+html[data-theme="dark"] .context-signature-back:hover{ background:rgba(0,0,0,.5); }
 
 .context-signature-hint{
   font-size:14px;
@@ -1111,15 +1217,15 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   border-radius:16px;
   border:none;
   background:var(--accent);
-  color:#000;
+  color:var(--bg);
   font-weight:800;
   font-size:15px;
   cursor:pointer;
 }
 .context-signature-action-btn--ghost{
   background:transparent;
-  border:1px solid rgba(255,255,255,.22);
-  color:#fff;
+  border:1px solid var(--border-strong);
+  color:var(--text);
 }
 
 .context-signature-saved-preview{
@@ -1133,6 +1239,23 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   box-sizing:border-box;
 }
 
+.context-signature-crop-wrap.is-loading{
+  min-height:200px;
+}
+.context-signature-crop-wrap.is-loading img,
+.context-signature-crop-wrap.is-loading .context-signature-crop-box{
+  display:none;
+}
+.context-signature-crop-loading{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  color:#fff;
+}
+.context-signature-crop-loading[hidden]{ display:none; }
 .context-signature-crop-wrap{
   position:relative;
   /* No height cap — a portrait phone photo at width:100%/height:auto
@@ -1171,8 +1294,6 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   touch-action:none;
 }
 .context-signature-crop-handle[data-h="nw"]{ top:0; left:0; cursor:nwse-resize; }
-.context-signature-crop-handle[data-h="ne"]{ top:0; right:0; margin-right:-10px; margin-left:auto; left:auto; cursor:nesw-resize; }
-.context-signature-crop-handle[data-h="sw"]{ bottom:0; left:0; margin-bottom:-10px; margin-top:auto; top:auto; cursor:nesw-resize; }
 .context-signature-crop-handle[data-h="se"]{ bottom:0; right:0; margin-bottom:-10px; margin-right:-10px; top:auto; left:auto; cursor:nwse-resize; }
 
 .context-signature-draw-canvas{
@@ -1216,6 +1337,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 .context-signature-camera-badge.warn{ background:rgba(225,29,72,.75); }
 
 .context-signature-clean-preview{
+  position:relative;
   border-radius:14px;
   background:
     linear-gradient(45deg, #333 25%, transparent 25%),
@@ -1234,6 +1356,111 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   touch-action:none;
 }
 
+.context-signature-history{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+.context-signature-fade{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  opacity:.85;
+}
+.context-signature-fade input[type="range"]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:80px;
+  height:15px;
+  margin:0;
+  border-radius:8px;
+  background:var(--border-strong);
+  cursor:pointer;
+}
+.context-signature-fade input[type="range"]:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.context-signature-fade input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:var(--text);
+  border:none;
+}
+.context-signature-fade input[type="range"]::-moz-range-thumb{
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:var(--text);
+  border:none;
+}
+.context-signature-history-btn{
+  width:22px;
+  height:22px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  border:1px solid var(--border-strong);
+  background:rgba(255,255,255,.1);
+  color:var(--text);
+  cursor:pointer;
+}
+.context-signature-history-btn:hover:not(:disabled){
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="light"] .context-signature-history-btn{
+  background:rgba(0,0,0,.06);
+}
+html[data-theme="light"] .context-signature-history-btn:hover:not(:disabled){
+  background:rgba(0,0,0,.14);
+}
+.context-signature-history-btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.context-signature-history-btn svg{
+  width:15px;
+  height:15px;
+}
+.context-signature-hint--below{
+  margin:12px 0 0;
+}
+.context-signature-brush-ring{
+  position:absolute;
+  display:none;
+  box-sizing:border-box;
+  border:2px solid #fff;
+  outline:1px solid rgba(0,0,0,.6);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+html[data-theme="light"] .context-signature-clean-preview{
+  background:
+    linear-gradient(45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(-45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c4cbdb 75%),
+    linear-gradient(-45deg, transparent 75%, #c4cbdb 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0;
+  background-color:#eef1f8;
+}
+html[data-theme="light"] .context-signature-modal .bc-file-remove-btn,
+html[data-theme="light"] .context-signature-back{
+  background:rgba(0,0,0,.1);
+}
+html[data-theme="light"] .context-signature-modal .bc-file-remove-btn:hover,
+html[data-theme="light"] .context-signature-back:hover{
+  background:rgba(0,0,0,.2);
+}
 .context-signature-color-row{
   display:flex;
   gap:10px;
@@ -1255,8 +1482,59 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   border-radius:50%;
 }
 .context-signature-color-swatch--orig{
-  background:conic-gradient(#000, #2563eb, #e11d48, #eab308, #000);
+  background:
+    linear-gradient(45deg, #333 25%, transparent 25%),
+    linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%),
+    linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size:8px 8px;
+  background-position:0 0, 0 4px, 4px -4px, -4px 0;
+  background-color:#555;
+  background-clip:padding-box;
 }
+html[data-theme="light"] .context-signature-color-swatch--orig{
+  background:
+    linear-gradient(45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(-45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c4cbdb 75%),
+    linear-gradient(-45deg, transparent 75%, #c4cbdb 75%);
+  background-size:8px 8px;
+  background-position:0 0, 0 4px, 4px -4px, -4px 0;
+  background-color:#eef1f8;
+  background-clip:padding-box;
+}
+.context-signature-color-row{
+  align-items:center;
+  position:relative;
+}
+.context-signature-color-divider{
+  width:1px;
+  height:22px;
+  margin:0 10px;
+  background:var(--border-strong);
+}
+.context-signature-color-swatch--custom span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  border:1.5px dashed var(--border-strong);
+  font-size:16px;
+  font-weight:800;
+  line-height:1;
+  color:var(--text);
+}
+.context-signature-color-swatch--custom.has-color span{
+  border-style:solid;
+  color:transparent;
+}
+.context-signature-color-popover{
+  position:absolute;
+  left:0;
+  bottom:calc(100% + 8px);
+  z-index:5;
+}
+.context-signature-color-popover[hidden]{ display:none; }
 .context-signature-color-swatch.active{
   border-color:var(--context-yellow);
 }
@@ -1605,14 +1883,14 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
       <div class="context-toolbar">
         <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Add text (T)"><span class="ct-desktop-only">Add text</span><span class="ct-mobile-only">New</span></button>
 
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn"><span class="ct-desktop-only">Signature</span><span class="ct-mobile-only">S</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Signature (S)"><span class="ct-desktop-only">Signature</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Underline (U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Italic (I)" aria-label="Italic" aria-pressed="false"><i>I</i></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Bold (B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
           <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
-            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Add shape (S)" aria-label="Add shape" aria-haspopup="listbox" aria-expanded="false"><b>S</b></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Add shape (H)" aria-label="Add shape" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
             <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-kind="circle" data-label="Circle" role="option" aria-selected="false">Circle</button>
               <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Square" role="option" aria-selected="false">Square</button>
@@ -1716,6 +1994,26 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
       </div>
 
       <div class="context-fullscreen-overlay" id="ctFullscreenOverlay" hidden>
+        <div class="context-fullscreen-header">
+          <button type="button" class="context-fullscreen-home" data-goto="mainpage" aria-label="BC Tools home" title="Back to Creative Hub">
+            <img class="site-logo" id="ctFsLogo" alt="BC Tools logo">
+            <span class="context-fullscreen-brand">BC Tools</span>
+          </button>
+          <div class="nav-right context-fullscreen-actions">
+            <button type="button" class="nav-theme-btn context-fullscreen-nav-btn" data-theme-toggle aria-label="Toggle light and dark mode" title="Toggle light and dark mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+              </svg>
+            </button>
+            <button type="button" class="nav-share-btn context-fullscreen-nav-btn" data-share-toggle aria-label="Share" title="Share">
+              <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 3L9.5 14.5"></path>
+                <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
         <div class="context-fullscreen-canvas-area" id="ctFullscreenCanvasArea"></div>
         <div class="context-fullscreen-bar" id="ctFullscreenBar"></div>
       </div>
@@ -1727,7 +2025,12 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
       <div class="context-signature-modal">
         <div class="context-signature-header">
           <span>Signature</span>
-          <button type="button" class="context-signature-close" id="ctSigClose" aria-label="Close">&times;</button>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-back" id="ctSigBack" aria-label="Go back a step" title="Go back a step" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M11 18l-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctSigClose" aria-label="Close" title="Close">&times;</button>
+          </div>
         </div>
 
         <div class="context-signature-step" id="ctSigStepChoose">
@@ -1737,11 +2040,13 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
             <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigReplace">Replace signature</button>
           </div>
           <div id="ctSigChoiceWrap">
-            <p class="context-signature-hint">Take a photo of your signature on paper, upload one, or draw it below.</p>
-            <button type="button" class="context-signature-action-btn" id="ctSigCameraBtn">Take a photo</button>
-            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigUploadBtn">Upload a photo</button>
+            <p class="context-signature-hint">How you would like to add your signature.</p>
+            <p class="context-signature-hint"><b>TIP: Use clean, white paper. Take the photo in good lighting.</b></p>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigCameraBtn">Take a photo</button>
+            <button type="button" class="context-signature-action-btn" id="ctSigUploadBtn">Upload a photo</button>
             <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigDrawBtn">Draw instead</button>
-            <input type="file" id="ctSigFileInput" accept="image/*" hidden>
+            <p class="context-signature-hint" id="ctSigUploadError" hidden></p>
+            <input type="file" id="ctSigFileInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,.jpg,.jpeg,.png,.webp,.bmp,.avif,.heic,.heif" hidden>
           </div>
         </div>
 
@@ -1760,13 +2065,13 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
         </div>
 
         <div class="context-signature-step" id="ctSigStepCrop" hidden>
-          <p class="context-signature-hint">Drag the corners so the box just covers the signature.</p>
+          <p class="context-signature-hint">Drag the two corners so the box just covers the signature.</p>
+          <p class="context-signature-hint"><b>TIP: Crop it as much as possible to save time later.</b></p>
           <div class="context-signature-crop-wrap" id="ctSigCropWrap">
+            <span class="context-signature-crop-loading" id="ctSigCropLoading" hidden>Loading photo...</span>
             <img id="ctSigCropImg" alt="">
             <div class="context-signature-crop-box" id="ctSigCropBox">
               <span class="context-signature-crop-handle" data-h="nw"></span>
-              <span class="context-signature-crop-handle" data-h="ne"></span>
-              <span class="context-signature-crop-handle" data-h="sw"></span>
               <span class="context-signature-crop-handle" data-h="se"></span>
             </div>
           </div>
@@ -1781,15 +2086,31 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
         </div>
 
         <div class="context-signature-step" id="ctSigStepClean" hidden>
-          <p class="context-signature-hint">Fine-tune, then drag over any leftover marks to erase them.</p>
+          <div class="context-signature-history">
+            <button type="button" class="context-signature-history-btn" id="ctSigUndo" aria-label="Undo" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+            </button>
+            <button type="button" class="context-signature-history-btn" id="ctSigRedo" aria-label="Redo" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg>
+            </button>
+            <label class="context-signature-fade" title="Fade faint marks">
+              <span>Fade</span>
+              <input type="range" id="ctSigFade" min="0" max="100" step="1" value="0" aria-label="Fade faint marks">
+            </label>
+          </div>
           <div class="context-signature-clean-preview">
             <canvas id="ctSigCleanCanvas"></canvas>
+            <span class="context-signature-brush-ring" id="ctSigBrushRing" aria-hidden="true"></span>
           </div>
+          <p class="context-signature-hint context-signature-hint--below">Fine-tune, then drag over any leftover marks to erase them.</p>
           <div class="context-signature-color-row" id="ctSigColorRow">
             <button type="button" class="context-signature-color-swatch context-signature-color-swatch--orig active" data-color="original" aria-label="Original ink color" aria-pressed="true"></button>
+            <span class="context-signature-color-divider" aria-hidden="true"></span>
             <button type="button" class="context-signature-color-swatch" data-color="#0d0d0f" aria-label="Black" aria-pressed="false"><span style="background:#0d0d0f"></span></button>
             <button type="button" class="context-signature-color-swatch" data-color="#2E2548" data-shademix="true" aria-label="Blue" aria-pressed="false"><span style="background:#2E2548"></span></button>
             <button type="button" class="context-signature-color-swatch" data-color="#7a1f2b" aria-label="Red" aria-pressed="false"><span style="background:#7a1f2b"></span></button>
+            <button type="button" class="context-signature-color-swatch context-signature-color-swatch--custom" id="ctSigCustomColorBtn" data-custom="true" aria-label="Pick a custom color" title="Pick any color" aria-pressed="false"><span>+</span></button>
+            <div class="context-signature-color-popover" id="ctSigColorPopover" hidden></div>
           </div>
           <button type="button" class="context-signature-action-btn" id="ctSigSave">Use this signature</button>
         </div>
@@ -1857,7 +2178,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=48" defer></script>
-<script src="/context/context-tool.js?v=33" defer></script>
+<script src="/shared/site.js?v=53" defer></script>
+<script src="/context/context-tool.js?v=55" defer></script>
 </body>
 </html>

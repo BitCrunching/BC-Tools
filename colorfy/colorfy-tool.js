@@ -51,7 +51,30 @@
   ]);
 
   function isImageFile(f){
-    return f && f.type.startsWith("image/");
+    return f && (f.type.startsWith("image/") || isHeicFile(f));
+  }
+
+  function isHeicFile(f){
+    return f.type === "image/heic" || f.type === "image/heif" || /\.(heic|heif)$/i.test(f.name);
+  }
+  let heic2anyLoadPromise = null;
+  function loadHeic2any(){
+    if (window.heic2any) return Promise.resolve();
+    if (!heic2anyLoadPromise){
+      heic2anyLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/vendor/heic2any.min.js";
+        script.onload = () => resolve();
+        script.onerror = () => { heic2anyLoadPromise = null; reject(new Error("Failed to load the HEIC decoder.")); };
+        document.head.appendChild(script);
+      });
+    }
+    return heic2anyLoadPromise;
+  }
+  async function heicToPngBlob(file){
+    await loadHeic2any();
+    const decoded = await window.heic2any({ blob: file, toType: "image/png" });
+    return Array.isArray(decoded) ? decoded[0] : decoded;
   }
 
   function revealAfterDropUI(){
@@ -229,10 +252,22 @@
   /* restoreFracs, when given, seeds the pickers at their exact saved
      spots instead of the usual two-default-pickers behavior — used only
      by the "Continue where you left off" restore below. */
-  function setFile(file, restoreFracs){
+  async function setFile(file, restoreFracs){
     if (!isImageFile(file)){
       status.textContent = "Please pick an image file.";
       return;
+    }
+    if (isHeicFile(file)){
+      status.textContent = "Converting HEIC to PNG...";
+      try {
+        const png = await heicToPngBlob(file);
+        file = new File([png], file.name.replace(/\.(heic|heif)$/i, "") + ".png", { type: "image/png" });
+        status.textContent = "";
+      } catch (err){
+        console.error(err);
+        status.textContent = "Couldn't read that HEIC file — it may be corrupted or unsupported.";
+        return;
+      }
     }
     /* Already hidden by its own click handler during an actual restore —
        this also covers picking/dropping a brand-new image directly,

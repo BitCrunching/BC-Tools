@@ -14,7 +14,7 @@
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
     ["WELCOME_TO_CONTEXT", "Context lets you type text or drop in a signature anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
-    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, or use the Signature or Shape (S) button to drop one in."],
+    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, or use the Signature (S) or Shape (H) button to drop one in."],
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — or add a signature or a shape (circle, square, triangle, cross) instead of typed text."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — text boxes stay exactly where you placed them."],
     ["YOU_ARE_SET", "Hit Download when you're done. Close this with the red dot and we won't show it again."]
@@ -59,6 +59,11 @@
   const downloadBtn = document.getElementById("ctDownloadBtn");
   const removePdfBtn = document.getElementById("ctRemoveBtn");
   const fullscreenOverlay = document.getElementById("ctFullscreenOverlay");
+  /* Same logo image the site nav uses — copied at load rather than
+     embedding the base64 a second time. */
+  const fsLogo = document.getElementById("ctFsLogo");
+  const navLogo = document.querySelector(".site-nav-brand .site-logo");
+  if (fsLogo && navLogo) fsLogo.src = navLogo.src;
   const fullscreenCanvasArea = document.getElementById("ctFullscreenCanvasArea");
   const fullscreenBar = document.getElementById("ctFullscreenBar");
   const viewportMeta = document.querySelector('meta[name="viewport"]');
@@ -115,7 +120,7 @@
   let shapeBoxes = [];
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
-  let activeShapeKind = "circle";
+  let activeShapeKind = "triangle";
   let currentFileBytes = null;
 
   function isPdfFile(f){
@@ -636,6 +641,7 @@
   /* Reuses the same visual drag/resize handles as buildBoxEl's text
      boxes, but resizing here scales the whole image uniformly (keeping
      its aspect ratio) instead of just bumping a font size. */
+  let editSignatureBox = () => {};
   function buildSignatureBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-signature-box";
@@ -665,6 +671,13 @@
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
+
+    /* Double-click the signature itself to reopen the signature editor
+       on it (handles/remove button excluded). */
+    el.addEventListener("dblclick", (e) => {
+      if (e.target.closest(".bc-obj-drag-handle, .bc-obj-remove-btn, .bc-obj-resize-handle")) return;
+      editSignatureBox(box);
+    });
 
     function startDrag(handleEl, onMove){
       handleEl.addEventListener("pointerdown", (e) => {
@@ -756,6 +769,13 @@
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
 
+  /* The shape button shows the currently chosen shape (not a fixed
+     letter), on desktop and mobile alike. */
+  function renderShapeBtnIcon(){
+    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    shapeBtn.title = "Add shape (H) — " + activeShapeKind;
+  }
+
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
      independently — used by the PDF export step below to reproduce a
      non-uniformly stretched triangle/cross, since drawSvgPath's own
@@ -833,6 +853,7 @@
       el.classList.add("selected");
       bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
       activeShapeKind = box.kind;
+      renderShapeBtnIcon();
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
       bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
@@ -978,14 +999,17 @@
   });
 
   addTextBtn.addEventListener("click", addTextBox);
+  renderShapeBtnIcon();
+  bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
 
-  /* "S" is now the dropdown's own trigger, not an immediate-add button —
+  /* "H" is now the dropdown's own trigger, not an immediate-add button —
      clicking it just opens the Circle/Square/Triangle/Cross menu
      (shared bcRegisterDropdown, CLAUDE.md's "pick one of several" rule),
      and picking a kind is what actually places the shape. Re-kinds the
      currently selected shape in place instead, if there is one. */
   bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
+    renderShapeBtnIcon();
     if (!selectedShapeId){
       addShapeBox();
       return;
@@ -1302,30 +1326,6 @@
     if (isFullscreen && pdfjsDoc) renderPage();
   });
 
-  /* Keyboard shortcuts: "T" adds a text box, "S" adds a shape, "R" opens
-     the rename-file popup (desktop only — no on-screen keyboard to
-     conflict with). Ignored while typing anywhere editable, with a
-     modifier held, or off the Context page. */
-  document.addEventListener("keydown", (e) => {
-    const key = e.key.toLowerCase();
-    if (key !== "t" && key !== "s" && key !== "r") return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (editor.hidden) return;
-    if (!document.getElementById("page-context").classList.contains("active")) return;
-
-    const target = e.target;
-    const isEditable = target.isContentEditable
-      || target.tagName === "INPUT"
-      || target.tagName === "SELECT"
-      || target.tagName === "TEXTAREA";
-    if (isEditable) return;
-
-    e.preventDefault();
-    if (key === "t") addTextBox();
-    else if (key === "s") addShapeBox();
-    else filenameTrigger.click();
-  });
-
   /* Same overflow risk as the filename popup, worse on mobile: once the
      trigger goes icon-only (34px) its own dropdown container shrinks to
      match, but the menu's row of 5 color swatches doesn't — left:0;
@@ -1435,6 +1435,24 @@
   bcRegisterKeyShortcut("u", underlineBtn);
   bcRegisterKeyShortcut("r", filenameTrigger);
   bcRegisterKeyShortcut("d", downloadBtn);
+  /* "S" opens the signature editor, "H" opens the shape menu — both
+     ignored while the signature modal itself is already open (S would
+     otherwise reset it back to the first step mid-edit). */
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden;
+  bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
+  bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
+
+  bcRegisterEscapable(() => isFullscreen, () => closeFullscreen(), 90);
+  bcRegisterEscapable(
+    () => !colorMenu.hidden || !filenamePopup.hidden,
+    () => {
+      colorMenu.hidden = true;
+      colorTrigger.setAttribute("aria-expanded", "false");
+      filenamePopup.hidden = true;
+      filenameTrigger.setAttribute("aria-expanded", "false");
+    },
+    70
+  );
 
   document.addEventListener("click", (e) => {
     if (!colorDropdown.contains(e.target)){
@@ -1813,12 +1831,29 @@
       try { localStorage.setItem(SIG_STORAGE_KEY, dataUrl); } catch (e) { /* storage unavailable */ }
     }
 
-    function showSigStep(step){
-      [sigStepChoose, sigStepCamera, sigStepCrop, sigStepDraw, sigStepClean].forEach(s => { s.hidden = (s !== step); });
+    let playEraseHint = () => {};
+    let resetEraseHistory = () => {};
+    let editingSigBox = null;
+    const sigBackBtn = document.getElementById("ctSigBack");
+    let sigStepHistory = [];
+    function showSigStep(step, isBack){
+      const all = [sigStepChoose, sigStepCamera, sigStepCrop, sigStepDraw, sigStepClean];
+      const current = all.find(s => !s.hidden);
+      /* The live camera can't be returned to as a "previous step" (the
+         stream is stopped on leaving it), so it's never recorded. */
+      if (step === sigStepChoose) sigStepHistory = [];
+      else if (!isBack && current && current !== step && current !== sigStepCamera) sigStepHistory.push(current);
+      all.forEach(s => { s.hidden = (s !== step); });
       if (step !== sigStepCamera) stopCamera();
+      sigBackBtn.hidden = step === sigStepChoose;
     }
+    sigBackBtn.addEventListener("click", () => {
+      showSigStep(sigStepHistory.pop() || sigStepChoose, true);
+    });
 
     function openSigModal(){
+      editingSigBox = null;
+      document.getElementById("ctSigUploadError").hidden = true;
       const saved = getSavedSignature();
       if (saved){
         sigSavedPreview.src = saved;
@@ -1828,17 +1863,54 @@
         sigSavedWrap.hidden = true;
         sigChoiceWrap.hidden = false;
       }
-      showSigStep(sigStepChoose);
+      sigStepHistory = [];
+      showSigStep(sigStepChoose, true);
       sigOverlay.hidden = false;
     }
 
     function closeSigModal(){
       sigOverlay.hidden = true;
+      editingSigBox = null;
       stopCamera();
     }
 
+    /* Reopens the editor straight on the fine-tune step with an already
+       placed signature loaded in (its transparent PNG is both the canvas
+       content and the "original" base for recoloring), so erasing,
+       recoloring and undo all work as on a fresh one. Saving replaces
+       that box's image in place instead of adding another. */
+    editSignatureBox = function(box){
+      const img = new Image();
+      img.onload = () => {
+        sigCleanCanvas.width = img.naturalWidth;
+        sigCleanCanvas.height = img.naturalHeight;
+        sigCleanCtx = sigCleanCanvas.getContext("2d");
+        sigCleanCtx.drawImage(img, 0, 0);
+        sigCleanBaseImageData = sigCleanCtx.getImageData(0, 0, sigCleanCanvas.width, sigCleanCanvas.height);
+        sigEraseMask = new Uint8Array(sigCleanCanvas.width * sigCleanCanvas.height);
+        sigSoften = false;
+        sigInkColor = "original";
+        sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(btn => {
+          const active = btn.dataset.color === "original";
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", String(active));
+        });
+        resetEraseHistory();
+        sigFadeInput.disabled = true;
+        sigStepHistory = [];
+        editingSigBox = box;
+        sigSavedWrap.hidden = true;
+        sigChoiceWrap.hidden = false;
+        showSigStep(sigStepClean, true);
+        sigOverlay.hidden = false;
+        playEraseHint();
+      };
+      img.src = box.dataUrl;
+    };
+
     sigBtn.addEventListener("click", openSigModal);
     sigClose.addEventListener("click", closeSigModal);
+    bcRegisterEscapable(() => !sigOverlay.hidden, closeSigModal, 100);
     sigOverlay.addEventListener("click", (e) => { if (e.target === sigOverlay) closeSigModal(); });
 
     sigPlaceSavedBtn.addEventListener("click", () => {
@@ -1861,9 +1933,16 @@
     /* Shared by the "Upload a photo" file path and the "Take a photo"
        camera-capture path below — both end up with a plain image data
        URL and need the exact same crop-step setup. */
+    function setCropLoading(on){
+      sigCropWrap.classList.toggle("is-loading", on);
+      document.getElementById("ctSigCropLoading").hidden = !on;
+      document.getElementById("ctSigCropNext").disabled = on;
+    }
+
     function beginCropFromDataUrl(dataUrl){
       sigCropImg.src = dataUrl;
       sigCropImg.onload = () => {
+        setCropLoading(false);
         /* Step must be visible (not display:none) before reading
            sigCropWrap.clientWidth below — a hidden element always
            measures 0, which previously collapsed the crop box to
@@ -1888,14 +1967,64 @@
       };
     }
 
+    function isHeicFile(f){
+      return f.type === "image/heic" || f.type === "image/heif" || /\.(heic|heif)$/i.test(f.name);
+    }
+    let heic2anyLoadPromise = null;
+    function loadHeic2any(){
+      if (window.heic2any) return Promise.resolve();
+      if (!heic2anyLoadPromise){
+        heic2anyLoadPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "/vendor/heic2any.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => { heic2anyLoadPromise = null; reject(new Error("Failed to load the HEIC decoder.")); };
+          document.head.appendChild(script);
+        });
+      }
+      return heic2anyLoadPromise;
+    }
+    async function heicToPngBlob(file){
+      await loadHeic2any();
+      const decoded = await window.heic2any({ blob: file, toType: "image/png" });
+      return Array.isArray(decoded) ? decoded[0] : decoded;
+    }
+
     sigUploadBtn.addEventListener("click", () => sigFileInput.click());
     sigFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       sigFileInput.value = "";
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => beginCropFromDataUrl(reader.result);
-      reader.readAsDataURL(file);
+      const uploadError = document.getElementById("ctSigUploadError");
+      if (file.type === "image/gif" || /\.gif$/i.test(file.name)){
+        uploadError.textContent = "GIF files can't be used here — please upload a JPG, PNG, WEBP or HEIC photo.";
+        uploadError.hidden = false;
+        return;
+      }
+      uploadError.hidden = true;
+      const readAsCrop = (blob) => {
+        const reader = new FileReader();
+        reader.onload = () => beginCropFromDataUrl(reader.result);
+        reader.readAsDataURL(blob);
+      };
+      if (isHeicFile(file)){
+        /* Jump to the crop step right away so there's instant feedback
+           while the (slow) HEIC decode runs; the photo drops in once ready. */
+        sigCropImg.removeAttribute("src");
+        setCropLoading(true);
+        showSigStep(sigStepCrop);
+        heicToPngBlob(file).then((png) => {
+          if (sigStepCrop.hidden) return setCropLoading(false);
+          readAsCrop(png);
+        }).catch((err) => {
+          console.error(err);
+          setCropLoading(false);
+          if (!sigStepCrop.hidden) showSigStep(sigStepChoose, true);
+          alert("Couldn't read that HEIC file — it may be corrupted or unsupported.");
+        });
+        return;
+      }
+      readAsCrop(file);
     });
 
     /* ===== Camera capture — live guidance for lighting/sharpness =====
@@ -2001,7 +2130,7 @@
       beginCropFromDataUrl(shot.toDataURL("image/png"));
     });
 
-    /* Drag any corner handle to resize the crop rectangle; clamped to
+    /* Drag either corner handle (top-left / bottom-right) to resize the crop rectangle; clamped to
        the wrap's own bounds so it can never crop outside the photo. */
     sigCropBox.querySelectorAll(".context-signature-crop-handle").forEach(handle => {
       handle.addEventListener("pointerdown", (e) => {
@@ -2058,6 +2187,7 @@
       sigSourceCanvas = cropped;
       runCleanup();
       showSigStep(sigStepClean);
+      playEraseHint();
     });
 
     /* ===== Draw pad (alternative to a photo) ===== */
@@ -2115,6 +2245,7 @@
       sigSourceCanvas = copy;
       runCleanup();
       showSigStep(sigStepClean);
+      playEraseHint();
     });
 
     /* ===== Cleanup: illumination-normalize, then threshold ===== */
@@ -2328,6 +2459,27 @@
        computeCleanedImageData) turned out not to need per-photo manual
        tuning the way the old ratio-based cutoff did. */
     const SIG_SENSITIVITY = 55;
+    const sigFadeInput = document.getElementById("ctSigFade");
+    let sigCleanedRaw = null;
+    let sigEraseMask = null; // 1 = pixel the user brushed away; survives Fade changes
+    let sigSoften = true;
+
+    /* Single source of truth for what the fine-tune canvas shows:
+       faded base -> brushed-away pixels cleared -> chosen ink color. */
+    function renderClean(){
+      const w = sigCleanCanvas.width, h = sigCleanCanvas.height;
+      if (sigSoften) drawSoftened(sigCleanBaseImageData);
+      else sigCleanCtx.putImageData(sigCleanBaseImageData, 0, 0);
+      const img = sigCleanCtx.getImageData(0, 0, w, h);
+      for (let p = 0; p < sigEraseMask.length; p++){
+        if (sigEraseMask[p]) img.data[p * 4 + 3] = 0;
+      }
+      sigCleanCtx.putImageData(img, 0, 0);
+      if (sigInkColor !== "original"){
+        const active = sigColorRow && sigColorRow.querySelector(".context-signature-color-swatch.active");
+        applyInkColor(sigInkColor, !!(active && active.dataset.shademix === "true"));
+      }
+    }
 
     let sigInkColor = "original";
 
@@ -2336,8 +2488,14 @@
       sigCleanCanvas.width = sigSourceCanvas.width;
       sigCleanCanvas.height = sigSourceCanvas.height;
       sigCleanCtx = sigCleanCanvas.getContext("2d");
-      sigCleanBaseImageData = computeCleanedImageData(sigSourceCanvas, SIG_SENSITIVITY);
+      sigCleanedRaw = computeCleanedImageData(sigSourceCanvas, SIG_SENSITIVITY);
+      sigFadeInput.disabled = false;
+      sigFadeInput.value = "0";
+      sigCleanBaseImageData = sigCleanedRaw;
+      sigEraseMask = new Uint8Array(sigCleanCanvas.width * sigCleanCanvas.height);
+      sigSoften = true;
       drawSoftened(sigCleanBaseImageData);
+      resetEraseHistory();
       /* Fresh source photo — reset any color override from a previous
          attempt rather than silently carrying it over. */
       sigInkColor = "original";
@@ -2422,7 +2580,34 @@
     }
 
     if (sigColorRow){
-      sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(btn => {
+      const customBtn = document.getElementById("ctSigCustomColorBtn");
+      const popover = document.getElementById("ctSigColorPopover");
+      function applyCustom(color){
+        sigInkColor = color;
+        customBtn.dataset.color = color;
+        customBtn.classList.add("has-color");
+        customBtn.querySelector("span").style.background = color;
+        sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(b => {
+          const active = b === customBtn;
+          b.classList.toggle("active", active);
+          b.setAttribute("aria-pressed", String(active));
+        });
+        applyInkColor(color, false);
+      }
+      /* Codify's Background palette (shared/site.js bcCreateColorPanel):
+         swatches, saturation/value square, hue strip, hex field. */
+      const colorPanel = bcCreateColorPanel(popover, { value: "#2563eb", onChange: applyCustom });
+      customBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (customBtn.dataset.color && !customBtn.classList.contains("active")) applyCustom(customBtn.dataset.color);
+        if (customBtn.dataset.color) colorPanel.setValue(customBtn.dataset.color);
+        popover.hidden = !popover.hidden;
+      });
+      document.addEventListener("click", (e) => {
+        if (!popover.hidden && !popover.contains(e.target)) popover.hidden = true;
+      });
+      bcRegisterEscapable(() => !popover.hidden, () => { popover.hidden = true; }, 110);
+      sigColorRow.querySelectorAll(".context-signature-color-swatch:not([data-custom])").forEach(btn => {
         btn.addEventListener("click", () => {
           sigInkColor = btn.dataset.color;
           sigColorRow.querySelectorAll(".context-signature-color-swatch").forEach(b => {
@@ -2435,11 +2620,107 @@
       });
     }
 
+    /* Fade slider — drops the faintest marks first (stray pencil, paper
+       shadow, light smudges) and, pushed further, thins out lighter ink
+       too. Works off the cached cleaned result, so dragging it is cheap;
+       brushed-away areas and undo history are kept (re-applied via the
+       erase mask). Disabled for an already-placed signature, which has
+       no source photo to re-derive from. */
+    function applyFade(raw, fade){
+      const out = new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height);
+      if (fade <= 0) return out;
+      const cut = fade * 1.6, soft = 24;
+      for (let i = 0; i < out.data.length; i += 4){
+        if (out.data[i + 3] === 0) continue;
+        const strength = 255 - (0.299 * out.data[i] + 0.587 * out.data[i + 1] + 0.114 * out.data[i + 2]);
+        if (strength < cut) out.data[i + 3] = 0;
+        else if (strength < cut + soft) out.data[i + 3] = Math.round(out.data[i + 3] * (strength - cut) / soft);
+      }
+      return out;
+    }
+    let sigFadeTimer = null;
+    sigFadeInput.addEventListener("input", () => {
+      clearTimeout(sigFadeTimer);
+      sigFadeTimer = setTimeout(() => {
+        if (!sigCleanedRaw) return;
+        sigCleanBaseImageData = applyFade(sigCleanedRaw, Number(sigFadeInput.value));
+        renderClean();
+      }, 60);
+    });
+
     /* Touch-up eraser — drag over the preview to punch alpha=0 into a
        small radius under the pointer, for any shadow/smudge the
-       automatic cleanup above didn't fully catch. */
+       automatic cleanup above didn't fully catch. A ring the size of
+       that radius follows the pointer so the brush footprint is visible,
+       and a short ghost drag plays once on entering this step so the
+       gesture is discoverable (purely visual — never touches pixels). */
     (function(){
+      const ring = document.getElementById("ctSigBrushRing");
+      const undoBtn = document.getElementById("ctSigUndo");
+      const redoBtn = document.getElementById("ctSigRedo");
+      const HISTORY_MAX = 30;
+      let undoStack = [];
+      let redoStack = [];
       let erasing = false;
+
+      function snapshot(){
+        return sigEraseMask.slice();
+      }
+      function syncHistoryBtns(){
+        undoBtn.disabled = undoStack.length === 0;
+        redoBtn.disabled = redoStack.length === 0;
+      }
+      /* History holds only the erase mask, not pixels — the canvas is always
+         re-rendered from (faded base + mask + ink color), so undo/redo and
+         the Fade slider never clobber each other. */
+      function restore(mask){
+        sigEraseMask = mask;
+        renderClean();
+      }
+      function undo(){
+        if (!undoStack.length) return;
+        redoStack.push(snapshot());
+        restore(undoStack.pop());
+        syncHistoryBtns();
+      }
+      function redo(){
+        if (!redoStack.length) return;
+        undoStack.push(snapshot());
+        restore(redoStack.pop());
+        syncHistoryBtns();
+      }
+      resetEraseHistory = function(){ undoStack = []; redoStack = []; syncHistoryBtns(); };
+      undoBtn.addEventListener("click", undo);
+      redoBtn.addEventListener("click", redo);
+      document.addEventListener("keydown", (e) => {
+        if (sigStepClean.hidden || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+        const k = e.key.toLowerCase();
+        if (k === "z" && !e.shiftKey){ e.preventDefault(); undo(); }
+        else if ((k === "z" && e.shiftKey) || (k === "y" && !e.metaKey)){ e.preventDefault(); redo(); }
+      });
+      const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+      undoBtn.title = isMac ? "Undo (⌘Z)" : "Undo (Ctrl+Z)";
+      redoBtn.title = isMac ? "Redo (⌘⇧Z)" : "Redo (Ctrl+Y)";
+      let hintAnim = null;
+      const brushRadius = () => Math.max(6, sigCleanCanvas.width * 0.02);
+      const cssScale = () => sigCleanCanvas.getBoundingClientRect().width / sigCleanCanvas.width;
+
+      function placeRing(x, y){
+        const d = brushRadius() * 2 * cssScale();
+        ring.style.width = d + "px";
+        ring.style.height = d + "px";
+        ring.style.left = x + "px";
+        ring.style.top = y + "px";
+        ring.style.display = "block";
+      }
+      function cancelHint(){
+        if (hintAnim){ hintAnim.cancel(); hintAnim = null; }
+        ring.style.display = "none";
+      }
+      function localPoint(e){
+        const r = sigCleanCanvas.getBoundingClientRect();
+        return [e.clientX - r.left, e.clientY - r.top];
+      }
       function eraseAt(clientX, clientY){
         const rect = sigCleanCanvas.getBoundingClientRect();
         const scaleX = sigCleanCanvas.width / rect.width;
@@ -2449,17 +2730,62 @@
         sigCleanCtx.save();
         sigCleanCtx.globalCompositeOperation = "destination-out";
         sigCleanCtx.beginPath();
-        sigCleanCtx.arc(x, y, Math.max(6, sigCleanCanvas.width * 0.02), 0, Math.PI * 2);
+        sigCleanCtx.arc(x, y, brushRadius(), 0, Math.PI * 2);
         sigCleanCtx.fill();
         sigCleanCtx.restore();
+        const rad = brushRadius(), cw = sigCleanCanvas.width, ch = sigCleanCanvas.height;
+        const x0 = Math.max(0, Math.floor(x - rad)), x1 = Math.min(cw - 1, Math.ceil(x + rad));
+        const y0 = Math.max(0, Math.floor(y - rad)), y1 = Math.min(ch - 1, Math.ceil(y + rad));
+        for (let py = y0; py <= y1; py++){
+          for (let px = x0; px <= x1; px++){
+            if ((px - x) * (px - x) + (py - y) * (py - y) <= rad * rad) sigEraseMask[py * cw + px] = 1;
+          }
+        }
       }
+
+      playEraseHint = function(){
+        cancelHint();
+        const r = sigCleanCanvas.getBoundingClientRect();
+        if (!r.width || !ring.animate) return;
+        const w = r.width, h = r.height;
+        placeRing(w * 0.4, h * 0.5);
+        const pts = [[0.4, 0.5], [0.46, 0.4], [0.53, 0.6], [0.6, 0.42], [0.675, 0.5]];
+        hintAnim = ring.animate(pts.map(([px, py], i) => ({
+          left: (w * px) + "px",
+          top: (h * py) + "px",
+          opacity: i === 0 || i === pts.length - 1 ? 0.2 : 1,
+          offset: i / (pts.length - 1)
+        })), { duration: 2400, easing: "ease-in-out" });
+        const thisAnim = hintAnim;
+        const done = () => { if (hintAnim === thisAnim){ hintAnim = null; ring.style.display = "none"; } };
+        thisAnim.onfinish = done;
+        setTimeout(done, 2500);
+      };
+
+      sigCleanCanvas.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { cancelHint(); placeRing(...localPoint(e)); } });
+      sigCleanCanvas.addEventListener("pointerleave", (e) => { if (!erasing) ring.style.display = "none"; });
       sigCleanCanvas.addEventListener("pointerdown", (e) => {
+        cancelHint();
+        undoStack.push(snapshot());
+        /* Masks are 1 byte/pixel of the full-resolution crop, so cap by total
+           memory as well as step count — a big phone-photo crop would
+           otherwise hold hundreds of MB across 30 steps. */
+        while (undoStack.length > HISTORY_MAX || (undoStack.length > 1 && undoStack.length * sigEraseMask.length > 64e6)) undoStack.shift();
+        redoStack = [];
+        syncHistoryBtns();
         erasing = true;
         try { sigCleanCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        placeRing(...localPoint(e));
         eraseAt(e.clientX, e.clientY);
       });
-      sigCleanCanvas.addEventListener("pointermove", (e) => { if (erasing) eraseAt(e.clientX, e.clientY); });
-      ["pointerup", "pointercancel"].forEach(evt => sigCleanCanvas.addEventListener(evt, () => { erasing = false; }));
+      sigCleanCanvas.addEventListener("pointermove", (e) => {
+        placeRing(...localPoint(e));
+        if (erasing) eraseAt(e.clientX, e.clientY);
+      });
+      ["pointerup", "pointercancel"].forEach(evt => sigCleanCanvas.addEventListener(evt, (e) => {
+        erasing = false;
+        if (e.pointerType !== "mouse") ring.style.display = "none";
+      }));
     })();
 
     sigSaveBtn.addEventListener("click", () => {
@@ -2467,7 +2793,14 @@
       setSavedSignature(dataUrl);
       const img = new Image();
       img.onload = () => {
-        addSignatureBox(dataUrl, img.naturalWidth, img.naturalHeight);
+        if (editingSigBox){
+          editingSigBox.dataUrl = dataUrl;
+          editingSigBox.heightPt = editingSigBox.widthPt * (img.naturalHeight / img.naturalWidth);
+          renderTextBoxes();
+          schedulePersist();
+        } else {
+          addSignatureBox(dataUrl, img.naturalWidth, img.naturalHeight);
+        }
         closeSigModal();
       };
       img.src = dataUrl;

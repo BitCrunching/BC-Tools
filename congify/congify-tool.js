@@ -234,6 +234,7 @@
     resultsHeader.hidden = false;
   }
   doneContinueBtn.addEventListener("click", hideDoneView);
+  bcRegisterEscapable(() => !doneActions.hidden, hideDoneView, 40);
 
   /* Download button in the done view — conversion itself no longer
      downloads automatically (see the "finished" handler below), this is
