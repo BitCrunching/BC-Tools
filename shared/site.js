@@ -214,6 +214,30 @@ function bcSetupBannerDropTarget(toolApp, opts){
    as bcRegisterDropdown's group above, tracked separately since these
    aren't dropdowns. */
 const bcInfoTooltips = [];
+/* ===== Escape closes whatever is open ===== one global listener, one
+   thing per press, highest priority first (modals/overlays 100, then
+   menus/tooltips 60; banners — terminal, help, cookie — deliberately never). Anything openable registers
+   itself with bcRegisterEscapable(isOpen, close, priority) — a handler
+   that already called preventDefault() on this same keypress (e.g. an
+   input cancelling its own edit) is respected and nothing else closes. */
+const bcEscapables = [];
+function bcRegisterEscapable(isOpen, close, priority){
+  bcEscapables.push({ isOpen, close, priority: priority || 50 });
+  bcEscapables.sort((a, b) => b.priority - a.priority);
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || e.defaultPrevented) return;
+  for (const item of bcEscapables){
+    let open = false;
+    try { open = item.isOpen(); } catch (err) { /* element gone — treat as closed */ }
+    if (open){
+      item.close();
+      e.preventDefault();
+      return;
+    }
+  }
+});
+
 function bcRegisterInfoTooltip(btn, tooltip){
   const entry = { btn, tooltip };
   bcInfoTooltips.push(entry);
@@ -686,19 +710,23 @@ function startPrivacyCheck(){
    separate convert-then-download flow (Congify: converting produces
    the result, a later, separate click actually downloads it), so the
    badge reports whichever step just finished instead of always saying
-   "download" for a step that didn't download anything yet. */
+   "download" for a step that didn't download anything yet. "save" is
+   for a tool with no file output at all (Colorfy: saving a color to
+   the palette is the one thing it actually persists, so that's the
+   action worth confirming stayed local, not a download that never
+   happens here). Unrecognized/missing values fall back to "download",
+   same as before this list existed. */
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
   if (!badgeEl) return;
+  const actionWord = action === "convert" ? "convert" : action === "save" ? "save" : "download";
   if (privacyCheckExternalCount === 0){
-    const label = action === "convert" ? "convert local & private" : "download local & private";
-    badgeEl.textContent = "> BC_Tools_bot: " + label;
+    badgeEl.textContent = "> BC_Tools_bot: " + actionWord + " local & private";
   } else {
     /* {action} names which step actually leaked, not just that one did
        — a tool with a separate convert-then-download flow (Congify)
        can have a breach happen during either, and just saying "privacy
        breach" without saying which wouldn't tell you where to look. */
-    const actionWord = action === "convert" ? "convert" : "download";
     const template = "ATTENTION! - ({count}) privacy breach during {action} - {host}";
     const text = template.replace("{count}", privacyCheckExternalCount).replace("{action}", actionWord).replace("{host}", privacyCheckExternalHosts.join(", "));
     badgeEl.textContent = "> " + text;
@@ -726,7 +754,9 @@ function showNavTerminal(text){
 
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){
-  const themeBtn = document.getElementById("navThemeBtn");
+  /* The nav button, plus any other control marked data-theme-toggle (e.g.
+     Context's fullscreen-editor header) — all drive the same logic. */
+  const themeBtns = document.querySelectorAll("#navThemeBtn, [data-theme-toggle]");
   const root = document.documentElement;
 
   function applyTheme(theme){
@@ -749,7 +779,7 @@ function showNavTerminal(text){
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
   applyTheme(saved === "dark" ? "dark" : "light");
 
-  if (themeBtn){
+  themeBtns.forEach(themeBtn => {
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
@@ -757,13 +787,31 @@ function showNavTerminal(text){
       try { localStorage.setItem("bc-theme", next); } catch (e) { /* storage unavailable */ }
       showNavTerminal(next === "dark" ? "Dark mode set" : "Light mode set");
     });
-  }
+  });
 })();
 
 /* ===== NAV SHARE BUTTON ===== */
 (function(){
   const shareBtn = document.getElementById("navShareBtn");
   const shareMenu = document.getElementById("navShareMenu");
+
+  /* Extra share buttons (data-share-toggle, e.g. Context's fullscreen
+     header) behave like the nav one: native share sheet on phones; with
+     no native sheet to fall back on they just copy the link, since the
+     nav's own dropdown is hidden behind their overlay. */
+  document.querySelectorAll("[data-share-toggle]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (navigator.share){
+        try { await navigator.share({ title: document.title, text: "Try BC Tools for working with images.", url: window.location.href }); }
+        catch (e){ /* cancelled */ }
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        showNavTerminal("URL copied to clipboard");
+      } catch (e) { /* clipboard unavailable */ }
+    });
+  });
 
   if (shareBtn && shareMenu){
     shareBtn.addEventListener("click", async () => {
@@ -1193,3 +1241,157 @@ function bcCreateQuickCycleGesture({ thresholdMs = 200, getState, cycle, revert,
     cycle(e);
   };
 }
+
+/* ===== Shift+click on any "beta remove btn" (.bc-file-remove-btn) clears
+   every OTHER row in the tool, keeping just the one clicked — a single
+   delegated listener here, so every current and future adopter (Cleanly/
+   Combine's file rows, Convert/Compress/Coudio's per-file remove,
+   Colorfy's saved-color chips, ...) gets this for free with zero
+   per-tool wiring, the same "add the shared class, done" deal the rest
+   of .bc-file-remove-btn already is.
+
+   Deliberately index-based, not DOM-reference-based: every adopter's own
+   click handler re-renders its list from scratch on removal (`innerHTML
+   = ""` + rebuild), so the exact button element a visitor shift-clicked
+   stops being attached to the document after the very first other row is
+   removed. Position in reading order survives a rebuild (removing item
+   never reorders the rest), so tracking "the Nth remove button" and
+   re-querying live buttons before every step is what actually holds up
+   across every adopter's own render pattern, not "the same node twice."
+
+   Capture-phase on `document` so this runs before the target's own
+   bubble-phase click handler — `stopPropagation()` here is what stops
+   that handler from also firing and removing the very row a shift-click
+   means to keep. Every subsequent removal is a plain, unmodified
+   `.click()` on some *other* button, which has no shiftKey set, so it
+   sails through this same listener untouched and hits each tool's own
+   real remove logic normally — no shared "remove one item" API needed,
+   this only ever drives the buttons that already exist. */
+document.addEventListener("click", (e) => {
+  if (!e.shiftKey) return;
+  const keepBtn = e.target.closest(".bc-file-remove-btn");
+  if (!keepBtn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const initial = Array.from(document.querySelectorAll(".bc-file-remove-btn"));
+  let keepIndex = initial.indexOf(keepBtn);
+  if (keepIndex === -1 || initial.length <= 1) return;
+  let guard = 0;
+  while (guard++ < 1000){
+    const btns = Array.from(document.querySelectorAll(".bc-file-remove-btn"));
+    if (btns.length <= 1) break;
+    if (keepIndex >= btns.length) keepIndex = btns.length - 1;
+    const targetIndex = keepIndex === 0 ? 1 : 0;
+    if (targetIndex < keepIndex) keepIndex--;
+    btns[targetIndex].click();
+  }
+}, true);
+
+/* ===== Shared free-form color picker panel (swatches + saturation/value
+   square + hue strip + hex field) — the same palette Codify's Background
+   control uses, built here so a second tool (Context's signature ink)
+   doesn't hand-copy that markup/HSV math. Fills `container` and returns
+   { setValue(hex) }; onChange(hex) fires on every swatch/drag/hex edit.
+   (Codify still runs its own older inline copy of this — fold it onto
+   this when that file's next touched.) */
+function bcHsvToHex(h, s, v){
+  const i = Math.floor(h / 60) % 6;
+  const f = h / 60 - Math.floor(h / 60);
+  const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  const table = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]];
+  const [r, g, b] = table[i].map(x => Math.round(x * 255));
+  return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+function bcHexToHsv(hex){
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d !== 0){
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return [h, max === 0 ? 0 : d / max, max];
+}
+const BC_COLOR_PANEL_SWATCHES = ["#E5E7EB", "#7C3AED", "#2563EB", "#22C55E", "#F97316", "#1E1E1E"];
+function bcCreateColorPanel(container, { value = "#2563EB", swatches = BC_COLOR_PANEL_SWATCHES, onChange } = {}){
+  container.classList.add("bc-color-panel");
+  container.innerHTML = `
+    <div class="bc-cp-swatches">${swatches.map(c => `<button type="button" class="bc-cp-swatch" data-color="${c}" style="background:${c};" aria-label="${c}"></button>`).join("")}</div>
+    <div class="bc-cp-sv" role="slider" tabindex="0" aria-label="Saturation and brightness"><div class="bc-cp-sv-thumb"></div></div>
+    <input type="range" class="bc-cp-hue" min="0" max="359" step="1" value="0" aria-label="Hue">
+    <label class="bc-cp-hex-row"><span class="bc-cp-hex-label">Hex</span><input type="text" class="bc-cp-hex-input" maxlength="7" spellcheck="false" aria-label="Custom hex color"></label>`;
+  const sv = container.querySelector(".bc-cp-sv");
+  const thumb = container.querySelector(".bc-cp-sv-thumb");
+  const hueInput = container.querySelector(".bc-cp-hue");
+  const hexInput = container.querySelector(".bc-cp-hex-input");
+  let hue = 0, sat = 0, val = 0;
+
+  function paint(hex, fromHex){
+    sv.style.backgroundColor = bcHsvToHex(hue, 1, 1);
+    thumb.style.left = (sat * 100) + "%";
+    thumb.style.top = ((1 - val) * 100) + "%";
+    hueInput.value = Math.round(hue) % 360;
+    if (!fromHex) hexInput.value = hex.toUpperCase();
+    container.querySelectorAll(".bc-cp-swatch").forEach(b => b.classList.toggle("active", b.dataset.color.toLowerCase() === hex.toLowerCase()));
+  }
+  function emit(){
+    const hex = bcHsvToHex(hue, sat, val);
+    paint(hex);
+    if (onChange) onChange(hex);
+  }
+  function setValue(hex){
+    [hue, sat, val] = bcHexToHsv(hex);
+    paint(hex);
+  }
+  function pick(clientX, clientY){
+    const r = sv.getBoundingClientRect();
+    sat = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    val = Math.min(1, Math.max(0, 1 - (clientY - r.top) / r.height));
+    emit();
+  }
+  let dragging = false;
+  sv.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    dragging = true;
+    try { sv.setPointerCapture(e.pointerId); } catch (err) {}
+    pick(e.clientX, e.clientY);
+  });
+  sv.addEventListener("pointermove", (e) => { if (dragging) pick(e.clientX, e.clientY); });
+  const endDrag = (e) => { dragging = false; try { sv.releasePointerCapture(e.pointerId); } catch (err) {} };
+  sv.addEventListener("pointerup", endDrag);
+  sv.addEventListener("pointercancel", endDrag);
+  hueInput.addEventListener("input", () => { hue = Number(hueInput.value); emit(); });
+  container.querySelectorAll(".bc-cp-swatch").forEach(b => b.addEventListener("click", () => {
+    const hex = b.dataset.color;
+    setValue(hex);
+    if (onChange) onChange(hex.toLowerCase());
+  }));
+  function commitHex(){
+    let v = hexInput.value.trim();
+    if (/^[0-9a-f]{6}$/i.test(v)) v = "#" + v;
+    if (/^#[0-9a-f]{6}$/i.test(v)){
+      setValue(v);
+      if (onChange) onChange(v.toLowerCase());
+    } else {
+      hexInput.value = bcHsvToHex(hue, sat, val).toUpperCase();
+    }
+  }
+  hexInput.addEventListener("change", commitHex);
+  hexInput.addEventListener("keydown", (e) => { if (e.key === "Enter"){ e.preventDefault(); commitHex(); } });
+  setValue(value);
+  return { setValue };
+}
+
+/* Built-in menus/tooltips: any open dropdown, combo or info tooltip. */
+bcRegisterEscapable(
+  () => bcDropdowns.some(d => !d.menu.hidden) || bcCombos.some(c => !c.menu.hidden) || bcInfoTooltips.some(o => !o.tooltip.hidden),
+  () => {
+    bcCloseAllDropdowns();
+    bcCombos.forEach(c => { if (!c.menu.hidden) bcCloseCombo(c); });
+    bcInfoTooltips.forEach(o => { o.tooltip.hidden = true; o.btn.setAttribute("aria-expanded", "false"); });
+  },
+  60
+);

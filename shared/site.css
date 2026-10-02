@@ -766,6 +766,10 @@ span.gfx-md, span.gfx-lg{
   .site-logo{width:34px;height:34px;}
   .nav-close-btn,
   .nav-help-btn{display:none !important;}
+  /* Both buttons inside are hidden here, but the empty group itself would
+     still reserve its margin-left + the row gap (~32px), pushing the
+     theme/share buttons in from the right edge on every tool page. */
+  .nav-exit-group{display:none !important;}
 }
 
 /* Below the general mobile breakpoint, the brand text + logo + 3 nav
@@ -3557,3 +3561,98 @@ html[data-theme="dark"] video{
   color-scheme:dark;
 }
 
+/* ===== .bc-color-panel — shared free-form color picker (swatches, SV
+   square, hue strip, hex field); built by bcCreateColorPanel() in
+   shared/site.js. Same look as Codify's Background panel. ===== */
+.bc-color-panel{
+  width:200px;
+  padding:14px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  border-radius:16px;
+  border:1px solid var(--border-strong);
+  background:var(--bg);
+  color:var(--text);
+}
+.bc-cp-swatches{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:6px;
+}
+.bc-cp-swatch{
+  width:100%;
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid rgba(127,127,127,.35);
+  padding:0;
+  cursor:pointer;
+  transition:.15s;
+}
+.bc-cp-swatch:hover{ transform:scale(1.1); }
+.bc-cp-swatch.active{ border-color:#2563eb; }
+.bc-cp-sv{
+  position:relative;
+  width:100%;
+  height:120px;
+  border-radius:10px;
+  border:1px solid rgba(127,127,127,.35);
+  cursor:crosshair;
+  background-image:
+    linear-gradient(to top, #000, rgba(0,0,0,0)),
+    linear-gradient(to right, #fff, rgba(255,255,255,0));
+  touch-action:none;
+}
+.bc-cp-sv-thumb{
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid #fff;
+  outline:1px solid rgba(0,0,0,.6);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.bc-cp-hue{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:14px;
+  border-radius:7px;
+  background:linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor:pointer;
+}
+.bc-cp-hue::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  cursor:pointer;
+}
+.bc-cp-hue::-moz-range-thumb{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid #1e1e1e;
+  cursor:pointer;
+}
+.bc-cp-hex-row{ display:flex; align-items:center; gap:8px; }
+.bc-cp-hex-label{ font-size:13px; font-weight:700; opacity:.8; flex-shrink:0; }
+.bc-cp-hex-input{
+  flex:1;
+  min-width:0;
+  height:32px;
+  padding:0 10px;
+  border-radius:8px;
+  border:1px solid rgba(127,127,127,.35);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+}
+.bc-cp-hex-input:focus{ outline:none; border-color:#2563eb; }
