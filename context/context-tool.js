@@ -14,7 +14,7 @@
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
     ["WELCOME_TO_CONTEXT", "Context lets you type text or drop in a signature anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
-    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or just click on the page) to drop a text box wherever you need it."],
+    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, or use the Signature or Shape (S) button to drop one in."],
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — or add a signature or a shape (circle, square, triangle) instead of typed text."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — text boxes stay exactly where you placed them."],
     ["YOU_ARE_SET", "Hit Download when you're done. Close this with the red dot and we won't show it again."]
