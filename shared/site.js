@@ -836,7 +836,7 @@ function showNavTerminal(text){
   });
 
   if (shareBtn && shareMenu){
-    shareBtn.addEventListener("click", async () => {
+    shareBtn.addEventListener("click", async (e) => {
       const shareData = {
         title: document.title,
         text: "Try BC Tools for working with images.",
@@ -847,8 +847,28 @@ function showNavTerminal(text){
         catch (e){ /* cancelled, or share unsupported */ }
         return;
       }
-      shareMenu.classList.toggle("open");
+      if (e.detail === 0) shareMenu.classList.toggle("open");
+      else shareMenu.classList.add("open");
     });
+
+    const shareWrap = shareBtn.closest(".nav-share-wrap");
+    if (shareWrap && window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      const closeShare = () => {
+        shareMenu.classList.remove("open");
+        const list = document.getElementById("navShareMoreList");
+        const toggle = document.getElementById("navShareMoreToggle");
+        if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+      };
+      shareWrap.addEventListener("mouseenter", () => {
+        clearTimeout(closeTimer);
+        if (window.innerWidth > 768) shareMenu.classList.add("open");
+      });
+      shareWrap.addEventListener("mouseleave", () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeShare, 250);
+      });
+    }
 
     const shareMoreToggle = document.getElementById("navShareMoreToggle");
     const shareMoreList = document.getElementById("navShareMoreList");

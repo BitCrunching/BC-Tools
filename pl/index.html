@@ -71,7 +71,7 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu</title>
-<meta name="description" content="BC Tools: darmowe, prywatne narzędzia w przeglądarce do obrazów, wideo, dźwięku i kodu — konwertuj, kompresuj, łącz pliki PDF, dodawaj tekst, usuwaj metadane, twórz GIF-y, rób zrzuty ekranu kodu i nie tylko. Nic nigdy nie opuszcza Twojego urządzenia.">
+<meta name="description" content="Darmowe narzędzia działające prosto w przeglądarce, więc Twoje pliki nigdy nie opuszczają urządzenia. Konwertuj i kompresuj obrazy, łącz PDF-y, dodawaj tekst i podpisy, usuwaj metadane ze zdjęć, zamieniaj filmy w GIF-y, konwertuj dźwięk, rób ładne zrzuty kodu, wybieraj kolory i nie tylko. Bez rejestracji, bez wysyłania, sama zabawa.">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,12 +95,12 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu">
-<meta property="og:description" content="Darmowe, prywatne narzędzia w przeglądarce do obrazów, wideo, dźwięku i kodu. Nic nigdy nie opuszcza Twojego urządzenia.">
+<meta property="og:description" content="Darmowe, prywatne narzędzia działające w przeglądarce. Konwertuj, kompresuj, łącz PDF-y, twórz GIF-y i nie tylko. Twoje pliki nigdy nie opuszczają urządzenia, a do tego to świetna zabawa.">
 <meta property="og:url" content="https://bitcrunching.com/pl/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu">
-<meta name="twitter:description" content="Darmowe, prywatne narzędzia w przeglądarce do obrazów, wideo, dźwięku i kodu. Nic nigdy nie opuszcza Twojego urządzenia.">
+<meta name="twitter:description" content="Darmowe, prywatne narzędzia działające w przeglądarce. Konwertuj, kompresuj, łącz PDF-y, twórz GIF-y i nie tylko. Twoje pliki nigdy nie opuszczają urządzenia, a do tego to świetna zabawa.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -2036,7 +2036,7 @@ footer a{
   display:flex !important;
   align-items:center;
   justify-content:center;
-  height:22px !important;
+  height:15px !important;
   padding:0 !important;
   width:100%;
   justify-self:stretch;
@@ -3290,7 +3290,7 @@ if (VALID_PAGES.includes(startPage)) {
   const shareMenu = document.getElementById("navShareMenu");
 
   if (shareBtn && shareMenu){
-    shareBtn.addEventListener("click", async () => {
+    shareBtn.addEventListener("click", async (e) => {
       const shareData = {
         title: "BC Tools",
         text: "Try BC Tools for working with images.",
@@ -3301,8 +3301,28 @@ if (VALID_PAGES.includes(startPage)) {
         catch (e){ /* cancelled, or share unsupported */ }
         return;
       }
-      shareMenu.classList.toggle("open");
+      if (e.detail === 0) shareMenu.classList.toggle("open");
+      else shareMenu.classList.add("open");
     });
+
+    const shareWrap = shareBtn.closest(".nav-share-wrap");
+    if (shareWrap && window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      const closeShare = () => {
+        shareMenu.classList.remove("open");
+        const list = document.getElementById("navShareMoreList");
+        const toggle = document.getElementById("navShareMoreToggle");
+        if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+      };
+      shareWrap.addEventListener("mouseenter", () => {
+        clearTimeout(closeTimer);
+        if (window.innerWidth > 768) shareMenu.classList.add("open");
+      });
+      shareWrap.addEventListener("mouseleave", () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeShare, 250);
+      });
+    }
 
     const shareMoreToggle = document.getElementById("navShareMoreToggle");
     const shareMoreList = document.getElementById("navShareMoreList");

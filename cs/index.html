@@ -71,7 +71,7 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BC Tools – Zdarma nástroje pro obrázky, video, zvuk a kód</title>
-<meta name="description" content="BC Tools: bezplatné, soukromé nástroje v prohlížeči pro obrázky, video, zvuk a kód — převod, komprese, spojování PDF, přidávání textu, odstranění metadat, tvorba GIFů, snímky kódu a další. Nic nikdy neopustí vaše zařízení.">
+<meta name="description" content="Bezplatné nástroje, které běží přímo ve vašem prohlížeči, takže vaše soubory nikdy neopustí zařízení. Převádějte a zmenšujte obrázky, spojujte PDF, přidávejte text a podpisy, mažte metadata z fotek, měňte videa na GIFy, převádějte zvuk, dělejte hezké snímky kódu, vybírejte barvy a další. Bez registrace, bez nahrávání, jen zábava.">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,12 +95,12 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="BC Tools – Zdarma nástroje pro obrázky, video, zvuk a kód">
-<meta property="og:description" content="Bezplatné, soukromé nástroje v prohlížeči pro obrázky, video, zvuk a kód. Nic nikdy neopustí vaše zařízení.">
+<meta property="og:description" content="Bezplatné, soukromé nástroje přímo ve vašem prohlížeči. Převádějte, zmenšujte, spojujte PDF, vytvářejte GIFy a další. Vaše soubory nikdy neopustí zařízení a navíc je to zábava.">
 <meta property="og:url" content="https://bitcrunching.com/cs/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="BC Tools – Zdarma nástroje pro obrázky, video, zvuk a kód">
-<meta name="twitter:description" content="Bezplatné, soukromé nástroje v prohlížeči pro obrázky, video, zvuk a kód. Nic nikdy neopustí vaše zařízení.">
+<meta name="twitter:description" content="Bezplatné, soukromé nástroje přímo ve vašem prohlížeči. Převádějte, zmenšujte, spojujte PDF, vytvářejte GIFy a další. Vaše soubory nikdy neopustí zařízení a navíc je to zábava.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -2036,7 +2036,7 @@ footer a{
   display:flex !important;
   align-items:center;
   justify-content:center;
-  height:22px !important;
+  height:15px !important;
   padding:0 !important;
   width:100%;
   justify-self:stretch;
@@ -3290,7 +3290,7 @@ if (VALID_PAGES.includes(startPage)) {
   const shareMenu = document.getElementById("navShareMenu");
 
   if (shareBtn && shareMenu){
-    shareBtn.addEventListener("click", async () => {
+    shareBtn.addEventListener("click", async (e) => {
       const shareData = {
         title: "BC Tools",
         text: "Try BC Tools for working with images.",
@@ -3301,8 +3301,28 @@ if (VALID_PAGES.includes(startPage)) {
         catch (e){ /* cancelled, or share unsupported */ }
         return;
       }
-      shareMenu.classList.toggle("open");
+      if (e.detail === 0) shareMenu.classList.toggle("open");
+      else shareMenu.classList.add("open");
     });
+
+    const shareWrap = shareBtn.closest(".nav-share-wrap");
+    if (shareWrap && window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      const closeShare = () => {
+        shareMenu.classList.remove("open");
+        const list = document.getElementById("navShareMoreList");
+        const toggle = document.getElementById("navShareMoreToggle");
+        if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+      };
+      shareWrap.addEventListener("mouseenter", () => {
+        clearTimeout(closeTimer);
+        if (window.innerWidth > 768) shareMenu.classList.add("open");
+      });
+      shareWrap.addEventListener("mouseleave", () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeShare, 250);
+      });
+    }
 
     const shareMoreToggle = document.getElementById("navShareMoreToggle");
     const shareMoreList = document.getElementById("navShareMoreList");

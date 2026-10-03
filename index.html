@@ -71,7 +71,7 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BC Tools – Free Image, Video, Audio & Code Tools</title>
-<meta name="description" content="BC Tools: free, private, browser-based tools for images, video, audio, and code — convert, compress, combine PDFs, add text, remove metadata, make GIFs, screenshot code, and more. Nothing ever leaves your device.">
+<meta name="description" content="Free tools that run right in your browser, so your files never leave your device. Convert and compress images, merge PDFs, add text and signatures, strip photo metadata, turn videos into GIFs, convert audio, snap pretty code screenshots, grab colors and more. No sign-up, no uploads, just fun.">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -94,12 +94,12 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="BC Tools – Free Image, Video, Audio & Code Tools">
-<meta property="og:description" content="Free, private, browser-based tools for images, video, audio, and code. Nothing ever leaves your device.">
+<meta property="og:description" content="Free, private tools that run in your browser. Convert, compress, merge PDFs, make GIFs and more. Your files never leave your device, and it's actually fun.">
 <meta property="og:url" content="https://bitcrunching.com/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="BC Tools – Free Image, Video, Audio & Code Tools">
-<meta name="twitter:description" content="Free, private, browser-based tools for images, video, audio, and code. Nothing ever leaves your device.">
+<meta name="twitter:description" content="Free, private tools that run in your browser. Convert, compress, merge PDFs, make GIFs and more. Your files never leave your device, and it's actually fun.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -2035,7 +2035,7 @@ footer a{
   display:flex !important;
   align-items:center;
   justify-content:center;
-  height:22px !important;
+  height:15px !important;
   padding:0 !important;
   width:100%;
   justify-self:stretch;
@@ -3289,7 +3289,7 @@ if (VALID_PAGES.includes(startPage)) {
   const shareMenu = document.getElementById("navShareMenu");
 
   if (shareBtn && shareMenu){
-    shareBtn.addEventListener("click", async () => {
+    shareBtn.addEventListener("click", async (e) => {
       const shareData = {
         title: "BC Tools",
         text: "Try BC Tools for working with images.",
@@ -3300,8 +3300,28 @@ if (VALID_PAGES.includes(startPage)) {
         catch (e){ /* cancelled, or share unsupported */ }
         return;
       }
-      shareMenu.classList.toggle("open");
+      if (e.detail === 0) shareMenu.classList.toggle("open");
+      else shareMenu.classList.add("open");
     });
+
+    const shareWrap = shareBtn.closest(".nav-share-wrap");
+    if (shareWrap && window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      const closeShare = () => {
+        shareMenu.classList.remove("open");
+        const list = document.getElementById("navShareMoreList");
+        const toggle = document.getElementById("navShareMoreToggle");
+        if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+      };
+      shareWrap.addEventListener("mouseenter", () => {
+        clearTimeout(closeTimer);
+        if (window.innerWidth > 768) shareMenu.classList.add("open");
+      });
+      shareWrap.addEventListener("mouseleave", () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeShare, 250);
+      });
+    }
 
     const shareMoreToggle = document.getElementById("navShareMoreToggle");
     const shareMoreList = document.getElementById("navShareMoreList");
