@@ -33,7 +33,7 @@ window.BC_I18N = {
  "BC Tools logo": "Logo BC Tools",
  "BC Tools – Free Image, Video, Audio & Code Tools": "BC Tools – Zdarma nástroje pro obrázky, video, zvuk a kód",
  "BC Tools: free, private, browser-based tools for images, video, audio, and code — convert, compress, combine PDFs, add text, remove metadata, make GIFs, screenshot code, and more. Nothing ever leaves your device.": "BC Tools: bezplatné, soukromé nástroje v prohlížeči pro obrázky, video, zvuk a kód — převod, komprese, spojování PDF, přidávání textu, odstranění metadat, tvorba GIFů, snímky kódu a další. Nic nikdy neopustí vaše zařízení.",
- "BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED": "BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED",
+ "BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED": "BC-TOOLS_INTERNÍ_PAMĚT: ROZFRAGMENTOVANÁ",
  "Back to Creative Hub": "Zpět do Creative Hub",
  "Best for everyday photos.": "Nejlepší pro běžné fotografie.",
  "Best for logos, screenshots, and transparency.": "Nejlepší pro loga, snímky obrazovky a průhlednost.",
