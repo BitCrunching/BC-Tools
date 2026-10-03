@@ -362,7 +362,7 @@ window.BC_I18N = {
  "Comments metadata found!": "Opmerkingenmetadata gevonden!",
  "Common reasons people need this": "Veelvoorkomende redenen waarom mensen dit nodig hebben",
  "Company": "Bedrijf",
- "Compress": "Comprimeren",
+ "Compress": "Compress",
  "Compress and download": "Comprimeren en downloaden",
  "Compress and download (D)": "Comprimeren en downloaden (D)",
  "Compress icon": "Compress-pictogram",
