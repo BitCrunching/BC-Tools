@@ -6,7 +6,7 @@ BitCrunching is a modern alternative tool suite — a lightweight, serverless we
 
 ---
 
-## 🛠️ Features Today
+## Features Today
 
 * **Image Tools:**
   * **Convert:** Change image formats (PNG, JPG, WEBP, SVG, PDF) instantly.
@@ -19,7 +19,7 @@ BitCrunching is a modern alternative tool suite — a lightweight, serverless we
 
 ---
 
-## 🚀 Roadmap
+## Roadmap
 
 BitCrunching is designed to evolve over time into a full suite of digital file utilities:
 
