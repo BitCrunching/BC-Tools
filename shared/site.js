@@ -878,6 +878,12 @@ function showNavTerminal(text){
         shareMoreList.hidden = !willOpen;
         shareMoreToggle.setAttribute("aria-expanded", String(willOpen));
       });
+      if (window.matchMedia("(hover: hover)").matches){
+        shareMoreToggle.addEventListener("mouseenter", () => {
+          shareMoreList.hidden = false;
+          shareMoreToggle.setAttribute("aria-expanded", "true");
+        });
+      }
     }
 
     shareMenu.addEventListener("click", async (e) => {

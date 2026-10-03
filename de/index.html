@@ -1997,7 +1997,7 @@ footer a{
   position:absolute;
   top:44px;
   right:0;
-  width:190px;
+  width:120px;
   padding:8px;
   border-radius:18px;
   background:#1d2436;
@@ -2013,7 +2013,10 @@ footer a{
 
 .nav-share-menu button{
   height:34px;
-  padding:0 12px;
+  padding:0 10px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
   border-radius:12px;
   border:0;
   background:transparent;
@@ -3332,6 +3335,12 @@ if (VALID_PAGES.includes(startPage)) {
         shareMoreList.hidden = !willOpen;
         shareMoreToggle.setAttribute("aria-expanded", String(willOpen));
       });
+      if (window.matchMedia("(hover: hover)").matches){
+        shareMoreToggle.addEventListener("mouseenter", () => {
+          shareMoreList.hidden = false;
+          shareMoreToggle.setAttribute("aria-expanded", "true");
+        });
+      }
     }
 
     shareMenu.addEventListener("click", async (e) => {
