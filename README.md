@@ -1,4 +1,4 @@
-# BitCrunching ⚡
+# BitCrunching 
 
 > Instant, privacy-first file utilities right in your browser.
 
