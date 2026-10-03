@@ -150,6 +150,9 @@ def build_page(rel, tr, lang, built_pages, missing):
                 trail = text[len(text.rstrip()):]
                 out.append(lead + new + trail)
     result = "".join(out)
+    # Phone-width CSS shows the help banner title as just "GUIDE" via content:"..."
+    if "GUIDE" in tr:
+        result = result.replace('content:"GUIDE"', 'content:"' + tr["GUIDE"] + '"')
     # The English source already lists its translations; regenerate them below.
     result = re.sub(r'[ \t]*<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", result)
 

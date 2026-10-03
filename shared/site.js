@@ -314,7 +314,7 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
 
   function render(){
     const [heading, text] = steps[index];
-    stepEl.textContent = toolName.toUpperCase() + "_GUIDE: " + bcT("STEP") + " " + (index + 1) + "/" + steps.length;
+    stepEl.textContent = toolName.toUpperCase() + "_" + bcT("GUIDE") + ": " + bcT("STEP") + " " + (index + 1) + "/" + steps.length;
     textEl.textContent = bcT(heading) + " — " + bcT(text);
     back.disabled = index === 0;
     next.disabled = index === steps.length - 1;

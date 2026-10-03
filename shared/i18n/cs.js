@@ -299,6 +299,7 @@ window.BC_I18N = {
  "GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.": "GIFy tu nejsou podporované — Compress zpracovává jen statické obrázky. Animovaný GIF zmenšíte v Congify.",
  "GIFs were skipped — animated images aren't supported here, try Congify instead.": "GIFy byly přeskočeny — animované obrázky tu nejsou podporované, zkuste Congify.",
  "GPS metadata found!": "Nalezena metadata GPS!",
+ "GUIDE": "PRŮVODCE",
  "Galactic Handbook": "Galaktická příručka",
  "Get in touch with us": "Kontaktujte nás",
  "Get working with Creative Hub... a place where creativity travels faster than the speed of light.": "Pusťte se do práce s Creative Hub… místem, kde tvořivost cestuje rychleji než světlo.",
