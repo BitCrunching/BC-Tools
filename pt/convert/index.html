@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convert – Conversor gratuito de imagens e PDF – BC Tools</title>
+<meta name="description" content="Converta imagens entre JPG, PNG, WEBP, SVG e PDF de graça, direto no navegador. Sem envios, sem servidor, nada sai do seu dispositivo.">
+<link rel="canonical" href="https://bitcrunching.com/pt/convert/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/convert/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/convert/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/convert/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/convert/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/convert/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/convert/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/convert/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/convert/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/convert/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
+<script src="/shared/i18n/pt.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Convert – Conversor gratuito de imagens e PDF – BC Tools">
+<meta property="og:description" content="Converta imagens entre JPG, PNG, WEBP, SVG e PDF de graça, direto no navegador. Sem envios, sem servidor, nada sai do seu dispositivo.">
+<meta property="og:url" content="https://bitcrunching.com/pt/convert/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Convert – Conversor gratuito de imagens e PDF – BC Tools">
+<meta name="twitter:description" content="Converta imagens entre JPG, PNG, WEBP, SVG e PDF de graça, direto no navegador. Sem envios, sem servidor, nada sai do seu dispositivo.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+<script src="/vendor/pdf-lib.min.js"></script>
+<script src="/vendor/pdf.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=137">
+<style>
+.tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cvAfterDrop is revealed, so it never fights the dropdowns
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
+.tool-app:has(#cvAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cvAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cvAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cvResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cvAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Coudio already applies to #cdStatus for the same
+   reason; found via a 1100×322.5px banner-size audit (every other tool
+   renders exactly that pre-load, Convert/Compress were 354.5 — 32px of
+   dead space). */
+.tool-app:has(#cvAfterDrop[hidden]) #cvResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-convert{ animation:icon-wobble .5s ease; }
+.cs-shape{ background:#d670ff; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Convert's own brand-tinted
+   border on top, the one genuinely tool-specific piece. Same
+   color at both themes, so no light/dark split needed here. */
+.result{ border-color:#d670ff55; }
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cv-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#7626f5;
+  color:#7626f5;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+  border-bottom:1px dashed rgba(255,255,255,.14);
+}
+html[data-theme="light"] .help-banner-header{
+  border-bottom-color:rgba(29,36,54,.25);
+}
+.help-banner-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+/* Red and yellow are both functional here (close / collapse), unlike
+   the mainpage easter egg where only yellow does anything — so both
+   get their real traffic-light color instead of the muted grey used
+   for a purely decorative dot. */
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+.help-banner-term-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.14);
+  background:none;
+  color:#e5e7eb;
+  opacity:.8;
+  font-family:var(--bc-mono);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:.2s;
+}
+html[data-theme="light"] .help-banner-term-btn{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+.help-banner-term-btn:hover{
+  opacity:1;
+  border-color:#4ade80;
+  color:#4ade80;
+}
+.help-banner-term-btn:disabled{
+  opacity:.3;
+  cursor:default;
+}
+.help-banner-term-btn:disabled:hover{
+  border-color:rgba(255,255,255,.14);
+  color:#e5e7eb;
+}
+html[data-theme="light"] .help-banner-term-btn:disabled:hover{
+  border-color:rgba(29,36,54,.3);
+  color:#1d2436;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIA";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+#cvDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cvDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cvDrop.active{
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+.tool-app.active{
+  background:rgba(118,38,245,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cvAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. Was previously
+   nested inside #cvAfterDrop with a large negative top pulling it up
+   out of that box — worked, but was a one-off recipe instead of the
+   same positioning every other tool uses. */
+.cv-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cvAfterDrop:not([hidden])) .cv-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cv-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cv-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cv-back-btn{ display:none; }
+  .tool-app:has(#cvAfterDrop:not([hidden])) .cv-back-btn{ display:flex; }
+}
+
+.tool-io-row{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+
+/* .tool-controls is normally a 2-column grid pairing a format picker
+   with the primary button; here it now wraps only the Convert button
+   (the pickers moved into .tool-io-row above), so it needs to be a
+   single full-width column instead. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+.tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
+.tool-io-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:10px;
+}
+.io-label-short{ display:none; }
+
+/* Shape/color is the shared .bc-info-btn/.bc-info-tooltip
+   (shared/site.css) now — only the .tool-io-label flex layout above
+   stays local. Used to be this tool's own local .tool-io-info-btn/
+   -tooltip copy (the component's origin); Coudio's own use of the "i"
+   icon pointed at the shared version from the start, so Convert now
+   points at the same one instead of carrying a separate copy. */
+@media (max-width:640px){
+  .io-label-full{ display:none; }
+  .io-label-short{ display:inline; }
+}
+
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
+.tool-io-group .tool-format-select{ display:block; }
+@media (max-width:768px){
+  .tool-io-group .tool-format-select{ display:none !important; }
+}
+/* Mobile shortens both Input's and Output's placeholder — "Choose
+   format"/"Choose a format" don't fit as comfortably at phone widths
+   as they do on desktop — to just "Pick". Scoped to .is-placeholder
+   (toggled in convert-tool.js alongside the real textContent swap) so
+   this only applies before a format's actually chosen; once one is,
+   the label shows the real selection (e.g. "JPG") on mobile exactly
+   as it does on desktop. */
+@media (max-width:768px){
+  #cvInputTriggerLabel.is-placeholder,
+  #cvFormatTriggerLabel.is-placeholder{ font-size:0; }
+  #cvInputTriggerLabel.is-placeholder::before,
+  #cvFormatTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
+}
+
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
+
+.format-pick-intro{
+  max-width:680px;
+  margin:0 auto 32px;
+  text-align:center;
+  color:var(--text);
+  opacity:.8;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+/* Scoped to Convert specifically — .format-pick-group is shared with
+   Compress's level cards, which don't have this actions row. */
+.content-section-convert .format-pick-group{
+  padding:20px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+.content-section-convert .format-pick-sublist{
+  margin-bottom:16px;
+}
+.format-pick-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:auto;
+}
+.format-pick-action-btn{
+  width:100%;
+  height:40px;
+  padding:0 16px;
+  border-radius:14px;
+  border:1px solid var(--border-strong);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.format-pick-action-btn:hover{
+  background:rgba(127,127,127,.15);
+}
+.format-pick-action-btn:focus-visible{
+  outline:2px solid rgba(255,255,255,.5);
+  outline-offset:2px;
+}
+/* Marks which format this card's Input/Output was last set to — stays
+   selected after the click so the card visibly reflects the tool's
+   current state, rather than looking like a one-shot action button.
+   Input and Output are tracked independently (see convert-tool.js), so
+   picking "I have this" here doesn't disturb any other card's "I need
+   this" selection and vice versa — a user can set both from one card,
+   or just the one they still need after already uploading a file. */
+.format-pick-action-btn.selected{
+  background:#c365fb;
+  border-color:#c365fb;
+  color:#fff;
+}
+.format-pick-action-btn.selected:hover{
+  background:#b34df5;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Usamos cookies. Escolha abaixo quais categorias permitir. Veja nossa <a data-goto="cookies">Política de Cookies</a> para mais detalhes.</p>
+  <p class="cookie-banner-text-mobile">Escolha quais categorias permitir</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Alternar conteúdo das configurações de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIES_FERRAMENTAS_DEV:</span>
+    </span>
+    <span>Escolha quais categorias permitir</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mais sobre cookies necessários">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessários (sempre ativos)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Esses mantêm o essencial funcionando: lembrar sua escolha de cookies, seu idioma e seu tema claro/escuro. Não podem ser desativados e, como tudo o mais neste site, nunca saem do seu dispositivo.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mais sobre cookies de análise">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Análise - Para privacidade total, mantenha desativado.</span><span class="cookie-label-docked">Análise (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Isso nos permite melhorar a experiência do usuário recebendo dados valiosos via (Google Analytics) sobre como os usuários navegam pelo nosso site. Se você deseja permanecer totalmente anônimo, recomendamos desativar esta opção.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mais sobre cookies de publicidade">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicidade (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Usado pelo Google AdSense para exibir anúncios. Atualmente desativado em todo o site enquanto aguardamos a aprovação do AdSense, então este botão ainda não tem efeito.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Aceitar tudo</button>
+    <button type="button" id="cookieBannerSave">Confirmar escolhas</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logotipo do BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Alternar entre modo claro e escuro" title="Alternar entre modo claro e escuro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Compartilhar" title="Compartilhar">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiar link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mais opções de compartilhamento"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Clique para redefinir o guia da ferramenta" title="Clique para redefinir o guia da ferramenta">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Voltar ao Creative Hub" title="Voltar ao Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cvHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cvHelpClose" aria-label="Fechar e não mostrar novamente"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cvHelpToggle" aria-label="Minimizar" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cvHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="help-banner-term-btn" id="cvHelpBack">&lt; VOLTAR</button>
+      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="cvHelpCloseMobile">FECHAR</button>
+      <button type="button" class="help-banner-term-btn" id="cvHelpNext">PRÓXIMO &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cvHelpBody">
+    <div class="engine-status-row">&gt; <span id="cvHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-convert" role="img" aria-label="Ícone do Convert"></span>
+        Convert
+      </div>
+      <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Voltar ao Creative Hub" title="Voltar ao Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remover todos os arquivos">×</button>
+
+    <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Clique</span><span class="tool-drop-or-drop"> ou solte </span><span class="tool-drop-rest">imagens ou um PDF</span></div>
+    <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue de onde parou</button>
+
+    <div class="tool-after-drop" id="cvAfterDrop" hidden>
+      <div class="tool-io-row">
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label">
+            <span class="io-label-full">Entrada esperada</span><span class="io-label-short">IN</span>
+            <button type="button" class="bc-info-btn" id="cvInputInfoBtn" aria-label="O que significa Entrada esperada?" aria-expanded="false">i</button>
+          </span>
+          <div class="bc-info-tooltip" id="cvInputInfoTooltip" hidden>O formato de cada arquivo enviado é reconhecido separadamente, então misturar formatos diferentes não é problema. Cada arquivo é convertido para o formato escolhido.</div>
+          <!-- The real <select> below is the state/event backend every
+               existing bit of format logic (mutual-exclusion, URL
+               routing, auto-detect) already reads/writes — kept exactly
+               as it was, just visually hidden. This .bc-dropdown is the
+               real visible/interactive control now, kept in sync with
+               the select's value at every point convert-tool.js sets
+               one (see syncDropdownTrigger there). 5 options → the
+               plain shared dropdown, not the searchable combo. -->
+          <div class="bc-dropdown" id="cvInputDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvInputTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvInputTriggerLabel">Escolher formato</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvInputMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/heic" data-label="HEIC" role="option" aria-selected="false">HEIC</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvInputSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Escolher formato</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="image/heic">HEIC</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+
+        <span class="tool-io-swap" aria-hidden="true">
+          <span class="tool-io-swap-arrow">&rarr;</span>
+        </span>
+
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label"><span class="io-label-full">Saída</span><span class="io-label-short">SAÍDA</span></span>
+          <div class="bc-dropdown" id="cvFormatDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvFormatTriggerLabel">Escolha um formato</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvFormatMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvFormatSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Escolha um formato</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-results" id="cvResults">
+      <button type="button" class="bc-add-tile" id="cvAddTile" aria-label="Adicionar imagens ou um PDF" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">Arquivos individuais</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cvConvertBtn" disabled title="Converter e baixar (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">Converter e baixar</button>
+    </div>
+
+    <div class="tool-status" id="cvStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="convert">
+  <div class="content-section-article-wrap" id="cvWhyArticle" hidden>
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3 id="cvWhyHeading"></h3>
+    <p id="cvWhyP1"></p>
+    <p id="cvWhyP2"></p>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-2"></span>
+    </div>
+    <h3>Não sabe qual formato usar?</h3>
+    <p class="format-pick-intro">Veja para que cada formato realmente serve. Escolha o formato que você já tem e o formato de que precisa.</p>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal para fotos do dia a dia.</li>
+          <li>Arquivos pequenos, ótima compatibilidade.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn" data-set-input="image/jpeg">Eu tenho isto</button>
+          <button type="button" class="format-pick-action-btn" data-set-output="image/jpeg">Eu preciso disto</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal para logotipos, capturas de tela e transparência.</li>
+          <li>Qualidade sem perda.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn" data-set-input="image/png">Eu tenho isto</button>
+          <button type="button" class="format-pick-action-btn" data-set-output="image/png">Eu preciso disto</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal para sites.</li>
+          <li>Arquivos menores com suporte a transparência.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn" data-set-input="image/webp">Eu tenho isto</button>
+          <button type="button" class="format-pick-action-btn" data-set-output="image/webp">Eu preciso disto</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-heic" aria-hidden="true"></span> HEIC</p>
+        <ul class="format-pick-sublist">
+          <li>Formato de foto padrão do iPhone: aceito como entrada.</li>
+          <li>Converta para JPG, PNG ou WEBP para maior compatibilidade.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn" data-set-input="image/heic">Eu tenho isto</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal para compartilhar várias imagens como um único documento.</li>
+          <li>Você também pode mesclá-los com nossa ferramenta Combine.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn" data-set-input="application/pdf">Eu tenho isto</button>
+          <button type="button" class="format-pick-action-btn" data-set-output="application/pdf">Eu preciso disto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>Novo em converter imagens?</h3>
+    <p>Cada formato de imagem foi projetado para resolver um problema diferente, e escolher o certo tem um efeito maior no tamanho e na qualidade do arquivo do que quase qualquer outra decisão ao preparar imagens. Veja o que realmente acontece por baixo dos panos em cada um e quando isso de fato importa.</p>
+    <p>Quer saber mais? Leia na íntegra: <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert" href="/golden-rules/?tool=convert">a apenas um clique de distância.</a></p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000015" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Empresa</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">Nosso universo</span><span class="footer-link-plain">Sobre nós</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">Já respondido</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">Manual galáctico</span><span class="footer-link-plain">Termos de Uso</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">Protocolo alienígena de privacidade</span><span class="footer-link-plain">Política de Privacidade</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Registro de cookies</span><span class="footer-link-plain">Política de Cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primeiros passos com</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Entre em contato</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Entre no nosso Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=68" defer></script>
+<script src="/convert/convert-tool.js?v=40" defer></script>
+</body>
+</html>
