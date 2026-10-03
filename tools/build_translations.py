@@ -40,6 +40,10 @@ PAGES = [
     "codify/index.html",
     "faq/index.html",
     "golden-rules/index.html",
+    "about/index.html",
+    "privacy/index.html",
+    "terms/index.html",
+    "cookies/index.html",
 ]
 
 SKIP_TEXT_IN = {"script", "style", "code", "pre", "textarea", "svg", "noscript"}
