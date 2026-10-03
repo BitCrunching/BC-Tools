@@ -1,0 +1,3598 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme()/toggle logic still lives in its usual place further
+     down the page, this tiny early copy exists only to prevent a flash
+     of the *other* theme on load. Without this, the browser paints once
+     using :root's default (light) tokens before the deferred script
+     that reads localStorage and sets data-theme ever runs — confirmed
+     directly (a user's dark-mode reload visibly flashed light for 2
+     frames before flipping dark) — because that real logic used to run
+     from inside <body>, far too late to beat first paint. Keep this in
+     sync with the real applyTheme's own light/dark default logic if that
+     ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+})();
+</script>
+<!-- Custom scroll-position restore on reload, replacing the browser's
+     own native one entirely (history.scrollRestoration stays "manual"
+     for the rest of this page's life, never switched back to "auto").
+     The native version repaints at scrollTop 0 first, then corrects to
+     the remembered position later once the browser decides layout is
+     "ready" — that correction is a visible jump-then-settle on reload,
+     worse the farther down the page you were. Taking it over ourselves
+     applies the remembered position exactly once, on DOMContentLoaded —
+     by which point the full DOM already exists (this page has no
+     async-loaded content that would change height any later) — instead
+     of racing the browser's own opaque internal timing. Keyed by
+     location.pathname, not a single flat "bc-scrollY" — sessionStorage
+     is per-origin/per-tab, not per-page, so one flat key was actually
+     shared by every page under this origin: leaving the homepage
+     scrolled deep down and clicking through to a tool page restored
+     that same deep offset there too, landing on the tool's own later
+     content (an article section, etc.) instead of its top. Namespacing
+     by path keeps this purely a same-page reload restore, which is all
+     it was ever meant to be. -->
+<script>
+(function(){
+  try { history.scrollRestoration = "manual"; } catch(e){}
+  var scrollKey = "bc-scrollY:" + location.pathname;
+  function restoreScroll(){
+    try {
+      const y = sessionStorage.getItem(scrollKey);
+      /* window.scrollTo, not document.documentElement.scrollTop = ... —
+         a direct scrollTop assignment gets silently reset back to 0 on
+         this page (something else resets it before it sticks); scrollTo
+         actually holds. behavior:"instant" skips html's own
+         scroll-behavior:smooth so this restore is a single jump, not a
+         visible scroll animation down the page on every reload. */
+      if (y) window.scrollTo({ top: parseInt(y, 10), behavior: "instant" });
+    } catch(e){}
+  }
+  document.addEventListener("DOMContentLoaded", restoreScroll);
+  /* Also re-applied on load (images/icons/etc. fully sized, not just
+     the DOM parsed) — confirmed directly that DOMContentLoaded alone
+     isn't always enough: the page can still be taller than its final
+     height at that point, so the same saved pixel offset visibly
+     overshoots (landed on the footer instead of the intended section)
+     until layout finishes settling and this second pass corrects it. */
+  window.addEventListener("load", restoreScroll);
+  window.addEventListener("pagehide", () => {
+    try { sessionStorage.setItem(scrollKey, String(window.scrollY)); } catch(e){}
+  });
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BC Tools – Strumenti gratuiti per immagini, video, audio e codice</title>
+<meta name="description" content="BC Tools: strumenti gratuiti, privati e nel browser per immagini, video, audio e codice: converti, comprimi, unisci PDF, aggiungi testo, rimuovi metadati, crea GIF, fai screenshot del codice e altro. Niente lascia mai il tuo dispositivo.">
+<!-- AdSense disabled until further notice — placeholder ad-slot IDs
+     cause console errors once this script actually tries to fill them.
+     Re-enable by uncommenting once real ad units exist.
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3037236608651508" crossorigin="anonymous"></script>
+-->
+<link rel="canonical" href="https://bitcrunching.com/it/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/">
+<script src="/shared/i18n/it.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="BC Tools – Strumenti gratuiti per immagini, video, audio e codice">
+<meta property="og:description" content="Strumenti gratuiti, privati e nel browser per immagini, video, audio e codice. Niente lascia mai il tuo dispositivo.">
+<meta property="og:url" content="https://bitcrunching.com/it/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BC Tools – Strumenti gratuiti per immagini, video, audio e codice">
+<meta name="twitter:description" content="Strumenti gratuiti, privati e nel browser per immagini, video, audio e codice. Niente lascia mai il tuo dispositivo.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "BC Tools",
+  "url": "https://bitcrunching.com/",
+  "logo": "https://bitcrunching.com/favicon.svg"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BC Tools",
+  "url": "https://bitcrunching.com/"
+}
+</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<!-- The tool-icon SVGs/mask rules live in shared/icons.css, the one
+     canonical copy every tool page also points at (via @import inside
+     shared/site.css) — index.html links it directly here rather than
+     duplicating the block inline, since this page otherwise keeps all
+     its own CSS inline and doesn't load the rest of shared/site.css. -->
+<link rel="stylesheet" href="/shared/icons.css?v=4">
+<link rel="stylesheet" href="/shared/nav.css?v=1">
+<!-- Same reasoning, same pattern: the 4 category texture recipes
+     (image/video/sound/code) live in shared/textures.css so a tool's
+     own banner can opt into the same treatment its homepage card uses,
+     instead of the homepage keeping a private copy only it can see. -->
+<link rel="stylesheet" href="/shared/textures.css?v=2">
+
+<style>
+/* ===== TOKENS ===== */
+:root{
+  --context-yellow:#F6D44A;
+  /* Structural tokens — real light-mode values here, real dark-mode
+     values in the :root[data-theme="dark"] block below. These replace
+     the old approach (one dark-only value + a filter:invert on
+     #app-shell to fake light mode at paint time), which never round
+     -tripped correctly for every hue and needed a growing pile of
+     per-element exceptions to patch. Brand/accent colors (the 5 tool
+     colors, --shape-color) are deliberately NOT here — they're meant to
+     render identically in both themes, so they stay plain hex at their
+     point of use. */
+  --bg:#ffffff;
+  --border:rgba(0,0,0,.14);
+  --border-strong:rgba(0,0,0,.4);
+  --text:#1a1a1a;
+  --accent:#1e293b;
+  --accent2:#475569;
+  /* Manually synced with shared/site.css's own --bc-mono — same reason
+     --context-yellow is a local copy here (this page doesn't load
+     shared/site.css). See that file's :root comment for what this
+     unifies. */
+  --bc-mono:"Courier New", Courier, monospace;
+}
+
+:root[data-theme="dark"]{
+  --bg:#202124;
+  --border:rgba(255,255,255,.14);
+  --border-strong:rgba(255,255,255,.4);
+  --text:#ffffff;
+  --accent:#f1f5f9;
+  --accent2:#cbd5e1;
+}
+
+
+*{box-sizing:border-box;}
+
+/* Forces every element's transition off for one paint during a theme
+   swap (see applyTheme below) — so the light/dark flip is a hard cut
+   instead of every component's own ~0.2s transition (buttons, .result,
+   etc.) crossfading independently, which reads as one slow, uneven
+   fade rather than an instant switch. Removed two frames later, so
+   hover/etc. transitions keep working normally afterward. */
+.theme-instant, .theme-instant *{
+  transition:none !important;
+}
+
+html{
+  scroll-behavior:smooth;
+  /* Decorative background shapes (.cs-shape etc.) intentionally bleed
+     past their container's edges via overflow:visible for a parallax
+     look — on narrow phones a couple of them (Combine/Cleanly's
+     cs-shape-2) bleed past the *right* edge specifically, which browsers
+     do turn into real horizontal scroll. Rather than re-tuning each
+     shape's per-page offset (fragile — the next new shape reintroduces
+     this), clip at the document level: shapes still bleed/clip exactly
+     as designed, just never create an actual scrollbar.  */
+  overflow-x:hidden;
+}
+
+/* Light/dark theming now comes entirely from the --bg/--text/--border/
+   --accent tokens above (:root vs :root[data-theme="dark"]) plus each
+   brand color's own literal hex at its point of use — no page-wide
+   filter, no per-element "cancel the filter" exceptions. Brand colors
+   (tool accents, decorative shapes) render identically in both themes
+   simply because nothing is inverting them anymore. */
+
+body{
+  margin:0;
+  font-family:system-ui, sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  min-height:100vh;
+}
+
+/* Sticky footer: on short pages (e.g. Context with no PDF loaded yet),
+   the active page grows to fill any leftover viewport height so the
+   footer sits flush at the bottom instead of leaving a gap of plain
+   page background beneath it. */
+#app-shell{
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+
+/* ===== COOKIE CONSENT BANNER ===== */
+.cookie-banner[hidden]{
+  display:none;
+}
+
+/* Per-theme colors, not the invert filter — filter also inverts
+   shadows/borders and made this overlay nearly invisible in light mode. */
+.cookie-banner{
+  position:fixed;
+  left:16px;
+  right:16px;
+  bottom:16px;
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  max-width:520px;
+  margin:0 auto;
+  padding:20px 24px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:20px;
+}
+
+html[data-theme="light"] .cookie-banner{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.cookie-banner p{
+  margin:0;
+  font-size:14px;
+  line-height:1.5;
+  color:#e5e7eb;
+}
+
+html[data-theme="light"] .cookie-banner p{
+  color:#1d2436;
+}
+
+.cookie-banner a{
+  color:#f1f5f9;
+  text-decoration:underline;
+  cursor:pointer;
+}
+
+html[data-theme="light"] .cookie-banner a{
+  color:#1d2436;
+}
+
+.cookie-banner-categories{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  border-top:1px solid rgba(255,255,255,.14);
+  border-bottom:1px solid rgba(255,255,255,.14);
+  padding:10px 0;
+}
+
+html[data-theme="light"] .cookie-banner-categories{
+  border-color:rgba(29,36,54,.25);
+}
+
+.cookie-toggle-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:6px 0;
+  font-size:14px;
+  color:#e5e7eb;
+}
+
+.cookie-toggle-row[hidden]{
+  display:none;
+}
+
+html[data-theme="light"] .cookie-toggle-row{
+  color:#1d2436;
+}
+
+/* The "> " prefix on each category label is now a real button (was
+   plain text baked into the translated string) — clicking it expands
+   a short description of that category, without also toggling the
+   checkbox next to it (a real risk if this lived inside the <label>
+   instead of as its sibling). */
+.cookie-cat-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.cookie-cat-row .cookie-toggle-row{
+  flex:1;
+}
+
+.cookie-cat-arrow{
+  flex-shrink:0;
+  background:none;
+  border:none;
+  padding:0;
+  font:inherit;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  color:#e5e7eb;
+  opacity:.6;
+  cursor:pointer;
+  transition:transform .15s ease, opacity .15s ease;
+}
+
+.cookie-cat-arrow:hover,
+.cookie-cat-arrow:focus-visible{
+  opacity:1;
+}
+
+.cookie-cat.open .cookie-cat-arrow{
+  transform:rotate(90deg);
+}
+
+html[data-theme="light"] .cookie-cat-arrow{
+  color:#1d2436;
+}
+
+.cookie-cat-detail{
+  margin:0 0 6px 20px;
+  font-size:12px;
+  line-height:1.45;
+  color:#e5e7eb;
+  opacity:.7;
+}
+
+.cookie-cat-detail[hidden]{
+  display:none;
+}
+
+/* Same recurring bug as .cookie-toggle-row above — an unconditional
+   display:flex on .cookie-cat-row alone wouldn't be affected since
+   [hidden] targets .cookie-cat itself, but guarding it explicitly
+   here too since .cookie-cat has no display of its own to conflict
+   with (this is defensive, matching the established pattern rather
+   than a currently-observed bug). */
+.cookie-cat[hidden]{
+  display:none;
+}
+
+html[data-theme="light"] .cookie-cat-detail{
+  color:#1d2436;
+}
+
+.cookie-toggle-status{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  color:#ff6b6b;
+}
+
+.cookie-toggle-status.is-allowed{
+  color:#4ade80;
+}
+
+html[data-theme="light"] .cookie-toggle-status{
+  color:#dc2626;
+}
+
+html[data-theme="light"] .cookie-toggle-status.is-allowed{
+  color:#16a34a;
+}
+
+.cookie-toggle-row input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  flex:0 0 auto;
+  accent-color:#4ade80;
+  cursor:pointer;
+}
+
+.cookie-toggle-row input[type="checkbox"]:disabled{
+  cursor:not-allowed;
+  opacity:.6;
+}
+
+.cookie-banner-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+/* Feedback for "Confirm choices" — the docked panel doesn't dismiss
+   itself, so this is the only visible response. */
+.cookie-banner-saved{
+  margin-right:auto;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:.05em;
+  color:#4ade80;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+
+.cookie-banner-saved.is-visible{
+  opacity:1;
+}
+
+html[data-theme="light"] .cookie-banner-saved{
+  color:#16a34a;
+}
+
+.cookie-banner-saved-cursor{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  font-size:11px;
+  letter-spacing:.05em;
+  color:#4ade80;
+}
+
+html[data-theme="light"] .cookie-banner-saved-cursor{
+  color:#16a34a;
+}
+
+/* Docked panel auto-saves per toggle, so confirm is redundant there —
+   floating prompt still needs it. .needs-consent covers the exception:
+   no prior consent means "decline all" changes nothing, so auto-save
+   never fires without an explicit confirm. */
+.cookie-label-docked{
+  display:none;
+}
+.cookie-banner.docked .cookie-label-float{
+  display:none;
+}
+.cookie-banner.docked .cookie-label-docked{
+  display:inline;
+}
+
+.cookie-banner.docked #cookieBannerSave{
+  display:none;
+}
+
+.cookie-banner.docked.needs-consent #cookieBannerSave{
+  display:inline-flex;
+  align-items:center;
+}
+
+.cookie-banner-actions button{
+  height:40px;
+  padding:0 18px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  cursor:pointer;
+  font-weight:700;
+  font-size:14px;
+  background:rgba(255,255,255,.08);
+  color:#e5e7eb;
+}
+
+html[data-theme="light"] .cookie-banner-actions button{
+  border-color:rgba(29,36,54,.25);
+  background:rgba(29,36,54,.06);
+  color:#1d2436;
+}
+
+.cookie-banner-actions button:hover{
+  background:rgba(255,255,255,.14);
+}
+
+html[data-theme="light"] .cookie-banner-actions button:hover{
+  background:rgba(29,36,54,.12);
+}
+
+#cookieBannerAcceptAll{
+  background:#4ade80;
+  color:#111;
+  border-color:#4ade80;
+}
+
+#cookieBannerAcceptAll:hover{
+  background:#6ee7a3;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll{
+  /* #16a34a only gave white text a 3.30:1 ratio against it (fails
+     WCAG AA's 4.5:1) — darkened until it actually passes. */
+  background:#15803d;
+  color:#fff;
+  border-color:#15803d;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll:hover{
+  background:#166534;
+}
+
+/* "Accept All" flips to "Disable all" once everything's on, and back
+   once everything's off. */
+#cookieBannerAcceptAll.is-disable-all{
+  background:#ef4444;
+  color:#111;
+  border-color:#ef4444;
+}
+
+#cookieBannerAcceptAll.is-disable-all:hover{
+  background:#f87171;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all{
+  background:#dc2626;
+  color:#fff;
+  border-color:#dc2626;
+}
+
+html[data-theme="light"] #cookieBannerAcceptAll.is-disable-all:hover{
+  background:#b91c1c;
+}
+
+@media (max-width:600px){
+  .cookie-banner-actions{
+    flex-direction:column-reverse;
+  }
+  .cookie-banner-actions button{
+    width:100%;
+  }
+}
+
+/* Per-theme colors, same as .engine-status-card — not the invert filter. */
+/* Terminal label, inline with the panel's intro text */
+/* Uncolored — inherits the panel's text color */
+.cookie-dock-inline-label{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-right:6px;
+  white-space:nowrap;
+}
+
+.cookie-dock-title{
+  margin-left:6px;
+  /* Heading stays bold against the regular-weight body text below it,
+     same title/body split as .engine-status-title/.engine-status-row. */
+  font-weight:700;
+}
+
+/* Re-parent target for the cookie banner on the Cookies page */
+.cookie-banner-dock{
+  margin-top:8px;
+}
+
+/* Must precede the media query — equal specificity means source order
+   wins, so a later display:none would beat display:inline-flex at every
+   width. */
+.cookie-mobile-settings-btn{
+  display:none;
+  align-items:center;
+  margin-top:8px;
+  height:44px;
+  padding:0 20px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  cursor:pointer;
+  font-weight:700;
+  font-size:14px;
+  background:rgba(255,255,255,.08);
+  color:#e5e7eb;
+}
+
+html[data-theme="light"] .cookie-mobile-settings-btn{
+  border-color:rgba(29,36,54,.25);
+  background:rgba(29,36,54,.06);
+  color:#1d2436;
+}
+
+/* No docking on mobile — plain button reopens the floating banner
+   instead. */
+@media (max-width:768px){
+  .cookie-banner-dock{
+    display:none;
+  }
+  .cookie-mobile-settings-btn{
+    display:inline-flex;
+  }
+}
+
+/* Docked = same element, inline instead of position:fixed. Can't tween
+   fixed -> static, so the swap is a quick fade instead. */
+/* Matches the intro terminal card: 16px radius, 678px wide, spacing
+   tuned to land near its ~212px height. */
+.cookie-banner.docked{
+  position:static;
+  left:auto;
+  right:auto;
+  bottom:auto;
+  width:100%;
+  max-width:678px;
+  margin:0 auto;
+  padding:14px 16px;
+  gap:8px;
+  border-radius:16px;
+  font-family:var(--bc-mono);
+  letter-spacing:.02em;
+}
+
+/* Terminal look is docked-only — the floating prompt stays plain
+   (system font). */
+.cookie-banner.docked p,
+.cookie-banner.docked .cookie-toggle-row{
+  font-size:15px;
+  font-weight:700;
+}
+
+.cookie-banner.docked p{
+  opacity:.8;
+}
+
+/* The per-category explainer text (a <p>, same as the "Choose which
+   categories..." line above it) stays regular weight — only the
+   labels/headings around it are meant to read as bold. */
+.cookie-banner.docked .cookie-cat-detail{
+  font-weight:400;
+}
+
+.cookie-banner.docked .cookie-banner-categories{
+  padding:6px 0;
+  gap:0;
+}
+
+.cookie-banner.docked .cookie-toggle-row{
+  padding:3px 0;
+}
+
+.cookie-banner.docked .cookie-banner-actions button{
+  font-family:var(--bc-mono);
+  font-size:15px;
+  font-weight:400;
+  letter-spacing:.02em;
+  border-radius:10px;
+}
+
+/* Same reveal logic as the "BC-TOOLS_INTERNAL_MEMORY: FRAGMENTED" card:
+   at first glance only the title bar shows, and clicking the yellow
+   dot reveals the rest. Scoped to .docked specifically — this is the
+   settings-recap panel on the dedicated Cookies page, not the
+   first-visit floating consent banner, which must always show its
+   controls plainly and is untouched by this. */
+.cookie-dock-toggle{
+  padding:0;
+  border:none;
+  cursor:pointer;
+}
+
+.cookie-dock-toggle:hover,
+.cookie-dock-toggle:focus-visible{
+  box-shadow:0 0 0 3px rgba(250,204,21,.35);
+  outline:none;
+}
+
+.cookie-banner.docked:not(.dock-revealed) .cookie-banner-categories,
+.cookie-banner.docked:not(.dock-revealed) .cookie-banner-actions{
+  display:none;
+}
+
+/* ...allowed / ...disabled readout — terminal panel only */
+.cookie-toggle-status{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-toggle-status{
+  display:inline;
+}
+
+/* Three wordings swapped via CSS, not JS — i18n rewrites innerHTML on
+   language change and would clobber a JS-driven swap. */
+.cookie-banner-text-docked,
+.cookie-banner-text-mobile{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-banner-text-floating{
+  display:none;
+}
+
+.cookie-banner.docked .cookie-banner-text-docked{
+  display:block;
+}
+
+/* Mobile + Cookies page only: drop the "We use cookies" preamble and
+   link — visitor is already on that page. */
+@media (max-width:768px){
+  .cookie-banner.on-cookies-page .cookie-banner-text-floating{
+    display:none;
+  }
+  .cookie-banner.on-cookies-page .cookie-banner-text-mobile{
+    display:block;
+  }
+}
+
+.cookie-banner.cookie-banner-fading{
+  opacity:0;
+}
+
+.cookie-banner{
+  transition:opacity .18s ease;
+}
+
+.cookie-settings-btn-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#e5e7eb;
+  opacity:.5;
+}
+
+html[data-theme="light"] .cookie-settings-btn-dot{
+  background:#1d2436;
+}
+
+.cookie-settings-btn-cursor{
+  animation:cookie-settings-cursor-blink 1s step-end infinite;
+}
+
+@keyframes cookie-settings-cursor-blink{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:0; }
+}
+
+/* ===== TABS NAV ===== */
+/* .site-nav's own chrome (background/height/padding/flip/responsive
+   sizing) now lives in shared/nav.css, linked above — see that file's
+   header comment. */
+
+/* Central confirmation display for nav actions (theme, language,
+   copy link) — terminal-styled to match the site's other terminal
+   banners. Desktop only: there's no room for it once the nav collapses
+   for mobile, and confirmations there would just crowd the brand/menu
+   button instead of sitting in open space. */
+.nav-terminal{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
+  color:var(--text);
+  font-family:var(--bc-mono);
+  font-size:14px;
+  font-weight:400;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+  z-index:55;
+}
+
+.nav-terminal.show{
+  opacity:1;
+}
+
+.nav-terminal-prompt{
+  opacity:.7;
+}
+
+.nav-terminal-cursor{
+  animation:copy-toast-blink 1s step-end infinite;
+}
+
+@media (max-width:768px){
+  .nav-terminal{
+    display:none;
+  }
+}
+
+.site-nav-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-size:42px;
+  font-weight:900;
+  text-decoration:none;
+  letter-spacing:-0.02em;
+  white-space:nowrap;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+.brand-text{
+  color:#E3E8F8;
+}
+
+html[data-theme="light"] .brand-text{
+  color:#121727;
+}
+
+/* ===== ICON SLOTS =====
+   Icons are base64 background-images via --icon-* custom properties,
+   applied through .icon-* classes on a sized span:
+   <span class="gfx-md icon-convert" role="img" aria-label="...">.
+   New icon: add --icon-X, add .icon-X{background-image:var(--icon-X)},
+   use class="gfx-sm|md|lg icon-X". */
+img.gfx-md, img.gfx-lg,
+svg.gfx-md, svg.gfx-lg,
+span.gfx-md, span.gfx-lg{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  object-fit:contain;
+  color:var(--text);
+}
+
+.gfx-md{width:34px;height:34px;}
+.gfx-lg{width:46px;height:46px;}
+
+.site-logo{
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  flex-shrink:0;
+}
+
+@media (max-width:768px){
+  .site-nav-brand{font-size:30px;}
+  .site-logo{width:34px;height:34px;}
+}
+
+/* Below the general mobile breakpoint, the brand text + logo + 3 nav
+   icon buttons + all the gaps/padding between them add up to ~386px —
+   fine down to ~375px-wide phones (confirmed no overflow there), but
+   narrower ones (e.g. a Galaxy S25 FE at 360px) don't have room, and
+   since .site-nav has no flex-wrap, the excess silently overflows off
+   the right edge instead of wrapping. Scoped tightly to 370px (not
+   390px, as an earlier pass did) so this ONLY kicks in for phones that
+   actually need it — 375px+ devices keep full-size everything. */
+@media (max-width:370px){
+  .site-nav-brand{font-size:23px; gap:9px;}
+  .site-logo{width:26px;height:26px;}
+  .nav-right{gap:6px;}
+  .nav-theme-btn, .nav-share-btn{width:32px;height:32px;}
+}
+
+/* ===== PAGES ===== */
+.page{
+  display:none;
+}
+.page.active{
+  display:block;
+  flex:1 0 auto;
+}
+
+/* ===== MAINPAGE / ABOUT ===== */
+main{
+  max-width:1100px;
+  margin:0 auto;
+  padding:64px 24px 100px;
+}
+
+#page-mainpage main{
+  padding-top:16px;
+}
+
+
+.hero{
+  text-align:center;
+  padding:40px 0 56px;
+}
+
+/* The mainpage's title+intro block is immediately followed by the tool
+   cards now (moved up so they're visible without scrolling past the
+   rest of the hero copy first) — the generic 56px bottom padding above
+   was tuned for when a full hero preceded ordinary page content, not
+   for butting straight up against the cards heading's own top margin,
+   so the combined gap felt too loose. Scoped to this specific block
+   (not .hero generally) so every other page's hero is untouched. */
+.hero-intro{
+  /* Tightened top padding (was the generic 40px from .hero) to reclaim
+     vertical space between the sticky nav and the title, so the title
+     itself can go back to full size below without pushing the tool
+     cards further down the page than before. */
+  padding-top:16px;
+  padding-bottom:8px;
+}
+
+/* Just wide enough that the intro sentence stops wrapping to a second
+   line on typical desktop widths, without touching the shared .hero p
+   max-width every other page's hero also relies on. Selector is
+   .hero.hero-intro (not just .hero-intro) specifically to outrank the
+   generic .hero p rule below on specificity — equal specificity would
+   otherwise let source order silently decide the winner, which is
+   exactly what was happening before (.hero p, declared later, was
+   winning and capping this at 700px despite this rule existing). */
+.hero.hero-intro p{
+  /* Close to the page container's own cap (main{max-width:1100px},
+     minus its side padding) — as wide as this can go before it would
+     just be overflowing the page instead of actually fitting more. */
+  max-width:1050px;
+  text-align:center;
+}
+
+.hero h1{
+  margin:0 0 18px;
+  font-size:clamp(41px, 5.2vw, 63px);
+  line-height:1.1;
+  letter-spacing:-0.03em;
+}
+
+#page-mainpage .hero h1{
+  font-size:clamp(46px, 5.2vw, 68px);
+}
+
+.hero.hero-intro h1{
+  margin-bottom:32px;
+}
+
+/* Desktop gets the full two-sentence intro; mobile gets a single
+   condensed line instead — swapped via display, not translated
+   separately per breakpoint, since it's the same content either way. */
+.hero-p1-mobile{
+  display:none;
+}
+
+@media (max-width:768px){
+  #page-mainpage .hero-intro h1{
+    font-size:31px;
+  }
+  #page-mainpage .cards-heading{
+    display:none;
+  }
+  .hero-p3{
+    display:none;
+  }
+  .hero-p1-desktop{
+    display:none;
+  }
+  .hero-p1-mobile{
+    display:block;
+  }
+}
+
+.hero p{
+  margin:0 auto 16px;
+  max-width:700px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+  text-align:left;
+}
+
+.hero p:first-of-type{
+  margin-top:10px;
+}
+
+.hero p:last-of-type{
+  margin-bottom:0;
+}
+
+/* The Terms of Use call these out as "terminal-style banners ... for
+   entertainment purposes only" (loading-tools banner, the classified-
+   memory card, and the About page's fake email banner all share this
+   class) — hidden entirely on mobile, where screen space is tighter
+   and they're pure decoration. */
+@media (max-width:768px){
+  .engine-status-card,
+  .hero-classified{
+    display:none;
+  }
+}
+
+/* Per-theme colors, not the invert filter — filter also inverts
+   shadows, turning this one white and invisible on light pages. */
+.engine-status-card{
+  position:relative;
+  margin:32px auto 0;
+  max-width:680px;
+  text-align:left;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  overflow:hidden;
+  font-family:var(--bc-mono);
+  letter-spacing:.02em;
+}
+
+html[data-theme="light"] .engine-status-card{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.engine-status-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+
+/* The dashed divider only makes sense once there's a body below it to
+   divide from — shown only while revealed, scoped to this specific
+   card by #id since .engine-status-header could in principle be reused
+   elsewhere later (same reasoning as the dot-color/body-hide rules
+   above). */
+#engineStatusCard.revealed .engine-status-header{
+  border-bottom:1px dashed rgba(255,255,255,.14);
+}
+
+html[data-theme="light"] #engineStatusCard.revealed .engine-status-header{
+  border-bottom-color:rgba(29,36,54,.25);
+}
+
+.engine-status-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#e5e7eb;
+  opacity:.5;
+}
+
+html[data-theme="light"] .engine-status-dot{
+  background:#1d2436;
+}
+
+.engine-status-dot-red{
+  background:#ef4444 !important;
+  opacity:1 !important;
+}
+
+.engine-status-dot-yellow{
+  background:#facc15 !important;
+  opacity:1 !important;
+}
+
+.engine-status-dot-green{
+  background:#4ade80 !important;
+  opacity:1 !important;
+}
+
+/* Only the yellow dot actually does anything here — real macOS greys
+   out a window's non-functional traffic-light buttons rather than
+   showing them fully colored, so match that instead of implying red
+   and green are clickable too. Scoped to this one card by #id so the
+   cookie-settings mock window elsewhere, which reuses the same
+   red/yellow/green classes purely for decoration, keeps its full
+   color. */
+#engineStatusCard .engine-status-dot-red,
+#engineStatusCard .engine-status-dot-green{
+  background:#6b7280 !important;
+  opacity:.6 !important;
+}
+
+/* Same treatment on the cookie banner's docked-state mock titlebar —
+   these dots are purely decorative there too (nothing individually
+   clickable), but the yellow-only-colored convention is now
+   established site-wide, so keep it visually consistent here as well. */
+.cookie-settings-btn-dot.engine-status-dot-red,
+.cookie-settings-btn-dot.engine-status-dot-green{
+  background:#6b7280 !important;
+  opacity:.6 !important;
+}
+
+.engine-status-title{
+  margin-left:6px;
+  font-size:15px;
+  font-weight:700;
+  color:#e5e7eb;
+  opacity:.8;
+}
+
+html[data-theme="light"] .engine-status-title{
+  color:#1d2436;
+}
+
+.engine-status-body{
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  position:relative;
+}
+
+/* Genuinely hidden (not just blurred behind an overlay) until the
+   yellow dot is clicked — matches "minimize/restore" better than the
+   old blur-and-click-a-button-on-top pattern, and reuses the same
+   traffic-light dots already styled for the cookie-settings mock
+   window elsewhere on the site instead of a bespoke reveal control. */
+/* Scoped by #id, not the shared .engine-status-card class — that class
+   is also reused purely for its look by the "loading other tools"
+   banner, which has no header/dots and never gets a "revealed" class,
+   so a class-based rule here hid its entire body permanently, leaving
+   just its empty bordered box (reported as "now all I see is a
+   line"). */
+#engineStatusCard:not(.revealed) .engine-status-body{
+  display:none;
+}
+
+.engine-status-dot-toggle{
+  padding:0;
+  border:none;
+  cursor:pointer;
+  /* Same 8px circle as the plain decorative dots either side of it —
+     button reset alone would otherwise shrink it to fit its (empty)
+     text content. */
+  width:8px;
+  height:8px;
+}
+
+.engine-status-dot-toggle:hover,
+.engine-status-dot-toggle:focus-visible{
+  box-shadow:0 0 0 3px rgba(250,204,21,.35);
+  outline:none;
+}
+
+.engine-status-row{
+  font-size:15px;
+  font-weight:400;
+  color:#e5e7eb;
+  opacity:.8;
+  white-space:pre-wrap;
+}
+
+html[data-theme="light"] .engine-status-row{
+  color:#1d2436;
+}
+
+.engine-status-value{
+  color:#4ade80;
+  font-weight:700;
+}
+
+html[data-theme="light"] .engine-status-value{
+  color:#16a34a;
+}
+
+.engine-status-error{
+  color:#ff6b6b;
+  font-weight:700;
+}
+
+html[data-theme="light"] .engine-status-error{
+  /* #dc2626 only gave 3.97:1 against .engine-status-card's light bg
+     (fails WCAG AA's 4.5:1) — darkened until it actually passes. */
+  color:#b91c1c;
+}
+
+.backlog-coms-row{
+  white-space:normal;
+  line-height:1.5;
+}
+
+.backlog-coms-sender{
+  font-weight:800;
+}
+
+.backlog-coms-meta{
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.05em;
+  opacity:.55;
+  margin-bottom:2px;
+}
+
+.engine-status-eye{
+  display:inline-block;
+  width:1ch;
+  height:1em;
+  line-height:1em;
+  overflow:hidden;
+  text-align:center;
+  vertical-align:middle;
+}
+
+/* Decorative glitch text — garbled on purpose, no semantic meaning */
+.engine-status-glitch{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.05em;
+  color:#9ca3af;
+  opacity:.8;
+  word-break:break-all;
+  user-select:none;
+}
+
+html[data-theme="light"] .engine-status-glitch{
+  color:#4b5568;
+  opacity:.75;
+}
+
+.engine-status-glitch-char{
+  display:inline-block;
+  width:1ch;
+  opacity:0;
+}
+
+.loading_tools_banner{
+  margin-top:48px;
+}
+
+.loading_tools_dots{
+  display:inline-block;
+  overflow:hidden;
+  width:0;
+  white-space:nowrap;
+  vertical-align:bottom;
+  animation:loading_tools_dots_grow 1.6s step-end infinite;
+}
+
+.loading_tools_dots-red{
+  color:#f87171;
+}
+
+.loading_tools_dots-green{
+  color:#4ade80;
+}
+
+@keyframes loading_tools_dots_grow{
+  0%{width:0;}
+  25%{width:1ch;}
+  50%{width:2ch;}
+  75%{width:3ch;}
+  100%{width:0;}
+}
+
+@media (max-width:768px){
+  .engine-status-card{display:none;}
+}
+
+.next-tools-preview{
+  margin-top:20px;
+  max-width:900px;
+  display:flex;
+  align-items:center;
+  gap:32px;
+}
+
+.next-tools-preview-text{
+  flex:1 1 auto;
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+  text-align:left;
+}
+
+/* Mirrors .cards grid math: minmax(240px,1fr), 24px gap, inside
+   max-width:1100px with 24px padding (1052px content). Column count
+   breaks at 816px/1080px — measured against live .card.convert. */
+/* Reserved slot for a future SVG — outer frame only for now */
+.tool-card-blueprint{
+  position:relative;
+  overflow:hidden;
+  flex:0 0 auto;
+  width:260px;
+  min-height:215px;
+  padding:36px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:28px;
+  background:#202124;
+}
+
+html[data-theme="light"] .tool-card-blueprint{
+  border-color:rgba(0,0,0,.15);
+  background:#d4dbee;
+}
+
+/* Rocks are generated/animated from JS (asteroid-field driver); five
+   varied cycles avoid an obvious repeating loop. */
+.tool-card-asteroid{
+  position:absolute;
+  top:0;
+  left:0;
+  display:block;
+  background:#9ca3af;
+  will-change:transform;
+}
+
+.tool-card-asteroid.is-comet{
+  background:#ffffff;
+  border-radius:50%;
+  box-shadow:0 0 6px 1px rgba(255,255,255,.6);
+}
+
+html[data-theme="light"] .tool-card-asteroid{
+  background:#5b6478;
+}
+
+html[data-theme="light"] .tool-card-asteroid.is-comet{
+  background:#2c3550;
+  box-shadow:0 0 6px 1px rgba(44,53,80,.5);
+}
+
+/* Tail trails opposite the comet's travel direction. --tail-angle is set
+   per-instance in JS from that comet's actual from/to path. */
+.tool-card-asteroid.is-comet::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  right:50%;
+  width:26px;
+  height:2px;
+  background:linear-gradient(to left, rgba(255,255,255,.75), rgba(255,255,255,0));
+  transform-origin:right center;
+  transform:translateY(-50%) rotate(var(--tail-angle, 40deg));
+  pointer-events:none;
+}
+
+.tool-card-star{
+  position:absolute;
+  width:2px;
+  height:2px;
+  border-radius:50%;
+  background:#ffffff;
+  opacity:.5;
+  animation:tool-card-star-twinkle 3s ease-in-out infinite;
+}
+
+html[data-theme="light"] .tool-card-star{
+  background:#5b6478;
+}
+
+@keyframes tool-card-star-twinkle{
+  0%, 100%{ opacity:.15; }
+  50%{ opacity:.75; }
+}
+
+.tool-card-star:nth-child(1){ top:14px;  left:32px;  animation-delay:0s; }
+.tool-card-star:nth-child(2){ top:38px;  left:182px; width:3px; height:3px; animation-delay:-1.6s; }
+.tool-card-star:nth-child(3){ top:66px;  left:92px;  animation-delay:-.4s; }
+.tool-card-star:nth-child(4){ top:100px; left:222px; animation-delay:-2.2s; }
+.tool-card-star:nth-child(5){ top:128px; left:16px;  width:3px; height:3px; animation-delay:-1s; }
+.tool-card-star:nth-child(6){ top:150px; left:140px; animation-delay:-2.8s; }
+.tool-card-star:nth-child(7){ top:182px; left:58px;  animation-delay:-.8s; }
+.tool-card-star:nth-child(8){ top:22px;  left:114px; width:3px; height:3px; animation-delay:-2s; }
+
+@media (max-width:768px){
+  .next-tools-preview{display:none;}
+}
+
+#page-mainpage .cards-heading{
+  text-align:center;
+  font-size:clamp(28px, 3.6vw, 40px);
+  font-weight:700;
+  letter-spacing:-0.02em;
+  margin:20px 0 28px;
+}
+
+/* Filter the tool grid by category — click a pill to show only that
+   category's cards; click the same pill again (or nothing is active)
+   to go back to showing everything. Pure show/hide via a [hidden]
+   toggle in JS below, not a re-render, so card-readmore/preview and
+   any other per-card state never gets rebuilt. */
+#page-mainpage .category-filter{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin:0 0 32px;
+}
+#page-mainpage .category-filter-btn{
+  height:40px;
+  padding:0 22px;
+  border-radius:20px;
+  border:1px solid var(--border-strong);
+  background:transparent;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+#page-mainpage .category-filter-btn:hover{
+  background:rgba(127,127,127,.15);
+}
+#page-mainpage .category-filter-btn[aria-pressed="true"]{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:var(--bg);
+}
+
+#page-mainpage .cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+  gap:24px;
+  margin-bottom:56px;
+}
+
+@media (max-width:768px){
+  #page-mainpage .cards{grid-template-columns:1fr;}
+  #page-mainpage .card{
+    max-width:435px;
+    margin:0 auto;
+  }
+}
+
+/* Same reasoning as the mobile cap above, just desktop's own size —
+   grid-template-columns' auto-fit/1fr means a lone card (e.g. the
+   category filter narrowing the grid down to one match) stretches to
+   fill the entire row's width instead of staying card-sized, since
+   there's nothing else in that row to share the space with. Capping
+   it back to roughly what it'd be in a full 4-per-row grid and
+   centering it keeps a single filtered result from ballooning. */
+@media (min-width:769px){
+  #page-mainpage .card{
+    max-width:245px;
+    margin:0 auto;
+  }
+}
+
+#page-mainpage .card[hidden]{
+  display:none;
+}
+#page-mainpage .card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-height:270px;
+  text-align:left;
+  padding:0;
+  border-radius:28px;
+  border:none;
+  outline:none;
+  color:var(--text);
+  overflow:hidden;
+  font-family:inherit;
+  transform-origin:bottom center;
+  transition:transform .17s cubic-bezier(.22,1,.36,1);
+}
+
+/* No rotation/wobble on the card itself — a quick, pure grow anchored
+   at the bottom (transform-origin above) so only the top visibly
+   moves; the bottom edge, where Read More lives, stays put. A plain
+   uniform scale() — no squeeze/stretch — so the whole banner just
+   enlarges as one piece, Read More included (it's a normal child, so
+   it scales along with everything else here for free).
+
+   Read More used to have its own separate scale/wobble reaction, kept
+   off via :not(:has(.card-readmore:hover)) on this rule — dropped
+   after that combination (a transform here shifting where Read More
+   sits, while Read More had its own :hover-triggered transform too)
+   turned out to cause a real hover flicker: the card's own animation
+   moving Read More's hit-box could flip its :hover state on/off mid-
+   transition right at the boundary between the two. Read More now
+   just does a plain background/color hover (see .card-readmore:hover
+   below) — the same simple pattern every other button on the site
+   uses — so there's nothing left to collide. */
+#page-mainpage .card:hover{
+  transform:scale(1.05);
+}
+#page-mainpage .card:active{
+  transform:scale(1.02);
+  transition-duration:.1s;
+}
+
+@media (max-width:768px){
+  /* Was min-height:0 — letting card height be purely content-driven
+     (icon + title + description), so a tool with a shorter description
+     ended up visibly shorter than one with a longer one (164px vs
+     188px, reported live). 188px matches the tallest naturally-sized
+     card, so every card floors out at the same height instead of the
+     grid looking uneven — flex-direction:column on .card (see the base
+     rule above) is what lets the shorter ones' content just have more
+     breathing room below it rather than stretching awkwardly. */
+  #page-mainpage .card{ min-height:188px; }
+}
+
+#page-mainpage .card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  border-radius:28px;
+}
+
+#page-mainpage .card.convert::before{
+  background:linear-gradient(155deg, #B84CFF);
+}
+
+#page-mainpage .card.compress::before{
+  background:#3FBFE8;
+}
+
+#page-mainpage .card.combine::before{
+  background:linear-gradient(155deg, #FF6961);
+}
+
+#page-mainpage .card.exif::before{
+  background:#7ED321;
+}
+
+#page-mainpage .card.context::before{
+  background:var(--context-yellow);
+}
+
+#page-mainpage .card.gif::before{
+  background:#22D3D0;
+}
+
+#page-mainpage .card.coudio::before{
+  background:#18C98A;
+}
+
+#page-mainpage .card.codify::before{
+  background:#C81C86;
+}
+
+#page-mainpage .card.colorfy::before{
+  background:#FF8A4C;
+}
+
+#page-mainpage .card.codoc::before{
+  background:linear-gradient(155deg, #5B6EF5);
+}
+
+/* ===== Category textures — moved to shared/textures.css (linked in
+   <head>) so the homepage card grid and any tool's own banner share the
+   exact same 4 recipes instead of the homepage keeping its own private
+   copy. Image gets no texture at all, on purpose: it's the largest
+   category by far, and leaving it plain keeps the other three
+   treatments reading as deliberate accents instead of "every category
+   has a gimmick." Layered as ::after so it sits above the flat
+   ::before fill but still below the real card content (.card-open is
+   z-index:1). See shared/textures.css for the actual rules. */
+
+#page-mainpage .card-open{
+  position:relative;
+  z-index:1;
+  flex:4 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  width:100%;
+  padding:28px 28px 20px;
+  border:none;
+  outline:none;
+  background:none;
+  color:inherit;
+  font-family:inherit;
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+#page-mainpage .card-open:hover{
+  background:rgba(255,255,255,.12);
+}
+
+html[data-theme="dark"] #page-mainpage .card-open:hover{
+  background:rgba(0,0,0,.08);
+}
+
+#page-mainpage .card-title-row{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+#page-mainpage .card-icon{
+  width:46px;
+  height:46px;
+  flex-shrink:0;
+}
+
+#page-mainpage .card h2{
+  margin:0;
+  font-size:28px;
+  letter-spacing:-0.02em;
+  color:var(--text);
+}
+
+#page-mainpage .card p{
+  position:relative;
+  z-index:1;
+  margin:22px 0 0;
+  font-size:15px;
+  line-height:1.6;
+  color:var(--text);
+  text-align:center;
+}
+
+#page-mainpage .card-readmore{
+  position:relative;
+  z-index:2;
+  flex:1 0 auto;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  padding:0;
+  margin:0;
+  border:none;
+  border-top:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.16);
+  font-weight:400;
+  font-size:15px;
+  font-family:inherit;
+  color:var(--text);
+  text-decoration:none;
+  cursor:pointer;
+  border-radius:0;
+  transition:background .2s ease, color .2s ease;
+}
+
+/* Plain background/color hover — no transform. This used to have its
+   own scale/wobble reaction, but combining a transform here with one
+   on .card (above) turned out to cause a real hover flicker: either
+   one moving could shift Read More's hit-box right at the boundary
+   between the two, flipping :hover on/off mid-transition. Simpler and
+   collision-free this way. */
+#page-mainpage .card-readmore:hover,
+#page-mainpage .card-readmore:focus-visible{
+  color:var(--text);
+  background:rgba(255,255,255,.3);
+}
+
+html[data-theme="dark"] #page-mainpage .card-readmore{
+  border-top:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.1);
+}
+
+html[data-theme="dark"] #page-mainpage .card-readmore:hover,
+html[data-theme="dark"] #page-mainpage .card-readmore:focus-visible{
+  background:rgba(0,0,0,.18);
+}
+
+@media (max-width:768px){
+  #page-mainpage .card-readmore{display:none;}
+}
+
+/* ===== Tool preview modal ("Read more") =====
+   Same dark bordered-card surface as the cookie banner (#1d2436 /
+   #e4e9f5), so it reads as part of the same design system instead of
+   a generic browser-default dialog. The peek image is a real
+   screenshot of the tool, given a "looking through a foggy window"
+   treatment: a blurred, darkened copy fills the frame, and a sharp
+   copy sits on top clipped to a soft circular mask — so the center is
+   crisp and the edges dissolve into blur instead of a hard crop. */
+.tool-preview-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,.6);
+  box-sizing:border-box;
+}
+.tool-preview-overlay[hidden]{ display:none; }
+
+.tool-preview-modal{
+  position:relative;
+  width:100%;
+  max-width:960px;
+  padding:24px;
+  border-radius:24px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  box-sizing:border-box;
+}
+html[data-theme="light"] .tool-preview-modal{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+/* Same style + logic as the top nav's own "go back" button
+   (.nav-close-btn, shared/site.css) — a bordered arrow-in-a-box rather
+   than a red-hover "×", since this genuinely is going back to where you
+   were (the homepage grid), not a destructive close. Kept as its own
+   class (this page is the SPA, doesn't load shared/site.css) but the
+   values are copied 1:1 from .nav-close-btn's recipe. */
+.tool-preview-close{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  margin:0 0 12px auto;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:none;
+  color:var(--text);
+  line-height:1;
+  cursor:pointer;
+  transition:.2s;
+}
+.tool-preview-close svg{
+  width:20px;
+  height:20px;
+}
+.tool-preview-close:hover{
+  border-color:var(--border-strong);
+}
+
+.tool-preview-peek{
+  display:block;
+  position:relative;
+  width:100%;
+  aspect-ratio:1600/615;
+  border-radius:16px;
+  overflow:hidden;
+  background:#000;
+  object-fit:cover;
+}
+
+.tool-preview-title{
+  margin:20px 0 8px;
+  font-size:22px;
+  font-weight:800;
+  color:var(--text);
+}
+.tool-preview-desc{
+  margin:0;
+  color:var(--text);
+  opacity:.85;
+  font-size:15px;
+  line-height:1.6;
+}
+
+.tool-preview-open{
+  display:block;
+  margin-top:20px;
+  padding:12px 20px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  text-align:center;
+  text-decoration:none;
+  font-weight:700;
+  font-size:15px;
+  transition:.2s;
+}
+html[data-theme="light"] .tool-preview-open{
+  border-color:rgba(29,36,54,.3);
+  background:rgba(29,36,54,.06);
+}
+.tool-preview-open:hover{
+  border-color:#7c9dff;
+  background:rgba(124,157,255,.15);
+}
+
+footer{
+  text-align:center;
+  padding:32px 24px;
+  font-size:13px;
+  background:#1d2436;
+  color:var(--text);
+}
+
+html[data-theme="light"] footer{
+  background:#d4dbee;
+}
+
+.footer-dashboard{
+  border-top:1px solid rgba(255,255,255,.1);
+  padding:48px 24px 8px;
+  display:flex;
+  justify-content:center;
+  background:#1d2436;
+}
+
+html[data-theme="light"] .footer-dashboard{
+  background:#d4dbee;
+}
+
+.footer-dashboard-inner{
+  width:100%;
+  max-width:820px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+  gap:16px;
+}
+
+.footer-dashboard-col{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.footer-dashboard-col h3,
+.footer-getting-started-group h3{
+  color:var(--text);
+  font-size:13px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin:0 0 4px;
+}
+
+/* One "Getting started with" heading over both tool columns — same
+   grid item as any other .footer-dashboard-col, just with the tools
+   split into two side-by-side lists underneath a single shared title
+   instead of the heading belonging to (and only visually sitting
+   above) the first column alone. */
+.footer-getting-started-group{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.footer-getting-started-columns{
+  display:flex;
+  gap:16px;
+}
+
+@media (max-width:768px){
+  .footer-dashboard-inner{
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+  .footer-getting-started-group{
+    display:none;
+  }
+}
+
+.footer-dash-link{
+  background:none;
+  border:none;
+  padding:0;
+  color:var(--text);
+  font-size:13px;
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+  font-family:inherit;
+  width:fit-content;
+}
+
+.footer-dash-link:hover{
+  color:var(--text);
+  text-decoration:underline;
+}
+
+/* Company-column footer links have a playful "alien" wording (Our
+   Universe, Galactic Handbook, etc.) on desktop, but plain labels
+   (About Us, Terms of Use, etc.) on mobile — same two-span,
+   CSS-swapped-by-breakpoint pattern as Context's toolbar labels. */
+.footer-link-plain{
+  display:none;
+}
+
+@media (max-width:768px){
+  .footer-link-fun{
+    display:none;
+  }
+  .footer-link-plain{
+    display:inline;
+  }
+}
+
+.footer-dash-text{
+  color:var(--text);
+  opacity:.6;
+  font-size:13px;
+}
+
+#footerContactSection .footer-dash-text{
+  opacity:1;
+}
+
+.footer-contact-address{
+  display:none; /* markup kept for later use */
+}
+
+.footer-dash-text a{
+  opacity:1;
+  color:#4da6ff;
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
+.footer-dash-text a:hover{
+  color:#7cc0ff;
+}
+
+/* #4da6ff (this file's own default, just above) only gives a 1.85:1
+   ratio against the light-theme footer's pale background — nowhere
+   close to WCAG AA's 4.5:1. Dark theme's own navy background is fine
+   at 6.05:1 and stays unguarded/unchanged. */
+html[data-theme="light"] .footer-dash-text a{
+  color:#1d4ed8;
+}
+
+html[data-theme="light"] .footer-dash-text a:hover{
+  color:#1e40af;
+}
+
+footer a{
+  color:var(--text);
+}
+
+/* Language dropdown CSS (.nav-lang-wrap/.nav-lang-btn/.nav-lang-menu)
+   removed from the live site on request — archived in full, not
+   deleted, at shared/i18n-archive.js along with re-enable steps. */
+
+.nav-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+
+.nav-share-wrap{
+  position:relative;
+}
+
+.nav-share-btn,
+.nav-theme-btn{
+  color:var(--text);
+  width:36px;
+  height:36px;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.2s;
+  font-family:inherit;
+}
+
+.nav-share-btn:hover,
+.nav-theme-btn:hover{
+  color:var(--text);
+  border-color:var(--border-strong);
+}
+
+.nav-lang-wrap{position:relative}
+.nav-lang-menu{position:absolute;top:44px;right:0;min-width:150px;padding:8px;border-radius:18px;background:#1d2436;border:1px solid rgba(255,255,255,.14);display:none;gap:2px;z-index:60}
+.nav-lang-menu.open{display:grid}
+.nav-lang-menu a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;color:#fff;text-decoration:none;font-size:14px;font-weight:700}
+.nav-lang-menu a:hover,.nav-lang-menu a[aria-current]{background:rgba(255,255,255,.12)}
+.nav-lang-menu svg{width:22px;height:15px;border-radius:2px;flex:none}
+.nav-theme-btn.nav-lang-btn svg{width:22px;height:15px;border-radius:2px;border:1px solid rgba(128,128,128,.4);box-sizing:content-box}
+.nav-lang-btn{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-decoration:none;
+}
+.nav-theme-btn svg{
+  width:20px;
+  height:20px;
+}
+
+.nav-share-icon{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.15;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.nav-share-menu{
+  position:absolute;
+  top:44px;
+  right:0;
+  width:190px;
+  padding:8px;
+  border-radius:18px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  display:none;
+  gap:2px;
+  z-index:60;
+}
+
+.nav-share-menu.open{
+  display:grid;
+}
+
+.nav-share-menu button{
+  height:34px;
+  padding:0 12px;
+  border-radius:12px;
+  border:0;
+  background:transparent;
+  color:#ffffff;
+  font-size:15px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+}
+
+.nav-share-menu button:hover{
+  background:rgba(255,255,255,.08);
+}
+
+.nav-share-priority{
+  margin-bottom:4px;
+}
+
+.nav-share-more-toggle{
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+  height:22px !important;
+  padding:0 !important;
+  width:100%;
+  justify-self:stretch;
+  color:rgba(255,255,255,.7) !important;
+}
+
+.nav-share-more-arrow{
+  display:inline-block;
+  font-size:11px;
+  transition:transform .2s ease;
+}
+
+.nav-share-more-toggle[aria-expanded="true"] .nav-share-more-arrow{
+  transform:rotate(180deg);
+}
+
+.nav-share-more-list:not([hidden]){
+  display:grid;
+  gap:2px;
+}
+
+@keyframes copy-toast-blink{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:0; }
+}
+
+
+.about-article{
+  max-width:700px;
+  margin:0 auto;
+  padding:0 24px 80px;
+  text-align:left;
+}
+
+.mp-colors-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.mp-colors-article{
+  position:relative;
+  z-index:1;
+  margin-top:0;
+}
+
+/* Small hover payoff on the "Bonbonia" running gag — wobbles like it's
+   excited to be mentioned. Purely decorative, no click action. */
+.bonbonia-candy{
+  display:inline-block;
+  cursor:default;
+}
+
+.bonbonia-candy:hover{
+  animation:bonbonia-wobble .5s ease;
+}
+
+@keyframes bonbonia-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-18deg) scale(1.25); }
+  50%{ transform:rotate(18deg) scale(1.25); }
+  75%{ transform:rotate(-10deg) scale(1.1); }
+}
+
+.mp-colors-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.mp-colors-bg-shape{
+  position:absolute;
+  display:block;
+  border-radius:28px;
+  background:var(--shape-color);
+  opacity:.45;
+  filter:blur(1px);
+  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+}
+
+@keyframes mp-colors-drift{
+  0%{ transform:translate(0, 0) rotate(0deg); }
+  25%{ transform:translate(20px, -24px) rotate(4deg); }
+  50%{ transform:translate(36px, -44px) rotate(8deg); }
+  75%{ transform:translate(16px, -20px) rotate(3deg); }
+  100%{ transform:translate(0, 0) rotate(0deg); }
+}
+
+/* Purple: gentler, horizontal-only drift */
+@keyframes mp-colors-drift-x{
+  0%{ transform:translateX(0); }
+  25%{ transform:translateX(10px); }
+  50%{ transform:translateX(18px); }
+  75%{ transform:translateX(8px); }
+  100%{ transform:translateX(0); }
+}
+
+/* Salmon: upward-only drift, never dips below its resting position */
+@keyframes mp-colors-drift-up{
+  0%{ transform:translate(0, 0) rotate(0deg); }
+  25%{ transform:translate(-4px, -9px) rotate(-1.5deg); }
+  50%{ transform:translate(-8px, -16px) rotate(-3deg); }
+  75%{ transform:translate(-3px, -7px) rotate(-1deg); }
+  100%{ transform:translate(0, 0) rotate(0deg); }
+}
+
+/* Per-shape color/size/placement in CSS, not inline styles, so the
+   mobile overrides below can win. */
+.shape-purple{
+  --shape-color:#b45ce7;
+  width:245px;
+  height:286px;
+  top:20px;
+  left:10%;
+  animation-name:mp-colors-drift-x;
+  animation-duration:30s;
+  animation-delay:0s;
+}
+
+.shape-green{
+  --shape-color:#4ade80;
+  width:245px;
+  height:286px;
+  top:180px;
+  right:5%;
+  animation-delay:-5s;
+}
+
+.shape-salmon{
+  --shape-color:#ec6f63;
+  width:200px;
+  height:230px;
+  bottom:10px;
+  left:32%;
+  animation-name:mp-colors-drift-up;
+  animation-delay:0s;
+}
+
+/* Mobile: 15% smaller, shifted down to clear the text */
+@media (max-width:768px){
+  .shape-purple{
+    width:208px;
+    height:243px;
+    top:10px;
+  }
+  .shape-green{
+    width:208px;
+    height:243px;
+    top:320px;
+    right:calc(5% - 15px);
+  }
+  .shape-salmon{
+    width:170px;
+    height:196px;
+    bottom:0;
+  }
+}
+
+.about-article p{
+  color:var(--text);
+  margin:0 0 16px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+.about-section-heading{
+  font-size:clamp(28px, 3.6vw, 40px);
+  margin:0 0 20px;
+  color:var(--text);
+  text-align:left;
+}
+
+.about-story-heading{
+  margin-top:-36px;
+}
+
+/* .engine-status-card's own margin is top-only (32px) and the
+   following .about-section-heading has no top margin either, so the
+   banner and "Our Beliefs" right after it were sitting almost
+   flush together. Scoped bottom margin here rather than touching
+   either shared rule, which are both reused elsewhere. */
+.backlog-coms-banner{
+  margin-bottom:32px;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Usiamo i cookie. Scegli qui sotto quali categorie consentire. Vedi la nostra <a href="/it/cookies/">Cookie Policy</a> per i dettagli.</p>
+  <p class="cookie-banner-text-mobile">Scegli quali categorie consentire</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Mostra/nascondi il contenuto delle impostazioni dei cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE_STRUMENTI_DEV:</span>
+    </span>
+    <span>Scegli quali categorie consentire</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Maggiori informazioni sui cookie necessari">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessari (sempre attivi)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Questi mantengono funzionante l'essenziale: ricordare la tua scelta sui cookie, la tua lingua e il tuo tema chiaro/scuro. Non possono essere disattivati e, come tutto il resto su questo sito, non lasciano mai il tuo dispositivo.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Maggiori informazioni sui cookie di analisi">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analisi - Per la massima privacy, tienila disattivata.</span><span class="cookie-label-docked">Analisi (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Questo ci permette di migliorare l'esperienza utente ricevendo dati preziosi tramite (Google Analytics) su come gli utenti navigano nel nostro sito. Se desideri restare completamente anonimo, ti consigliamo di disattivare questa opzione.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Maggiori informazioni sui cookie pubblicitari">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Pubblicità (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Usato da Google AdSense per mostrare annunci. Attualmente disattivato su tutto il sito in attesa dell'approvazione di AdSense, quindi questo interruttore non ha ancora effetto.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Accetta tutto</button>
+    <button type="button" id="cookieBannerSave">Conferma le scelte</button>
+  </div>
+</div>
+<div id="app-shell">
+
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo di BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Passa tra modalità chiara e scura" title="Passa tra modalità chiara e scura">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Condividi" title="Condividi">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copia link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Altre opzioni di condivisione"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAINPAGE ===================== -->
+<section class="page active" id="page-mainpage">
+  <main>
+    <div class="hero hero-intro">
+      <h1>Stabilire un nuovo standard per chi crea!</h1>
+      <p class="hero-p1-desktop">Inizia con il Creative Hub... un luogo in cui la creatività viaggia più veloce della luce.</p>
+      <p class="hero-p1-desktop">Collezione in continua crescita di strumenti nel browser per immagini, video, audio e codice.</p>
+      <p class="hero-p1-mobile">Creative Hub: una collezione in continua crescita di strumenti nel browser per immagini, video, audio e codice.</p>
+    </div>
+
+    <h2 class="cards-heading">Inizia con il Creative Hub:</h2>
+
+    <div class="category-filter" id="categoryFilter" role="group" aria-label="Filtra gli strumenti per categoria">
+      <button type="button" class="category-filter-btn" data-category="all" aria-pressed="true">Tutti</button>
+      <button type="button" class="category-filter-btn" data-category="image" aria-pressed="false">Immagine</button>
+      <button type="button" class="category-filter-btn" data-category="video" aria-pressed="false">Video</button>
+      <button type="button" class="category-filter-btn" data-category="sound" aria-pressed="false">Suono</button>
+      <button type="button" class="category-filter-btn" data-category="code" aria-pressed="false">Codice</button>
+    </div>
+
+    <div class="cards" id="cardsGrid">
+      <div class="card convert" data-category="image" title="Il colore è: Viola">
+        <a class="card-open" href="/it/convert/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-convert" role="img" aria-label="Icona di Convert"></span>
+            <h2>Convert</h2>
+          </div>
+          <p>Converti immagini tra JPG, PNG, WEBP e PDF. Puoi anche caricare HEIC/HEIF!</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/convert-dark.mp4?v=1" data-preview-img-light="/shared/previews/convert-light.mp4?v=1" data-preview-name="Convert" data-preview-desc="Trasforma qualsiasi immagine o PDF esattamente nel formato che ti serve: JPG, PNG, WEBP, PDF, persino HEIC appena uscito da un iPhone. All'istante, nel browser, senza alcun caricamento sui server." data-preview-href="/convert/">Leggi di più</button>
+      </div>
+
+      <div class="card compress" data-category="image" title="Il colore è: Azzurro cielo">
+        <a class="card-open" href="/it/compress/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-compress" role="img" aria-label="Icona di Compress"></span>
+            <h2>Compress</h2>
+          </div>
+          <p>Riduci le dimensioni dei file immagine mantenendo la qualità.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/compress-dark.mp4?v=1" data-preview-img-light="/shared/previews/compress-light.mp4?v=1" data-preview-name="Compress" data-preview-desc="Riduci le dimensioni delle tue foto senza rovinarne la qualità. Scegli Bassa, Media o Alta e scarica: un file o un intero lotto, in pochi secondi, senza alcun caricamento sui server." data-preview-href="/compress/">Leggi di più</button>
+      </div>
+
+      <div class="card combine" data-category="image" title="Il colore è: Rosso corallo">
+        <a class="card-open" href="/it/combine/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-combine" role="img" aria-label="Icona di Combine"></span>
+            <h2>Combine</h2>
+          </div>
+          <p>Unisci più file PDF in un unico documento nell'ordine che preferisci.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/combine-dark.mp4?v=1" data-preview-img-light="/shared/previews/combine-light.mp4?v=1" data-preview-name="Combine" data-preview-desc="Unisci due o più PDF in uno: trascinali nell'ordine che vuoi, poi scarica. Uniti nel browser, senza alcun caricamento sui server." data-preview-href="/combine/">Leggi di più</button>
+      </div>
+
+      <div class="card exif" data-category="image" title="Il colore è: Verde lime">
+        <a class="card-open" href="/it/cleanly/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-cleanly" role="img" aria-label="Icona di Cleanly"></span>
+            <h2>Cleanly</h2>
+          </div>
+          <p>Rimuovi i metadati nascosti come posizione GPS, modello della fotocamera o dati dell'editor negli SVG prima di condividere.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/cleanly-dark.mp4?v=1" data-preview-img-light="/shared/previews/cleanly-light.mp4?v=1" data-preview-name="Cleanly" data-preview-desc="Cancella dalle tue foto i dati nascosti di GPS, fotocamera e data e ora prima di condividerle: analizzate e pulite all'istante, nel browser, senza caricamento sui server." data-preview-href="/cleanly/">Leggi di più</button>
+      </div>
+
+      <div class="card context" data-category="image" title="Il colore è: Giallo">
+        <a class="card-open" href="/it/context/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-context" role="img" aria-label="Icona di Context"></span>
+            <h2>Context</h2>
+          </div>
+          <p>Aggiungi il tuo testo direttamente su un PDF: didascalie, note, firme, forme.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/context-dark.mp4?v=1" data-preview-img-light="/shared/previews/context-light.mp4?v=1" data-preview-name="Context" data-preview-desc="Clicca ovunque su un PDF per inserire testo, una firma o una forma, dagli il tuo stile e scarica: all'istante, nel browser, senza alcun caricamento sui server." data-preview-href="/context/">Leggi di più</button>
+      </div>
+
+      <div class="card gif" data-category="video" title="Il colore è: Verde acqua">
+        <a class="card-open" href="/it/congify/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-gif" role="img" aria-label="Icona di Congify"></span>
+            <h2>Congify</h2>
+          </div>
+          <p>Trasforma una clip video in una GIF: ritaglia l'intervallo, scegli fps e dimensioni.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/congify-dark.mp4?v=1" data-preview-img-light="/shared/previews/congify-light.mp4?v=1" data-preview-name="Congify" data-preview-desc="Trasforma una clip video in una GIF: ritaglia l'intervallo che vuoi, aggiungi didascalie se lo desideri, scegli frame rate e dimensioni, poi scarica. All'istante, nel browser, senza alcun caricamento sui server." data-preview-href="/congify/">Leggi di più</button>
+      </div>
+
+      <div class="card coudio" data-category="sound" title="Il colore è: Verde smeraldo">
+        <a class="card-open" href="/it/coudio/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-coudio" role="img" aria-label="Icona di Coudio"></span>
+            <h2>Coudio</h2>
+          </div>
+          <p>Converti l'audio tra MP3, WAV, OGG e altro: scegli uno o più file, scegli un formato.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/coudio-dark.mp4?v=1" data-preview-img-light="/shared/previews/coudio-light.mp4?v=1" data-preview-name="Coudio" data-preview-desc="Converti audio (o estrai la traccia audio da un video) tra MP3, WAV, OGG, AIFF, AU, CAF e VOC: scegli uno o più file, un formato e un bitrate, poi scarica. All'istante, nel browser, senza caricamento sui server." data-preview-href="/coudio/">Leggi di più</button>
+      </div>
+
+      <div class="card codify" data-category="code" title="Il colore è: Rosa">
+        <a class="card-open" href="/it/codify/">
+          <div class="card-title-row">
+            <span class="gfx-lg card-icon icon-codify" role="img" aria-label="Icona di Codify"></span>
+            <h2>Codify</h2>
+          </div>
+          <p>Trasforma uno snippet di codice in un bellissimo screenshot con stile: scegli un linguaggio.</p>
+        </a>
+        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/codify-dark.mp4?v=3" data-preview-img-light="/shared/previews/codify-light.mp4?v=3" data-preview-name="Codify" data-preview-desc="Trasforma uno snippet di codice in un bellissimo screenshot con stile: scegli un linguaggio e un tema, oppure parti da un modello, poi scarica. All'istante, nel browser, senza alcun caricamento sui server." data-preview-href="/codify/">Leggi di più</button>
+      </div>
+
+      <div class="card colorfy" data-category="image" title="Il colore è: Arancione">
+        <a class="card-open" href="/colorfy/">
+          <div class="card-title-row">
+            <span class="gfx-placeholder gfx-lg card-icon" role="img" aria-label="Icona di Colorfy">(icon-colorfy.txt)</span>
+            <h2>Colorfy</h2>
+          </div>
+          <p>Trova il colore esatto di qualsiasi pixel di un'immagine: trascina il selettore, ottieni il codice.</p>
+        </a>
+      </div>
+
+      <div class="card codoc" data-category="special" title="Il colore è: Indaco">
+        <a class="card-open" href="/codoc/">
+          <div class="card-title-row">
+            <span class="gfx-placeholder gfx-lg card-icon" role="img" aria-label="Icona di Codoc">(icon-codoc.txt)</span>
+            <h2>Codoc</h2>
+          </div>
+          <p>Converti un documento Word (.docx) in PDF, direttamente nel browser.</p>
+        </a>
+      </div>
+    </div>
+
+    <div class="engine-status-card loading_tools_banner">
+      <div class="engine-status-body">
+        <div class="engine-status-row">&gt; Caricamento degli altri strumenti... <span class="engine-status-error">nessuno strumento trovato (<span class="engine-status-eye" id="loadingToolsEyeL">•</span>_<span class="engine-status-eye" id="loadingToolsEyeR">•</span>;)</span></div>
+        <div class="engine-status-row"><span>&gt; Preparazione degli strumenti</span><span class="loading_tools_dots" aria-hidden="true">...</span></div>
+      </div>
+    </div>
+
+    <div class="hero hero-p3">
+      <p>I nostri strumenti sono costruiti per essere i più veloci, i più semplici e accessibili da qualsiasi punto dell'universo.</p>
+    </div>
+
+    <div class="ad-slot ad-slot-banner">
+      <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+    </div>
+
+    <div class="next-tools-preview">
+      <p class="next-tools-preview-text">Stiamo sviluppando più nuovi strumenti proprio ora. Solo quelli che sopravvivono ai nostri duri test cosmici sono autorizzati per l'uso umano.<br><br>Puoi vedere il cosmo in diretta sulla destra. Guarda, passa una cometa!</p>
+      <div class="tool-card-blueprint" id="nextToolSvgSlot">
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+        <span class="tool-card-star" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="hero hero-classified">
+      <p>...aspetta, i nostri sistemi hanno rilevato una perdita di memoria non autorizzata dall'archivio interno di BC Tools che probabilmente non dovresti leggere.</p>
+
+      <div class="engine-status-card" id="engineStatusCard">
+        <div class="engine-status-content">
+          <div class="engine-status-header">
+            <span class="engine-status-dot engine-status-dot-red" id="engineStatusDot1" aria-hidden="true"></span>
+            <button type="button" class="engine-status-dot engine-status-dot-yellow engine-status-dot-toggle" id="engineStatusDot2" aria-label="Mostra/nascondi il contenuto della memoria riservata" aria-expanded="false"></button>
+            <span class="engine-status-dot engine-status-dot-green" id="engineStatusDot3" aria-hidden="true"></span>
+            <span class="engine-status-title">MEMORIA_INTERNA_BC-TOOLS: FRAMMENTATA</span>
+          </div>
+          <div class="engine-status-body">
+            <div class="engine-status-glitch" aria-hidden="true">0x7F3A_&amp;%$#_dGVzdA==_0b1010110_&amp;&amp;NULL&amp;&amp;_0xE4_~~~_#error_stack_corrupted#_¯\_(ツ)_/¯</div>
+            <div class="engine-status-row">&gt; Estrazione dei dati del browser: <span class="engine-status-error">ERRORE...</span> <span class="engine-status-value">nessuna fuga di dati</span></div>
+            <div class="engine-status-row">&gt; Caricamento su server: <span class="engine-status-error">ERRORE...</span> <span class="engine-status-value">nessun server trovato</span></div>
+            <div class="engine-status-row">&gt; Tracciamento degli utenti: <span class="engine-status-error">ERRORE...</span> <span class="engine-status-value">restrizioni sui cookie</span></div>
+            <div class="engine-status-row">&gt; Pubblicità invadenti: <span class="engine-status-error">ERRORE...</span> <span class="engine-status-value">ambiente senza pubblicità imposto</span></div>
+            <div class="engine-status-glitch" aria-hidden="true">#!/dev/null_0x9B2C_&amp;&amp;01001000_&gt;&gt;&gt;_play_non-disturbing_ad_below_&lt;&lt;&lt;_~0x00~_(╯°□°)╯︵┻━┻</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mp-colors-wrap">
+      <div class="mp-colors-bg" aria-hidden="true">
+        <span class="mp-colors-bg-shape shape-purple"></span>
+        <span class="mp-colors-bg-shape shape-green"></span>
+        <span class="mp-colors-bg-shape shape-salmon"></span>
+      </div>
+      <article class="about-article mp-colors-article">
+        <h2 class="about-section-heading">L'importanza dei colori...</h2>
+        <p>Dopo aver studiato i segnali creativi di mondi diversi, abbiamo scoperto che interfacce senza vita e rettangoli grigi causavano un grave calo dei livelli di ispirazione. La soluzione era ovvia: più colore porta più creatività.</p>
+        <p>Il Creative Hub è il luogo di nascita di strumenti vivaci che aiutano a incanalare tutta la creatività in un modo che sembra imprevedibile, energico e in costante evoluzione.</p>
+        <p>Questi colori non sono solo decorazione. Sono al centro di tutta l'energia creativa: un linguaggio visivo pensato per far sentire ogni strumento vivo e più facile da riconoscere, e ogni creazione come un viaggio.</p>
+        <p>Man mano che il Creative Hub si espande, crescerà anche il suo spettro. Nuovi strumenti porteranno nuovi colori e nuove firme energetiche da tutto l'universo creativo.</p>
+        <p>Il nostro sviluppatore sostiene che i colori siano stati creati con cura usando avanzate varietà di colore digitale del suo pianeta natale, Bonbonia<span class="bonbonia-candy" aria-hidden="true">🍬</span>.</p>
+        <p>Non siamo riusciti a verificare questa affermazione, ma ci è venuta proprio fame.</p>
+      </article>
+    </div>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+  </main>
+
+
+</section>
+
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Azienda</h3>
+      <a class="footer-dash-link" href="/it/about/"><span class="footer-link-fun">Il nostro universo</span><span class="footer-link-plain">Chi siamo</span></a>
+      <a class="footer-dash-link" href="/it/faq/"><span class="footer-link-fun">Già risposto</span><span class="footer-link-plain">FAQ</span></a>
+      <a class="footer-dash-link" href="/it/terms/"><span class="footer-link-fun">Manuale galattico</span><span class="footer-link-plain">Termini di utilizzo</span></a>
+      <a class="footer-dash-link" href="/it/privacy/"><span class="footer-link-fun">Protocollo alieno sulla privacy</span><span class="footer-link-plain">Informativa sulla privacy</span></a>
+      <a class="footer-dash-link" href="/it/cookies/"><span class="footer-link-fun">Registro dei cookie</span><span class="footer-link-plain">Cookie Policy</span></a>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Per iniziare con</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <!-- Each links straight to its own tab on the golden-rules
+               page via ?tool=<id> (the same ids golden-rules-tool.js's
+               selectGoldenRulesTool() and every other tool page's
+               go-to-golden-rules buttons use) — this page doesn't load
+               shared/site.js (SPA, own inline JS instead), so it can't
+               rely on that file's click delegate to add the query
+               param the way every standalone tool page does; these
+               plain hrefs just carry it directly. Previously all 8
+               pointed at the bare /golden-rules/ URL, so every one of
+               these silently landed on Convert's tab regardless of
+               which tool you clicked. -->
+          <a class="footer-dash-link" href="/golden-rules/?tool=convert">Convert</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=compress">Compress</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=combine">Combine</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=exif">Cleanly</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=context">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/golden-rules/?tool=gif">Congify</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=coudio">Coudio</a>
+          <a class="footer-dash-link" href="/golden-rules/?tool=codify">Codify</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Mettiti in contatto con noi</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Unisciti al nostro Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+
+<div class="tool-preview-overlay" id="toolPreviewOverlay" hidden>
+  <div class="tool-preview-modal" role="dialog" aria-modal="true" aria-labelledby="toolPreviewTitle">
+    <button type="button" class="tool-preview-close" id="toolPreviewClose" aria-label="Chiudi anteprima">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <video class="tool-preview-peek" id="toolPreviewPeek" muted loop playsinline aria-label=""></video>
+    <h3 class="tool-preview-title" id="toolPreviewTitle"></h3>
+    <p class="tool-preview-desc" id="toolPreviewDesc"></p>
+    <a class="tool-preview-open" id="toolPreviewOpen" href="#">Apri lo strumento</a>
+  </div>
+</div>
+
+<script>
+/* Restores the real path after 404.html bounces a direct link/refresh to "/" */
+(function(){
+  try {
+    const redirectPath = sessionStorage.getItem("bc-redirect-path");
+    if (redirectPath){
+      sessionStorage.removeItem("bc-redirect-path");
+      if (redirectPath !== location.pathname + location.search + location.hash){
+        history.replaceState(null, "", redirectPath);
+      }
+    }
+  } catch (e) { /* sessionStorage unavailable */ }
+})();
+
+/* GA4 click tracking — this page doesn't load shared/site.js (own inline
+   JS instead, see the note near the footer's getting-started links above),
+   so it keeps its own copy of the same data-ga-event delegate pattern
+   rather than sharing the one in site.js. Card open/read-more clicks derive
+   their tool slug from the card's own second class (e.g. "card convert" ->
+   "convert") instead of hand-tagging all 9 cards individually. */
+document.addEventListener("click", (e) => {
+  const cardOpen = e.target.closest(".card-open, .card-readmore");
+  if (cardOpen){
+    const card = cardOpen.closest(".card");
+    const tool = card ? card.classList[1] : undefined;
+    gtag("event", cardOpen.classList.contains("card-readmore") ? "homepage_card_readmore" : "homepage_card_open", { tool });
+    return;
+  }
+  const footerLink = e.target.closest(".footer-dash-link");
+  if (footerLink){
+    gtag("event", "footer_nav_click", { destination: footerLink.getAttribute("href") });
+  }
+});
+
+/* Intro terminal glitch lines: each character sits in a fixed-width slot
+   so text never reflows. Two lines animate independently. Not started on
+   load — kicks in once the visitor clicks reveal (see below). */
+function startIntroTerminalGlitchLines(){
+document.querySelectorAll(".engine-status-glitch").forEach((el, lineIndex) => {
+  const chars = Array.from(el.textContent);
+  el.textContent = "";
+  const spans = chars.map(ch => {
+    const span = document.createElement("span");
+    span.className = "engine-status-glitch-char";
+    span.textContent = ch;
+    el.appendChild(span);
+    return span;
+  });
+  const n = spans.length;
+  if (n === 0) return;
+
+  if (lineIndex === 0){
+    /* "Code wave" effect: erase front-to-back to empty, hold 3s, rebuild
+       front-to-back. Erase+pause+rebuild is a fixed 7s regardless of line
+       length (step size scales to character count); full string then
+       holds 5s before repeating. Each step touches only the one changed
+       character, keeping erase/rebuild symmetric at n steps each. */
+    const PAUSE = 3000;
+    const STEP = (7000 - PAUSE) / (2 * n);
+    const REPEAT_HOLD = 5000;
+
+    spans.forEach(span => { span.style.opacity = "1"; });
+
+    function eraseStep(k){
+      if (k > 0) spans[k - 1].style.opacity = "0";
+      if (k < n){
+        setTimeout(() => eraseStep(k + 1), STEP);
+      } else {
+        setTimeout(() => revealStep(0), PAUSE);
+      }
+    }
+
+    function revealStep(k){
+      if (k > 0) spans[k - 1].style.opacity = "1";
+      if (k < n){
+        setTimeout(() => revealStep(k + 1), STEP);
+      } else {
+        setTimeout(() => eraseStep(0), REPEAT_HOLD);
+      }
+    }
+
+    setTimeout(() => eraseStep(1), STEP);
+  } else {
+    /* Bottom line: every few seconds, one random letter blinks off and
+       back on after 0.2-1.5s, independent of the top line. */
+    spans.forEach(span => { span.style.opacity = "1"; });
+
+    function scheduleFlicker(){
+      const delay = 2000 + Math.random() * 3000;
+      setTimeout(() => {
+        const span = spans[Math.floor(Math.random() * spans.length)];
+        span.style.opacity = "0";
+        const offFor = 200 + Math.random() * 1300;
+        setTimeout(() => { span.style.opacity = "1"; }, offFor);
+        scheduleFlicker();
+      }, delay);
+    }
+
+    scheduleFlicker();
+  }
+});
+}
+
+/* Asteroid field for the empty "next tool" slot. Eight cycles rotate —
+   varied rock counts, sizes, paths, speeds, one comet. Add an entry to
+   CYCLES to extend. Coordinates are relative to the card (260 x ~215),
+   starting off-frame and ending past the far edge. */
+(function(){
+  const slot = document.getElementById("nextToolSvgSlot");
+  if (!slot || typeof Element.prototype.animate !== "function") return;
+
+  const ROCK = "52% 48% 45% 55% / 48% 58% 42% 52%";
+  const ROCK2 = "58% 42% 47% 53% / 50% 61% 39% 50%";
+  const ROCK3 = "44% 56% 63% 37% / 57% 43% 57% 43%";
+
+  const CYCLES = [
+    /* 1 — loose trio, big, top-left to bottom-right */
+    [
+      { w:26, h:22, from:[-30,-30], to:[300,260], rot:240,  dur:3000, delay:0,    op:.30, r:ROCK2 },
+      { w:15, h:13, from:[60,-30],  to:[300,300], rot:-190, dur:3000, delay:600,  r:ROCK3 },
+      { w:34, h:29, from:[-45,30],  to:[320,230], rot:160,  dur:3000, delay:1200, op:.22, r:ROCK }
+    ],
+    /* 2 — two smaller rocks, upper half, quicker */
+    [
+      { w:13, h:11, from:[-25,-20], to:[300,150], rot:300, dur:2400, delay:0,   op:.28, r:ROCK3 },
+      { w:19, h:16, from:[-40,20],  to:[300,210], rot:-220, dur:2600, delay:700, r:ROCK2 }
+    ],
+    /* 3 — fast comet plus one slow drifter */
+    [
+      { w:8,  h:8,  from:[-30,-25], to:[300,250], rot:0,   dur:700,  delay:0,    op:.85, comet:true },
+      { w:30, h:26, from:[-45,60],  to:[300,200], rot:120, dur:3400, delay:900,  op:.20, r:ROCK }
+    ],
+    /* 4 — scattered shower, four small rocks */
+    [
+      { w:11, h:9,  from:[-20,-25], to:[290,240], rot:200,  dur:2800, delay:0,    op:.28, r:ROCK3 },
+      { w:14, h:12, from:[40,-30],  to:[300,280], rot:-160, dur:3000, delay:650,  r:ROCK2 },
+      { w:9,  h:8,  from:[-35,15],  to:[300,190], rot:260,  dur:2600, delay:1300, r:ROCK },
+      { w:17, h:14, from:[110,-35], to:[290,300], rot:140,  dur:3200, delay:1950, r:ROCK2 }
+    ],
+    /* 5 — one huge slow boulder plus a quick chip */
+    [
+      { w:44, h:38, from:[-55,-20], to:[310,250], rot:90,   dur:4200, delay:0,    op:.18, r:ROCK },
+      { w:10, h:9,  from:[-25,50],  to:[300,180], rot:-320, dur:1500, delay:2600, r:ROCK3 }
+    ],
+    /* 6 — dense burst, five rocks nearly at once, same top-left to
+       bottom-right heading as every other cycle */
+    [
+      { w:16, h:14, from:[-30,-30], to:[300,220], rot:180,  dur:2600, delay:0,   op:.26, r:ROCK },
+      { w:11, h:9,  from:[-20,-40], to:[290,260], rot:-220, dur:2400, delay:80,  r:ROCK3 },
+      { w:20, h:17, from:[-40,-10], to:[310,240], rot:150,  dur:2800, delay:160, op:.22, r:ROCK2 },
+      { w:9,  h:8,  from:[-15,-25], to:[300,270], rot:260,  dur:2200, delay:240, r:ROCK },
+      { w:14, h:12, from:[-35,-15], to:[295,255], rot:-190, dur:2500, delay:320, r:ROCK3 }
+    ],
+    /* 7 — quick shower, five small rocks, tightly clustered */
+    [
+      { w:8,  h:7,  from:[10,-30],  to:[220,260], rot:110,  dur:1900, delay:0,   r:ROCK },
+      { w:9,  h:8,  from:[60,-30],  to:[280,255], rot:-140, dur:2000, delay:100, r:ROCK2 },
+      { w:7,  h:6,  from:[110,-30], to:[300,250], rot:170,  dur:1800, delay:200, r:ROCK3 },
+      { w:10, h:9,  from:[150,-35], to:[300,260], rot:-120, dur:2100, delay:300, r:ROCK },
+      { w:8,  h:7,  from:[190,-30], to:[300,240], rot:200,  dur:1700, delay:400, r:ROCK2 }
+    ],
+    /* 8 — double comet, same heading, close together */
+    [
+      { w:7, h:7, from:[-25,-20], to:[300,230], rot:0, dur:650, delay:0,   op:.9,  comet:true },
+      { w:9, h:9, from:[-35,-5],  to:[295,245], rot:0, dur:900, delay:300, op:.85, comet:true }
+    ]
+  ];
+
+  const GAP = 8000;
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  let index = 0;
+  let timer = null;
+
+  function runCycle(){
+    slot.querySelectorAll(".tool-card-asteroid").forEach(el => el.remove());
+    const rocks = CYCLES[index];
+    let longest = 0;
+
+    rocks.forEach(rock => {
+      const el = document.createElement("span");
+      el.className = "tool-card-asteroid" + (rock.comet ? " is-comet" : "");
+      el.style.width = rock.w + "px";
+      el.style.height = rock.h + "px";
+      if (rock.r) el.style.borderRadius = rock.r;
+      if (rock.comet){
+        const travelAngle = Math.atan2(rock.to[1] - rock.from[1], rock.to[0] - rock.from[0]) * 180 / Math.PI;
+        el.style.setProperty("--tail-angle", travelAngle + "deg");
+        el.dataset.tailAngle = travelAngle;
+      }
+      slot.appendChild(el);
+
+      /* fill:"both", not "forwards" — "forwards" leaves a delayed rock
+         visible at its CSS default (top-left) until the delay ends, then
+         jumps to start. "both" applies the first keyframe during delay
+         too. No fade needed — paths start/end outside the clipped card. */
+      el.animate([
+        { transform:`translate(${rock.from[0]}px, ${rock.from[1]}px) rotate(0deg)` },
+        { transform:`translate(${rock.to[0]}px, ${rock.to[1]}px) rotate(${rock.rot}deg)` }
+      ], { duration:rock.dur, delay:rock.delay, easing:"linear", fill:"both" });
+
+      longest = Math.max(longest, rock.dur + rock.delay);
+    });
+
+    index = (index + 1) % CYCLES.length;
+    timer = setTimeout(runCycle, longest + GAP);
+  }
+
+  /* Preview is display:none below 769px — start only on desktop, stop
+     if the viewport shrinks past the breakpoint. */
+  function sync(){
+    if (desktopQuery.matches){
+      if (timer === null) runCycle();
+    } else if (timer !== null){
+      clearTimeout(timer);
+      timer = null;
+      slot.querySelectorAll(".tool-card-asteroid").forEach(el => el.remove());
+    }
+  }
+
+  desktopQuery.addEventListener("change", sync);
+  sync();
+})();
+
+/* Intro terminal: only the header (traffic-light dots + title) shows
+   at first — the classified body is genuinely hidden, not just
+   blurred, until the yellow dot is clicked, same macOS-window
+   minimize/restore metaphor as the dots' own colors imply. A second
+   click re-hides it. Choice persisted to localStorage (same mechanism
+   as theme/language) so it opens back up automatically next visit. */
+(function(){
+  const card = document.getElementById("engineStatusCard");
+  const toggle = document.getElementById("engineStatusDot2");
+  if (!card || !toggle) return;
+
+  /* Card is display:none below 769px — animation loops start only on
+     desktop, or later if the viewport grows past the breakpoint. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  let animationsStarted = false;
+
+  function startAnimations(){
+    /* Guards against running twice — a second call would rebuild the
+       glitch spans, orphaning the first set's timers on detached nodes. */
+    if (animationsStarted || !desktopQuery.matches) return;
+    animationsStarted = true;
+    startIntroTerminalGlitchLines();
+  }
+
+  function setRevealed(revealed){
+    card.classList.toggle("revealed", revealed);
+    toggle.setAttribute("aria-expanded", String(revealed));
+    if (revealed) startAnimations();
+    try { localStorage.setItem("bc-intro-terminal-revealed", revealed ? "1" : "0"); } catch (e) { /* storage unavailable */ }
+  }
+
+  desktopQuery.addEventListener("change", () => {
+    if (card.classList.contains("revealed")) startAnimations();
+  });
+
+  let alreadyRevealed = false;
+  try { alreadyRevealed = localStorage.getItem("bc-intro-terminal-revealed") === "1"; } catch (e) { /* storage unavailable */ }
+  setRevealed(alreadyRevealed);
+
+  toggle.addEventListener("click", () => {
+    setRevealed(!card.classList.contains("revealed"));
+  });
+})();
+
+/* Loading-tools face: eyes blink together, (•_•;) -> (-_-;) -> (•_•;).
+   Only the eye characters swap; punctuation stays static so nothing
+   shifts. Re-queries each call since language switches replace innerHTML. */
+(function(){
+  /* Banner is display:none below 769px — skip the blink there. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+  setInterval(() => {
+    if (!desktopQuery.matches) return;
+    const eyeL = document.getElementById("loadingToolsEyeL");
+    const eyeR = document.getElementById("loadingToolsEyeR");
+    if (!eyeL || !eyeR) return;
+    eyeL.textContent = "-";
+    eyeR.textContent = "-";
+    setTimeout(() => {
+      const eyeLNow = document.getElementById("loadingToolsEyeL");
+      const eyeRNow = document.getElementById("loadingToolsEyeR");
+      if (eyeLNow) eyeLNow.textContent = "•";
+      if (eyeRNow) eyeRNow.textContent = "•";
+    }, 180);
+  }, 5000);
+})();
+
+/* Cookie consent banner: per-category choice, gates GA4/AdSense
+   (Consent Mode starts denied in <head>). */
+(function(){
+  const banner = document.getElementById("cookieBanner");
+  const analyticsToggle = document.getElementById("cookieToggleAnalytics");
+  const advertisingToggle = document.getElementById("cookieToggleAdvertising");
+  const acceptAllBtn = document.getElementById("cookieBannerAcceptAll");
+  const saveBtn = document.getElementById("cookieBannerSave");
+  if (!banner || !analyticsToggle || !advertisingToggle || !acceptAllBtn || !saveBtn) return;
+
+  /* Labels natively toggle their checkbox on any click within them —
+     restrict that to the checkbox itself so the row text isn't a
+     click target. */
+  banner.querySelectorAll(".cookie-toggle-row").forEach(row => {
+    row.addEventListener("click", e => {
+      if (e.target.tagName !== "INPUT") e.preventDefault();
+    });
+  });
+
+  /* The "> " on each category is a real button now, sibling to (not
+     inside) the label, so it can't accidentally flip the checkbox —
+     clicking it just expands/collapses a short description of what
+     that category actually covers. */
+  banner.querySelectorAll(".cookie-cat-arrow").forEach(arrowBtn => {
+    arrowBtn.addEventListener("click", () => {
+      const detail = document.getElementById(arrowBtn.getAttribute("aria-controls"));
+      if (!detail) return;
+      const willOpen = detail.hidden;
+      detail.hidden = !willOpen;
+      arrowBtn.setAttribute("aria-expanded", String(willOpen));
+      const cat = arrowBtn.closest(".cookie-cat");
+      if (cat) cat.classList.toggle("open", willOpen);
+    });
+  });
+
+  /* Docked titlebar's yellow dot: same reveal logic as the classified-
+     memory card — only visible/clickable while docked in the first
+     place (the dot itself is display:none otherwise), so no separate
+     guard needed here for the floating consent banner. One real
+     exception: if this visitor hasn't actually made a consent choice
+     yet (readSaved() below returns null), the categories/buttons are
+     the real required controls, not a fun extra — force them visible
+     regardless of the toggle rather than gating consent behind an
+     easter egg. Only returning visitors who've already chosen get the
+     hide-until-clicked treatment. */
+  const dockToggle = document.getElementById("cookieDockToggle");
+  if (dockToggle){
+    let dockRevealed = false;
+    try { dockRevealed = localStorage.getItem("bc-cookie-dock-revealed") === "1"; } catch (e) { /* storage unavailable */ }
+
+    function setDockRevealed(revealed){
+      dockRevealed = revealed;
+      banner.classList.toggle("dock-revealed", revealed || !readSaved());
+      dockToggle.setAttribute("aria-expanded", String(revealed));
+      try { localStorage.setItem("bc-cookie-dock-revealed", revealed ? "1" : "0"); } catch (e) { /* storage unavailable */ }
+    }
+    setDockRevealed(dockRevealed);
+
+    dockToggle.addEventListener("click", () => setDockRevealed(!dockRevealed));
+  }
+
+  function readSaved(){
+    try {
+      const raw = localStorage.getItem("bc-cookie-consent");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+
+  function applyConsent(prefs){
+    gtag("consent", "update", {
+      analytics_storage: prefs.analytics ? "granted" : "denied",
+      ad_storage: prefs.advertising ? "granted" : "denied",
+      ad_user_data: prefs.advertising ? "granted" : "denied",
+      ad_personalization: prefs.advertising ? "granted" : "denied"
+    });
+  }
+
+  const savedNotice = document.getElementById("cookieBannerSaved");
+  let savedNoticeTimer = null;
+
+  function flashSavedNotice(){
+    if (!savedNotice) return;
+    savedNotice.textContent = "> preferences_saved";
+    savedNotice.classList.add("is-visible");
+    clearTimeout(savedNoticeTimer);
+    savedNoticeTimer = setTimeout(() => {
+      savedNotice.classList.remove("is-visible");
+    }, 2200);
+  }
+
+  /* Tracks whether the visitor has ever recorded a choice — drives the
+     floating banner's visibility and the docked panel's confirm button. */
+  function refreshConsentState(){
+    banner.classList.toggle("needs-consent", !readSaved());
+  }
+
+  function savePrefs(prefs){
+    applyConsent(prefs);
+    try { localStorage.setItem("bc-cookie-consent", JSON.stringify(prefs)); } catch (e) { /* storage unavailable */ }
+    refreshConsentState();
+    /* Docked banner is page content, so it stays put — show a
+       confirmation instead; dismiss only applies to the floating version. */
+    if (banner.classList.contains("docked")){
+      flashSavedNotice();
+    } else {
+      banner.hidden = true;
+    }
+  }
+
+  /* "...enabled" / "...disabled" readout per category. */
+  const analyticsStatus = document.getElementById("cookieStatusAnalytics");
+  const advertisingStatus = document.getElementById("cookieStatusAdvertising");
+
+  function statusText(allowed){
+    return allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous";
+  }
+
+  /* "Accept All" becomes "Disable all" once everything's on, flips back
+     once all are off; a partial selection keeps "Accept All". */
+  function renderActionButton(){
+    const allOn = analyticsToggle.checked && advertisingToggle.checked;
+    acceptAllBtn.textContent = allOn ? "Disable all" : "Accept All";
+    acceptAllBtn.classList.toggle("is-disable-all", allOn);
+  }
+
+  function renderStatuses(){
+    [[analyticsStatus, analyticsToggle], [advertisingStatus, advertisingToggle]].forEach(([out, input]) => {
+      if (!out) return;
+      out.textContent = statusText(input.checked);
+      out.classList.toggle("is-allowed", input.checked);
+    });
+    renderActionButton();
+  }
+
+  function syncTogglesFromSaved(){
+    const current = readSaved() || { analytics: false, advertising: false };
+    analyticsToggle.checked = !!current.analytics;
+    advertisingToggle.checked = !!current.advertising;
+    renderStatuses();
+  }
+
+  const saved = readSaved();
+  if (saved){
+    applyConsent(saved);
+    syncTogglesFromSaved();
+  } else {
+    banner.hidden = false;
+  }
+  renderStatuses();
+  refreshConsentState();
+
+  /* Docked panel auto-saves each toggle immediately — reads as a
+     settings panel, so a confirm step is just friction. Two exceptions
+     keep the explicit confirm: the floating first-time prompt (needs a
+     deliberate dismiss action), and a docked panel with no prior consent
+     (auto-save shouldn't record a choice never confirmed). */
+  function onToggleChange(){
+    renderStatuses();
+    const isDocked = banner.classList.contains("docked");
+    const alreadyChose = !banner.classList.contains("needs-consent");
+    if (isDocked && alreadyChose){
+      savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
+    }
+  }
+
+  analyticsToggle.addEventListener("change", onToggleChange);
+  advertisingToggle.addEventListener("change", onToggleChange);
+
+  acceptAllBtn.addEventListener("click", () => {
+    /* Acts as "allow all" unless everything's already on, in which case
+       it shows "Disable all" and turns everything off instead. */
+    const turnOn = !(analyticsToggle.checked && advertisingToggle.checked);
+    analyticsToggle.checked = turnOn;
+    advertisingToggle.checked = turnOn;
+    renderStatuses();
+    savePrefs({ analytics: turnOn, advertising: turnOn });
+  });
+
+  saveBtn.addEventListener("click", () => {
+    savePrefs({ analytics: analyticsToggle.checked, advertising: advertisingToggle.checked });
+  });
+
+  /* Mobile has no docked panel — Cookies page gets a plain button that
+     reopens the floating banner. */
+  const mobileSettingsBtn = document.getElementById("cookieMobileSettingsBtn");
+  if (mobileSettingsBtn){
+    mobileSettingsBtn.addEventListener("click", () => {
+      syncTogglesFromSaved();
+      banner.hidden = false;
+    });
+  }
+
+  /* Same element serves both roles — floats as the consent overlay, or
+     re-parents inline into the Cookies page. Called by gotoPage() on
+     every route change. */
+  const dock = document.getElementById("cookieBannerDock");
+  const bannerHome = banner.parentNode;
+  const bannerNextSibling = banner.nextSibling;
+  let pendingDock = null;
+  let placementTimer = null;
+
+  /* Docking is desktop-only, matching the other terminal easter eggs
+     (all hidden below 768px). Mobile banner always stays floating. */
+  const desktopQuery = window.matchMedia("(min-width:769px)");
+
+  window.bcSyncCookieBannerPlacement = function(pageName){
+    /* Marks which page the banner overlays, so CSS can shorten its text
+       on the Cookies page only. Must be set before the early-returns
+       below — on mobile shouldDock/isDocked are always false and the
+       function would bail out before reaching this. */
+    banner.classList.toggle("on-cookies-page", pageName === "cookies");
+
+    if (!dock) return;
+    const shouldDock = pageName === "cookies" && desktopQuery.matches;
+    const isDocked = banner.classList.contains("docked");
+    /* Compares against any move already in flight, not just current DOM
+       state — the class updates only after the 180ms fade, so fast
+       navigation could otherwise queue conflicting moves. */
+    const settledTarget = pendingDock === null ? isDocked : pendingDock;
+    if (shouldDock === settledTarget) return;
+
+    pendingDock = shouldDock;
+    banner.classList.add("cookie-banner-fading");
+    clearTimeout(placementTimer);
+    placementTimer = setTimeout(() => {
+      if (shouldDock){
+        dock.appendChild(banner);
+        banner.classList.add("docked");
+        banner.hidden = false;
+        syncTogglesFromSaved();
+      } else {
+        bannerHome.insertBefore(banner, bannerNextSibling);
+        banner.classList.remove("docked");
+        /* Restores the floating banner's visibility rule: shown only
+           when the visitor hasn't chosen yet. */
+        banner.hidden = !!readSaved();
+      }
+      refreshConsentState();
+      banner.classList.remove("cookie-banner-fading");
+      pendingDock = null;
+      placementTimer = null;
+    }, 180);
+  };
+
+  /* Re-evaluates on breakpoint crossing, so rotating a tablet or
+     resizing a window doesn't leave it in the wrong mode. */
+  desktopQuery.addEventListener("change", () => {
+    window.bcSyncCookieBannerPlacement(pathToName(location.pathname));
+  });
+
+  window.bcSyncCookieBannerPlacement(pathToName(location.pathname));
+})();
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+/* i18n system (translations object incl. the g7 easter egg,
+   checkTranslationCompleteness, applyLanguage, the language-switcher
+   nav button/menu) removed from the live site on request — archived in
+   full, not deleted, at shared/i18n-archive.js along with re-enable
+   steps. Every string that used to be looked up via dict[key] is now a
+   plain literal at its own call site. */
+
+/* Central confirmation display for nav actions — see .nav-terminal in
+   the stylesheet. Shared by theme and share/copy so every nav button
+   confirms itself the same way, in the same spot. */
+function showNavTerminal(text){
+  const el = document.getElementById("navTerminal");
+  const textEl = document.getElementById("navTerminalText");
+  if (!el || !textEl) return;
+  textEl.textContent = text;
+  el.classList.add("show");
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+
+/* ===== TAB SWITCHING ===== */
+const VALID_PAGES = ["mainpage"];
+
+/* Legal/policy pages never show ads — keep in sync with anywhere ads
+   might otherwise be requested. */
+const AD_EXCLUDED_PAGES = ["terms", "privacy", "cookies"];
+
+/* Historically listed routes with a generated static file needing a
+   trailing slash to match GitHub Pages' file location. Every route is
+   now a real standalone MPA page (see MIGRATED_PAGES below), so this
+   stays empty — kept only because nameToPath() still references it. */
+const STATIC_ROUTES = [];
+
+/* Cleanly is branded as "Cleanly" everywhere in the UI, but its internal
+   page id/section stayed "exif" (metadata format) to avoid a much wider
+   rename — this just maps the public URL to match the branding. */
+function nameToPath(name){
+  if (name === "mainpage") return "/";
+  if (name === "exif") return "/cleanly/";
+  return STATIC_ROUTES.includes(name) ? "/" + name + "/" : "/" + name;
+}
+
+function pathToName(pathname){
+  const seg = pathname.replace(/^\/|\/$/g, "");
+  if (seg === "" || seg === "creativehub") return "mainpage";
+  if (seg === "cleanly") return "exif";
+  return seg;
+}
+
+/* Pages already migrated out to standalone MPA routes — no longer exist
+   as <section id="page-X"> here, so any lingering data-goto="X" (nav,
+   footer, translated cookie-banner copy, etc.) must do a real navigation
+   instead of gotoPage()'s normal in-page section swap. */
+const MIGRATED_PAGES = { about: "/about/", faq: "/faq/", terms: "/terms/", privacy: "/privacy/", cookies: "/cookies/", exif: "/cleanly/", combine: "/combine/", compress: "/compress/", convert: "/convert/", context: "/context/", "golden-rules": "/golden-rules/" };
+
+function gotoPage(name){
+  if (MIGRATED_PAGES[name]){
+    location.href = MIGRATED_PAGES[name];
+    return;
+  }
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+
+  /* Cookie banner floats over every page, docks inline into /cookies */
+  if (typeof window.bcSyncCookieBannerPlacement === "function"){
+    window.bcSyncCookieBannerPlacement(name);
+  }
+
+  window.scrollTo(0, 0);
+  const path = nameToPath(name);
+  try {
+    if (location.pathname !== path){
+      history.pushState(null, "", path);
+    }
+  } catch (e) {
+    /* file:// pages can block pushState — tab switching still works */
+  }
+
+  /* SPA routing never reloads the page, so GA4's automatic pageview
+     (fired once on initial load) misses these — send one manually. */
+  if (typeof gtag === "function"){
+    gtag("event", "page_view", {
+      page_path: path,
+      page_title: document.title
+    });
+  }
+
+  /* Same problem for AdSense: Auto ads only scans the DOM once on
+     load, so client-side route changes need an explicit nudge to
+     place ads in the newly-visible page. Skipped entirely on
+     legal/policy pages. */
+  if (!AD_EXCLUDED_PAGES.includes(name)){
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error("[adsense] push failed:", err);
+    }
+
+    /* Manual <ins class="adsbygoogle"> units (Golden Rules' top/rail/
+       bottom slots) each need their own push — one push fills exactly
+       one unfilled ins, unlike the untargeted Auto ads push above.
+       Scoped to the now-active page only: these ins tags stay in the
+       DOM (just hidden) while on any other page, and requesting an ad
+       for hidden content is exactly what we don't want. Google marks a
+       filled ins with data-adsbygoogle-status, so repeat visits to the
+       same page never double-push an already-filled slot. */
+    const activePage = document.getElementById("page-" + name);
+    if (activePage){
+      activePage.querySelectorAll("ins.adsbygoogle:not([data-adsbygoogle-status])").forEach(() => {
+        try {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (err) {
+          console.error("[adsense] manual ins push failed:", err);
+        }
+      });
+    }
+  }
+}
+
+window.addEventListener("popstate", () => {
+  const name = pathToName(location.pathname);
+  if (VALID_PAGES.includes(name)){
+    gotoPage(name);
+  }
+});
+
+document.addEventListener("click", (e) => {
+  const target = e.target.closest("[data-goto]");
+  if (target) gotoPage(target.dataset.goto);
+});
+
+document.addEventListener("click", (e) => {
+  const target = e.target.closest(".go-to-contact");
+  if (!target) return;
+  const section = document.getElementById("footerContactSection");
+  if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+
+const startPage = pathToName(location.pathname);
+if (VALID_PAGES.includes(startPage)) {
+  gotoPage(startPage);
+}
+
+
+
+/* ===== NAV SHARE BUTTON (works on Convert + Compress) ===== */
+(function(){
+  const shareBtn = document.getElementById("navShareBtn");
+  const shareMenu = document.getElementById("navShareMenu");
+
+  if (shareBtn && shareMenu){
+    shareBtn.addEventListener("click", async () => {
+      const shareData = {
+        title: "BC Tools",
+        text: "Try BC Tools for working with images.",
+        url: window.location.href
+      };
+      if (window.innerWidth <= 768 && navigator.share){
+        try { await navigator.share(shareData); }
+        catch (e){ /* cancelled, or share unsupported */ }
+        return;
+      }
+      shareMenu.classList.toggle("open");
+    });
+
+    const shareMoreToggle = document.getElementById("navShareMoreToggle");
+    const shareMoreList = document.getElementById("navShareMoreList");
+    if (shareMoreToggle && shareMoreList){
+      shareMoreToggle.addEventListener("click", () => {
+        const willOpen = shareMoreList.hidden;
+        shareMoreList.hidden = !willOpen;
+        shareMoreToggle.setAttribute("aria-expanded", String(willOpen));
+      });
+    }
+
+    shareMenu.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-share]");
+      if (!btn) return;
+      const pageUrl = encodeURIComponent(window.location.href);
+      const pageText = encodeURIComponent("Try BC Tools for working with images.");
+
+      if (btn.dataset.share === "copy"){
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          showNavTerminal("URL copied to clipboard");
+        }
+        catch { /* clipboard unavailable */ }
+      }
+      if (btn.dataset.share === "whatsapp") window.open(`https://wa.me/?text=${pageText}%20${pageUrl}`, "_blank");
+      if (btn.dataset.share === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`, "_blank");
+      if (btn.dataset.share === "x") window.open(`https://twitter.com/intent/tweet?text=${pageText}&url=${pageUrl}`, "_blank");
+      if (btn.dataset.share === "linkedin") window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`, "_blank");
+      if (btn.dataset.share === "email") window.location.href = `mailto:?subject=BC Tools&body=${pageText}%0A%0A${pageUrl}`;
+
+      shareMenu.classList.remove("open");
+      if (shareMoreList){
+        shareMoreList.hidden = true;
+        shareMoreToggle.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!shareBtn.contains(e.target) && !shareMenu.contains(e.target)){
+        shareMenu.classList.remove("open");
+        if (shareMoreList){
+          shareMoreList.hidden = true;
+          shareMoreToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    });
+  }
+})();
+
+/* ===== LIGHT/DARK THEME TOGGLE ===== */
+(function(){
+  const themeBtn = document.getElementById("navThemeBtn");
+  const root = document.documentElement;
+
+  function applyTheme(theme){
+    /* Both states set an explicit data-theme value now — the token
+       system's :root[data-theme="dark"] override (see :root in <style>)
+       needs "dark" to actually be present as an attribute value, not
+       represented by the attribute's absence like the old filter-based
+       approach did. */
+    /* .theme-instant forces transition:none on every element for one
+       paint, so the light/dark swap is a hard cut, not the ~0.2s
+       crossfade individual components' own transitions would otherwise
+       produce — removed shortly after so those same transitions keep
+       working normally for hover/etc. afterward. setTimeout, not
+       requestAnimationFrame — rAF callbacks can be throttled/skipped
+       entirely in a backgrounded or otherwise inactive tab, which
+       would leave this class stuck forever and silently kill every
+       transition on the page for good; a plain timer doesn't have
+       that failure mode. */
+    root.classList.add("theme-instant");
+    root.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+    setTimeout(() => { root.classList.remove("theme-instant"); }, 50);
+  }
+
+  let saved = null;
+  try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
+  applyTheme(saved === "dark" ? "dark" : "light");
+
+  if (themeBtn){
+    themeBtn.addEventListener("click", () => {
+      const isLight = root.getAttribute("data-theme") === "light";
+      const next = isLight ? "dark" : "light";
+      applyTheme(next);
+      try { localStorage.setItem("bc-theme", next); } catch (e) { /* storage unavailable */ }
+      showNavTerminal(next === "dark" ? "Dark mode set" : "Light mode set");
+    });
+  }
+})();
+
+/* ===== Tool preview modal ("Read more") ===== */
+(function(){
+  const overlay = document.getElementById("toolPreviewOverlay");
+  if (!overlay) return;
+  const modal = overlay.querySelector(".tool-preview-modal");
+  const peek = document.getElementById("toolPreviewPeek");
+  const title = document.getElementById("toolPreviewTitle");
+  const desc = document.getElementById("toolPreviewDesc");
+  const openLink = document.getElementById("toolPreviewOpen");
+  const closeBtn = document.getElementById("toolPreviewClose");
+  let lastFocused = null;
+
+  let activeBtn = null;
+
+  function currentPreviewSrc(){
+    if (!activeBtn) return "";
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    return isLight ? activeBtn.dataset.previewImgLight : activeBtn.dataset.previewImgDark;
+  }
+
+  /* Calling .play() in the same tick as setting .src races the load —
+     with nothing buffered yet (readyState HAVE_NOTHING) that play()
+     request can silently end up going nowhere instead of queuing, so
+     the clip loads but never actually starts. Waiting for "canplay"
+     guarantees play() only fires once there's actually a frame ready. */
+  function loadAndPlay(src){
+    peek.pause();
+    peek.src = src;
+    peek.addEventListener("canplay", () => peek.play().catch(() => {}), { once: true });
+    peek.load();
+  }
+
+  function openPreview(btn){
+    activeBtn = btn;
+    const name = btn.dataset.previewName;
+    loadAndPlay(currentPreviewSrc());
+    peek.setAttribute("aria-label", `Preview of the ${name} tool`);
+    title.textContent = name;
+    desc.textContent = btn.dataset.previewDesc;
+    openLink.href = btn.dataset.previewHref;
+    lastFocused = btn;
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+    closeBtn.focus();
+  }
+
+  function closePreview(){
+    overlay.hidden = true;
+    document.body.style.overflow = "";
+    peek.pause();
+    if (lastFocused) lastFocused.focus();
+  }
+
+  /* Preload both the light and dark preview clip the moment a visitor
+     shows intent (hover, or focus from tabbing in) — by the time they
+     actually click, the request is usually already in flight or done,
+     instead of only starting once the modal opens. Preloading both
+     (not just the current theme's) covers a mid-hover theme toggle too.
+     A plain, never-inserted <video> with preload="auto" is enough to
+     warm the browser cache without playing anything; nothing needs to
+     hold a reference to it once loading has started. Guarded so the
+     same pair only ever gets requested once per button. */
+  document.querySelectorAll(".card-readmore").forEach(btn => {
+    function preload(){
+      if (btn.dataset.preloaded) return;
+      btn.dataset.preloaded = "1";
+      [btn.dataset.previewImgLight, btn.dataset.previewImgDark].forEach(src => {
+        if (!src) return;
+        const v = document.createElement("video");
+        v.preload = "auto";
+        v.muted = true;
+        v.src = src;
+      });
+    }
+    btn.addEventListener("mouseenter", preload);
+    btn.addEventListener("focus", preload);
+    btn.addEventListener("click", () => openPreview(btn));
+  });
+
+  /* Some browsers pause a looping muted <video> right at the loop
+     boundary instead of resuming (seen in testing: currentTime resets
+     to 0, loop's own "seek back to start" step runs, but the "resume
+     playback" step silently doesn't) — since this clip has no visible
+     controls, any pause while the modal is open is unintended, so just
+     resume it rather than leaving a frozen first frame on screen. */
+  peek.addEventListener("pause", () => {
+    if (!overlay.hidden) peek.play().catch(() => {});
+  });
+
+  closeBtn.addEventListener("click", closePreview);
+  overlay.addEventListener("click", e => {
+    if (!modal.contains(e.target)) closePreview();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !overlay.hidden) closePreview();
+  });
+
+  /* Swaps to the matching light/dark clip if the user toggles theme
+     while the preview is open — the tool page itself repaints live,
+     so this should too rather than showing a stale-theme clip. */
+  new MutationObserver(() => {
+    if (overlay.hidden) return;
+    loadAndPlay(currentPreviewSrc());
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+
+/* ===== Category filter (All/Image/Video/Sound/Code) =====
+   A plain radio-style group, not independent toggles — only one pill
+   is ever active, and "All" is just another explicit option in that
+   same group rather than a special "nothing selected" state. Starts
+   on All (matching the HTML's aria-pressed="true" default), so a
+   fresh load or reload always shows every tool with no filter
+   applied. */
+(function(){
+  const filterBar = document.getElementById("categoryFilter");
+  const cards = document.querySelectorAll("#cardsGrid .card");
+  if (!filterBar || !cards.length) return;
+
+  const buttons = filterBar.querySelectorAll(".category-filter-btn");
+  let activeCategory = "all";
+
+  function applyFilter(){
+    cards.forEach(card => {
+      card.hidden = activeCategory !== "all" && card.dataset.category !== activeCategory;
+    });
+    buttons.forEach(btn => {
+      btn.setAttribute("aria-pressed", String(btn.dataset.category === activeCategory));
+    });
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.category;
+      applyFilter();
+    });
+  });
+})();
+
+
+/* ===== Language switch =====
+   A page lists its translations as <link rel="alternate" hreflang="..">
+   (the build script writes them). This adds one nav button that links to
+   the other language's copy of the same page; it never redirects on its
+   own and just remembers the last choice. */
+(function(){
+  const FLAGS = {
+      en: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="8"/></svg>',
+      de: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#FFCE00"/><rect width="60" height="26.7" fill="#DD0000"/><rect width="60" height="13.3" fill="#000"/></svg>',
+      nl: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#21468B"/><rect width="60" height="26.7" fill="#fff"/><rect width="60" height="13.3" fill="#AE1C28"/></svg>',
+      fr: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#0055A4"/><rect x="40" width="20" height="40" fill="#EF4135"/></svg>',
+      it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
+      cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
+      es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
+      id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',
+      pl: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#DC143C"/></svg>'
+    };
+  function applySavedLang(){
+    let saved = null;
+    try { saved = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
+    const current = document.documentElement.lang || "en";
+    if (!saved || saved === current) return;
+    const target = document.querySelector('link[rel="alternate"][hreflang="' + saved + '"]');
+    if (!target) return;
+    const internal = document.referrer && new URL(document.referrer).origin === location.origin;
+    if (current !== "en" && !internal) return;
+    location.replace(new URL(target.href, location.href).pathname + location.search + location.hash);
+  }
+  applySavedLang();
+  function addLangButton(){
+    const nav = document.querySelector(".nav-right");
+    if (!nav || nav.querySelector(".nav-lang-wrap")) return;
+    const current = document.documentElement.lang || "en";
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default");
+    if (alts.length < 2) return;
+    const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano" };
+    const wrap = document.createElement("div");
+    wrap.className = "nav-lang-wrap";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nav-theme-btn nav-lang-btn";
+    btn.innerHTML = FLAGS[current] || current.toUpperCase();
+    btn.title = NAMES[current] || current;
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+    const menu = document.createElement("div");
+    menu.className = "nav-lang-menu";
+    alts.forEach(l => {
+      const a = document.createElement("a");
+      a.href = new URL(l.href, location.href).pathname + location.search;
+      a.hreflang = l.hreflang;
+      a.innerHTML = (FLAGS[l.hreflang] || "") + "<span>" + (NAMES[l.hreflang] || l.hreflang) + "</span>";
+      if (l.hreflang === current) a.setAttribute("aria-current", "true");
+      a.addEventListener("click", () => { try { localStorage.setItem("bc-lang", l.hreflang); } catch (e) { /* storage unavailable */ } });
+      menu.appendChild(a);
+    });
+    const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!menu.classList.contains("open")); });
+    document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    wrap.append(btn, menu);
+    nav.insertBefore(wrap, nav.firstChild);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addLangButton);
+  else addLangButton();
+})();
+
+</script>
+
+</div>
+</body>
+</html>

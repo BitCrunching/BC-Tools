@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regole d'oro – BC Tools</title>
+<meta name="description" content="Regole d'oro per scegliere formati immagine, compressione e impostazioni con BC Tools.">
+<link rel="canonical" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/golden-rules/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/golden-rules/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/golden-rules/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/golden-rules/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/golden-rules/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/golden-rules/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
+<script src="/shared/i18n/it.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Regole d'oro – BC Tools">
+<meta property="og:description" content="Regole d'oro per scegliere formati immagine, compressione e impostazioni con BC Tools.">
+<meta property="og:url" content="https://bitcrunching.com/it/golden-rules/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Regole d'oro – BC Tools">
+<meta name="twitter:description" content="Regole d'oro per scegliere formati immagine, compressione e impostazioni con BC Tools.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=137">
+<style>
+/* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
+.golden-rules-switcher{
+  display:flex;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
+.golden-rules-tool-btn{
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  font-family:inherit;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+
+.golden-rules-tool-btn:hover{
+  border-color:var(--border-strong);
+}
+
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
+.golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+.golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
+.golden-rules-articles{
+  display:none;
+  position:relative;
+  max-width:820px;
+  margin:0 auto 80px;
+  padding:0 24px;
+}
+
+.golden-rules-articles.active{
+  display:block;
+}
+
+.golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
+
+.golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+
+.golden-rules-article summary::-webkit-details-marker{
+  display:none;
+}
+
+.golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  color:var(--text);
+  transition:.2s;
+}
+
+.golden-rules-article[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+}
+
+.golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  margin:24px 0 10px;
+}
+
+.golden-rules-body h3:first-child{
+  margin-top:0;
+}
+
+.golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Usiamo i cookie. Scegli qui sotto quali categorie consentire. Vedi la nostra <a data-goto="cookies">Cookie Policy</a> per i dettagli.</p>
+  <p class="cookie-banner-text-mobile">Scegli quali categorie consentire</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Mostra/nascondi il contenuto delle impostazioni dei cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE_STRUMENTI_DEV:</span>
+    </span>
+    <span>Scegli quali categorie consentire</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Maggiori informazioni sui cookie necessari">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessari (sempre attivi)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Questi mantengono funzionante l'essenziale: ricordare la tua scelta sui cookie, la tua lingua e il tuo tema chiaro/scuro. Non possono essere disattivati e, come tutto il resto su questo sito, non lasciano mai il tuo dispositivo.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Maggiori informazioni sui cookie di analisi">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analisi - Per la massima privacy, tienila disattivata.</span><span class="cookie-label-docked">Analisi (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Questo ci permette di migliorare l'esperienza utente ricevendo dati preziosi tramite (Google Analytics) su come gli utenti navigano nel nostro sito. Se desideri restare completamente anonimo, ti consigliamo di disattivare questa opzione.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Maggiori informazioni sui cookie pubblicitari">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Pubblicità (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Usato da Google AdSense per mostrare annunci. Attualmente disattivato su tutto il sito in attesa dell'approvazione di AdSense, quindi questo interruttore non ha ancora effetto.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Accetta tutto</button>
+    <button type="button" id="cookieBannerSave">Conferma le scelte</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo di BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Passa tra modalità chiara e scura" title="Passa tra modalità chiara e scura">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Condividi" title="Condividi">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copia link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Altre opzioni di condivisione"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Torna al Creative Hub" title="Torna al Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+    <div class="hero">
+      <h1>Regole d'oro</h1>
+      <p class="lead">Guide pratiche e approfondite per ottenere il massimo da ogni strumento: il come, il perché e gli errori da evitare.</p>
+    </div>
+
+    <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+      <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+    </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
+
+    <div class="golden-rules-articles active" data-tool="convert">
+
+      <details class="golden-rules-article">
+        <summary>1. La guida completa ai formati immagine: JPG contro PNG contro WEBP</summary>
+        <div class="golden-rules-body">
+          <p>Ogni formato immagine è stato progettato per risolvere un problema diverso, e scegliere quello giusto ha più effetto su dimensioni e qualità del file di quasi ogni altra decisione nella preparazione delle immagini. Ecco cosa succede davvero sotto il cofano con ciascuno e quando conta davvero.</p>
+
+          <h3>JPG (JPEG): il formato per le foto</h3>
+          <p>Il JPG usa la compressione con perdita, il che significa che scarta alcuni dati dell'immagine a ogni salvataggio per ridurre le dimensioni del file. Per le fotografie, con le loro transizioni graduali di colore, il rumore naturale e l'assenza di bordi netti, funziona in modo notevole, dato che l'occhio umano non nota facilmente le informazioni specifiche che il JPG scarta. Ecco perché il JPG resta il formato predefinito per la fotografia su web, fotocamere e telefoni: ottima compressione, file piccoli, supporto universale.</p>
+          <p>Ciò che il JPG non può fare è la trasparenza. Il formato non ha alcun canale alfa, quindi se ti serve uno sfondo trasparente, il JPG è completamente escluso. Si degrada inoltre un po' a ogni nuovo salvataggio (ne parliamo nell'articolo sugli errori qui sotto) e fatica con la grafica a bordi netti come testo o loghi, dove gli artefatti di compressione diventano visibili come sfocatura attorno alle linee nette.</p>
+
+          <h3>PNG: il formato senza perdita e adatto alla trasparenza</h3>
+          <p>Il PNG usa la compressione senza perdita: ogni pixel è preservato esattamente, senza perdita di qualità, per quante volte lo risalvi. Ciò lo rende la scelta giusta per qualsiasi cosa con bordi netti, colori piatti o testo: loghi, screenshot, icone, diagrammi. Supporta inoltre pienamente la trasparenza, anche parziale (bordi morbidi e sfumati), cosa che il JPG semplicemente non può fare.</p>
+          <p>Il compromesso sono le dimensioni. La compressione senza perdita non può ridurre un file nemmeno lontanamente quanto l'approccio con perdita del JPG, soprattutto per fotografie con molte sottili variazioni di colore. Una foto salvata come PNG può facilmente essere 5-10 volte più grande della stessa foto salvata come JPG, per una differenza di qualità che la maggior parte delle persone non riesce a vedere.</p>
+
+          <h3>WEBP: il moderno tuttofare</h3>
+          <p>Il WEBP è il formato più recente di Google ed è davvero il meglio dei due mondi nella maggior parte dei casi: supporta sia la compressione con perdita sia quella senza (quindi può comportarsi come JPG o come PNG a seconda di ciò che ti serve), supporta la trasparenza e di solito produce file più piccoli di JPG o PNG a pari qualità: spesso il 25-35% più piccoli del JPG per le foto e molto più piccoli del PNG per la grafica.</p>
+          <p>L'unico vero limite è la compatibilità con software più vecchio: alcuni vecchi editor di immagini, alcuni client di posta e alcuni dispositivi datati non gestiscono bene il WEBP. Per un sito web moderno è raramente un problema pratico, ma se invii un file a qualcuno di cui non controlli il software, vale la pena pensarci.</p>
+
+          <h3>HEIC: il formato iPhone da cui vorrai convertire</h3>
+          <p>L'HEIC (e il suo stretto parente HEIF) è il formato foto predefinito di Apple da iOS 11: comprime meglio del JPG a parità di qualità, ed è per questo che gli iPhone lo usano in automatico. Il problema è la compatibilità: la maggior parte del software non Apple, i vecchi strumenti di modifica e moltissimi siti web e moduli di caricamento non riescono ancora ad aprire direttamente un file HEIC.</p>
+          <p>Convert accetta HEIC/HEIF come input e lo decodifica interamente nel browser, quindi puoi inserire una foto appena uscita da un iPhone e ottenere un JPG, PNG o WEBP che si apre ovunque. Non c'è un'opzione di output HEIC, dato che lo scopo della conversione è proprio lasciarsi alle spalle quel divario di compatibilità.</p>
+
+          <h3>La regola decisionale rapida</h3>
+          <p>Foto senza necessità di trasparenza → JPG o WEBP. Tutto ciò che richiede trasparenza o bordi netti (loghi, screenshot, grafica) → PNG o WEBP. Serve il file più piccolo possibile con supporto dei browser moderni → WEBP.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Trasformare le foto in un PDF (e perché farlo)</summary>
+        <div class="golden-rules-body">
+          <p>Convertire immagini in un unico PDF è una delle cose più utili che Convert sa fare e che le persone non scoprono subito: è la risposta a «come invio queste 12 foto come un solo file invece di 12 allegati separati».</p>
+
+          <h3>Perché unire immagini in un PDF invece di comprimerle in un semplice ZIP</h3>
+          <p>Un file ZIP richiede al destinatario di scaricarlo, estrarlo e aprire ogni immagine singolarmente, passaggi in più che la maggior parte delle persone non farà. Un PDF si apre direttamente in un browser o nel visualizzatore PDF integrato che quasi ogni dispositivo ha già, e le pagine appaiono esattamente nell'ordine che hai impostato, cosa che conta enormemente per candidature (lettera di presentazione, poi CV, poi esempi di portfolio) o documenti scansionati che devono restare in sequenza.</p>
+          <p>È anche il formato atteso per un enorme numero di consegne ufficiali e semiufficiali: candidature, richieste di risarcimento assicurative, documenti fiscali, compiti scolastici e domande di affitto spesso specificano «inviare come unico PDF» proprio perché è inequivocabile e non può essere riordinato o spezzato per errore come una cartella di immagini sparse.</p>
+
+          <h3>Passo dopo passo</h3>
+          <p>Trascina le tue immagini in Convert: puoi selezionarne più d'una insieme. Clicca sul pulsante di formato «PDF»: a differenza degli altri formati, questo non converte ogni immagine separatamente, le unisce tutte in un unico PDF in cui ogni immagine diventa una pagina a sé. Clicca su «Converti e scarica» e otterrai un unico file PDF con ogni immagine selezionata, una per pagina, nell'ordine in cui le hai caricate.</p>
+          <p>Qui l'ordine conta, quindi ricontrolla l'ordine in cui i file sono stati selezionati prima di convertire: attualmente Convert segue l'ordine in cui hai scelto o trascinato i file, quindi se la sequenza è importante (come per un documento scansionato di più pagine), selezionali o trascinali nell'ordine in cui devono apparire.</p>
+
+          <h3>Una nota sulla qualità delle immagini nel PDF</h3>
+          <p>Poiché le tue immagini vengono incorporate così come sono, un'immagine a bassa risoluzione apparirà ancora a bassa risoluzione dentro il PDF: la conversione in PDF non aggiunge dettaglio che non c'era. Se prepari qualcosa come un portfolio stampato, vale la pena comprimere o ridimensionare le immagini a una risoluzione sensata prima, invece di riversare file originali della fotocamera inutilmente enormi, che producono un PDF gonfio, lento da aprire e scomodo da inviare per e-mail.</p>
+
+          <h3>Quando questo è lo strumento sbagliato</h3>
+          <p>Se stai unendo PDF che hai già (e non immagini grezze), ti serve invece lo strumento Combine: l'output PDF di Convert serve specificamente a trasformare immagini in un nuovo PDF, non a unire documenti PDF esistenti.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Estrarre immagini da un PDF: una guida pratica</summary>
+        <div class="golden-rules-body">
+          <p>La direzione inversa, estrarre immagini da un PDF esistente, risolve un problema diverso e altrettanto comune: hai un PDF e ti serve solo una pagina, o tutte le pagine, come file immagine indipendenti.</p>
+
+          <h3>Motivi comuni per cui serve</h3>
+          <p>Estrarre una singola diapositiva da una presentazione PDF per inserirla in un'e-mail o in un messaggio di chat. Estrarre le pagine di un documento scansionato per modificarle o annotarle singolarmente in un editor di immagini. Prendere un diagramma o un grafico da un rapporto PDF per riutilizzarlo altrove. Archiviare ogni pagina di un vecchio documento scansionato come file immagine separato e più universalmente visualizzabile.</p>
+
+          <h3>Come funziona davvero</h3>
+          <p>Trascina un PDF in Convert invece di un'immagine e lo strumento lo rileva automaticamente: le opzioni di formato cambiano e mostrano solo JPG, PNG e WEBP, perché convertire un PDF in un altro PDF o in SVG non ha senso. Scegli il formato immagine adatto (JPG per file più piccoli, PNG se le pagine del PDF contengono trasparenza o testo nitido, WEBP per il miglior equilibrio dei due), poi converti.</p>
+          <p>Ogni pagina del PDF diventa un file immagine separato. Un PDF di 10 pagine convertito in JPG ti darà 10 file JPG singoli, numerati automaticamente per pagina. Se estrai più di 5 pagine, vengono raggruppate automaticamente in un unico download ZIP invece di avviare dieci download separati.</p>
+
+          <h3>Risoluzione e considerazioni sulla qualità</h3>
+          <p>Le pagine PDF vengono rese in immagini a una scala fissa pensata per produrre risultati nitidi e leggibili per documenti e presentazioni tipici. Se estrai un diagramma molto dettagliato o ti serve una risoluzione particolarmente alta per la stampa, vale la pena controllare la qualità dell'output prima di fare affidamento su di esso per qualcosa di critico in stampa: l'estrazione a risoluzione di schermo è di solito più che sufficiente per l'uso digitale, ma lavori di stampa molto fini potrebbero richiedere un altro strumento creato specificamente per l'estrazione ad alta risoluzione.</p>
+
+          <h3>PDF di più pagine e nomi dei file</h3>
+          <p>Ogni immagine estratta viene etichettata automaticamente con il numero della sua pagina, così capisci subito a quale pagina del documento originale corrisponde ogni output: utile quando lavori su un PDF lungo e ti servono solo poche pagine specifiche invece dell'intero documento.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando convertire le tue immagini: scenari reali</summary>
+        <div class="golden-rules-body">
+          <p>Conoscere le differenze tecniche tra i formati è una cosa; sapere quale si applica davvero alla situazione che hai davanti è un'altra. Ecco un modo di ragionare basato su scenari.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situazione</th><th>Formato migliore</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situazione">Una piattaforma indica un formato specifico richiesto</td><td data-label="Formato migliore">Qualunque cosa richieda la piattaforma: controlla prima</td></tr>
+              <tr><td data-label="Situazione">Velocizzare il tuo sito web</td><td data-label="Formato migliore">WEBP</td></tr>
+              <tr><td data-label="Situazione">Aver bisogno di uno sfondo trasparente</td><td data-label="Formato migliore">PNG o WEBP</td></tr>
+              <tr><td data-label="Situazione">Prepararsi per la stampa o l'uso professionale</td><td data-label="Formato migliore">PNG</td></tr>
+              <tr><td data-label="Situazione">Archiviare a lungo termine</td><td data-label="Formato migliore">PNG (o WEBP in modalità senza perdita)</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Caricare su una piattaforma che accetta solo certi formati</h3>
+          <p>È il motivo più comune per cui le persone hanno bisogno di un convertitore: un sito web, un'app o un modulo di invio specifica «solo JPG o PNG», ma la tua immagine è in WEBP o SVG. Convert lo risolve in pochi secondi: scegli il formato richiesto dalla piattaforma e hai finito. Controlla sempre prima i requisiti dichiarati dalla piattaforma, perché indovinare male fa perdere un giro.</p>
+
+          <h3>Velocizzare un sito web che gestisci</h3>
+          <p>Se carichi immagini sul tuo sito web, convertire vecchie immagini JPG e PNG in WEBP è uno dei miglioramenti di maggior valore e minor sforzo che puoi fare: file più piccoli significano caricamenti di pagina più rapidi, il che incide sull'esperienza utente e sul posizionamento nei motori di ricerca. Conta di più per le pagine ricche di immagini (gallerie, schede prodotto, blog con molte foto) che per una pagina con una o due piccole icone.</p>
+
+          <h3>Aver bisogno di uno sfondo trasparente</h3>
+          <p>Se hai un JPG (che non può avere trasparenza) e devi posizionarlo su uno sfondo colorato, un modello di design o un'altra immagine, dovrai convertirlo, anche se vale la pena sapere che Convert può aggiungere un involucro in formato trasparente ma non può rimuovere magicamente uno sfondo pieno esistente dalla foto stessa. Se lo sfondo deve essere davvero rimosso (non solo reso compatibile con la trasparenza), serve uno strumento di rimozione dello sfondo, non un convertitore di formato.</p>
+
+          <h3>Prepararsi per la stampa o l'uso professionale</h3>
+          <p>Le tipografie e i flussi di lavoro di design professionali hanno a volte requisiti di formato specifici: il PNG per loghi e grafica con bordi netti è uno dei più comuni, perché evita i morbidi artefatti di compressione che il JPG può introdurre attorno al testo e alle linee nette. Se non sei sicuro di cosa voglia una specifica tipografia, il PNG è di solito un'impostazione predefinita sicura e senza perdita per qualsiasi cosa che non sia una semplice fotografia.</p>
+
+          <h3>Archiviazione o conservazione a lungo termine</h3>
+          <p>Per tutto ciò che vuoi conservare nella migliore qualità possibile per anni, i formati senza perdita (PNG) sono la scelta più sicura a lungo termine rispetto a JPG compressi ripetutamente, perché il JPG perde un po' di qualità a ogni nuovo salvataggio. Se lo spazio di archiviazione è un vero vincolo, confrontalo con la modalità senza perdita di WEBP, più efficiente in termini di spazio del PNG e comunque priva della perdita generazionale del JPG.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni nella conversione (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte dei problemi di conversione nasce da una manciata di errori ripetuti. Ecco a cosa fare attenzione.</p>
+
+          <h3>Risalvare ripetutamente un JPG come JPG</h3>
+          <p>Ogni volta che un JPG viene aperto, modificato anche di poco e salvato di nuovo, perde un po' più di qualità: si chiama perdita generazionale e si accumula. Se devi modificare un'immagine più volte, lavora in un formato senza perdita (PNG) durante la modifica e converti in JPG solo come passaggio finale di esportazione, una volta sola, alla fine.</p>
+
+          <h3>Usare il JPG quando in realtà serve la trasparenza</h3>
+          <p>Questa è la domanda di supporto più comune che ricevono i convertitori: «perché il mio logo ha un riquadro bianco attorno invece di uno sfondo trasparente?» La risposta è quasi sempre che il formato sorgente o di output era il JPG, che non può rappresentare affatto la trasparenza: nessuna impostazione o trucco lo risolve, perché il formato in sé non ha il concetto di canale alfa. Se ti serve la trasparenza, sia l'immagine sorgente sia il formato di output devono supportarla (PNG o WEBP).</p>
+
+          <h3>Convertire verso l'alto, non solo di lato</h3>
+          <p>Convertire un'immagine piccola e a bassa risoluzione in un altro formato non aggiunge dettaglio né aumenta la risoluzione reale: un JPG di 400×300 pixel convertito in PNG è ancora un'immagine di 400×300 pixel, solo in un contenitore diverso. Se ti serve un'immagine più grande, ti serve l'originale a risoluzione più alta fin dall'inizio; la sola conversione di formato non può creare un dettaglio mai catturato.</p>
+
+          <h3>Scegliere il PNG per impostazione predefinita per le fotografie grandi</h3>
+          <p>La compressione senza perdita del PNG è fantastica per la grafica ma poco adatta alle fotografie, per le quali produce file molto più grandi del necessario per una differenza di qualità che la maggior parte degli spettatori non percepirà. Se converti un lotto di foto delle vacanze «per sicurezza», JPG o WEBP ti serviranno molto meglio: riserva il PNG alle immagini con trasparenza, testo o bordi grafici netti.</p>
+
+          <h3>Non controllare l'output prima di inviarlo in un posto importante</h3>
+          <p>Per qualsiasi cosa destinata a un cliente, a un datore di lavoro o a una consegna ufficiale, vale la pena aprire il file convertito una volta prima di inviarlo: confermare l'ordine delle pagine in un PDF di più pagine, controllare che la trasparenza sia stata resa correttamente o verificare che il file non sia inaspettatamente enorme. Richiede pochi secondi ed evita il problema molto più dispendioso di una consegna respinta o di un reinvio imbarazzante.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="golden-rules-articles" data-tool="compress">
+      <details class="golden-rules-article">
+        <summary>1. Come funziona davvero la compressione delle immagini</summary>
+        <div class="golden-rules-body">
+          <p>La compressione sembra un singolo cursore o un singolo clic, ma sotto ci sono due approcci davvero diversi che fanno la riduzione, e capire quale è in azione spiega quasi ogni risultato che vedrai da uno strumento come questo.</p>
+
+          <h3>Compressione con perdita: scartare ciò che non noterai</h3>
+          <p>La compressione con perdita, quella usata da JPG e WEBP, funziona individuando nell'immagine le informazioni che l'occhio umano percepisce male e scartandole. Le sottili sfumature di colore vengono semplificate, il dettaglio fine ad alta frequenza viene lisciato, e il risultato è un file che può essere una frazione dell'originale pur apparendo corretto a un osservatore casuale. Il problema è che questo scarto è permanente: una volta perso quel dettaglio, nessuna riapertura o risalvataggio lo riporta indietro, e comprimere ripetutamente un file già compresso con perdita ne accumula la perdita ogni volta.</p>
+          <p>Il «rapporto di qualità» o livello di compressione che scegli controlla quanto aggressivamente ciò avviene. Un'impostazione di qualità alta scarta pochissimo e riduce il file in modo modesto; un'impostazione di qualità bassa scarta molto di più e lo riduce drasticamente, a costo di artefatti visibili: blocchettature attorno ai bordi, dettagli sbavati, bande di colore in cieli e sfumature.</p>
+
+          <h3>Compressione senza perdita: riconfezionare senza perdere nulla</h3>
+          <p>La compressione senza perdita, l'approccio del PNG, funziona in modo completamente diverso: trova modi più intelligenti ed efficienti per memorizzare esattamente gli stessi dati dei pixel, allo stesso modo in cui un file ZIP riduce un documento di testo senza cambiare un solo carattere. Nulla viene scartato, quindi puoi comprimere e decomprimere quante volte vuoi senza alcuna variazione di qualità. Il compromesso è che la riduzione di dimensioni è molto minore, perché c'è un limite matematico rigido a quanto puoi ridurre i dati senza scartarne nessuno, soprattutto per le immagini fotografiche, piene del tipo di dettaglio fine e irregolare che resiste al riconfezionamento senza perdita.</p>
+
+          <h3>Perché il nostro strumento Compress converte il PNG in JPG</h3>
+          <p>Ecco perché Compress converte automaticamente le foto PNG in JPG durante la compressione: una fotografia PNG sottoposta solo a compressione senza perdita si riduce a malapena, mentre la stessa foto a cui si permette la compressione con perdita può ridursi drasticamente. Per una vera fotografia, questo scambio vale quasi sempre la pena: la differenza di qualità è invisibile alle normali dimensioni di visualizzazione, e la differenza di dimensioni del file è enorme. È un'altra storia per i PNG che non sono fotografie (screenshot, loghi, grafiche con trasparenza o testo nitido), ed è per questo che questa conversione è tarata specificamente per contenuti simili a foto e non applicata ciecamente a ogni PNG.</p>
+
+          <h3>Cosa succede davvero quando sposti il cursore della qualità</h3>
+          <p>Internamente, un'impostazione di qualità più bassa aumenta quanto grossolanamente le informazioni di colore e dettaglio dell'immagine vengono raggruppate e semplificate prima di essere memorizzate. Pensalo come arrotondare i numeri: arrotondare «qualità 95» cambia a malapena qualcosa, mentre arrotondare «qualità 40» cambia molto di più, ma occupa anche molto meno spazio per essere descritto. Non esiste un numero «giusto» universale: l'impostazione corretta dipende interamente da cosa servirà l'immagine, ed è proprio di questo che parla l'articolo successivo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Scegliere il giusto livello di compressione per il tuo caso d'uso</summary>
+        <div class="golden-rules-body">
+          <p>Non esiste una singola impostazione di compressione «migliore»: il livello giusto dipende interamente da dove va l'immagine e da cosa deve sopportare. Ecco come ragionarci per scenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destinazione</th><th>Livello consigliato</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destinazione">Social media / app di messaggistica</td><td data-label="Livello consigliato">Media</td></tr>
+              <tr><td data-label="Destinazione">Il tuo sito web o negozio online</td><td data-label="Livello consigliato">Da Media ad Alta</td></tr>
+              <tr><td data-label="Destinazione">Stampa o consegna professionale al cliente</td><td data-label="Livello consigliato">Bassa, oppure salta la compressione</td></tr>
+              <tr><td data-label="Destinazione">Archiviazione a lungo termine</td><td data-label="Livello consigliato">Bassa</td></tr>
+              <tr><td data-label="Destinazione">Limiti di dimensione degli allegati e-mail</td><td data-label="Livello consigliato">Alta</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Social media e messaggistica</h3>
+          <p>Piattaforme come Instagram, WhatsApp e la maggior parte dei feed social ricomprimono già ogni immagine che carichi, spesso in modo aggressivo, qualunque cosa invii. Caricare qui un file enorme e appena compresso non ti dà nulla: la piattaforma lo comprimerà di nuovo dalla sua parte comunque. Un livello di compressione da moderato ad alto mantiene veloce il caricamento e sensata la dimensione del file originale senza rinunciare a qualità che vedresti davvero dopo l'elaborazione della piattaforma.</p>
+
+          <h3>Siti web e negozi online</h3>
+          <p>Per tutto ciò che ospiti tu stesso (un sito portfolio, un blog, una pagina prodotto), le dimensioni dei file influiscono direttamente sulla velocità di caricamento della pagina, il che incide sia sull'esperienza dei visitatori sia, per tutto ciò che è commerciale, su tassi di conversione e posizionamento nei motori di ricerca. Qui conviene puntare a una compressione più aggressiva, perché la visualizzazione sul web richiede raramente il dettaglio da stampa, e una pagina piena di enormi immagini non ottimizzate è uno dei motivi più comuni per cui i siti sembrano lenti.</p>
+
+          <h3>Stampa e uso professionale</h3>
+          <p>Questo è l'unico posto in cui conviene essere prudenti. La stampa rivela dettagli e artefatti che uno schermo semplicemente non mostra, perché viene vista a risoluzione effettiva più alta e spesso a dimensione fisica maggiore. Per qualsiasi cosa diretta a una tipografia, a un invio per una galleria o a una consegna professionale a un cliente, usa un livello di compressione leggero o salta la compressione per quella copia specifica, e tieni un file master non compresso o leggermente compresso come tua fonte di verità.</p>
+
+          <h3>Archiviazione e conservazione a lungo termine</h3>
+          <p>Se l'obiettivo è conservare una foto per anni (foto di famiglia, un archivio, qualsiasi cosa che potresti voler rivedere a piena qualità più avanti), evita una forte compressione con perdita sull'unica copia. Una volta scartato il dettaglio, non si recupera, anche se un uso successivo dovesse richiederlo. Un approccio ragionevole è tenere una copia d'archivio di qualità più alta e generare separatamente versioni compresse su richiesta per ciò di cui un uso specifico ha davvero bisogno.</p>
+
+          <h3>Allegati e-mail e limiti di dimensione dei file</h3>
+          <p>Molti provider di posta limitano la dimensione degli allegati, di solito intorno ai 25 MB in totale. Se invii più foto, un livello di compressione più forte ti porta in modo affidabile sotto quel tetto. È uno dei pochi casi in cui il vincolo pratico (ci sta nell'e-mail o no) conta più della differenza visiva tra i livelli di compressione, quindi non aver paura di comprimere più di quanto faresti per altri usi.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Compressione per il web: velocità senza sacrificare la qualità</summary>
+        <div class="golden-rules-body">
+          <p>Il peso delle immagini è uno dei fattori più grandi e più correggibili di un sito lento, ed è anche uno dei più facili da sbagliare in entrambe le direzioni: troppa poca compressione e le pagine si trascinano, troppa e le foto appaiono nettamente degradate. Ecco come arrivare al giusto mezzo.</p>
+
+          <h3>Perché le dimensioni delle immagini contano così tanto per la velocità</h3>
+          <p>Sulla maggior parte delle pagine ricche di contenuto, le immagini costituiscono la gran parte del peso totale della pagina, molto più di HTML, CSS o JavaScript messi insieme. Il tempo di caricamento della pagina per un visitatore, e la valutazione che ne danno i motori di ricerca, è influenzato in modo sproporzionato dal peso delle immagini, il che significa che comprimerle bene è spesso la modifica di prestazioni con la maggiore leva, prima della maggior parte delle ottimizzazioni a livello di codice.</p>
+
+          <h3>Adattare la compressione a come l'immagine verrà davvero visualizzata</h3>
+          <p>Un'immagine mostrata a 400 pixel di larghezza su una pagina non ha bisogno di essere consegnata come file originale della fotocamera da 4000 pixel leggermente compresso: le serve molto meno dettaglio per apparire nitida alla sua dimensione di visualizzazione reale. Prima di preoccuparti del livello di compressione, assicurati che le dimensioni dell'immagine corrispondano più o meno a quanto grande apparirà davvero; comprimere un'immagine sovradimensionata significa trattare il sintomo lasciando la causa più grande (risoluzione inutile).</p>
+
+          <h3>Scegliere un formato per il web</h3>
+          <p>Per il contenuto fotografico, JPG o WEBP a un livello di compressione da moderato a forte è quasi sempre la scelta giusta: chi naviga una pagina non ha bisogno di fedeltà da stampa, e il vantaggio di velocità di un file più piccolo è molto reale e molto percepibile, soprattutto su connessioni mobili. Per grafica a colori piatti, screenshot o qualsiasi cosa con testo e bordi netti, il PNG senza perdita (non toccato dai metodi con perdita) di solito appare meglio e può persino risultare più piccolo di una versione con perdita pesantemente piena di artefatti della stessa grafica.</p>
+
+          <h3>Il punto di rendimenti decrescenti</h3>
+          <p>La compressione non scala linearmente con la qualità visiva persa: il primo tratto di compressione da un originale non compresso toglie moltissime dimensioni con quasi nessuna variazione visibile, mentre spingere la compressione sempre più nel territorio aggressivo toglie via via meno dimensioni per un danno sempre più visibile. In pratica, la maggior parte delle foto raggiunge un punto ottimale ben prima della «compressione massima», e vale la pena controllare un'immagine compressa alla sua dimensione di visualizzazione reale invece di presumere che più compressione sia sempre meglio per la velocità.</p>
+
+          <h3>Elaborare in blocco le immagini di un intero sito</h3>
+          <p>Se stai ottimizzando molte immagini in una volta (un catalogo prodotti, una galleria, le vecchie immagini dei post di un blog), applica un livello di compressione coerente a tipi di contenuto simili invece di valutare ognuna a occhio. Questo mantiene coerente la qualità visiva del sito e rende molto più veloce rifare il processo più tardi se cambi idea sull'impostazione, perché non devi ridecidere caso per caso.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando comprimere e quando lasciare un'immagine così com'è</summary>
+        <div class="golden-rules-body">
+          <p>La compressione è uno strumento davvero utile, ma non è automaticamente la mossa giusta per ogni immagine in ogni situazione: sapere quando evitarla è importante quanto sapere come usarla.</p>
+
+          <h3>Segnali che un'immagine è una buona candidata alla compressione</h3>
+          <p>Le grandi foto originali della fotocamera destinate a web, e-mail o messaggistica traggono quasi sempre vantaggio dalla compressione: in genere portano molta più risoluzione e peso di quanto serva alla destinazione. Anche qualsiasi file che si scontra con un limite rigido (un tetto per gli allegati e-mail, una restrizione di caricamento, il limite di dimensione di un modulo) è un candidato ovvio, perché la compressione è spesso il modo più rapido per scendere sotto il limite senza ritagliare o ridimensionare il contenuto dell'immagine.</p>
+
+          <h3>Segnali che dovresti lasciare un'immagine così com'è (o comprimerla molto leggermente)</h3>
+          <p>Le grafiche con testo, linee nette o colori piatti (screenshot, diagrammi, loghi, documenti scansionati) tendono a comprimersi male con i metodi con perdita, perché gli artefatti di compressione compaiono come sfocatura e frange di colore proprio dove l'occhio nota di più: attorno a bordi e testo. Di solito sono meglio serviti dall'approccio senza perdita del PNG, o evitando la compressione piuttosto che combattere gli artefatti.</p>
+          <p>Tutto ciò che è già stato compresso una volta non dovrebbe essere ricompresso a cuor leggero «per sicurezza». Ricomprimere un JPG già compresso con perdita non lo riduce in modo significativo nella maggior parte dei casi e può introdurre un secondo giro di perdita di qualità sopra il primo, accumulando artefatti invece di rimuoverli.</p>
+
+          <h3>L'abitudine della copia master</h3>
+          <p>Una regola semplice che evita la maggior parte dei rimpianti: tieni una copia master di alta qualità (o non compressa) di tutto ciò che potresti riutilizzare e genera versioni compresse da quella master per ogni uso specifico, invece di sovrascrivere l'unica copia con una compressa. Lo spazio di archiviazione costa poco; ricreare un originale perso non è possibile una volta andato.</p>
+
+          <h3>Giudicare in base alla destinazione, non per abitudine</h3>
+          <p>La domanda giusta non è «dovrei comprimere questa immagine» in astratto, ma «di cosa ha davvero bisogno il luogo in cui va questa immagine». Una foto destinata a un SMS ha bisogno di quasi nulla del suo dettaglio originale; una foto destinata a un grande striscione stampato ne ha bisogno di quasi tutto. Lascia che sia la destinazione a fissare l'asticella, invece di applicare per abitudine lo stesso livello di compressione a tutto ciò che passa nel tuo flusso di lavoro.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni nella compressione (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte dei reclami sulla compressione risale a un piccolo insieme di errori ripetuti. Ecco a cosa fare attenzione.</p>
+
+          <h3>Comprimere lo stesso file più e più volte</h3>
+          <p>Ogni passaggio di compressione con perdita scarta un po' più di dettaglio, e quella perdita si accumula a ogni passaggio aggiuntivo: un file compresso, riaperto, modificato e ricompresso più volte apparirà nettamente peggiore di uno compresso una volta da un originale pulito. Comprimi sempre dall'originale o da un master non compresso, non da una copia già compressa.</p>
+
+          <h3>Sovrascrivere l'unica copia</h3>
+          <p>Comprimere sul posto ed eliminare l'originale è il modo più comune di perdere per sempre l'accesso alla qualità piena. Una volta che un passaggio di compressione con perdita ha scartato dettaglio, non c'è modo di recuperarlo: tieni l'originale al sicuro finché non sei certo di non averne bisogno in qualità più alta in seguito.</p>
+
+          <h3>Comprimere la grafica come se fossero foto</h3>
+          <p>Screenshot, loghi e grafiche ricche di testo non rispondono bene alla stessa compressione con perdita che funziona benissimo sulle fotografie: i bordi netti e i colori piatti che rendono queste immagini ciò che sono diventano sbavature visibili e frange di colore con la compressione con perdita. Di solito si gestiscono meglio con formati senza perdita, o con un tocco di compressione molto più leggero di quello che useresti su una foto.</p>
+
+          <h3>Scegliere un livello di compressione senza controllare il risultato</h3>
+          <p>È allettante scegliere la «compressione massima» per il file più piccolo possibile e andare avanti, ma quell'impostazione introduce spesso artefatti ovviamente visibili quando guardi l'output alla dimensione reale. Un rapido controllo del risultato compresso, alla dimensione a cui verrà davvero visto, richiede secondi e evita di inviare o pubblicare qualcosa che appare nettamente peggiore del previsto.</p>
+
+          <h3>Ignorare la compressione propria della destinazione</h3>
+          <p>Caricare un file enorme e appena compresso su una piattaforma che lo comprimerà comunque (la maggior parte dei social e delle app di messaggistica) spreca tempo di caricamento e banda senza alcun beneficio visivo, perché l'elaborazione della piattaforma stessa determina gran parte della qualità finale a prescindere da ciò che hai inviato. Adatta lo sforzo di compressione a ciò che la destinazione conserverà davvero, non alla supposizione che «più qualità originale in entrata equivalga a più qualità finale in uscita».</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="combine">
+      <details class="golden-rules-article">
+        <summary>1. Come unire i PDF nell'ordine giusto ogni volta</summary>
+        <div class="golden-rules-body">
+          <p>L'intero compito di Combine è ingannevolmente semplice (prendere più file e unirli in un unico PDF), ma il dettaglio che mette più spesso in difficoltà non è l'unione in sé: è assicurarsi che le pagine finiscano nell'ordine che intendevi davvero.</p>
+
+          <h3>Come Combine determina l'ordine delle pagine</h3>
+          <p>Combine unisce i tuoi file nell'ordine in cui compaiono nella selezione: l'ordine in cui li hai scelti nel selettore di file, o in cui sono stati trascinati, dall'alto in basso. Non cerca di indovinare un ordine «corretto» in base a nomi, date o contenuto, perché non esiste una regola universale su quale ordine vuoi; rispetta semplicemente la sequenza che gli dai. Ciò significa che la responsabilità dell'ordine corretto ricade interamente su come selezioni o disponi i file prima di unire.</p>
+
+          <h3>Perché i nomi dei file possono ingannare</h3>
+          <p>Un'ipotesi comune è che i file vengano uniti automaticamente in ordine alfabetico o numerico. Se il selettore di file del tuo sistema operativo li elenca così e li selezioni trascinando su tutta la lista, spesso otterrai proprio questo, ma è un effetto collaterale dell'ordine di visualizzazione del selettore, non una garanzia. Nel momento in cui selezioni i file uno per uno con il mouse, fuori sequenza, o li trascini uno alla volta, l'ordine di unione segue i tuoi clic, non i nomi dei file.</p>
+
+          <h3>Un controllo affidabile prima di unire</h3>
+          <p>Prima di cliccare su unisci, guarda l'elenco di anteprima che Combine ti mostra: riflette l'ordine effettivo che l'unione userà. Se qualcosa è fuori posto, rimuovilo e riaggiungilo nella posizione giusta, oppure riordina la selezione prima di caricare. Questo controllo di trenta secondi è molto più veloce che scaricare un PDF unito, scoprire che la pagina 4 doveva essere la pagina 2 e ricominciare da capo.</p>
+
+          <h3>Nominare i file per rendere l'ordine a prova di errore</h3>
+          <p>Se unisci regolarmente insiemi di più file (pagine scansionate, rapporti in più parti, capitoli sequenziali), un'abitudine semplice che elimina del tutto le incertezze sull'ordine è anteporre numeri ai nomi dei file prima di unire: 01-copertina.pdf, 02-cv.pdf, 03-portfolio.pdf. Selezionarli tutti insieme in un selettore di file seguirà allora naturalmente quell'ordine numerico, e ottieni la sequenza corretta senza dover riordinare nulla a mano in Combine.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Unire per le candidature: lettera di presentazione, CV, portfolio</summary>
+        <div class="golden-rules-body">
+          <p>Le candidature a lavori e tirocini sono uno dei motivi più comuni per cui si ricorre a uno strumento di unione PDF, e impostare bene la struttura può davvero influire su come viene accolta la tua candidatura.</p>
+
+          <h3>Perché i datori di lavoro preferiscono un solo PDF a più allegati</h3>
+          <p>Un selezionatore o recruiter spesso esamina decine o centinaia di candidature, di frequente dal telefono o scorrendo velocemente tra una riunione e l'altra. Una candidatura che arriva come tre o quattro allegati separati (lettera di presentazione, CV, portfolio, referenze) lo costringe ad aprire e gestire più file per avere il quadro completo, ed è facile che un allegato venga perso, archiviato male o semplicemente non aperto. Un unico PDF ben ordinato elimina del tutto questo attrito: un clic apre tutto, nell'ordine in cui vuoi che venga letto.</p>
+
+          <h3>L'ordine che funziona per la maggior parte delle candidature</h3>
+          <p>Una sequenza predefinita sensata è: prima la lettera di presentazione (la più breve, dà il contesto), poi il CV (il cuore di ciò che la maggior parte dei valutatori vuole), infine il materiale di supporto, cioè esempi di portfolio, certificati, referenze. Rispecchia come la maggior parte delle persone vuole leggere una candidatura: contesto, poi sostanza, poi prove a supporto, invece di iniziare da un portfolio senza sapere per quale lavoro ci si candida.</p>
+
+          <h3>Unire file nati in formati diversi</h3>
+          <p>È comune che una lettera di presentazione esista come PDF esportato da Word, un CV come PDF separato e gli esempi di portfolio come file immagine (foto di lavori fisici, screenshot di progetti digitali, certificati scansionati). Se i pezzi del tuo portfolio sono immagini e non PDF, convertili prima in PDF con l'output PDF dello strumento Convert, che trasforma un lotto di immagini in un unico PDF dove ogni immagine è una pagina a sé; poi unisci quel PDF con quelli della lettera di presentazione e del CV nell'ordine in cui vuoi che appaiano.</p>
+
+          <h3>Mantenere le dimensioni del file ragionevoli</h3>
+          <p>Le immagini del portfolio, soprattutto foto della fotocamera di lavori fisici o screenshot ad alta risoluzione, possono essere inutilmente grandi. Se il tuo PDF di candidatura combinato diventa enorme, vale la pena comprimere le immagini sorgente prima di convertirle in PDF e unirle, non dopo: un allegato grande e lento da aprire è un piccolo ma reale punto di attrito per chiunque lo esamini sotto pressione di tempo.</p>
+
+          <h3>Ricontrollare prima di consegnarlo</h3>
+          <p>Una volta unito, apri il PDF finale e scorrilo una volta, dall'inizio alla fine. Individua pagine fuori ordine, una bozza inclusa per errore o un'immagine del portfolio che non è stata convertita come previsto: il tipo di piccolo errore invisibile finché non guardi davvero, e molto più imbarazzante da scoprire dopo che un datore di lavoro l'ha già aperto.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Unire documenti scansionati senza perdere l'ordine delle pagine</summary>
+        <div class="golden-rules-body">
+          <p>I documenti cartacei scansionati (contratti, moduli, documenti d'identità, lettere di più pagine) portano le loro particolari sfide di ordine, soprattutto per come avviene di solito la scansione.</p>
+
+          <h3>Perché le pagine scansionate finiscono fuori ordine più spesso di altri file</h3>
+          <p>Molti scanner e app di scansione salvano ogni pagina come file separato con un nome generico generato automaticamente (scan001.pdf, IMG_2024.jpg e così via), a volte numerato nell'ordine in cui le pagine sono state fisicamente inserite nello scanner e a volte no. Se hai scansionato una pila di pagine fuori dall'ordine fisico, o una stampante multifunzione le ha numerate in modo inatteso, i nomi dei file non rifletteranno in modo affidabile il vero ordine di lettura del documento: selezionare i file «in ordine di nome» può quindi produrre silenziosamente un documento unito con le pagine fuori sequenza.</p>
+
+          <h3>L'approccio più sicuro: controlla il contenuto, non solo i nomi dei file</h3>
+          <p>Prima di unire, dai un'occhiata al contenuto effettivo di ogni pagina scansionata (le miniature di anteprima di Combine lo rendono veloce) invece di fidarti solo del nome del file. Bastano pochi secondi per confermare che la pagina uno sia davvero l'inizio del documento e che la due la segua logicamente, ma è il modo più affidabile per evitare di consegnare un documento rimescolato a una banca, un ufficio pubblico o un proprietario di casa, dove un documento fuori ordine può causare ritardi reali.</p>
+
+          <h3>Scansioni miste: alcune pagine fotografate, altre scansionate</h3>
+          <p>È comune avere una scansione vera per la maggior parte delle pagine e una foto da telefono per una o due (una pagina che non entrava sul piano dello scanner, o scansionata più tardi come ripensamento). Combine gestisce immagini e PDF in modo intercambiabile, quindi tecnicamente non è un problema, ma visivamente una pagina fotografata spesso appare diversa per luce e inquadratura da una vera scansione. Se la coerenza dell'aspetto del documento conta, vale la pena riscansionare bene la pagina fuori posto invece di mescolare formati, anche se è una questione estetica e non funzionale.</p>
+
+          <h3>Contratti di più pagine e pagine di firma</h3>
+          <p>Per contratti o moduli con una pagina di firma, quella pagina deve finire nella posizione esatta rispetto al resto del documento, perché una pagina di firma unita nel posto sbagliato può far sembrare un documento legale non valido o incompleto. Tratta questi casi come difficili per il controllo di anteprima prima dell'unione descritto sopra: è esattamente la situazione in cui cinque secondi sull'elenco di anteprima ordinato ti evitano un documento da far firmare e inviare di nuovo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando unire e quando tenere i file separati</summary>
+        <div class="golden-rules-body">
+          <p>Unire tutto in un unico PDF non è sempre la scelta migliore: a volte file separati servono davvero meglio il destinatario, e vale la pena sapere in quale situazione ti trovi.</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situazione</th><th>Unire o tenere separati</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situazione">Candidatura o rapporto di più pagine da leggere in ordine</td><td data-label="Unire o tenere separati">Combine</td></tr>
+              <tr><td data-label="Situazione">Una piattaforma richiede esplicitamente un unico PDF</td><td data-label="Unire o tenere separati">Combine</td></tr>
+              <tr><td data-label="Situazione">Il destinatario deve usare ogni file in modo indipendente</td><td data-label="Unire o tenere separati">Tenere separati</td></tr>
+              <tr><td data-label="Situazione">Grande lotto di file di riferimento non correlati</td><td data-label="Unire o tenere separati">Tenere separati, o ZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Quando unire è chiaramente la scelta giusta</h3>
+          <p>Qualsiasi cosa debba essere letta in una sequenza precisa (una candidatura di più pagine, un contratto scansionato, un rapporto con un'introduzione seguita da dati di supporto) trae enorme vantaggio dall'essere un unico file, perché garantisce che il lettore incontri tutto nell'ordine che hai pensato e non possa aprire le pagine in disordine né saltare qualcosa. Ovunque un modulo o una piattaforma richieda esplicitamente «un unico PDF» la scelta è altrettanto facile: unisci e invia esattamente ciò che è richiesto.</p>
+
+          <h3>Quando file separati servono meglio il destinatario</h3>
+          <p>Se un destinatario deve agire sui documenti in modo indipendente (per esempio inoltrare solo la fattura alla contabilità tenendo la bolla di consegna per i propri archivi), unirli in un solo file gli rende il lavoro più difficile, non più facile, perché dovrebbe estrarre o ristampare solo la parte che gli serve. Allo stesso modo, se invii diversi documenti davvero non correlati a qualcuno che li archivierà in posti diversi, file separati gli permettono di gestire ciascuno a modo suo invece di lottare con un PDF unito.</p>
+
+          <h3>Grandi raccolte di materiale di riferimento</h3>
+          <p>Se invii un grosso lotto di immagini o documenti vagamente correlati che non vanno letti in sequenza (un grande lotto di foto di riferimento, per esempio), un archivio ZIP di file separati può in realtà essere più utile di un unico PDF gigante, perché il destinatario può sfogliare e aprire singoli elementi invece di scorrere un enorme documento per trovare una foto.</p>
+
+          <h3>Un modo rapido per decidere</h3>
+          <p>Chiediti se i file rappresentano un'unica cosa coerente da leggere dall'inizio alla fine (uniscili) o più cose indipendenti che capita siano inviate insieme (tienile separate o comprimile in un ZIP). La maggior parte di candidature, contratti e documenti scansionati di più pagine rientra chiaramente nella prima categoria; la maggior parte di materiale di riferimento, consegne in blocco e documenti utilizzabili in modo indipendente rientra nella seconda.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni nell'unione (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>Combine è uno strumento semplice, ma una manciata di errori evitabili causa la maggior parte della frustrazione che le persone incontrano.</p>
+
+          <h3>Fidarsi dei nomi dei file per l'ordine invece di controllare l'anteprima</h3>
+          <p>Come spiegato negli articoli sull'ordine qui sopra, i nomi dei file non riflettono sempre l'ordine che vuoi davvero, soprattutto per scansioni e download con nomi generati automaticamente. Dai sempre un'occhiata all'elenco di anteprima prima di unire invece di dare per scontato che l'ordine di selezione corrispondesse alla tua intenzione.</p>
+
+          <h3>Mescolare documenti non correlati in un unico file «per comodità»</h3>
+          <p>Unire più documenti non correlati solo per avere meno file da gestire spesso si ritorce contro: il destinatario ora deve aprire un grosso file unito e scorrere per trovare l'unica sezione che gli serve, invece di aprire direttamente il file specifico. Riserva l'unione ai documenti che formano davvero un'unica lettura coerente.</p>
+
+          <h3>Non controllare il file finale prima di inviarlo</h3>
+          <p>Un PDF unito va aperto e scorso una volta prima di andare in un posto importante. È il passaggio che individua una pagina fuori ordine, un documento duplicato per errore o una pagina che non è stata visualizzata come previsto: problemi banali da correggere prima dell'invio e ben più imbarazzanti da spiegare dopo.</p>
+
+          <h3>Dimenticare di convertire le immagini prima di unirle ai PDF</h3>
+          <p>Se hai immagini sparse da includere nello stesso documento unito dei PDF esistenti, ricorda che Combine unisce i file così come vengono forniti: per un risultato più fluido, assicurati che le immagini siano già nel formato e nell'ordine voluti, perché correggere orientamento o contenuto di un'immagine dopo che fa già parte di un PDF unito è molto più scomodo che farlo prima.</p>
+
+          <h3>Inviare un file unito inutilmente enorme</h3>
+          <p>Unire più PDF già grandi o immagini scansionate ad alta risoluzione produce un file combinato che eredita tutto il loro peso: se il risultato è inaspettatamente enorme, conviene comprimere le immagini sorgente prima dell'unione e non dopo, perché un PDF lento da aprire e sovradimensionato è una fonte comune di lamentele da parte di destinatari con connessioni lente o dispositivi datati.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="exif">
+      <details class="golden-rules-article">
+        <summary>1. Cosa rivelano davvero di te i metadati EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Ogni foto scattata dal tuo telefono o dalla fotocamera porta con sé molto più dell'immagine stessa. Nel file c'è un blocco di metadati, i dati EXIF, che registra in silenzio una quantità sorprendente di dettagli su quando, dove e come è stata scattata la foto.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Tipo di metadati</th><th>Cosa rivela</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tipo di metadati">Posizione GPS</td><td data-label="Cosa rivela">Il luogo esatto in cui è stata scattata la foto, spesso entro pochi metri</td></tr>
+              <tr><td data-label="Tipo di metadati">Marca e modello del dispositivo</td><td data-label="Cosa rivela">La fotocamera o il telefono specifico usato</td></tr>
+              <tr><td data-label="Tipo di metadati">Data e ora</td><td data-label="Cosa rivela">La data e l'ora esatte, al secondo</td></tr>
+              <tr><td data-label="Tipo di metadati">Impostazioni della fotocamera</td><td data-label="Cosa rivela">Apertura, tempo di posa, ISO, lunghezza focale</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Posizione: la più importante</h3>
+          <p>Se i servizi di localizzazione erano attivi quando è stata scattata la foto, la maggior parte dei telefoni incorpora le coordinate GPS esatte del luogo dello scatto, spesso precise entro pochi metri. Chiunque apra il file originale nel visualizzatore giusto, o lo passi in un lettore di metadati, può tracciare quella posizione su una mappa: una foto scattata a casa, sul posto di lavoro o a scuola di un bambino può quindi rivelare esattamente dove si trova quel luogo, senza che tu abbia mai scritto l'indirizzo da nessuna parte.</p>
+
+          <h3>Dettagli del dispositivo</h3>
+          <p>L'EXIF include in genere marca e modello esatti della fotocamera o del telefono che ha scattato la foto, a volte fino alla versione specifica del software. Da solo sembra innocuo, ma combinato con altri metadati aggiunge un ulteriore dettaglio identificativo a una foto e, in alcuni contesti (annunci su marketplace, account anonimi), può essere un altro filo che lega una foto ai dispositivi noti di una persona specifica.</p>
+
+          <h3>Data e ora</h3>
+          <p>La data e l'ora esatte dello scatto sono registrate al secondo, il che è più preciso di quanto la maggior parte delle persone realizzi: una foto pubblicata «con noncuranza» può rivelare esattamente quando qualcuno era in un certo luogo, il che diventa rilevante per chiunque pensi che la propria routine o i propri spostamenti possano essere ricostruiti da uno schema di foto pubblicate nel tempo.</p>
+
+          <h3>Impostazioni della fotocamera e, a volte, altro</h3>
+          <p>Vengono memorizzati anche dettagli tecnici come apertura, tempo di posa e ISO, che contano per i fotografi che rivedono i propri scatti ma di per sé non sono sensibili per la privacy. Alcuni dispositivi e app di modifica incorporano inoltre un'anteprima in miniatura, la cronologia di software/modifiche o persino un campo per copyright o nome dell'autore, a seconda delle impostazioni: i campi esatti presenti variano per dispositivo e app, ma posizione e data/ora sono i due che hanno più peso reale per la privacy.</p>
+
+          <h3>Perché conta anche per le foto «poco importanti»</h3>
+          <p>La maggior parte delle singole foto sembra a basso rischio, ma i metadati si sommano: un estraneo con accesso ai dati di posizione di diverse tue foto può ricostruire uno schema dei luoghi che frequenti (casa, lavoro, palestra, la scuola di un bambino) che nessuna singola foto rivelerebbe da sola. È esattamente il vuoto che Cleanly serve a colmare: rimuovere questi metadati prima che una foto lasci il tuo dispositivo toglie l'intero livello di informazioni nascoste, lasciando l'immagine visibile del tutto invariata.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Come rimuovere i metadati prima di vendere o pubblicare foto</summary>
+        <div class="golden-rules-body">
+          <p>Due delle situazioni più comuni in cui i dati EXIF causano silenziosamente problemi reali sono la vendita di oggetti online e la pubblicazione pubblica di foto: in entrambi i casi le foto vanno a estranei, che è esattamente quando i metadati nascosti contano di più.</p>
+
+          <h3>Vendere sui marketplace</h3>
+          <p>Le foto di oggetti in vendita (mobili, elettronica, un'auto, una casa in affitto) sono quasi sempre scattate a casa o sul posto di lavoro del venditore. Se lasciate intatte, queste foto possono fornire a un acquirente il tuo indirizzo esatto prima ancora che vi siate incontrati o abbiate concordato qualcosa, semplicemente aprendo i metadati dell'immagine. È un modo reale e documentato in cui le persone si sono viste esporre la posizione di casa a estranei senza alcun motivo legittimo per conoscerla. Passare le foto degli annunci da Cleanly prima di caricarle rimuove completamente questo rischio, senza alcuna differenza visibile per l'acquirente.</p>
+
+          <h3>Pubblicare sui social e sui forum</h3>
+          <p>La maggior parte delle grandi piattaforme social rimuove automaticamente i metadati al caricamento, il che è una buona notizia, ma non tutte lo fanno, e le copie inoltrate o scaricate della tua foto (screenshot, salvataggi, ripubblicazioni) non passano in modo affidabile per lo stesso processo di rimozione. Se una foto viene scaricata da dove l'hai pubblicata e ricondivisa altrove, tutti i metadati sopravvissuti al caricamento originale viaggiano con essa. Rimuovere i metadati prima di pubblicare è l'unico modo per garantire che non siano mai presenti in nessun punto della catena.</p>
+
+          <h3>Una semplice abitudine prima di pubblicare</h3>
+          <p>Prima di caricare foto ovunque saranno visibili a persone che non conosci personalmente (un annuncio su un marketplace, un post social pubblico, un forum, un profilo di incontri), passale prima da Cleanly. Richiede pochi secondi, funziona su un intero gruppo di foto insieme e produce copie visivamente identiche senza i dati nascosti. Farne un passaggio predefinito, e non qualcosa che ricordi solo per le foto «sensibili», significa non farsi mai cogliere impreparati da una foto a cui non avevi pensato.</p>
+
+          <h3>Cosa la rimozione non cambia</h3>
+          <p>Vale la pena essere chiari su ciò che Cleanly fa e non fa: rimuove i metadati nascosti dal file, ma non può rimuovere informazioni visibili nell'immagine stessa, come un cartello stradale sullo sfondo, un numero civico visibile, un riflesso che mostra la tua posizione. La rimozione dei metadati gestisce il livello invisibile; tutto ciò che è visibile nella foto è una considerazione separata che devi comunque controllare con i tuoi occhi prima di pubblicare.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Cleanly per i fotografi: privacy senza perdere qualità</summary>
+        <div class="golden-rules-body">
+          <p>I fotografi hanno un rapporto leggermente diverso con i metadati rispetto agli utenti occasionali di telefono: una parte è davvero utile da conservare per i propri archivi, il che rende «rimuovi tutto, sempre» un istinto non del tutto giusto.</p>
+
+          <h3>Perché i fotografi potrebbero voler tenere in locale alcuni metadati</h3>
+          <p>Le impostazioni della fotocamera (apertura, tempo di posa, ISO, lunghezza focale) sono preziose quando riesamini i tuoi scatti: capire quali impostazioni hanno prodotto una foto che ti è piaciuta aiuta a replicarla. Per le tue copie di lavoro, conservate in privato, non c'è motivo di rimuovere queste informazioni, perché sono dati di riferimento davvero utili che non comportano rischi per la privacy finché i file restano con te.</p>
+
+          <h3>Perché le copie consegnate o pubblicate sono un'altra cosa</h3>
+          <p>Nel momento in cui una foto viene consegnata a un cliente, pubblicata su un sito portfolio o postata pubblicamente, il calcolo cambia: i dati di posizione in particolare non hanno nulla da fare in un file destinato al cliente o al pubblico, perché possono rivelare luoghi di scatto che dovevano restare privati (la casa di un cliente per uno shooting di famiglia, una sede privata, l'indirizzo esatto di uno studio se non deve essere pubblico). Cleanly è pensato esattamente per questo passaggio: passa da lì le esportazioni finali destinate all'esterno prima della consegna o della pubblicazione, tenendo i tuoi file di lavoro con i metadati completi intatti per tuo riferimento.</p>
+
+          <h3>Mai nessuna perdita di qualità</h3>
+          <p>Una preoccupazione comune (e ragionevole) è che rimuovere i metadati possa in qualche modo influire sulla qualità dell'immagine: non è così. I metadati sono un blocco separato di informazioni simili a testo memorizzato accanto ai dati dei pixel, non mescolato con essi, quindi rimuoverli non ha alcun effetto su risoluzione, colore o nitidezza. L'output di Cleanly è, pixel per pixel, la stessa foto, solo senza i dati nascosti che la accompagnavano.</p>
+
+          <h3>Integrarlo in un flusso di consegna</h3>
+          <p>Per i fotografi che consegnano gallerie o esportano lotti con regolarità, l'approccio più semplice è trattare la rimozione dei metadati come l'ultimo passaggio prima dell'esportazione, applicata all'intero lotto in una volta anziché foto per foto. In questo modo diventa una parte di routine della chiusura di un lavoro, simile a un controllo qualità finale, invece di qualcosa da ricordare separatamente per ogni cliente o per ogni piattaforma su cui una galleria viene condivisa.</p>
+
+          <h3>Proteggere i clienti quanto te stesso</h3>
+          <p>Vale la pena ricordare che i dati di posizione e dispositivo a rischio nelle foto di un cliente riguardano spesso la vita del cliente, non la tua: una sessione di ritratti di famiglia girata a casa loro, foto di fidanzamento in un luogo privato significativo. Rimuovere i metadati prima della consegna protegge la privacy dei tuoi clienti quanto la tua reputazione professionale di trattare con cura le loro immagini.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando la rimozione dei metadati conta di più</summary>
+        <div class="golden-rules-body">
+          <p>Non tutte le foto hanno la stessa posta in gioco per la privacy: sapere quali situazioni richiedono davvero la rimozione dei metadati ti aiuta a concentrare l'abitudine dove conta di più.</p>
+
+          <h3>Foto scattate a casa o sul posto di lavoro</h3>
+          <p>Qualsiasi foto scattata dentro o subito intorno a casa o al luogo di lavoro (comprese le foto di annunci su marketplace, le foto di «lavoro da casa» o gli scatti casuali in salotto) porta con sé metadati di posizione che indicano direttamente un luogo in cui trascorri tempo regolarmente e in modo prevedibile. È costantemente la categoria con la posta più alta, perché è la posizione più preziosa da conoscere per qualcuno e quella che la maggior parte delle persone non pensa di proteggere.</p>
+
+          <h3>Foto con bambini</h3>
+          <p>Le foto di bambini (a scuola, a un'attività regolare, in un quartiere) portano un livello di rischio in più se i metadati di posizione sopravvivono, perché possono rivelare dove si trova prevedibilmente un bambino in orari ricorrenti. Molti genitori pensano già con attenzione a cosa è visibile in una foto prima di pubblicarla: la stessa cura vale la pena estenderla a ciò che è invisibile nei metadati.</p>
+
+          <h3>Qualsiasi cosa vada a un estraneo prima che si stabilisca la fiducia</h3>
+          <p>Acquirenti su marketplace, contatti di incontri online e altri contesti in cui condividi foto con qualcuno che non hai vagliato di persona sono esattamente le situazioni in cui non vuoi fornire più informazioni del previsto. Una foto di un annuncio o di un profilo è l'esempio più chiaro: il destinatario non ha ancora alcun rapporto con te, e i metadati rimossi fanno sì che la foto riveli solo ciò che vi è visibile, niente di più.</p>
+
+          <h3>Quando conta meno</h3>
+          <p>La rimozione dei metadati è molto meno critica per le foto condivise in privato con persone che già conosci e di cui ti fidi: inviare una foto direttamente a un familiare o a un amico stretto tramite un canale privato non comporta lo stesso rischio di esposizione della pubblicazione pubblica o dell'invio a un estraneo. Non è che lasciare i metadati sia mai attivamente vantaggioso per la privacy, solo che l'urgenza pratica cresce con quanto il destinatario è pubblico o non fidato.</p>
+
+          <h3>Un valore predefinito ragionevole</h3>
+          <p>Data la rapidità e l'assenza di perdite del processo, c'è poco svantaggio nel fare della rimozione dei metadati un'abitudine predefinita per tutto ciò che esce dalla tua cerchia ristretta e fidata: non costa nulla in qualità o fatica, e significa che non devi più affidarti al ricordo di farlo in modo selettivo per quella specifica foto che poi risulta importante.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni di privacy con le foto</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte dei problemi di privacy delle foto nasce da una manciata di abitudini che sul momento sembrano innocue. Ecco a cosa fare attenzione.</p>
+
+          <h3>Dare per scontato che la piattaforma se ne occupi già</h3>
+          <p>È vero che molte grandi piattaforme social rimuovono automaticamente i metadati al caricamento, ma non tutte lo fanno, e le copie inoltrate, scaricate e ricondivise non ripassano in modo affidabile per la stessa rimozione. Fare affidamento su «la piattaforma probabilmente se ne occupa» è una scommessa; rimuovere tu stesso i metadati prima di pubblicare elimina del tutto l'incertezza.</p>
+
+          <h3>Pensare solo a ciò che è visibile nella foto</h3>
+          <p>Spesso si controlla con cura una foto per i dettagli visibili (nessun documento sensibile sullo sfondo, nessun cartello stradale leggibile) dimenticando che i metadati invisibili possono far trapelare lo stesso tipo di informazione (in particolare la posizione) anche quando l'immagine in sé sembra perfettamente sicura. Controllare il contenuto visibile e rimuovere i metadati sono due passaggi separati, entrambi necessari.</p>
+
+          <h3>Vendere oggetti con foto di annunci non toccate</h3>
+          <p>Gli annunci sui marketplace sono una delle fonti reali più comuni di esposizione accidentale della posizione, dato che i venditori fotografano gli oggetti esattamente dove vivono e caricano le foto così come sono. È uno dei casi più chiari e di maggior valore per rimuovere i metadati prima di pubblicare, perché il rischio (rivelare l'indirizzo di casa a degli sconosciuti) è concreto e la soluzione richiede pochi secondi.</p>
+
+          <h3>Dimenticare le vecchie foto già pubblicate</h3>
+          <p>La rimozione dei metadati protegge solo le foto che pulisci prima di condividerle: non sistema retroattivamente le foto già pubblicate da qualche parte con i metadati intatti. Se ti preoccupano i post passati, la soluzione è tornare a quelle foto specifiche, rimuoverle e sostituirle con versioni pulite se la piattaforma lo consente, invece di presumere che l'abitudine da ora in poi copra tutto ciò che è già in giro.</p>
+
+          <h3>Trattarlo come un compito tutto o niente, occasionale</h3>
+          <p>Aspettare a rimuovere i metadati solo per le foto che «sembrano sensibili» significa affidarsi ogni singola volta al proprio giudizio, ed è proprio il tipo di abitudine che alla fine ne perde una. Inserire la rimozione dei metadati nella routine predefinita per qualsiasi cosa lasci una cerchia fidata elimina del tutto la valutazione caso per caso: viene applicata con coerenza invece che in modo selettivo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly per gli SVG: rimuovere i metadati dell'editor, non l'EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Tutto quanto sopra riguarda i dati EXIF incorporati nelle foto: GPS, modello della fotocamera, data e ora. I file SVG non hanno affatto EXIF, perché non sono foto: sono testo XML che descrive forme. Ma gli strumenti di design incorporano in un SVG il loro tipo di metadati nascosti, e Cleanly rileva e rimuove anche quelli quando ne trascini uno.</p>
+
+          <h3>Cosa incorporano gli strumenti di design in un SVG</h3>
+          <p>Illustrator, Inkscape, Sketch e Figma scrivono tutti nel file più delle forme che hai disegnato: un blocco incorporato <code>&lt;metadata&gt;</code>/RDF (a volte con informazioni su autore e licenza tramite i tag Dublin Core), attributi specifici dell'editor con spazio dei nomi (i più comuni sono i tag <code>sodipodi:</code> di Inkscape) e semplici commenti XML lasciati dal processo di esportazione. Niente di tutto ciò è visibile quando l'SVG viene visualizzato, ma viaggia tutto con il file verso chiunque lo invii.</p>
+
+          <h3>Perché conta per la condivisione</h3>
+          <p>Lo stesso ragionamento che vale per il tag GPS di una foto vale qui: i metadati che non hai aggiunto consapevolmente sono comunque metadati che escono dalla porta con il file. Un'icona o un logo esportati per un cliente, un annuncio su un marketplace o un repository pubblico possono portare con sé informazioni sulla versione del software o sull'attribuzione dell'autore che non hai mai voluto pubblicare. Rimuoverli prima di condividere è la stessa abitudine «non costa niente, evita una sorpresa» della rimozione dell'EXIF da una foto.</p>
+
+          <h3>Cosa ti mostra Cleanly prima di rimuovere</h3>
+          <p>Proprio come elenca i tag GPS, fotocamera e data trovati in una foto, Cleanly analizza un SVG trascinato e mostra esattamente cosa ha trovato (metadati incorporati, dati di creazione dell'editor o commenti) così puoi vedere cosa c'è davvero nel file prima di rimuoverlo, invece di pulire alla cieca.</p>
+
+          <h3>Senza perdita, non con perdita</h3>
+          <p>A differenza della compressione di una foto, non è un compromesso sulla qualità. La pulizia rimuove solo la zavorra che il browser non ha mai visualizzato: le forme, i colori e la struttura creati dal tuo strumento di design restano completamente intatti, quindi il file pulito appare identico pixel per pixel e può comunque essere aperto e modificato in un editor vettoriale in seguito.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="context">
+      <details class="golden-rules-article">
+        <summary>1. Come funziona davvero l'aggiunta di testo a un PDF</summary>
+        <div class="golden-rules-body">
+          <p>Una pagina PDF non è un documento di testo in cui puoi semplicemente cliccare e scrivere: somiglia di più a un foglio stampato, un'immagine fissa di testo e grafica disposti in posizioni esatte. Capire questa distinzione spiega sia cosa fa Context sia perché funziona così.</p>
+
+          <h3>La pagina è un'immagine, non un documento</h3>
+          <p>La maggior parte dei PDF (tutto ciò che non è costruito specificamente come modulo compilabile) non ha il concetto di «spazio vuoto in cui scrivere». Quella che vedi come una riga, una casella o un campo vuoto è in realtà solo inchiostro posto a coordinate fisse: non c'è alcun campo di testo sottostante in attesa del tuo input, come in un documento Word o un modulo web. Quando Context ti lascia «aggiungere testo» a un PDF, non trova un campo nascosto da riempire: colloca un livello di testo nuovo e indipendente sopra la pagina esistente, posizionato dove lo trascini.</p>
+
+          <h3>Sovrapporre o modificare</h3>
+          <p>Questo approccio a sovrapposizione è lo stesso usato da praticamente ogni strumento di annotazione PDF, non solo da questo: modificare davvero il testo originale di un PDF (cambiare una frase già stampata sulla pagina) richiede software specializzato e spesso non è affatto possibile se il file originale non ha conservato livelli di testo modificabili. Ciò che fa invece Context è più semplice e molto più ampiamente utile: aggiunge un nuovo pezzo di testo separato che sta visivamente sopra la pagina, esattamente ciò che serve per didascalie, note, iniziali o per compilare una riga vuota di un modulo.</p>
+
+          <h3>Punti, non pixel</h3>
+          <p>Le pagine PDF misurano la posizione in punti (1/72 di pollice), non nei pixel dello schermo con cui trascini col dito o col cursore. Context gestisce la conversione per te: ciò che vedi sullo schermo, a qualsiasi livello di zoom, corrisponde sempre alla posizione fissa corretta nel PDF reale, quindi una casella di testo che metti in cima a una pagina resta in cima alla pagina indipendentemente dal dispositivo o dallo zoom con cui qualcun altro la aprirà in seguito.</p>
+
+          <h3>Cosa succede quando scarichi</h3>
+          <p>Quando premi Scarica, ogni casella di testo e forma che hai posizionato viene disegnata in modo permanente sulle pagine del PDF (colori, stile grassetto/corsivo/sottolineato, posizione e dimensione esatte comprese), producendo un unico PDF ordinario. Non esiste un «formato Context» speciale e non c'è nulla di separato da tenere traccia: il file che ne esce si apre e si stampa in modo identico a qualsiasi altro PDF, in qualsiasi lettore PDF, su qualsiasi dispositivo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Scegliere la giusta dimensione e posizione del testo per documenti diversi</summary>
+        <div class="golden-rules-body">
+          <p>La giusta dimensione e posizione del testo dipende interamente dal tipo di documento che stai annotando e da chi lo leggerà dopo. Ecco come ragionarci per scenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Tipo di documento</th><th>Approccio consigliato</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tipo di documento">Compilare le righe vuote di un modulo</td><td data-label="Approccio consigliato">Rispetta la dimensione dell'etichetta stampata, posizionati appena sopra la riga</td></tr>
+              <tr><td data-label="Tipo di documento">Aggiungere una nota o un commento</td><td data-label="Approccio consigliato">Usa un colore a contrasto, tienilo chiaramente separato dal testo originale</td></tr>
+              <tr><td data-label="Tipo di documento">Firmare o siglare</td><td data-label="Approccio consigliato">Leggermente più grande del testo circostante, centrato sulla riga</td></tr>
+              <tr><td data-label="Tipo di documento">Didascalie per un PDF ricco di immagini</td><td data-label="Approccio consigliato">Dimensione coerente per ogni didascalia in ogni pagina</td></tr>
+              <tr><td data-label="Tipo di documento">Documenti formali o legali</td><td data-label="Approccio consigliato">Rispetta da vicino la dimensione del carattere del documento, usa il nero</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Adattarsi al testo esistente del documento</h3>
+          <p>La cosa più importante che fa sembrare una riga aggiunta voluta e non appiccicata è adattare la sua dimensione a ciò che è già stampato lì vicino. Se le etichette del modulo sono stampate a circa 11–12 pt, aggiungere la tua risposta a 24 pt la fa sembrare fuori posto, anche se la posizione è perfetta. Ingrandisci prima il testo stampato circostante, fatti un'idea della sua scala e scegli una dimensione vicina: Context ricorda l'ultima dimensione usata, quindi una volta che l'hai adattata, ogni casella successiva parte automaticamente dalla stessa.</p>
+
+          <h3>Restare dentro le linee, alla lettera</h3>
+          <p>Le righe e le caselle vuote nei moduli sono di solito dimensionate per una quantità specifica di testo a una dimensione specifica. Prima di scrivere una risposta lunga in una riga corta, valuta se serve rimpicciolirla leggermente per farla stare, perché il testo che sborda oltre la fine di una riga stampata sembra un errore a chi leggerà il documento finito, anche se tecnicamente nulla è rotto.</p>
+
+          <h3>Scegliere un colore che si legga come «aggiunto», non «nascosto»</h3>
+          <p>Il testo nero è di solito la scelta predefinita più sicura, perché corrisponde a come la maggior parte dei moduli e dei documenti è già stampata e non si fa notare come un'aggiunta. Il testo colorato è davvero utile per note, correzioni o qualsiasi cosa tu voglia far risaltare rispetto al contenuto originale: assicurati solo che il colore scelto abbia un reale contrasto con la pagina dietro; i colori chiari come il giallo si perdono facilmente su una pagina bianca.</p>
+
+          <h3>Lasciare margine per l'imprevisto</h3>
+          <p>Posizionare il testo proprio sul bordo della pagina rischia di farlo tagliare se il documento viene poi stampato su un formato di carta o con impostazioni di margine leggermente diversi dal previsto. Lasciare un piccolo margine tra il testo e il bordo della pagina, e tra il testo e qualsiasi contenuto stampato vicino, mantiene il risultato pulito comunque venga poi stampato o visualizzato.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Compilare moduli e firmare documenti senza stampante</summary>
+        <div class="golden-rules-body">
+          <p>Stampare, firmare, scansionare e rispedire per e-mail è ancora il modo in cui si gestisce molta burocrazia, ed è quasi sempre inutile. Ecco come saltarlo usando solo un browser.</p>
+
+          <h3>Sostituire il ciclo stampa-firma-scansiona</h3>
+          <p>Se un modulo richiede solo un nome, una data, qualche breve risposta e un segno dove va la firma, raramente c'è un vero motivo per coinvolgere una stampante o uno scanner. Apri il PDF direttamente in Context, metti una casella di testo su ogni riga vuota, scrivi la tua risposta e scarica: l'intero andirivieni che prima richiedeva carta ora avviene interamente sullo schermo, e il risultato è comunque un PDF più pulito e leggibile di una copia cartacea scansionata. Per una casella di spunta o un'opzione a scelta multipla, inserisci una forma (una croce per segnare, un cerchio per selezionare) invece di provare a scrivere un carattere di spunta che potrebbe non esistere nemmeno nel carattere.</p>
+
+          <h3>Firme e sigle digitate</h3>
+          <p>Digitare il tuo nome in uno stile corsivo o simile alla scrittura a mano su una riga di firma è prassi comune per gran parte della burocrazia di tutti i giorni: moduli interni aziendali, accordi informali, ricevute di presa visione e documenti simili a bassa posta in gioco. Vale però la pena essere lucidi su una cosa: un nome digitato non equivale a una firma elettronica legalmente riconosciuta secondo leggi come eIDAS o l'ESIGN Act statunitense, che in genere richiedono specifiche fasi di consenso e verifica che una semplice sovrapposizione digitata non fornisce. Per contratti, atti legali o qualsiasi cosa in cui la validità della firma conti davvero, usa un servizio di firma elettronica dedicato: Context è lo strumento giusto per la burocrazia informale, non un sostituto.</p>
+
+          <h3>Allineare le risposte alle etichette stampate</h3>
+          <p>La maggior parte dei moduli stampa un'etichetta («Nome:», «Data:») seguita da una riga o casella vuota per la risposta. Trascina la tua casella di testo in modo che stia appena sopra la riga invece che sopra di essa: il testo posto direttamente su una riga stampata diventa difficile da leggere quando i due si sovrappongono, mentre il testo che galleggia appena sopra resta chiaramente leggibile e continua a leggersi come «la risposta a quell'etichetta» per chiunque guardi la pagina finita.</p>
+
+          <h3>Ricontrollare prima di inviarlo</h3>
+          <p>Una volta compilato ogni campo, vale la pena scorrere ogni pagina alla dimensione reale (non solo la miniatura in cui scrivevi) per confermare che nulla si sovrapponga, nulla vada oltre il bordo di una riga e ogni campo richiesto sia stato davvero compilato: una casella di testo che sembra a posto mentre la modifichi può occasionalmente risultare leggermente diversa quando guardi la pagina finita nel suo insieme.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Lavorare con PDF di più pagine: coerenza e modifica pagina per pagina</summary>
+        <div class="golden-rules-body">
+          <p>Contratti, rapporti e moduli di più pagine richiedono un approccio leggermente diverso da una rapida modifica di una pagina, soprattutto per mantenere la coerenza man mano che si procede nel documento.</p>
+
+          <h3>Spostarsi tra le pagine senza perdere il segno</h3>
+          <p>La navigazione tra le pagine di Context mantiene ogni casella di testo legata alla pagina specifica in cui è stata inserita, quindi spostarsi tra le pagine per compilare sezioni diverse di un documento lungo non rischia di mescolare nulla: una casella aggiunta a pagina 3 resta a pagina 3 indipendentemente da quante altre pagine visiti prima di scaricare.</p>
+
+          <h3>Mantenere coerenti dimensione e colore tra le pagine</h3>
+          <p>Per qualsiasi cosa con una struttura ripetuta nelle pagine (la stessa etichetta su ogni pagina di un modulo di più pagine, per esempio), riutilizzare di proposito la stessa dimensione e lo stesso colore del carattere ogni volta fa sembrare il documento finito un unico passaggio coerente invece di diverse modifiche incoerenti messe insieme. Dato che l'ultima dimensione e l'ultimo colore usati vengono riportati automaticamente alla casella di testo successiva, mantenere la coerenza in un documento lungo di solito significa semplicemente non cambiarli a meno che tu non lo voglia davvero.</p>
+
+          <h3>Pianificare un giro prima di iniziare a scrivere</h3>
+          <p>Per i documenti più lunghi vale la pena fare un rapido primo giro su ogni pagina (solo guardando, senza ancora scrivere) per vedere l'intera portata di ciò che va compilato prima di decidere dimensione e posizione sulla pagina uno. Una dimensione che sembra giusta su una prima pagina rada può rivelarsi troppo grande per una pagina più fitta più avanti, e accorgersene presto evita di dover tornare a ridimensionare caselle già posizionate.</p>
+
+          <h3>Rivedere l'intero documento prima di scaricare</h3>
+          <p>Poiché ogni pagina viene visualizzata e modificata in modo indipendente, è facile concentrarsi sulla pagina su cui stai lavorando e perdere di vista il documento nel suo insieme. Prima di scaricare, sfoglia le pagine dall'inizio: è l'unico modo per individuare una pagina saltata del tutto o una casella che è finita per sembrare diversa dalle altre senza che te ne accorgessi mentre lavoravi.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni quando si aggiunge testo ai PDF (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte dei problemi con un PDF modificato risale a un piccolo insieme di errori facili da non notare. Ecco a cosa fare attenzione.</p>
+
+          <h3>Testo troppo piccolo quando si riduce lo zoom</h3>
+          <p>È facile scrivere a una dimensione che sembra perfettamente leggibile mentre sei zoomato e concentrato su una singola casella, per poi scoprire che è nettamente piccola quando la pagina viene vista alla sua dimensione normale e piena. Riduci lo zoom (o controlla il PDF finito in un visualizzatore separato) prima di scaricare per confermare che ogni casella sia leggibile alla dimensione reale, non solo a quella di modifica.</p>
+
+          <h3>Posizionare il testo sopra il contenuto esistente invece che accanto</h3>
+          <p>Posizionare una casella di testo direttamente sopra testo stampato o una linea rende entrambi difficili da leggere quando si sovrappongono: il contenuto sottostante non si sposta. Sposta il nuovo testo in uno spazio davvero vuoto lì vicino invece di sovrapporlo a qualcosa già stampato.</p>
+
+          <h3>Modificare la pagina sbagliata</h3>
+          <p>In un documento più lungo è facile perdere traccia di quale pagina sia attiva, soprattutto dopo aver zoomato o scorso, e finire per aggiungere testo alla pagina sbagliata. Controlla l'indicatore di pagina prima di aggiungere una casella su qualsiasi documento di più di una pagina, in particolare subito dopo essere passato a una nuova pagina.</p>
+
+          <h3>Usare un colore con scarso contrasto</h3>
+          <p>I colori chiari, soprattutto il giallo pallido, possono andare bene alla dimensione di modifica su uno schermo luminoso e poi diventare davvero difficili da leggere una volta stampati o visti su un altro schermo. Attieniti a colori con forte contrasto contro il bianco, come il nero o un colore saturo, per tutto ciò che deve davvero essere letto e non solo notato.</p>
+
+          <h3>Dimenticare di rinominare il file prima di condividerlo</h3>
+          <p>Scaricare direttamente da un nome di file generico del caricamento può lasciare te (o chi lo riceve) con un file chiamato semplicemente «documento» o simile, indistinguibile da una dozzina di altri file con lo stesso nome predefinito. Prendersi un momento per dargli un nome chiaro e specifico prima di scaricare (cos'è e spesso la data) evita vera confusione in seguito, soprattutto quando più versioni dello stesso modulo iniziano ad accumularsi in una cartella di download.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="gif">
+      <details class="golden-rules-article">
+        <summary>1. La guida completa alle GIF: frame rate, dimensioni e perché sono ancora ovunque</summary>
+        <div class="golden-rules-body">
+          <p>Il formato GIF ha decenni ed è tecnicamente primitivo rispetto al video moderno, eppure non è mai scomparso: è l'unico formato di immagini in movimento che si riproduce automaticamente ovunque, senza controlli del player, senza suono e senza la barriera del «clicca per riprodurre». Capire cos'è davvero spiega sia i suoi limiti sia perché le impostazioni di Congify hanno la forma che hanno.</p>
+
+          <h3>Cos'è davvero una GIF</h3>
+          <p>Una GIF non è un video compresso: è una sequenza di immagini singole, ciascuna limitata a una tavolozza di al massimo 256 colori, riprodotte una dopo l'altra in loop. Non c'è alcuna traccia audio e non c'è modo di aggiungerne una; una GIF è muta per definizione, ed è proprio per questo che parte in automatico dove un video non lo farebbe (app di chat, feed social, post nei forum) senza bisogno di un pulsante muto o di un tocco per avviarla.</p>
+          <p>Il limite dei 256 colori è il maggior vincolo tecnico del formato. Non è come la compressione con perdita del JPG, che sfoca il dettaglio per risparmiare spazio: una GIF non può proprio mostrare più di 256 colori distinti in un singolo fotogramma, quindi le sfumature morbide e la profondità di colore fotografica vengono ridotte a una tavolozza più piccola. Per la maggior parte delle clip quotidiane (registrazioni dello schermo, clip di reazione, brevi riprese con una manciata di colori dominanti) è invisibile o quasi; per un tramonto con un ampio e sottile gradiente di colore, vedrai a volte bande visibili.</p>
+
+          <h3>Frame rate: il compromesso sugli fps</h3>
+          <p>Congify offre 5, 10, 15 o 20 fotogrammi al secondo. Ogni fotogramma in più è un'altra immagine intera aggiunta al file, quindi il frame rate è la leva più grande sulle dimensioni: passare da 10 a 20 fps raddoppia circa il numero di fotogrammi (e circa le dimensioni del file) per la stessa durata della clip, per un miglioramento di fluidità spesso difficile da notare alle risoluzioni GIF e alle dimensioni di visualizzazione tipiche.</p>
+          <p>10 fps è un valore predefinito ragionevole per la maggior parte delle clip: il movimento appare fluido senza gonfiare il file. Scendi a 5 fps per tutto ciò che è lungo o quasi statico (una slide di testo, una panoramica lenta), dove meno fotogrammi non si notano. Usa 15-20 fps solo quando il movimento è veloce e gli scatti sarebbero davvero fastidiosi: gameplay rapido, gesti veloci, tutto ciò che cambia molto da un fotogramma all'altro.</p>
+
+          <h3>Dimensioni e ritaglio: Pieno, Quadrato, Verticale</h3>
+          <p>Pieno mantiene intatte le proporzioni originali del video sorgente: la scelta predefinita più sicura quando non sei certo di dove finirà la GIF. Quadrato (1:1) ritaglia un quadrato centrato, quello che la maggior parte delle piattaforme social mostra in modo pulito in un feed senza bande nere né ritagli imprevedibili da parte loro. Verticale è adatto a storie e collocazioni di video verticali, dove una clip orizzontale altrimenti apparirebbe piccola con bande ai lati.</p>
+          <p>Il ritaglio avviene prima della generazione della GIF, non dopo, quindi ciò che Quadrato o Verticale tagliano via è davvero sparito dall'output: vale la pena vedere in anteprima il ritaglio rispetto al tuo soggetto reale (la parte importante dell'inquadratura è centrata?) invece di presumere che vada sempre a posto.</p>
+
+          <h3>La regola decisionale rapida</h3>
+          <p>Clip breve e quotidiana con persone o movimento → 10 fps, Pieno. Pubblicazione in un feed che ritaglia comunque in quadrato → Quadrato, così controlli tu il ritaglio invece della piattaforma. Riprese lunghe o quasi ferme → scendi prima a 5 fps, prima di ricorrere a qualsiasi altra riduzione di dimensioni.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Il ritaglio: scegliere la giusta lunghezza della clip</summary>
+        <div class="golden-rules-body">
+          <p>La cosa più importante che controlli sulle dimensioni di una GIF e su quanto si legge davvero non sono gli fps o il ritaglio: è quanto girato le dai in partenza. Ritagliare bene conta più di qualsiasi impostazione successiva.</p>
+
+          <h3>Perché più breve è quasi sempre meglio</h3>
+          <p>Una GIF va in loop, quindi chi la guarda in genere la vede più di una volta: una buona GIF merita un secondo e un terzo giro invece di richiederne uno solo per capire cosa è successo. Ridurla al solo momento che conta (un gesto, una reazione, una battuta, un'azione specifica sullo schermo) invece dei secondi attorno dà quasi sempre qualcosa di più efficace, non solo più leggero. Una GIF che richiede 10 secondi per essere capita di solito non è una buona candidata per il formato.</p>
+          <p>Le dimensioni del file scalano direttamente con la durata della clip: un ritaglio di 6 secondi pesa circa il doppio di uno di 3 secondi con le stesse impostazioni di fps e dimensioni, a parità di tutto il resto. Poiché le GIF vengono così spesso condivise tramite app di chat e connessioni più lente, ritagliare stretto di solito rende più che abbassare gli fps o ritagliare più piccolo.</p>
+
+          <h3>Usare la barra di scorrimento con precisione</h3>
+          <p>Trascina le due maniglie sulla striscia di fotogrammi per impostare esattamente dove la clip inizia e finisce: l'anteprima si aggiorna in tempo reale così vedi con precisione cosa tieni prima di scegliere frame rate o dimensioni. Scorri lentamente soprattutto attorno ai punti di ingresso e uscita; mezzo secondo di vuoto all'inizio o un fotogramma in più alla fine è un motivo comune per cui una GIF ritagliata risulta meno incisiva del momento che avevi in mente.</p>
+
+          <h3>Direzione di riproduzione: Normale, Inverso, Boomerang</h3>
+          <p>Normale riproduce una volta la clip ritagliata, tornando in loop dalla fine direttamente all'inizio: va bene per la maggior parte delle riprese, ma quello stacco netto all'inizio può sembrare brusco se il primo e l'ultimo fotogramma non coincidono naturalmente. Inverso riproduce la stessa clip al contrario, utile soprattutto come effetto voluto e non come impostazione generica. Boomerang riproduce avanti e subito indietro prima di ripartire, così la GIF fa avanti e indietro invece di scattare all'inizio: è l'impostazione da usare ogni volta che il punto di ripartenza altrimenti sembrerebbe stridente, ed è diventata di per sé uno stile familiare e riconoscibile per brevi clip in loop.</p>
+
+          <h3>Velocità: rallentare o accelerare il loop</h3>
+          <p>La velocità cambia la frequenza di riproduzione indipendentemente dagli fps con cui hai estratto la clip: 0,5x riproduce a metà velocità per enfasi o per un effetto rallentatore, mentre 2x o 4x comprime un'azione più lunga in un loop più stretto e incisivo. È un controllo diverso dal frame rate: gli fps decidono quanti fotogrammi esistono, la velocità decide con che rapidità la GIF scorre i fotogrammi che ha già, quindi una GIF rallentata a bassi fps può comunque apparire a scatti: abbina una velocità più lenta a fps più alti se vuoi sia fluidità sia effetto rallentatore.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Aggiungere didascalie che funzionano davvero</summary>
+        <div class="golden-rules-body">
+          <p>Le didascalie trasformano una GIF in qualcosa che si legge anche con l'audio spento ovunque nella pagina, il che, dato che le GIF non hanno alcun suono, è sempre. Renderle leggibili su uno sfondo in movimento e imprevedibile richiede un po' più di attenzione che mettere testo su un'immagine statica.</p>
+
+          <h3>Scelta del carattere e leggibilità</h3>
+          <p>Impact (il classico carattere meme spesso e condensato) si legge chiaramente a dimensioni piccole e regge meglio sugli sfondi movimentati di un carattere più leggero e sottile: è una scelta deliberata e pratica, non solo uno stile predefinito. Arial è la scelta più sicura e neutra per tutto ciò che deve apparire informativo invece che come un meme. Times e Comic Sans ci sono per quando il tono richiede qualcosa di specifico, ma nessuno dei due regge altrettanto bene su uno sfondo in movimento a dimensioni di didascalia piccole.</p>
+
+          <h3>Contorno: perché il testo con contorno si legge meglio su qualsiasi sfondo</h3>
+          <p>Lo sfondo di una GIF cambia da un fotogramma all'altro, quindi il testo senza contorno può essere perfettamente leggibile in un fotogramma e quasi invisibile nel successivo se le immagini dietro passano dallo scuro al chiaro. Un contorno (in un colore a contrasto, di solito nero attorno al testo bianco o bianco attorno al testo nero) mantiene la didascalia leggibile durante questi cambiamenti, perché è il contorno, non solo il riempimento, che l'occhio aggancia su uno sfondo movimentato o variabile. Attivalo per quasi tutto ciò che ha un vero movimento sullo sfondo: è una delle poche impostazioni da lasciare attiva di default.</p>
+
+          <h3>Nozioni di base sul contrasto dei colori</h3>
+          <p>Testo bianco o giallo con contorno nero è la combinazione classica e affidabile: regge su quasi qualsiasi ripresa. Il testo nero può funzionare su riprese costantemente chiare, ma è più rischioso nel momento in cui una parte della clip diventa scura. Nel dubbio, guarda l'anteprima della didascalia sui momenti più scuri e più chiari della clip ritagliata, non solo sul fotogramma che stavi guardando mentre la scrivevi.</p>
+
+          <h3>Posizionamento e più didascalie</h3>
+          <p>Le didascalie si possono trascinare ovunque nel riquadro e ridimensionare trascinando la maniglia d'angolo, quindi non ti viene imposta alcuna posizione fissa «in alto» o «in basso»: mettile ciascuna dove non coprono la parte delle riprese che conta davvero. Congify supporta più didascalie nella stessa GIF, utile per una battuta in più tempi o una sequenza con etichette, ma ognuna aggiunge disordine visivo, quindi chiediti se una sola riga ben posizionata basti prima di impilarne diverse.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando usare una GIF, un MP4 o un'immagine statica</summary>
+        <div class="golden-rules-body">
+          <p>Una GIF non è sempre la risposta giusta solo perché la sorgente è una clip video: sapere quando batte davvero le alternative ti evita un file gonfio che un video avrebbe gestito meglio, o un'immagine con didascalia che non aveva bisogno di movimento.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situazione</th><th>Scelta migliore</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situazione">App di chat e messaggistica</td><td data-label="Scelta migliore">GIF: parte in automatico, nessun tocco necessario</td></tr>
+              <tr><td data-label="Situazione">Clip più lunga con audio importante</td><td data-label="Scelta migliore">MP4: le GIF non possono portare alcun suono</td></tr>
+              <tr><td data-label="Situazione">Un solo momento, nessun movimento necessario</td><td data-label="Scelta migliore">Un'immagine statica: più piccola e semplice</td></tr>
+              <tr><td data-label="Situazione">Passaggio di un tutorial o di una documentazione</td><td data-label="Scelta migliore">GIF per azioni brevi e ripetibili, video per dimostrazioni più lunghe</td></tr>
+              <tr><td data-label="Situazione">Post su feed social</td><td data-label="Scelta migliore">Vanno bene entrambi: controlla cosa riproduce davvero in automatico la piattaforma</td></tr>
+            </tbody>
+          </table>
+
+          <h3>App di messaggistica e reazioni</h3>
+          <p>Questo è il terreno di casa del formato: una GIF cade dritta in una chat e parte subito, senza tocco, senza rotella di caricamento, senza un player video separato. Per una reazione rapida, un loop ripetibile o una breve clip pensata per arrivare all'istante in una conversazione, nient'altro si comporta così.</p>
+
+          <h3>Post sui social media</h3>
+          <p>La maggior parte delle piattaforme converte comunque in automatico una GIF caricata in un video in loop internamente, quindi la differenza pratica rispetto a pubblicare direttamente un MP4 è spesso piccola; ma una GIF resta la scelta più sicura se non sei sicuro che una piattaforma o un embed tratti un MP4 caricato allo stesso modo (riproduzione automatica, nessuna icona audio, nessun controllo del player).</p>
+
+          <h3>Documentazione e tutorial</h3>
+          <p>Una GIF breve in loop è davvero eccellente per mostrare una singola azione ripetibile di un'interfaccia (clicca qui, trascina là, guarda aprirsi questo menu) perché va in loop da sola senza che il lettore debba premere play o tornare indietro. Per qualsiasi cosa più lunga di pochi secondi o che richieda una narrazione, un vero video con comandi di riproduzione serve meglio il lettore di un lungo loop muto in riproduzione automatica.</p>
+
+          <h3>E-mail e presentazioni</h3>
+          <p>Il supporto per le GIF animate nei client di posta e nei software di presentazione è incoerente: alcuni mostrano ogni fotogramma come previsto, altri solo il primo come immagine statica. Se l'animazione è essenziale per ciò che comunichi in uno di questi contesti, vale la pena provare prima nella destinazione reale invece di presumere che si animi come in un browser.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni con le GIF (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte delle GIF deludenti dipende da un piccolo insieme di scelte evitabili fatte all'inizio del processo, prima ancora che entri in gioco una didascalia o un'impostazione di ritaglio.</p>
+
+          <h3>Portare gli fps al massimo per impostazione predefinita</h3>
+          <p>È allettante usare 20 fps ogni volta presumendo che più alto sia semplicemente meglio, ma per la maggior parte delle clip quotidiane il guadagno di fluidità rispetto a 10 fps è appena visibile mentre le dimensioni del file raddoppiano più o meno. Riserva i frame rate più alti alle riprese dove il movimento è davvero abbastanza veloce da richiederli.</p>
+
+          <h3>Ritagliare in modo troppo largo</h3>
+          <p>Qualche secondo in più prima e dopo il momento vero non gonfia solo il file: diluisce anche il senso della GIF, costringendo lo spettatore a sorbirsi una preparazione che un ritaglio più stretto avrebbe saltato. Nel dubbio, ritaglia più stretto di quanto sembri comodo e controlla l'anteprima: raramente è troppo corto.</p>
+
+          <h3>Didascalie senza contorno su riprese movimentate</h3>
+          <p>Un testo perfettamente leggibile sul fotogramma che stavi fissando mentre lo scrivevi può sparire del tutto un secondo dopo, quando lo sfondo cambia. Attivare il contorno per impostazione predefinita per qualsiasi cosa con vero movimento sullo sfondo evita di riscoprirlo dopo che la GIF è già stata condivisa.</p>
+
+          <h3>Ignorare le dimensioni del file su una connessione mobile</h3>
+          <p>Una GIF lunga, ad alto frame rate e a dimensione piena può diventare più volte più grande della stessa clip come video codificato correttamente e, a differenza di un video, una GIF non può essere «messa in pausa prima del caricamento completo» nella maggior parte dei posti in cui viene condivisa, quindi l'intero file deve arrivare prima che parta. Se una GIF esce inaspettatamente grande, ridurre la durata e abbassare gli fps sono le due impostazioni da controllare per prime, ben prima di passare a un ritaglio più piccolo.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="coudio">
+      <details class="golden-rules-article">
+        <summary>1. La guida completa ai formati audio: MP3 contro WAV</summary>
+        <div class="golden-rules-body">
+          <p>I formati audio si dividono lungo la stessa linea tra perdita e assenza di perdita dei formati immagine, e la stessa domanda di fondo decide quale vuoi davvero: stai preparando qualcosa da ascoltare e condividere, o qualcosa da conservare nella migliore qualità possibile per lavorarci ancora?</p>
+
+          <h3>MP3: il formato universale con perdita</h3>
+          <p>L'MP3 usa la compressione con perdita, scartando dettagli audio che l'udito umano nota con più difficoltà per ridurre drasticamente il file, spesso a un decimo dell'originale non compresso o meno, a seconda del bitrate usato. È supportato praticamente da tutto: ogni telefono, ogni autoradio, ogni app musicale, ogni sito web. Per ascolto, condivisione e uso quotidiano, l'MP3 è quasi sempre la scelta predefinita giusta.</p>
+          <p>Il compromesso è lo stesso del JPG: parte del dettaglio è davvero perso dopo la compressione, e non torna se in seguito converti l'MP3 in qualcos'altro. Per un ascolto casuale è inudibile a bitrate ragionevoli; per ascolto critico, mastering o archiviazione inizia a contare.</p>
+
+          <h3>WAV: il formato senza perdita e non compresso</h3>
+          <p>Il WAV memorizza l'audio non compresso: ogni campione è preservato esattamente, senza alcun dato scartato. Ciò lo rende la scelta giusta per qualsiasi cosa verrà modificata, mixata o elaborata ulteriormente, perché gli artefatti della compressione con perdita non si sommano l'uno sull'altro attraverso più giri di modifica come accadrebbe con un MP3 risalvato ripetutamente. È anche il formato standard per i master d'archivio, perché è la cosa più vicina a mantenere intatta la registrazione originale.</p>
+          <p>Il prezzo da pagare sono le dimensioni: i file WAV sono in genere 5-10 volte più grandi di un MP3 dello stesso audio a un bitrate ragionevole, dato che non c'è compressione a fare il lavoro. Pochi minuti di audio WAV possono già essere decine di megabyte, il che conta se lo invii per e-mail o ne archivi molto.</p>
+
+          <h3>La regola decisionale rapida</h3>
+          <p>Condividere, ascoltare, caricare sulla maggior parte delle piattaforme → MP3. Modificare, mixare o archiviare una copia master a cui tornerai → WAV. Non sei sicuro e si tratta di un uso una tantum → l'MP3 è la scelta predefinita più sicura; quasi tutto può riprodurlo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Il bitrate spiegato: scegliere il numero giusto per l'MP3</summary>
+        <div class="golden-rules-body">
+          <p>Il bitrate è l'unica impostazione MP3 che conta davvero sia per le dimensioni sia per la qualità, e scegliere un numero sensato per ciò che stai facendo vale più che tirare a indovinare.</p>
+
+          <h3>Cosa controlla davvero il bitrate</h3>
+          <p>Il bitrate è la quantità di dati usata per codificare ogni secondo di audio, misurata in kilobit al secondo (kbps). Un bitrate più alto conserva più dettaglio originale e suona più vicino alla sorgente non compressa; un bitrate più basso comprime di più, scartando più informazioni, in cambio di un file più piccolo. È un compromesso diretto e circa lineare: raddoppiare il bitrate raddoppia più o meno le dimensioni del file per la stessa durata di audio.</p>
+
+          <h3>Adattare il bitrate a ciò che stai davvero codificando</h3>
+          <p>Il parlato (podcast, memo vocali, audiolibri, narrazione) non ha affatto bisogno di un bitrate alto; la voce ha molta meno complessità della musica, e anche un bitrate basso suona chiaro e perfettamente intelligibile mantenendo piccoli i file. La musica, soprattutto con ampia gamma dinamica o molti strumenti simultanei, trae vantaggio da un bitrate sensibilmente più alto prima che gli artefatti di compressione (una leggera asprezza o una qualità «sott'acqua» nei passaggi complessi) diventino udibili.</p>
+          <p>C'è un vero punto di rendimenti decrescenti nella fascia alta: oltre un certo bitrate, la maggior parte degli ascoltatori con cuffie o altoparlanti tipici non riesce più a distinguere in modo affidabile la differenza dalla sorgente, quindi alzare ancora il numero gonfia solo il file senza un guadagno di qualità percepibile. Se non sei sicuro, un bitrate medio è la scelta generale sicura: nettamente meglio delle impostazioni vocali a basso bitrate, senza le dimensioni di un'impostazione di mastering musicale di qualità massima che non ti serve per la condivisione quotidiana.</p>
+
+          <h3>Quando il bitrate non conta affatto</h3>
+          <p>Se converti in WAV invece che in MP3, il bitrate è irrilevante: il WAV è non compresso, quindi non c'è alcuna impostazione di bitrate da scegliere. Il bitrate entra in gioco solo quando scambi deliberatamente un po' di qualità per un file più piccolo, che è l'intero presupposto di scegliere l'MP3 invece del WAV.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Estrarre l'audio da un file video</summary>
+        <div class="golden-rules-body">
+          <p>Coudio non si limita a convertire file audio esistenti: può anche estrarre la traccia audio da un video e darti solo il suono, scartando del tutto l'immagine.</p>
+
+          <h3>Motivi comuni per cui serve</h3>
+          <p>Trasformare un video registrato di una lezione, riunione o intervista in un file audio in stile podcast, molto più piccolo e più facile da ascoltare in movimento. Estrarre un brano o un clip sonoro da un video quando serve solo l'audio. Archiviare solo la parte audio di vecchi filmati video per risparmiare spazio. Convertire il voiceover di una registrazione dello schermo in un file audio autonomo da modificare o trascrivere altrove.</p>
+
+          <h3>Come funziona davvero</h3>
+          <p>Trascina un file MP4, WEBM, MOV o OGV in Coudio nello stesso modo in cui trascineresti un file audio: lo strumento rileva che è un video ed estrae automaticamente la traccia audio, scartando l'immagine. Scegli MP3 o WAV come output come faresti per un normale file audio e (per l'MP3) scegli un bitrate. Il video in sé non viene mai ricodificato né alterato; viene estratta solo la sua traccia audio esistente.</p>
+
+          <h3>Cosa succede se il video non ha una traccia audio</h3>
+          <p>Un video senza alcun suono (una registrazione dello schermo muta, riprese fatte senza audio) non dà nulla da estrarre a Coudio, perché nel file non c'è alcuna traccia audio. Lo strumento non può aggirare la cosa: se la registrazione originale non ha davvero suono, non c'è audio da ricavare.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando usare MP3 o WAV: scenari reali</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situazione</th><th>Formato migliore</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situazione">Condividere un brano, una registrazione o un memo vocale</td><td data-label="Formato migliore">MP3</td></tr>
+              <tr><td data-label="Situazione">Caricare su una piattaforma di podcast</td><td data-label="Formato migliore">MP3, bitrate medio</td></tr>
+              <tr><td data-label="Situazione">Modificare o mixare ulteriormente l'audio</td><td data-label="Formato migliore">WAV</td></tr>
+              <tr><td data-label="Situazione">Archiviare una registrazione master</td><td data-label="Formato migliore">WAV</td></tr>
+              <tr><td data-label="Situazione">Inviare per e-mail una rapida nota vocale</td><td data-label="Formato migliore">MP3, un bitrate basso va bene per il parlato</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Podcast, note vocali e parlato</h3>
+          <p>L'MP3 a un bitrate modesto è lo standard qui: le dimensioni del file contano più che per la musica, perché gli episodi sono spesso lunghi e il parlato tollera la compressione in modo eccezionale senza perdita di qualità udibile per chi ascolta.</p>
+
+          <h3>Musica che condividi o ascolti</h3>
+          <p>L'MP3 a un bitrate medio-alto copre quasi ogni caso quotidiano: inviare un brano a un amico, caricare sulla maggior parte delle piattaforme, tenere la musica su un telefono dove lo spazio si accumula. Ricorri al WAV solo se ti serve specificamente l'originale non compresso: per modifica, campionamento o un archivio d'ascolto davvero critico.</p>
+
+          <h3>Audio che modificherai o mixerai più tardi</h3>
+          <p>Il WAV evita di accumulare ulteriore perdita di compressione su qualsiasi modifica fai (mixaggio, ritaglio, sovrapposizione, regolazione dei livelli), dato che nel file non c'è compressione con perdita. Converti in MP3 solo come passaggio finale di esportazione, a modifica ultimata: la stessa regola che vale per il risalvataggio ripetuto di un JPG.</p>
+
+          <h3>Archiviazione a lungo termine</h3>
+          <p>Per tutto ciò che vuoi preservare nella migliore qualità possibile a tempo indefinito (una registrazione originale, una traccia master, un'intervista importante), il WAV è la scelta più sicura a lungo termine, perché non perde mai ulteriore dettaglio, per quante volte venga copiato o salvato in backup.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni nella conversione audio (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte dei reclami sulla qualità audio risale a una piccola manciata di scelte evitabili.</p>
+
+          <h3>Convertire ripetutamente da MP3 a MP3</h3>
+          <p>Proprio come risalvare un JPG, ricodificare un MP3 già compresso in MP3 perde un po' più di dettaglio ogni volta: il secondo passaggio di compressione ha meno informazioni originali con cui lavorare del primo. Dove possibile, conserva e modifica da una sorgente senza perdita (WAV) ed esporta in MP3 una sola volta, alla fine.</p>
+
+          <h3>Usare un bitrate che non corrisponde al contenuto</h3>
+          <p>Un bitrate basso perfetto per il parlato suonerà nettamente compresso su musica con un mix strumentale pieno, mentre un bitrate massimo su un semplice memo vocale spreca solo spazio senza alcun beneficio udibile. Adatta il bitrate a ciò che c'è davvero nella registrazione, non a un unico numero per tutto.</p>
+
+          <h3>Non controllare se c'è una traccia audio prima di estrarre</h3>
+          <p>Provare a estrarre l'audio da un video registrato muto, o da cui l'audio è stato tolto prima in qualche altro passaggio, restituirà un risultato vuoto: non c'è nulla da estrarre. Vale la pena un rapido controllo (o un rapido ascolto del video originale) prima di presumere che l'estrazione sia fallita per colpa di Coudio e non perché la sorgente non ha semplicemente alcun suono.</p>
+
+          <h3>Ignorare le dimensioni del file per le registrazioni lunghe</h3>
+          <p>Una registrazione lunga di lezione o riunione esportata in WAV, o con un bitrate MP3 inutilmente alto, può arrivare a dimensioni scomode da inviare per e-mail o caricare. Soprattutto per contenuti parlati lunghi, un bitrate MP3 moderato mantiene il file gestibile senza una reale perdita di intelligibilità.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="codify">
+      <details class="golden-rules-article">
+        <summary>1. Perché gli screenshot di codice contano e come renderli leggibili</summary>
+        <div class="golden-rules-body">
+          <p>Uno snippet di codice in testo semplice incollato in una chat, una slide o un post social perde tutto ciò che rende il vero codice leggibile a colpo d'occhio: niente colori della sintassi, niente spaziatura coerente, spesso nemmeno le interruzioni di riga. Uno screenshot con stile risolve il problema, ma solo se è leggibile alla dimensione con cui verrà visto.</p>
+
+          <h3>Perché l'evidenziazione della sintassi non è solo decorazione</h3>
+          <p>Colorare parole chiave, stringhe, commenti e nomi di funzione non è estetica: è un vero aiuto alla lettura. Gli sviluppatori esperti scorrono il codice evidenziato per forma e colore prima di leggerlo parola per parola, ed è esattamente per questo che il codice semplice e senza colori in uno screenshot o in un'app di messaggistica a basso contrasto si legge molto più lentamente, anche per chi conosce bene il linguaggio.</p>
+
+          <h3>Tenere breve lo snippet</h3>
+          <p>Uno screenshot di codice è pensato per essere letto a colpo d'occhio, non scorso: nel momento in cui uno snippet deve rimpicciolirsi oltre una dimensione di lettura comoda per entrare nel riquadro, di solito significa che l'estratto è troppo lungo per uno screenshot e servirebbe meglio il lettore come file collegato o gist. Taglia solo le righe che fanno il punto; uno snippet più breve, più grande e più leggibile batte quasi sempre uno completo ma minuscolo.</p>
+
+          <h3>Scegliere una dimensione davvero leggibile dove verrà pubblicato</h3>
+          <p>Uno screenshot che sul tuo monitor appare perfettamente nitido a dimensione piena può diventare illeggibile in un'anteprima di chat, in un tweet incorporato o in una slide vista dal fondo di una sala. Se sai dove andrà a finire l'immagine, visualizzala più o meno a quella dimensione prima di finalizzare: ciò che si legge bene a schermo intero non sempre si legge bene in miniatura.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Scegliere un tema: Dracula, VS Code Dark, Monokai o GitHub Light</summary>
+        <div class="golden-rules-body">
+          <p>I quattro temi non sono semplici tavolozze di colori fini a sé stesse: ciascuno deriva da (o segue da vicino) un vero tema di editor largamente usato, e sceglierne uno che appaia familiare al tuo pubblico può contare quanto sceglierne uno che appaia bene.</p>
+
+          <h3>Dracula: contrastato e distintivo</h3>
+          <p>Lo sfondo viola scuro di Dracula con evidenziazioni vivaci rosa, verdi e ciano è uno dei temi di editor più riconoscibili oggi: subito familiare a una gran parte degli sviluppatori e abbastanza contrastato da restare leggibile anche rimpicciolito. È una scelta predefinita solida quando non sei sicuro di chi guarderà o di dove finirà l'immagine.</p>
+
+          <h3>VS Code Dark: la base più comune</h3>
+          <p>Poiché Visual Studio Code è l'editor di codice più usato, il suo tema scuro predefinito è quello che il maggior numero di spettatori associa già a «come appare normalmente il codice»: una scelta sicura e senza sorprese, soprattutto per un pubblico che probabilmente include specificamente utenti di VS Code (che, statisticamente, sono la maggior parte degli sviluppatori).</p>
+
+          <h3>Monokai: caldo e consolidato da tempo</h3>
+          <p>Monokai precede la maggior parte dei temi più recenti e ha una tavolozza calda e distinta, con sfumature di fondo olivastre e accenti arancioni e rosa, che molti sviluppatori che hanno usato Sublime Text o configurazioni più vecchie riconosceranno subito. Appare leggermente più morbido nel contrasto rispetto a Dracula, il che alcuni trovano più riposante per una visione prolungata.</p>
+
+          <h3>GitHub Light: quello per i contesti luminosi</h3>
+          <p>I tre temi qui sopra sono scuri; GitHub Light è l'unica vera opzione chiara, in linea con il rendering predefinito del codice di GitHub. È la scelta giusta per una presentazione o un documento altrimenti chiaro, dove un blocco di codice scuro spiccherebbe come un rettangolo stridente e slegato invece di integrarsi nel design circostante.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Scegliere la lingua e ottenere la giusta evidenziazione della sintassi</summary>
+        <div class="golden-rules-body">
+          <p>Scegliere la lingua corretta non è solo un'etichetta: è ciò che dice all'evidenziatore quali parole sono parole chiave, quali sono stringhe e quali sono commenti, quindi farlo bene (o male) ha un effetto diretto e visibile sul risultato.</p>
+
+          <h3>Cosa succede se scegli il linguaggio sbagliato</h3>
+          <p>L'evidenziazione avviene confrontando schemi con le regole di sintassi di un linguaggio specifico, quindi sceglierne uno sbagliato produce risultati sicuri di sé ma errati invece di un errore: le parole chiave di un altro linguaggio potrebbero non essere colorate affatto o, peggio, un'altra parola viene classificata male e colorata come se fosse una parola chiave. Controlla sempre due volte che il selettore del linguaggio corrisponda a ciò che c'è davvero nella casella, soprattutto dopo aver incollato da un modello o cambiato linguaggio durante la modifica.</p>
+
+          <h3>Snippet con più linguaggi</h3>
+          <p>Uno snippet che incorpora un linguaggio dentro un altro (SQL dentro una stringa Python, HTML dentro un template literal JavaScript) verrà evidenziato correttamente solo per il singolo linguaggio selezionato: non c'è modo di evidenziare entrambi insieme in un solo snippet. Per contenuti davvero misti, scegli il linguaggio che costituisce la maggior parte dello snippet, oppure dividilo in due screenshot separati se entrambe le metà devono essere leggibili.</p>
+
+          <h3>Quando l'evidenziazione conta poco</h3>
+          <p>Per snippet molto brevi (una singola riga, un breve valore di configurazione, un comando di una riga) il linguaggio specifico conta molto meno, perché c'è così poco contenuto che un lettore può interpretarlo correttamente a prescindere dalla colorazione. Conta di più per snippet più lunghi e strutturalmente complessi, dove il colore fa davvero il lavoro di separare logica, stringhe e commenti.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Quando usare uno screenshot di codice, uno snippet dal vivo o una gist</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situazione</th><th>Scelta migliore</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situazione">Post sui social media</td><td data-label="Scelta migliore">Screenshot: la maggior parte delle piattaforme non mostra affatto i blocchi di codice</td></tr>
+              <tr><td data-label="Situazione">Presentazione o slide</td><td data-label="Scelta migliore">Screenshot: aspetto coerente indipendentemente dall'allestimento della stanza</td></tr>
+              <tr><td data-label="Situazione">Una chat con un collega che copierà e incollerà</td><td data-label="Scelta migliore">Testo semplice o uno snippet dal vivo: uno screenshot non può essere copiato come codice</td></tr>
+              <tr><td data-label="Situazione">Documentazione o un post sul blog</td><td data-label="Scelta migliore">Un vero blocco di codice: ricercabile, copiabile, accessibile</td></tr>
+              <tr><td data-label="Situazione">Condividere un file completo o un esempio lungo</td><td data-label="Scelta migliore">Una gist o un link al repository: uno screenshot non regge una lunghezza simile</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Social media e app di chat senza supporto al codice</h3>
+          <p>La maggior parte dei social non ha alcun concetto di blocco di codice formattato: incolla codice grezzo in un tweet o in un post e perde tutta l'indentazione, le interruzioni di riga e la colorazione, riducendosi spesso a un muro di testo illeggibile. Uno screenshot aggira del tutto il problema, perché è solo un'immagine e si visualizza in modo identico ovunque si visualizzino le immagini.</p>
+
+          <h3>Quando il destinatario deve davvero usare il codice</h3>
+          <p>Uno screenshot è un'immagine: non si può selezionare, copiare né incollare di nuovo in un editor. Se la persona a cui lo invii deve davvero eseguire, modificare o copiare il codice (non solo guardarlo), testo semplice, uno snippet dal vivo in un'app di chat che lo supporta o il link a una gist la servono molto meglio di un'immagine da ridigitare a mano.</p>
+
+          <h3>Documentazione e scrittura tecnica</h3>
+          <p>Un vero blocco di codice testuale nella documentazione è ricercabile, accessibile agli screen reader e copiabile: tutte cose a cui uno screenshot rinuncia. Gli screenshot si guadagnano il posto nella documentazione soprattutto per mostrare ciò in cui sono davvero bravi: un'interfaccia annotata, un diff evidenziato in un certo modo o codice come appare in un editor specifico a scopo illustrativo, non perché il lettore lo copi.</p>
+
+          <h3>Esempi più lunghi e file completi</h3>
+          <p>Uno screenshot di codice funziona meglio per un estratto mirato che qualcuno può leggere in uno o due colpi d'occhio; per un file intero, un esempio con più funzioni o qualunque cosa richieda di scorrere un'immagine molto alta, una gist o un link a un repository è la scelta più pratica e utilizzabile.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni negli screenshot di codice (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte degli screenshot di codice difficili da leggere condivide una di una manciata di cause evitabili.</p>
+
+          <h3>Includere molto più codice di quanto serva al punto</h3>
+          <p>Uno screenshot con 40 righe di contesto per mostrare una sola riga rilevante costringe il lettore a cercare ciò che conta. Taglia solo le righe che fanno il punto: import, codice standard e funzioni non correlate si possono quasi sempre togliere senza perdere il messaggio.</p>
+
+          <h3>Scegliere il linguaggio sbagliato per l'evidenziatore di sintassi</h3>
+          <p>Una selezione di linguaggio rimasta da uno snippet precedente, o la scelta dell'opzione dal nome più simile invece di quella esatta, produce un'evidenziazione sottilmente sbagliata, facile da non notare a colpo d'occhio ma che appare strana a chiunque conosca il linguaggio. Ricontrolla che il linguaggio corrisponda prima di esportare, soprattutto dopo aver incollato un modello.</p>
+
+          <h3>Un tema che stona con il luogo in cui viene pubblicato</h3>
+          <p>Uno screenshot a tema scuro inserito in una presentazione o in un documento altrimenti chiaro spicca come un rettangolo stridente invece di integrarsi nel design circostante: GitHub Light esiste proprio per questo caso, quindi vale la pena passarci invece di usare per abitudine un tema scuro ovunque.</p>
+
+          <h3>Esportare a una dimensione troppo piccola per essere letta una volta condivisa</h3>
+          <p>Ciò che è nitido e leggibile a dimensione piena sul tuo schermo può diventare illeggibile una volta che è una miniatura in un'app di chat o un piccolo incorporamento in un post social. Se sai dove sta andando, controlla l'immagine più o meno a quella dimensione di visualizzazione prima di darla per finita: uno snippet più breve, con testo più grande, comunica spesso meglio di uno più lungo rimpicciolito per farlo entrare.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="colorfy">
+      <details class="golden-rules-article">
+        <summary>1. HEX, RGB, HSB e HSL: cosa significa davvero ogni codice colore</summary>
+        <div class="golden-rules-body">
+          <p>Ogni colore su uno schermo si riduce agli stessi valori di luce rossa/verde/blu: HEX, RGB, HSB e HSL sono solo quattro modi diversi di scrivere lo stesso colore, ciascuno adatto a un tipo di lavoro diverso.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Formato</th><th>Ideale per</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formato">HEX (<code>#FF8A4C</code>)</td><td data-label="Ideale per">CSS, strumenti di design, ovunque sia previsto un unico codice compatto</td></tr>
+              <tr><td data-label="Formato">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="Ideale per">Codice che costruisce i colori da numeri separati, o che miscela/calcola sui canali</td></tr>
+              <tr><td data-label="Formato">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="Ideale per">Regolare luminosità o saturazione di un colore mantenendo la stessa tonalità</td></tr>
+              <tr><td data-label="Formato">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="Ideale per">Schiarire o scurire un colore in modo prevedibile per gli stati hover/attivo</td></tr>
+            </tbody>
+          </table>
+
+          <h3>HEX: il formato compatto e supportato ovunque, predefinito</h3>
+          <p>Un codice HEX comprime rosso, verde e blu in una sola stringa di sei cifre, ed è per questo che è il formato che quasi tutti gli strumenti di design, i fogli di stile CSS e gli editor di immagini si aspettano di default. È compatto e facile da incollare, ma i numeri al suo interno (coppie in base 16) non sono qualcosa che la maggior parte delle persone legge a colpo d'occhio come i normali numeri decimali.</p>
+
+          <h3>RGB: gli stessi valori, scritti per esteso</h3>
+          <p>L'RGB scrive gli stessi tre canali che l'HEX codifica, solo come tre normali numeri da 0 a 255 invece di coppie esadecimali compresse: più facile da gestire se regoli a mano un canale o scrivi codice che costruisce un colore da input rosso/verde/blu separati.</p>
+
+          <h3>HSB e HSL: costruiti attorno a come si percepisce davvero il colore</h3>
+          <p>Entrambi dividono il colore in tonalità (il colore vero e proprio, come posizione su una ruota dei colori) e due altre dimensioni che descrivono quanto è vivido o chiaro: HSB usa saturazione e luminosità, HSL usa saturazione e chiarezza. Entrambi sono molto più facili da gestire quando vuoi «lo stesso colore, ma più scuro» o «lo stesso colore, ma più spento»: lasci intatta la tonalità e regoli solo l'altro numero, invece di ricalcolare a mano tre canali RGB separati.</p>
+
+          <h3>Scegliere un formato in Colorfy</h3>
+          <p>Il menu a discesa del formato di Colorfy si applica in una volta sola alla lettura di ogni selettore e di ogni colore salvato: passa a quello che corrisponde a dove stai per incollarlo (HEX per il CSS, HSB/HSL se stai per ritoccare a mano una tinta), invece di convertire tu stesso un codice copiato in seguito.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Riprendere un colore da uno screenshot, una foto o un riferimento di design</summary>
+        <div class="golden-rules-body">
+          <p>Provare a far combaciare un colore a occhio (il blu esatto di un marchio, una tinta da una foto di moodboard, un colore dal sito di un concorrente) a memoria o indovinando un codice HEX raramente va a segno. Campionare il pixel reale è l'unico modo per ottenere il valore preciso.</p>
+
+          <h3>Perché «abbastanza vicino» spesso non basta</h3>
+          <p>Due colori che sembrano quasi identici affiancati possono comunque essere misurabilmente diversi una volta confrontati i loro codici reali: una tonalità diversa in un solo canale RGB è spesso invisibile all'occhio in isolamento, ma diventa evidente nel momento in cui viene posta direttamente accanto al vero riferimento. Il campionamento elimina del tutto le congetture: il selettore rilegge esattamente ciò che c'è nel file, non un'approssimazione.</p>
+
+          <h3>Lavorare da uno screenshot</h3>
+          <p>Uno screenshot di una pagina web, di un'app o del design di qualcun altro viene trattato esattamente come qualsiasi altra immagine: trascinalo dentro, sposta il selettore sul pixel esatto da riprendere e copia il codice. È il modo più affidabile per ricavare un colore di marchio o di interfaccia da un riferimento di cui non hai il file sorgente originale.</p>
+
+          <h3>Attenzione agli artefatti di compressione e illuminazione</h3>
+          <p>Un JPEG molto compresso o una foto scattata con luce colorata/calda può spostare i valori reali dei pixel di un colore rispetto al suo colore «vero» previsto: il vero codice HEX di un logo fotografato sotto luce gialla da interni risulterà un po' più caldo del logo reale. Quando la precisione conta (per esempio per far combaciare un colore ufficiale di un marchio), preferisci campionare da uno screenshot pulito o da una sorgente non compressa piuttosto che da una foto, quando disponibile.</p>
+
+          <h3>Campionare più di un punto per verificare la coerenza</h3>
+          <p>Una singola foto ha spesso più variazione di colore in un'area presumibilmente «uniforme» di quanto sembri a colpo d'occhio: compressione JPEG, sfumature sottili e illuminazione introducono piccole differenze da pixel a pixel. Usare due o tre selettori su punti diversi della stessa area, invece di fidarsi di un solo campione, dà un'idea migliore se si tratta di una vera variazione di colore o solo di rumore.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Costruire una palette riutilizzabile mentre lavori</summary>
+        <div class="golden-rules-body">
+          <p>La palette dei colori salvati di Colorfy esiste proprio per quando prelevi più di un colore da un'immagine e devi poter tornare su tutti più tardi, senza riaprire il file e riselezionare ogni colore da zero.</p>
+
+          <h3>Salvare man mano</h3>
+          <p>Cliccando su «Salva» accanto a un colore campionato lo aggiungi a una palette che resta nel browser, separata dall'immagine stessa: sarà ancora lì la prossima volta che apri Colorfy, anche con un'altra immagine caricata o senza alcuna immagine. Si possono tenere fino a 20 colori alla volta, abbastanza per una palette completa ricavata da diverse immagini di riferimento senza dover prima copiare i codici altrove.</p>
+
+          <h3>Dare un nome a un colore salvato</h3>
+          <p>Facendo doppio clic su un colore salvato puoi dargli un nome breve (fino a 25 caratteri), utile quando una palette ha più di un paio di voci e «il terzo arancione» smette di essere un modo affidabile per distinguerle. Il nome compare come tooltip al passaggio del mouse, così i campioni restano visivamente puliti ma sono facili da identificare per nome quando serve.</p>
+
+          <h3>Svuotare una palette</h3>
+          <p>Rimuovere un colore salvato alla volta funziona con lo stesso pulsante «×» usato da ogni elenco di file del sito. Tenendo premuto Maiusc mentre clicchi su quel pulsante, invece, cancelli tutti i colori salvati in una volta, compreso quello cliccato: la strada più rapida quando la palette di un progetto concluso non serve più e preferisci iniziare il prossimo vuoto anziché rimuovere ogni voce singolarmente.</p>
+
+          <h3>Quando vale la pena tenere aperta una palette</h3>
+          <p>Una palette salvata è più utile per un progetto in corso (costruire un set coerente di colori di marchio o interfaccia nell'arco di più sessioni) piuttosto che per una singola ricerca di colore, dove copiare direttamente il codice e andare avanti è più semplice che salvarlo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Confrontare colori affiancati con più selettori</summary>
+        <div class="golden-rules-body">
+          <p>Un singolo selettore basta per prendere un colore, ma confrontare due o più colori della stessa immagine (controllare il contrasto, far combaciare gli estremi di un gradiente, campionare una palette sparsa su una foto) è molto più semplice con più selettori attivi contemporaneamente.</p>
+
+          <h3>Aggiungere un secondo (o terzo, o quarto) selettore</h3>
+          <p>Fino a 4 selettori possono essere attivi sulla stessa immagine contemporaneamente, ciascuno numerato in modo che la sua riga di risultato qui sotto sia facile da associare al suo anello sull'immagine. Aggiungine uno con il pulsante «+» sotto l'elenco dei selettori, oppure tieni premuto Maiusc e clicca ovunque sull'immagine per inserire direttamente in quel punto un nuovo selettore numerato: l'opzione più rapida quando sai già più o meno dove vuoi campionare.</p>
+
+          <h3>Leggere i risultati insieme</h3>
+          <p>Ogni selettore attivo ha la propria riga con il proprio codice e il pulsante Salva, tutti visibili contemporaneamente: utile per capire se due aree che nell'immagine sembrano dello stesso colore hanno davvero lo stesso codice, o per costruire in un solo passaggio una piccola palette multicolore da un'immagine, invece di campionare, salvare e ricampionare uno alla volta.</p>
+
+          <h3>Riposizionare senza aggiungerne altre</h3>
+          <p>Un semplice clic (senza Maiusc) sposta il selettore attivo più di recente invece di aggiungerne uno nuovo: utile per mettere a punto un punto di campionamento senza dover rimuovere e riaggiungere un selettore. Trascinare direttamente un selettore, o usare i tasti freccia una volta che ha il focus, funziona allo stesso modo per regolazioni fini a livello di pixel.</p>
+
+          <h3>Quando un selettore singolo resta la scelta giusta</h3>
+          <p>Per prelevare un solo colore al volo, aggiungere selettori in più è un peso inutile: servono soprattutto quando devi confrontare, contrapporre o raccogliere più di un colore dalla stessa immagine in una sessione.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errori comuni nella scelta dei colori (e come evitarli)</summary>
+        <div class="golden-rules-body">
+          <p>La maggior parte delle scelte di colore imprecise risale a una manciata di abitudini evitabili, per lo più su dove esattamente si posa il selettore e non su qualcosa che non va nello strumento stesso.</p>
+
+          <h3>Campionare proprio su un bordo</h3>
+          <p>Un pixel sul confine tra due colori è spesso un colore intermedio sfumato per antialiasing, non un campione netto di nessuno dei due lati: è particolarmente facile quando si è zoomati fuori e si clicca vicino al contorno di una forma. Zooma (ingrandisci l'anteprima) e mira all'interno uniforme dell'area che vuoi davvero, ben lontano da qualsiasi bordo.</p>
+
+          <h3>Fidarsi di un'immagine molto compressa</h3>
+          <p>La compressione JPEG può spostare leggermente i valori dei singoli pixel dal colore originale, soprattutto nelle aree movimentate o dettagliate di una foto: un'area colorata «uniforme» può presentare un piccolo rumore da pixel a pixel che non c'era nella scena originale. Quando la precisione conta, preferisci una sorgente PNG o altra senza perdita a un JPEG compresso, se disponibile.</p>
+
+          <h3>Non tenere conto del proprio schermo</h3>
+          <p>Il codice che Colorfy rilegge è il valore esatto memorizzato nel file immagine, ma come appare davvero quel colore dipende dallo schermo che lo mostra, e gli schermi variano in calibrazione. Se un colore campionato deve corrispondere esattamente a un riferimento fisico (materiale stampato, un prodotto fisico), considera il codice campionato come l'accurato punto di partenza e aspettati di verificare il risultato finale rispetto al riferimento fisico stesso, non solo a come appare sul tuo monitor.</p>
+
+          <h3>Dimenticare che i colori salvati restano da un'immagine all'altra</h3>
+          <p>Poiché la palette salvata non è legata a nessuna immagine caricata, è facile ritrovarsi con colori di più progetti non correlati mescolati nella stessa palette se non la svuoti ogni tanto. Maiusc+clic sul pulsante di rimozione di un colore salvato cancella l'intera palette in un colpo quando inizi un nuovo progetto non correlato, invece di lasciare che colori vecchi e nuovi si accumulino insieme.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
+  </main>
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Azienda</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">Il nostro universo</span><span class="footer-link-plain">Chi siamo</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">Già risposto</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">Manuale galattico</span><span class="footer-link-plain">Termini di utilizzo</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">Protocollo alieno sulla privacy</span><span class="footer-link-plain">Informativa sulla privacy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Registro dei cookie</span><span class="footer-link-plain">Cookie Policy</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Per iniziare con</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Mettiti in contatto con noi</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Unisciti al nostro Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=67" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
+</body>
+</html>
