@@ -263,7 +263,7 @@
     resultsToggle.textContent = collapsed ? "+" : "−";
     resultsToggle.setAttribute("aria-expanded", String(!collapsed));
     resultsToggle.setAttribute("aria-label", bcT(collapsed ? "Expand result" : "Minimize result"));
-    resultsToggle.title = collapsed ? "Expand result" : "Minimize result";
+    resultsToggle.title = collapsed ? bcT("Expand result") : bcT("Minimize result");
   });
 
   /* Renders a finished GIF blob into the results panel — used both

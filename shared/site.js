@@ -147,7 +147,7 @@ document.addEventListener("click", (e) => {
        clicked. Forward it as a query param so golden-rules/index.html
        can open the right tab on load. */
     const tool = golden.dataset.tool;
-    location.href = tool ? `/golden-rules/?tool=${encodeURIComponent(tool)}` : "/golden-rules/";
+    location.href = bcLangPath("/golden-rules/") + (tool ? `?tool=${encodeURIComponent(tool)}` : "");
   }
 });
 

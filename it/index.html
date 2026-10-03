@@ -3185,9 +3185,15 @@ function pathToName(pathname){
    instead of gotoPage()'s normal in-page section swap. */
 const MIGRATED_PAGES = { about: "/about/", faq: "/faq/", terms: "/terms/", privacy: "/privacy/", cookies: "/cookies/", exif: "/cleanly/", combine: "/combine/", compress: "/compress/", convert: "/convert/", context: "/context/", "golden-rules": "/golden-rules/" };
 
+function bcLangPath(path){
+  const lang = window.BC_LANG;
+  if (lang && Array.isArray(window.BC_LANG_PAGES) && window.BC_LANG_PAGES.includes(path)) return "/" + lang + path;
+  return path;
+}
+
 function gotoPage(name){
   if (MIGRATED_PAGES[name]){
-    location.href = MIGRATED_PAGES[name];
+    location.href = bcLangPath(MIGRATED_PAGES[name]);
     return;
   }
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -3424,7 +3430,7 @@ if (VALID_PAGES.includes(startPage)) {
     peek.setAttribute("aria-label", `Preview of the ${name} tool`);
     title.textContent = name;
     desc.textContent = btn.dataset.previewDesc;
-    openLink.href = btn.dataset.previewHref;
+    openLink.href = bcLangPath(btn.dataset.previewHref);
     lastFocused = btn;
     overlay.hidden = false;
     document.body.style.overflow = "hidden";
