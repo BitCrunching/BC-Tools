@@ -259,14 +259,14 @@
      for it to race against. */
   async function loadFileInner(file, restoreState){
     if (!isPdfFile(file)){
-      status.textContent = "Context only works with PDF files — \"" + file.name + "\" isn't one.";
+      status.textContent = bcT("Context only works with PDF files — \"{0}\" isn't one.", [file.name]);
       return;
     }
     if (!window.pdfjsLib){
-      status.textContent = "PDF engine failed to load.";
+      status.textContent = bcT("PDF engine failed to load.");
       return;
     }
-    status.textContent = "Preparing \"" + file.name + "\"...";
+    status.textContent = bcT("Preparing \"{0}\"...", [file.name]);
     currentFile = file;
     textBoxes = restoreState ? (restoreState.textBoxes || []) : [];
     signatureBoxes = restoreState ? (restoreState.signatureBoxes || []) : [];
@@ -291,7 +291,7 @@
       doc = await pdfjsLib.getDocument({ data: bytes }).promise;
     } catch (err){
       console.error(err);
-      status.textContent = "Couldn't read that PDF — it may be corrupted or password-protected.";
+      status.textContent = bcT("Couldn't read that PDF — it may be corrupted or password-protected.");
       return;
     }
     pdfjsDoc = doc;
@@ -654,7 +654,7 @@
 
     const img = document.createElement("img");
     img.src = box.dataUrl;
-    img.alt = "Signature";
+    img.alt = bcT("Signature");
     el.appendChild(img);
 
     const handle = document.createElement("span");
@@ -774,7 +774,7 @@
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
     shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    shapeBtn.title = "Add shape (H) — " + activeShapeKind;
+    shapeBtn.title = bcT("Add shape (H) — {0}", [bcT(activeShapeKind)]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -880,7 +880,7 @@
     const resizeHandle = document.createElement("span");
     resizeHandle.className = "context-text-resize-handle bc-obj-resize-handle";
     resizeHandle.setAttribute("aria-hidden", "true");
-    resizeHandle.setAttribute("title", "Drag to resize — hold Shift to keep it symmetric");
+    resizeHandle.setAttribute("title", bcT("Drag to resize — hold Shift to keep it symmetric"));
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);
 
@@ -1469,7 +1469,7 @@
   /* Trigger always reads "Rename file" — the actual current name shows
      inside the popup itself once opened, not on the button. */
   function updateFilenameTriggerLabel(){
-    filenameTriggerLabel.textContent = "Rename file";
+    filenameTriggerLabel.textContent = bcT("Rename file");
   }
 
   /* The popup defaults to right:0 on its dropdown container, which only
@@ -1571,7 +1571,7 @@
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
     downloadBtn.disabled = true;
-    status.textContent = "Preparing your PDF...";
+    status.textContent = bcT("Preparing your PDF...");
     startPrivacyCheck();
 
     try {
@@ -1710,7 +1710,7 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        status.textContent = "Done. Downloaded your edited PDF.";
+        status.textContent = bcT("Done. Downloaded your edited PDF.");
       }
 
       /* iOS Safari doesn't reliably honor <a download> for PDFs — it
@@ -1750,7 +1750,7 @@
       }
     } catch (err){
       console.error(err);
-      status.textContent = "Something went wrong — please try again.";
+      status.textContent = bcT("Something went wrong — please try again.");
     } finally {
       downloadBtn.disabled = false;
       finishPrivacyCheck(document.getElementById("ctPrivacyBadge"));
@@ -1998,7 +1998,7 @@
       if (!file) return;
       const uploadError = document.getElementById("ctSigUploadError");
       if (file.type === "image/gif" || /\.gif$/i.test(file.name)){
-        uploadError.textContent = "GIF files can't be used here — please upload a JPG, PNG, WEBP or HEIC photo.";
+        uploadError.textContent = bcT("GIF files can't be used here — please upload a JPG, PNG, WEBP or HEIC photo.");
         uploadError.hidden = false;
         return;
       }
@@ -2021,7 +2021,7 @@
           console.error(err);
           setCropLoading(false);
           if (!sigStepCrop.hidden) showSigStep(sigStepChoose, true);
-          alert("Couldn't read that HEIC file — it may be corrupted or unsupported.");
+          alert(bcT("Couldn't read that HEIC file — it may be corrupted or unsupported."));
         });
         return;
       }
@@ -2092,8 +2092,8 @@
       }
       const variance = n ? (sumSq / n) - Math.pow(sumL / n, 2) : 0;
 
-      setBadge(sigBadgeLight, avgLum > 70 && avgLum < 235, "Lighting good", avgLum <= 70 ? "Too dark" : "Too bright");
-      setBadge(sigBadgeBlur, variance > 90, "Sharp", "Hold steady / move closer");
+      setBadge(sigBadgeLight, avgLum > 70 && avgLum < 235, bcT("Lighting good"), bcT(avgLum <= 70 ? "Too dark" : "Too bright"));
+      setBadge(sigBadgeBlur, variance > 90, bcT("Sharp"), bcT("Hold steady / move closer"));
 
       sigCameraRaf = requestAnimationFrame(analyzeCameraFrame);
     }
@@ -2102,7 +2102,7 @@
       sigCameraError.hidden = true;
       showSigStep(sigStepCamera);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-        sigCameraError.textContent = "Camera access isn't available in this browser — try Upload instead.";
+        sigCameraError.textContent = bcT("Camera access isn't available in this browser — try Upload instead.");
         sigCameraError.hidden = false;
         return;
       }
@@ -2113,7 +2113,7 @@
         sigVideo.srcObject = sigCameraStream;
         sigCameraRaf = requestAnimationFrame(analyzeCameraFrame);
       } catch (err){
-        sigCameraError.textContent = "Couldn't access the camera — check permissions, or use Upload instead.";
+        sigCameraError.textContent = bcT("Couldn't access the camera — check permissions, or use Upload instead.");
         sigCameraError.hidden = false;
       }
     });
@@ -2700,8 +2700,8 @@
         else if ((k === "z" && e.shiftKey) || (k === "y" && !e.metaKey)){ e.preventDefault(); redo(); }
       });
       const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-      undoBtn.title = isMac ? "Undo (⌘Z)" : "Undo (Ctrl+Z)";
-      redoBtn.title = isMac ? "Redo (⌘⇧Z)" : "Redo (Ctrl+Y)";
+      undoBtn.title = bcT(isMac ? "Undo (⌘Z)" : "Undo (Ctrl+Z)");
+      redoBtn.title = bcT(isMac ? "Redo (⌘⇧Z)" : "Redo (Ctrl+Y)");
       let hintAnim = null;
       const brushRadius = () => Math.max(6, sigCleanCanvas.width * 0.02);
       const cssScale = () => sigCleanCanvas.getBoundingClientRect().width / sigCleanCanvas.width;

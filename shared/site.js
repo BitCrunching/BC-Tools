@@ -93,10 +93,14 @@ window.addEventListener("pagehide", () => {
    window.BC_LANG, window.BC_LANG_PAGES (paths that have a translated copy)
    and window.BC_I18N (English sentence -> translation). bcT() looks a
    sentence up there and returns it unchanged when there's no entry (or on
-   an English page), so wrapping a string in bcT() is always safe. */
-function bcT(s){
+   an English page), so wrapping a string in bcT() is always safe.
+   Strings with values use {name} placeholders: bcT(message, {n}).
+   A translation may leave a placeholder out (handy to dodge plural forms). */
+function bcT(s, vars){
   const dict = window.BC_I18N;
-  return (dict && dict[s]) || s;
+  let out = (dict && dict[s]) || s;
+  if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  return out;
 }
 /* Prefixes a site path with the current language folder when that page
    has a translated copy (e.g. "/convert/" -> "/cs/convert/"). */

@@ -793,9 +793,9 @@ console.log(a.next.value);`
        download status that started in the meantime doesn't get wiped. */
     if (hodStatusTimer){ clearTimeout(hodStatusTimer); hodStatusTimer = null; }
     if (statusEl && held){
-      statusEl.textContent = "toggle on";
+      statusEl.textContent = bcT("toggle on");
       hodStatusTimer = setTimeout(() => {
-        if (statusEl.textContent === "toggle on") statusEl.textContent = "";
+        if (statusEl.textContent === bcT("toggle on")) statusEl.textContent = "";
         hodStatusTimer = null;
       }, 2000);
     }
@@ -1131,8 +1131,8 @@ console.log(a.next.value);`
     exportFormat = fmt;
     formatPngBtn.setAttribute("aria-pressed", String(fmt === "png"));
     formatSvgBtn.setAttribute("aria-pressed", String(fmt === "svg"));
-    downloadBtn.textContent = fmt === "png" ? "Download PNG" : "Download SVG";
-    if (copyBtn) copyBtn.title = fmt === "png" ? "Copy PNG to clipboard" : "Copy SVG to clipboard";
+    downloadBtn.textContent = bcT(fmt === "png" ? "Download PNG" : "Download SVG");
+    if (copyBtn) copyBtn.title = bcT(fmt === "png" ? "Copy PNG to clipboard" : "Copy SVG to clipboard");
   }
   if (formatPngBtn && formatSvgBtn){
     formatPngBtn.addEventListener("click", () => setExportFormat("png"));
@@ -1557,18 +1557,18 @@ ${titlebarSvg}
 
   downloadBtn.addEventListener("click", async () => {
     setExportBtnsDisabled(true);
-    statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+    statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
     startPrivacyCheck();
     try {
       const { blob, ext } = await renderCodifyExport();
       const outName = (fileNameInput.value.trim() || "codify-snippet") + "." + ext;
       downloadBlob(blob, outName);
-      statusEl.textContent = "Done.";
+      statusEl.textContent = bcT("Done.");
     } catch (err){
       console.error(err);
       statusEl.textContent = err && err.message === "not-ready"
-        ? "Export isn't ready yet — try again in a moment."
-        : "Something went wrong generating the " + (exportFormat === "svg" ? "SVG" : "image") + ".";
+        ? bcT("Export isn't ready yet — try again in a moment.")
+        : bcT("Something went wrong generating the {0}.", [bcT(exportFormat === "svg" ? "SVG" : "image")]);
     } finally {
       setExportBtnsDisabled(codeInput.value.length === 0);
       finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
@@ -1586,21 +1586,21 @@ ${titlebarSvg}
   if (copyBtn){
     copyBtn.addEventListener("click", async () => {
       setExportBtnsDisabled(true);
-      statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+      statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
       try {
         const { blob, svgString, ext } = await renderCodifyExport();
         if (ext === "svg"){
           await navigator.clipboard.writeText(svgString);
-          statusEl.textContent = "SVG markup copied to clipboard.";
+          statusEl.textContent = bcT("SVG markup copied to clipboard.");
         } else {
           await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          statusEl.textContent = "PNG copied to clipboard.";
+          statusEl.textContent = bcT("PNG copied to clipboard.");
         }
       } catch (err){
         console.error(err);
         statusEl.textContent = err && err.message === "not-ready"
-          ? "Export isn't ready yet — try again in a moment."
-          : "Couldn't copy — your browser may not allow clipboard access here.";
+          ? bcT("Export isn't ready yet — try again in a moment.")
+          : bcT("Couldn't copy — your browser may not allow clipboard access here.");
       } finally {
         setExportBtnsDisabled(codeInput.value.length === 0);
       }

@@ -31,6 +31,13 @@ SITE = "https://bitcrunching.com"
 PAGES = [
     "index.html",
     "convert/index.html",
+    "compress/index.html",
+    "combine/index.html",
+    "cleanly/index.html",
+    "context/index.html",
+    "congify/index.html",
+    "coudio/index.html",
+    "codify/index.html",
 ]
 
 SKIP_TEXT_IN = {"script", "style", "code", "pre", "textarea", "svg", "noscript"}
@@ -161,6 +168,24 @@ def build_page(rel, tr, lang, built_pages, missing):
     return result
 
 
+def sync_english_alternates(lang):
+    """Make every English source page list its translation (hreflang), which
+    also is what the nav's language button reads. Idempotent."""
+    for rel in PAGES:
+        path = ROOT / rel
+        html = path.read_text(encoding="utf-8")
+        en_url = SITE + page_url(rel)
+        block = (
+            f'<link rel="alternate" hreflang="en" href="{en_url}">\n'
+            f'<link rel="alternate" hreflang="{lang}" href="{SITE}/{lang}{page_url(rel)}">\n'
+            f'<link rel="alternate" hreflang="x-default" href="{en_url}">\n'
+        )
+        cleaned = re.sub(r'<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", html)
+        new = re.sub(r'(<link rel="canonical"[^>]*>\n?)', lambda m: m.group(1) + block, cleaned, count=1)
+        if new != html:
+            path.write_text(new, encoding="utf-8")
+
+
 def write_js_dictionary(lang, tr, pages):
     out_dir = ROOT / "shared" / "i18n"
     out_dir.mkdir(exist_ok=True)
@@ -175,6 +200,36 @@ def write_js_dictionary(lang, tr, pages):
     )
 
 
+JS_STR = re.compile(r'bcT\(\s*("(?:[^"\\]|\\.)*")')
+BANNER = re.compile(r'bcSetupHelpBanner\("[^"]+",.*?\n\s*\]\);', re.S)
+LIT = re.compile(r'"((?:[^"\\]|\\.)*)"')
+
+
+def unescape(lit):
+    """Body of a double-quoted JS string literal -> its real text."""
+    return re.sub(r"\\(.)", lambda m: {"n": "\n", "t": "\t"}.get(m.group(1), m.group(1)), lit)
+
+
+def js_strings():
+    """English strings the page scripts translate at runtime: bcT("...") calls
+    plus the help-banner step texts (translated centrally in site.js)."""
+    found = set()
+    files = [ROOT / "shared" / "site.js"] + [
+        ROOT / Path(p).parent / f"{Path(p).parent.name}-tool.js" for p in PAGES if p != "index.html"
+    ]
+    for f in files:
+        if not f.exists():
+            continue
+        src = f.read_text(encoding="utf-8")
+        for m in JS_STR.finditer(src):
+            found.add(unescape(m.group(1)[1:-1]))
+        for b in BANNER.finditer(src):
+            for lit in LIT.findall(b.group(0).split("[", 1)[1]):
+                if re.search(r"[A-Za-z]{3}", lit):
+                    found.add(unescape(lit))
+    return found
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -183,6 +238,8 @@ def main():
     tr = load(lang)
     built_pages = {page_url(p) for p in PAGES}
     missing = set()
+    if not report:
+        sync_english_alternates(lang)
     for rel in PAGES:
         html = build_page(rel, tr, lang, built_pages, missing)
         if not report:
@@ -192,6 +249,9 @@ def main():
     if not report:
         write_js_dictionary(lang, tr, PAGES)
         print(f"Built {len(PAGES)} page(s) into /{lang}/ and shared/i18n/{lang}.js")
+    for s_ in js_strings():
+        if s_ not in tr and norm(s_) not in tr:
+            missing.add(s_)
     todo = sorted(s for s in missing if s not in tr)
     print(f"{len(todo)} string(s) without a {lang} translation" + (":" if report else " (run with --report to list)"))
     if report:

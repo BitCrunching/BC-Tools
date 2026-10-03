@@ -262,7 +262,7 @@
     const collapsed = resultsEl.hidden = !resultsEl.hidden;
     resultsToggle.textContent = collapsed ? "+" : "−";
     resultsToggle.setAttribute("aria-expanded", String(!collapsed));
-    resultsToggle.setAttribute("aria-label", collapsed ? "Expand result" : "Minimize result");
+    resultsToggle.setAttribute("aria-label", bcT(collapsed ? "Expand result" : "Minimize result"));
     resultsToggle.title = collapsed ? "Expand result" : "Minimize result";
   });
 
@@ -285,8 +285,8 @@
     resultsEl.hidden = false;
     resultsToggle.textContent = "−";
     resultsToggle.setAttribute("aria-expanded", "true");
-    resultsToggle.setAttribute("aria-label", "Minimize result");
-    resultsToggle.title = "Minimize result";
+    resultsToggle.setAttribute("aria-label", bcT("Minimize result"));
+    resultsToggle.title = bcT("Minimize result");
   }
 
   /* ===== file loading ===== */
@@ -307,7 +307,7 @@
     setTimeout(() => {
       if (token !== fileLoadToken || video.readyState > 0) return;
       resetGif();
-      statusEl.textContent = "Couldn't read that video — it may be corrupted or in an unsupported format.";
+      statusEl.textContent = bcT("Couldn't read that video — it may be corrupted or in an unsupported format.");
     }, 8000);
     videoWrap.classList.remove("active");
     scrubberFileName.value = file.name.replace(/\.[^.]+$/, "");
@@ -570,7 +570,7 @@
       const handle = document.createElement("span");
       handle.className = "gif-caption-drag-handle bc-obj-drag-handle";
       handle.setAttribute("role", "slider");
-      handle.setAttribute("aria-label", "Caption position");
+      handle.setAttribute("aria-label", bcT("Caption position"));
       handle.tabIndex = 0;
       handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
       boxEl.appendChild(handle);
@@ -585,14 +585,14 @@
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "gif-caption-remove bc-obj-remove-btn";
-      removeBtn.setAttribute("aria-label", "Remove caption");
+      removeBtn.setAttribute("aria-label", bcT("Remove caption"));
       removeBtn.textContent = "×";
       boxEl.appendChild(removeBtn);
 
       const sizeHandle = document.createElement("span");
       sizeHandle.className = "gif-caption-resize-handle bc-obj-resize-handle";
       sizeHandle.setAttribute("role", "slider");
-      sizeHandle.setAttribute("aria-label", "Caption text size");
+      sizeHandle.setAttribute("aria-label", bcT("Caption text size"));
       sizeHandle.tabIndex = 0;
       boxEl.appendChild(sizeHandle);
 
@@ -865,7 +865,7 @@
     if (!video.src || duration <= 0) return;
     previewPlaying = true;
     previewPlayBtn.textContent = "❚❚";
-    previewPlayBtn.setAttribute("aria-label", "Pause preview");
+    previewPlayBtn.setAttribute("aria-label", bcT("Pause preview"));
     if (orderMode === "normal"){
       if (video.currentTime < trimStart || video.currentTime >= trimEnd){
         video.currentTime = trimStart;
@@ -890,7 +890,7 @@
     previewRafId = null;
     video.pause();
     previewPlayBtn.textContent = "▶";
-    previewPlayBtn.setAttribute("aria-label", "Play preview");
+    previewPlayBtn.setAttribute("aria-label", bcT("Play preview"));
   }
 
   previewPlayBtn.addEventListener("click", () => {
@@ -1171,7 +1171,7 @@
   ];
   function renderStrokeWidthOption(opt, btn){
     captionStrokeWidthBtnLine.style.height = opt.lineHeight;
-    btn.setAttribute("aria-label", "Stroke thickness: " + opt.label);
+    btn.setAttribute("aria-label", bcT("Stroke thickness: {0}", [bcT(opt.label)]));
   }
   const strokeWidthControl = bcRegisterOptionChangeBtn(captionStrokeWidthBtn, STROKE_WIDTH_OPTIONS, (opt) => {
     const cap = findCaptionById(selectedCaptionId);
@@ -1202,7 +1202,7 @@
      corner-brackets icon — only the centered label text changes. */
   function renderCropOption(opt, btn){
     cropFreeIconNumber.textContent = opt.crop === "free" ? "0" : opt.label;
-    btn.setAttribute("aria-label", "Aspect ratio: " + opt.label);
+    btn.setAttribute("aria-label", bcT("Aspect ratio: {0}", [bcT(opt.label)]));
   }
   const cropControl = bcRegisterOptionChangeBtn(cropBtn, CROP_OPTIONS, (opt) => {
     cropMode = opt.crop;
@@ -1304,7 +1304,7 @@
        "back to a blank slate" reset) — set the message after calling it,
        not before, or resetGif() immediately wipes it back out. */
     resetGif();
-    statusEl.textContent = "Couldn't read that video — it may be corrupted or in an unsupported format.";
+    statusEl.textContent = bcT("Couldn't read that video — it may be corrupted or in an unsupported format.");
   });
 
   /* Same "×" remove pattern as Context's ctRemoveBtn — clears the
@@ -1504,7 +1504,7 @@
     if (!video.src || trimEnd <= trimStart) return;
     stopPreviewPlayback();
     convertBtn.disabled = true;
-    statusEl.textContent = "Loading encoder...";
+    statusEl.textContent = bcT("Loading encoder...");
     startPrivacyCheck();
 
     try {
@@ -1572,7 +1572,7 @@
       }
 
       for (let i = 0; i < orderedTimes.length; i++){
-        statusEl.textContent = "Extracting frame " + (i + 1) + " of " + orderedTimes.length + "...";
+        statusEl.textContent = bcT("Extracting frame {0} of {1}...", [i + 1, orderedTimes.length]);
         await seekTo(orderedTimes[i]);
         ctx.drawImage(video, cropRect.sx, cropRect.sy, cropRect.sw, cropRect.sh, 0, 0, outputWidth, outHeight);
         drawAllCaptions(ctx, outputWidth, outHeight, captionScale);
@@ -1580,11 +1580,11 @@
       }
 
       gif.on("progress", (p) => {
-        statusEl.textContent = "Encoding GIF... " + Math.round(p * 100) + "%";
+        statusEl.textContent = bcT("Encoding GIF... {0}%", [Math.round(p * 100)]);
       });
 
       gif.on("finished", async (blob) => {
-        statusEl.textContent = "Done.";
+        statusEl.textContent = bcT("Done.");
 
         recentWidth = outputWidth;
         try { localStorage.setItem(RECENT_WIDTH_KEY, String(outputWidth)); } catch (err) { /* skip */ }
@@ -1601,7 +1601,7 @@
 
       gif.render();
     } catch (err){
-      statusEl.textContent = "Something went wrong converting this video.";
+      statusEl.textContent = bcT("Something went wrong converting this video.");
       convertBtn.disabled = false;
       finishPrivacyCheck(document.getElementById("gifPrivacyBadge"), "convert");
     }
