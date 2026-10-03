@@ -80,6 +80,7 @@
 <link rel="canonical" href="https://bitcrunching.com/">
 <link rel="alternate" hreflang="en" href="https://bitcrunching.com/">
 <link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
@@ -3518,15 +3519,15 @@ if (VALID_PAGES.includes(startPage)) {
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-btn")) return;
     const current = document.documentElement.lang || "en";
-    const other = [...document.querySelectorAll('link[rel="alternate"][hreflang]')]
-      .find(l => l.hreflang !== current && l.hreflang !== "x-default");
-    if (!other) return;
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default");
+    if (alts.length < 2) return;
+    const other = alts[(alts.findIndex(l => l.hreflang === current) + 1) % alts.length];
     const link = document.createElement("a");
     link.className = "nav-theme-btn nav-lang-btn";
     link.href = new URL(other.href, location.href).pathname + location.search;
     link.hreflang = other.hreflang;
     link.textContent = other.hreflang.toUpperCase();
-    link.title = other.hreflang === "cs" ? "Česky" : "English";
+    link.title = { cs: "Česky", pl: "Polski" }[other.hreflang] || "English";
     link.setAttribute("aria-label", link.title);
     link.addEventListener("click", () => { try { localStorage.setItem("bc-lang", other.hreflang); } catch (e) { /* storage unavailable */ } });
     nav.insertBefore(link, nav.firstChild);

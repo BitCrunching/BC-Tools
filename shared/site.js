@@ -1433,15 +1433,15 @@ bcRegisterEscapable(
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-btn")) return;
     const current = document.documentElement.lang || "en";
-    const other = [...document.querySelectorAll('link[rel="alternate"][hreflang]')]
-      .find(l => l.hreflang !== current && l.hreflang !== "x-default");
-    if (!other) return;
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default");
+    if (alts.length < 2) return;
+    const other = alts[(alts.findIndex(l => l.hreflang === current) + 1) % alts.length];
     const link = document.createElement("a");
     link.className = "nav-theme-btn nav-lang-btn";
     link.href = new URL(other.href, location.href).pathname + location.search;
     link.hreflang = other.hreflang;
     link.textContent = other.hreflang.toUpperCase();
-    link.title = other.hreflang === "cs" ? "Česky" : "English";
+    link.title = { cs: "Česky", pl: "Polski" }[other.hreflang] || "English";
     link.setAttribute("aria-label", link.title);
     link.addEventListener("click", () => { try { localStorage.setItem("bc-lang", other.hreflang); } catch (e) { /* storage unavailable */ } });
     nav.insertBefore(link, nav.firstChild);

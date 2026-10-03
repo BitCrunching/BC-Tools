@@ -67,6 +67,18 @@ TOKEN = re.compile(
 ATTR = re.compile(r"""([\w:-]+)(\s*=\s*)(?:"([^"]*)"|'([^']*)')""")
 
 
+def all_langs():
+    return sorted(f.stem for f in (ROOT / "translations").glob("*.json") if not f.name.startswith("."))
+
+
+def alternate_block(rel):
+    en_url = SITE + page_url(rel)
+    out = f'<link rel="alternate" hreflang="en" href="{en_url}">\n'
+    for l in all_langs():
+        out += f'<link rel="alternate" hreflang="{l}" href="{SITE}/{l}{page_url(rel)}">\n'
+    return out + f'<link rel="alternate" hreflang="x-default" href="{en_url}">\n'
+
+
 def norm(s):
     return re.sub(r"\s+", " ", s).strip()
 
@@ -163,14 +175,7 @@ def build_page(rel, tr, lang, built_pages, missing):
     result = re.sub(r'[ \t]*<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", result)
 
     # <head> additions: alternate links + the language dictionary for bcT()
-    en_url = SITE + page_url(rel)
-    cs_url = SITE + f"/{lang}" + page_url(rel)
-    alternates = (
-        f'<link rel="alternate" hreflang="en" href="{en_url}">\n'
-        f'<link rel="alternate" hreflang="{lang}" href="{cs_url}">\n'
-        f'<link rel="alternate" hreflang="x-default" href="{en_url}">\n'
-        f'<script src="/shared/i18n/{lang}.js?v=1"></script>\n'
-    )
+    alternates = alternate_block(rel) + f'<script src="/shared/i18n/{lang}.js?v=1"></script>\n'
     result = re.sub(r"(<link rel=\"canonical\"[^>]*>\s*)", lambda mm: mm.group(1) + alternates, result, count=1)
     if alternates not in result:  # no canonical tag on the page
         result = result.replace("</head>", alternates + "</head>", 1)
@@ -183,12 +188,7 @@ def sync_english_alternates(lang):
     for rel in PAGES:
         path = ROOT / rel
         html = path.read_text(encoding="utf-8")
-        en_url = SITE + page_url(rel)
-        block = (
-            f'<link rel="alternate" hreflang="en" href="{en_url}">\n'
-            f'<link rel="alternate" hreflang="{lang}" href="{SITE}/{lang}{page_url(rel)}">\n'
-            f'<link rel="alternate" hreflang="x-default" href="{en_url}">\n'
-        )
+        block = alternate_block(rel)
         cleaned = re.sub(r'<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", html)
         new = re.sub(r'(<link rel="canonical"[^>]*>\n?)', lambda m: m.group(1) + block, cleaned, count=1)
         if new != html:
