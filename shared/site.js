@@ -88,6 +88,24 @@ window.addEventListener("pagehide", () => {
   try { sessionStorage.setItem(bcScrollKey, String(window.scrollY)); } catch(e){ /* unavailable */ }
 });
 
+/* ===== Translations (see tools/build_translations.py) =====
+   Translated pages (/cs/...) load shared/i18n/<lang>.js first, which sets
+   window.BC_LANG, window.BC_LANG_PAGES (paths that have a translated copy)
+   and window.BC_I18N (English sentence -> translation). bcT() looks a
+   sentence up there and returns it unchanged when there's no entry (or on
+   an English page), so wrapping a string in bcT() is always safe. */
+function bcT(s){
+  const dict = window.BC_I18N;
+  return (dict && dict[s]) || s;
+}
+/* Prefixes a site path with the current language folder when that page
+   has a translated copy (e.g. "/convert/" -> "/cs/convert/"). */
+function bcLangPath(path){
+  const lang = window.BC_LANG;
+  if (lang && Array.isArray(window.BC_LANG_PAGES) && window.BC_LANG_PAGES.includes(path)) return "/" + lang + path;
+  return path;
+}
+
 /* ===== data-goto -> real navigation (no SPA gotoPage() here) ===== */
 const SITE_PATH_MAP = {
   mainpage: "/",
@@ -110,7 +128,7 @@ document.addEventListener("click", (e) => {
   if (gotoEl){
     e.preventDefault();
     if (typeof gtag === "function") gtag("event", "nav_click", { destination: gotoEl.dataset.goto });
-    const target = SITE_PATH_MAP[gotoEl.dataset.goto] || "/";
+    const target = bcLangPath(SITE_PATH_MAP[gotoEl.dataset.goto] || "/");
     location.href = target;
     return;
   }
@@ -292,8 +310,8 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
 
   function render(){
     const [heading, text] = steps[index];
-    stepEl.textContent = toolName.toUpperCase() + "_GUIDE: STEP " + (index + 1) + "/" + steps.length;
-    textEl.textContent = heading + " — " + text;
+    stepEl.textContent = toolName.toUpperCase() + "_GUIDE: " + bcT("STEP") + " " + (index + 1) + "/" + steps.length;
+    textEl.textContent = bcT(heading) + " — " + bcT(text);
     back.disabled = index === 0;
     next.disabled = index === steps.length - 1;
   }
@@ -746,7 +764,7 @@ function showNavTerminal(text){
   const el = document.getElementById("navTerminal");
   const textEl = document.getElementById("navTerminalText");
   if (!el || !textEl) return;
-  textEl.textContent = text;
+  textEl.textContent = bcT(text);
   el.classList.add("show");
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => el.classList.remove("show"), 2200);
@@ -1016,12 +1034,12 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    return allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous";
+    return bcT(allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous");
   }
 
   function renderActionButton(){
     const allOn = analyticsToggle.checked && advertisingToggle.checked;
-    acceptAllBtn.textContent = allOn ? "Disable all" : "Accept All";
+    acceptAllBtn.textContent = bcT(allOn ? "Disable all" : "Accept All");
     acceptAllBtn.classList.toggle("is-disable-all", allOn);
   }
 
@@ -1400,3 +1418,30 @@ bcRegisterEscapable(
   },
   60
 );
+
+/* ===== Language switch =====
+   A page lists its translations as <link rel="alternate" hreflang="..">
+   (the build script writes them). This adds one nav button that links to
+   the other language's copy of the same page; it never redirects on its
+   own and just remembers the last choice. */
+(function(){
+  function addLangButton(){
+    const nav = document.querySelector(".nav-right");
+    if (!nav || nav.querySelector(".nav-lang-btn")) return;
+    const current = document.documentElement.lang || "en";
+    const other = [...document.querySelectorAll('link[rel="alternate"][hreflang]')]
+      .find(l => l.hreflang !== current && l.hreflang !== "x-default");
+    if (!other) return;
+    const link = document.createElement("a");
+    link.className = "nav-theme-btn nav-lang-btn";
+    link.href = new URL(other.href, location.href).pathname + location.search;
+    link.hreflang = other.hreflang;
+    link.textContent = other.hreflang.toUpperCase();
+    link.title = other.hreflang === "cs" ? "Česky" : "English";
+    link.setAttribute("aria-label", link.title);
+    link.addEventListener("click", () => { try { localStorage.setItem("bc-lang", other.hreflang); } catch (e) { /* storage unavailable */ } });
+    nav.insertBefore(link, nav.firstChild);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addLangButton);
+  else addLangButton();
+})();
