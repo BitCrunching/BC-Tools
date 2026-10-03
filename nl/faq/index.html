@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ – BC Tools</title>
+<meta name="description" content="Veelgestelde vragen over BC Tools: gratis, browsergebaseerde afbeeldingstools zonder server.">
+<link rel="canonical" href="https://bitcrunching.com/nl/faq/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/faq/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/faq/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/faq/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/faq/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/faq/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/faq/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/faq/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/faq/">
+<script src="/shared/i18n/nl.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="FAQ – BC Tools">
+<meta property="og:description" content="Veelgestelde vragen over BC Tools: gratis, browsergebaseerde afbeeldingstools zonder server.">
+<meta property="og:url" content="https://bitcrunching.com/nl/faq/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FAQ – BC Tools">
+<meta name="twitter:description" content="Veelgestelde vragen over BC Tools: gratis, browsergebaseerde afbeeldingstools zonder server.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=137">
+<style>
+.faq-group-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.hero + .faq-group-wrap{
+  margin-top:0;
+}
+
+.faq-group-wrap:last-child{
+  margin-bottom:56px;
+}
+
+.faq-group-wrap + .ad-slot-banner{
+  margin:3px auto;
+  line-height:0;
+}
+
+.ad-slot-banner + .faq-group-wrap{
+  margin-top:3px;
+}
+
+.faq-term-panel{
+  max-width:772px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+.faq-term-panel-box{
+  border-radius:16px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
+
+html[data-theme="light"] .faq-term-panel-box{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.faq-term-panel-head{
+  display:flex;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.02em;
+  font-size:14px;
+}
+
+html[data-theme="light"] .faq-term-panel-head{
+  border-bottom-color:rgba(29,36,54,.15);
+  color:#1d2436;
+}
+
+.faq-term-prompt{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.01em;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-q{
+  color:#1d2436;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q::before{
+  content:"> ";
+  opacity:.7;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-a{
+  font-family:var(--bc-mono);
+  color:#e5e7eb;
+  opacity:.85;
+  font-size:14px;
+  line-height:1.6;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-a{
+  color:#1d2436;
+  opacity:.8;
+}
+
+@media (max-width:768px){
+  .faq-term-panel-head,
+  .faq-term-panel-box .faq-item-mainpage .faq-q,
+  .faq-term-panel-box .faq-item-mainpage .faq-a{
+    font-size:12px;
+  }
+}
+
+.faq-list-mainpage{
+  max-width:772px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:grid;
+  gap:28px;
+}
+
+.faq-term-panel-box .faq-list-mainpage{
+  max-width:none;
+  margin:0;
+  padding:20px 20px 24px;
+  gap:22px;
+}
+
+.faq-item-mainpage{
+  padding:0;
+}
+
+.faq-item-mainpage .faq-q{
+  font-weight:700;
+  color:var(--text);
+  margin:0 0 8px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.5;
+}
+
+.faq-item-mainpage .faq-a{
+  color:var(--text);
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">We gebruiken cookies. Kies hieronder welke categorieën je toestaat. Zie onze <a data-goto="cookies">Cookiebeleid</a> voor details.</p>
+  <p class="cookie-banner-text-mobile">Kies welke categorieën je toestaat</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Inhoud van cookie-instellingen in-/uitschakelen" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Kies welke categorieën je toestaat</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Meer over noodzakelijke cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Noodzakelijk (altijd aan)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Hiermee blijven de essentiële dingen werken: je cookiekeuze, je taal en je licht/donker-thema onthouden. Ze kunnen niet worden uitgeschakeld en verlaten, zoals al het andere op deze site, nooit je apparaat.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Meer over analytische cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse - Houd dit uitgeschakeld voor volledige privacy.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Hiermee kunnen we de gebruikerservaring verbeteren door via (Google Analytics) waardevolle gegevens te ontvangen over hoe gebruikers door onze website navigeren. Wil je volledig anoniem blijven, dan raden we aan deze optie uit te schakelen.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Meer over advertentiecookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Advertenties (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Gebruikt door Google AdSense om advertenties te tonen. Momenteel site-breed uitgeschakeld in afwachting van goedkeuring door AdSense, dus deze schakelaar heeft nog geen effect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alles accepteren</button>
+    <button type="button" id="cookieBannerSave">Keuzes bevestigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools-logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Licht en donker thema wisselen" title="Licht en donker thema wisselen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Delen" title="Delen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopiëren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Meer deelopties"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Terug naar de Creative Hub" title="Terug naar de Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Al beantwoord</h1>
+    <p class="lead page-alias">Op aarde ook bekend als de pagina Veelgestelde vragen.</p>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>ALGEMENE_FAQ</div>
+          <div class="faq-list-mainpage">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Slaan jullie mijn bestanden op een server op?</p>
+              <p class="faq-a">Nee. Elke tool draait volledig in je browser. Je bestanden worden lokaal op je apparaat verwerkt en nergens geüpload.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Werkt BC Tools op mobiel?</p>
+              <p class="faq-a">Ja, elke tool werkt in mobiele en desktopbrowsers, zonder dat je iets hoeft te installeren.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Hoe werkt “Verder gaan waar je was gebleven”?</p>
+              <p class="faq-a">De meeste tools slaan je huidige werk lokaal op terwijl je bezig bent: IndexedDB voor bestandsgrote gegevens (je afbeeldingen, pdf's, code), localStorage voor kleine voorkeuren (thema, taal). Het verlaat nooit je apparaat.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wat is Sector 7G?</p>
+              <p class="faq-a">Geclassificeerd. De ware aard is voor mensen verboden terrein tot wij er klaar voor zijn, zei hij.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONVERT_FAQ</div>
+          <div class="faq-list-mainpage convert">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Verlies ik beeldkwaliteit bij het converteren?</p>
+              <p class="faq-a">Converteren naar JPG of WEBP past milde compressie met verlies toe. Converteren naar PNG is verliesvrij.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik meerdere afbeeldingen tegelijk converteren?</p>
+              <p class="faq-a">Ja. Bij 5 of minder afbeeldingen wordt elke afbeelding apart gedownload. Tussen 6 en 20 kun je kiezen voor losse bestanden of één ZIP. Boven 20 wordt alles samen in één ZIP gedownload; op die schaal is er geen optie voor losse bestanden.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Is WEBP beter dan JPG?</p>
+              <p class="faq-a">WEBP bereikt meestal een kleinere bestandsgrootte bij vergelijkbare kwaliteit, maar JPG heeft bredere ondersteuning in oudere toepassingen.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik HEIC-foto's van mijn iPhone converteren?</p>
+              <p class="faq-a">Ja. Zet een .HEIC- of .HEIF-foto erin en kies JPG, PNG of WEBP. Convert decodeert het volledig in je browser, geen app of upload nodig.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMPRESS_FAQ</div>
+          <div class="faq-list-mainpage compress">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Hoeveel zal de afbeelding krimpen?</p>
+              <p class="faq-a">Dat hangt af van de afbeelding en het gekozen niveau, maar meestal is het een vermindering van 30–80% van de oorspronkelijke bestandsgrootte.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Verliest de afbeelding kwaliteit?</p>
+              <p class="faq-a">Een beetje, afhankelijk van het gekozen niveau. Bij een laag niveau is er bijna geen zichtbaar verlies; een hoog niveau geeft grotere besparingen ten koste van kwaliteit.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ondersteunen jullie ook PNG-bestanden?</p>
+              <p class="faq-a">Ja. PNG-bestanden worden voor betere compressie naar JPG geconverteerd, wat hun grootte aanzienlijk verkleint.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMBINE_FAQ</div>
+          <div class="faq-list-mainpage combine">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Maakt de volgorde van de bestanden uit?</p>
+              <p class="faq-a">Ja. Pagina's worden precies in de volgorde van de lijst gecombineerd, dus sleep de bestanden in de gewenste volgorde voordat je combineert.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Is er een limiet aan het aantal pdf's dat ik kan combineren?</p>
+              <p class="faq-a">Er is geen harde limiet, al kunnen zeer grote bestanden iets langer duren omdat alles in je browser wordt verwerkt.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn bestanden?</p>
+              <p class="faq-a">Nee. Alle verwerking gebeurt lokaal in je browser met de File API en JavaScript-bibliotheken (pdf-lib en pdf.js). Je bestanden worden nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CLEANLY_FAQ</div>
+          <div class="faq-list-mainpage cleanly">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Welke metadata vindt deze tool?</p>
+              <p class="faq-a">GPS-locatie, merk en model van de camera, datum en tijd waarop de foto is gemaakt en eventuele bewerkingssoftware die in het bestand is vastgelegd, indien aanwezig.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Vermindert het verwijderen van metadata de beeldkwaliteit?</p>
+              <p class="faq-a">Nee. De afbeelding zelf wordt opnieuw gecodeerd op dezelfde resolutie en bijna oorspronkelijke kwaliteit. Alleen de verborgen metadata wordt verwijderd.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn foto's of de metadata die je vindt?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser met de File API en JavaScript-bibliotheken (exif-js). Je foto's en hun metadata worden nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONTEXT_FAQ</div>
+          <div class="faq-list-mainpage context">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik de tekst bewerken nadat ik hem aan de pdf heb toegevoegd?</p>
+              <p class="faq-a">Ja. Sleep je tekst om hem te verplaatsen, of gebruik de werkbalk om kleur, grootte en stijl op elk moment voor het downloaden te wijzigen.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Slaat deze tool mijn pdf ergens op?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser met de File API en JavaScript-bibliotheken (pdf-lib en pdf.js). Je pdf en alle tekst die je toevoegt worden nooit naar een server geüpload.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik Context op mijn telefoon gebruiken?</p>
+              <p class="faq-a">Ja. Context heeft een speciale mobiele schermvullende editor met knijpzoomen, dus tekst toevoegen werkt op een telefoon net zo goed als op een computer.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONGIFY_FAQ</div>
+          <div class="faq-list-mainpage congify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wat kan Congify converteren?</p>
+              <p class="faq-a">Een videoclip omzetten naar een GIF. Trim het gewenste bereik en kies dan een framerate (5, 10, 15 of 20 fps) en een grootte voordat je converteert.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Waarom is de framerate zo belangrijk voor de bestandsgrootte?</p>
+              <p class="faq-a">Elk extra frame is een volledig extra beeld in het bestand, dus de framerate is de grootste hefboom op de bestandsgrootte. 10 fps is een goede standaard voor de meeste clips.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn video?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser. Je video en de GIF die eruit komt worden nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COUDIO_FAQ</div>
+          <div class="faq-list-mainpage coudio">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Welke audioformaten ondersteunt Coudio?</p>
+              <p class="faq-a">Converteren tussen MP3 en WAV. MP3 is kleiner en speelt overal af; WAV is ongecomprimeerd en beter geschikt voor verdere bewerking.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik meer dan één audiobestand tegelijk converteren?</p>
+              <p class="faq-a">Ja. Elk bestand dat je laadt krijgt een eigen rij met een eigen converteer- en downloadknop, zodat je meerdere bestanden onafhankelijk van elkaar kunt afwerken.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn audiobestanden?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser. Je audio wordt nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODIFY_FAQ</div>
+          <div class="faq-list-mainpage codify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wat levert Codify eigenlijk op?</p>
+              <p class="faq-a">Een opgemaakte screenshot van een codefragment met syntaxiskleuring, geëxporteerd als PNG. Kies een taal en een thema voordat je exporteert.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Waarom is syntaxiskleuring belangrijk voor een screenshot?</p>
+              <p class="faq-a">Het is een echt leesmiddel, geen decoratie: met kleur gemarkeerde trefwoorden, strings en opmerkingen laten je code op vorm en kleur scannen voordat je hem woord voor woord leest.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn code?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser. De code die je typt wordt nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COLORFY_FAQ</div>
+          <div class="faq-list-mainpage colorfy">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wat geeft Colorfy me?</p>
+              <p class="faq-a">Zet een afbeelding erin, sleep de kiezer naar een willekeurige pixel en krijg direct de HEX-, RGB-, HSB- of HSL-code van precies die kleur.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik meer dan één kleur tegelijk bemonsteren?</p>
+              <p class="faq-a">Ja, tot 4 kiezers op dezelfde afbeelding. Voeg er een toe met de knop “+”, of houd Shift ingedrukt en klik ergens op de afbeelding om er direct een neer te zetten.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kan ik kleuren bewaren voor later?</p>
+              <p class="faq-a">Ja. Sla elke kleur die je kiest op in een palet (tot 20) zodat je later terug kunt komen en de code opnieuw kunt kopiëren zonder opnieuw te kiezen. Dubbelklik op een opgeslagen kleur om hem een korte eigen naam te geven.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Bewaren jullie mijn afbeelding?</p>
+              <p class="faq-a">Nee. Alles gebeurt lokaal in je browser. Je afbeelding wordt nooit naar een server geüpload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Codoc's FAQ section hidden for now (2026-09-29) — content kept here, just commented out, so it's easy to bring back.
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODOC_FAQ</div>
+          <div class="faq-list-mainpage codoc">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">What does Codoc convert?</p>
+              <p class="faq-a">A Word document (.docx) to PDF, paginated and laid out entirely in your browser.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Can it convert a PDF back to a Word document?</p>
+              <p class="faq-a">No, only DOCX to PDF. A PDF has no real structural concept of paragraphs or tables, so reconstructing an editable document from one reliably would need server-side processing — which breaks the never-leaves-your-device guarantee every other tool on this site relies on.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Do you keep my document?</p>
+              <p class="faq-a">No. Everything happens locally in your browser — your document is never uploaded to a server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  -->
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Bedrijf</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">Ons universum</span><span class="footer-link-plain">Over ons</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">Al beantwoord</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">Galactisch handboek</span><span class="footer-link-plain">Gebruiksvoorwaarden</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">Buitenaards privacyprotocol</span><span class="footer-link-plain">Privacybeleid</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Cookieregister</span><span class="footer-link-plain">Cookiebeleid</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Aan de slag met</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Comprimeren</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Neem contact met ons op</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Word lid van onze Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=65" defer></script>
+</body>
+</html>
