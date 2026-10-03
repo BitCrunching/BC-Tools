@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이용 약관 – BC Tools</title>
+<meta name="description" content="BC Tools 이용 약관: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구. 서비스가 어떻게 작동하는지, 그리고 사용이 당신에게 무엇을 의미하는지 읽어 보세요.">
+<link rel="canonical" href="https://bitcrunching.com/ko/terms/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/terms/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/terms/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/terms/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/terms/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/terms/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/terms/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/terms/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/terms/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/terms/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/terms/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/terms/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/terms/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/terms/">
+<script src="/shared/i18n/ko.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="이용 약관 – BC Tools">
+<meta property="og:description" content="BC Tools 이용 약관: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구. 서비스가 어떻게 작동하는지, 그리고 사용이 당신에게 무엇을 의미하는지 읽어 보세요.">
+<meta property="og:url" content="https://bitcrunching.com/ko/terms/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="이용 약관 – BC Tools">
+<meta name="twitter:description" content="BC Tools 이용 약관: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구. 서비스가 어떻게 작동하는지, 그리고 사용이 당신에게 무엇을 의미하는지 읽어 보세요.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=137">
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>은하 핸드북</h1>
+    <p class="lead page-alias">지구에서는 이용 약관 페이지로도 알려져 있습니다.</p>
+  </div>
+  <article class="terms-article">
+    <p class="terms-updated">최종 업데이트: 2026년 9월</p>
+    <p>BitCrunching(이하 “당사”)이 운영하는 서비스인 BC Tools에 오신 것을 환영합니다. 당사의 웹사이트와 브라우저 기반 유틸리티(이하 통칭하여 “서비스”)에 접속하거나 사용함으로써 귀하는 이 이용 약관에 구속되는 것에 동의합니다. 이 약관에 동의하지 않으면 서비스를 사용하지 마세요.</p>
+
+    <h2>1. 개인정보 보호 보장 및 서버 미사용</h2>
+    <p>당사의 서비스는 전적으로 클라이언트 측에서 작동합니다. 즉, 이미지 변환, 압축, 파일 합치기, 메타데이터 제거를 포함한 모든 파일 처리는 서버를 사용하지 않고 웹 브라우저 안에서 직접 이루어집니다.</p>
+    <ul>
+      <li>파일은 당사의 서버에 업로드되지 않습니다. 당사는 도구로 처리하는 어떤 콘텐츠나 파일도 수집, 열람, 저장 또는 소유하지 않습니다.</li>
+    </ul>
+    <p>직접 확인할 수 있습니다. 모든 도구는 처리 중에 실시간 네트워크 점검을 실행하고 결과를 도구 헤더에 표시합니다. 어떤 도구를 사용한 후에든 “&gt; BC_Tools_bot:” 줄을 찾아보세요. 보안 침해를 발견하면 즉시 알려 주세요.</p>
+
+    <h2>2. 지적 재산권</h2>
+    <p>BC Tools에 게시된 모든 콘텐츠, 코드, 맞춤 스타일, 레이아웃 구조, 그래픽 자산은 BitCrunching의 독점 자산이며 국제 저작권법의 보호를 받습니다.</p>
+    <ul>
+      <li>당사의 도구를 개인 또는 상업적 창작 프로젝트에 사용할 수 있습니다.</li>
+      <li>명시적인 서면 허가 없이 당사의 기반 소스 코드나 핵심 자산을 복사, 스크래핑, 미러링, 리버스 엔지니어링 또는 재배포할 수 없습니다.</li>
+    </ul>
+
+    <h2>3. 언어 및 번역</h2>
+    <p>BC Tools의 공식적이고 법적 구속력이 있는 언어는 영어입니다.</p>
+    <ul>
+      <li><strong>번역:</strong> 이 약관, 개인정보 처리방침, 쿠키 정책의 다른 언어 번역본은 오직 사용자의 편의를 위해 제공됩니다.</li>
+      <li><strong>오탈자:</strong> 영어가 아닌 버전의 문법 오류, 사소한 번역 차이, 오탈자, 사무상의 착오는 이 약관을 무효화하거나, 의도된 의미를 바꾸거나, 당사에 대한 어떠한 법적 청구의 근거로도 사용될 수 없습니다.</li>
+      <li><strong>신뢰할 수 있는 출처:</strong> 충돌이 있는 경우 영어 버전이 항상 최종 법적 문서로서 우선합니다.</li>
+      <li><strong>번역 오류 신고:</strong> 당사는 도구가 모든 사람이 접근할 수 있기를 바랍니다. 모국어에서 오타, 어색한 번역 또는 문법 오류를 발견하면 알려 주셔서 개선에 도움을 주세요.</li>
+    </ul>
+
+    <h2>4. 허용되는 사용 규칙</h2>
+    <p>귀하는 당사의 서비스를 합법적인 목적으로만 사용하는 것에 동의합니다. 자동화된 봇, 스크립트 또는 스크레이퍼를 사용해 시각적 환경에 과부하를 주거나 웹사이트의 실행 프레임워크에 악성 코드를 삽입하려는 시도는 엄격히 금지됩니다.</p>
+
+    <h2>5. 보증의 부인(“있는 그대로”)</h2>
+    <p>BC Tools는 모든 유틸리티를 “있는 그대로” 및 “제공 가능한 범위에서” 제공합니다. 파일 처리에 오류가 전혀 없을 것, 모든 파일 형식 및/또는 기기와 호환될 것, 서비스가 완전히 중단 없이 제공될 것이라는 점에 대해 명시적이든 묵시적이든 어떠한 보증도 하지 않습니다. 문제를 발견하면 알려 주셔서 개선에 도움을 주세요.</p>
+
+    <div class="engine-status-card">
+      <div class="engine-status-body">
+        <div class="engine-status-row">&gt; dev_log: 헌신적인 개발자가 정기적으로 업데이트와 버그 수정을 하고, 진행 상황을 Discord #Announcements에 보고합니다.</div>
+      </div>
+    </div>
+
+    <h2>6. 책임의 제한</h2>
+    <p>법이 허용하는 최대 범위에서 BitCrunching과 그 제작자는 당사 도구의 사용 또는 사용 불능으로 인해 발생하는 데이터 손실, 영업 중단, 시스템 충돌을 포함하되 이에 국한되지 않는 어떠한 손해에 대해서도 책임을 지지 않습니다.</p>
+
+    <h2>7. 준거법</h2>
+    <p>이 이용 약관은 네덜란드 법률에 따라 규율되고 해석됩니다. 이 약관에서 발생하는 모든 법적 분쟁은 네덜란드의 관할 법원에서 독점적으로 해결됩니다.</p>
+  </article>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=72" defer></script>
+</body>
+</html>
