@@ -1436,6 +1436,7 @@ bcRegisterEscapable(
       fr: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#0055A4"/><rect x="40" width="20" height="40" fill="#EF4135"/></svg>',
       it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
       pt: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#009C3B"/><polygon points="30,5 55,20 30,35 5,20" fill="#FFDF00"/><circle cx="30" cy="20" r="8" fill="#002776"/></svg>',
+      ja: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="12" fill="#BC002D"/></svg>',
       cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
       es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
       id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',
@@ -1457,10 +1458,10 @@ bcRegisterEscapable(
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-wrap")) return;
     const current = document.documentElement.lang || "en";
-    const ORDER = ["en", "nl", "de", "es", "fr", "it", "pl", "pt", "cs", "id"];
+    const ORDER = ["en", "nl", "de", "es", "fr", "it", "pl", "pt", "cs", "id", "ja"];
     const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default").sort((a, b) => ORDER.indexOf(a.hreflang) - ORDER.indexOf(b.hreflang));
     if (alts.length < 2) return;
-    const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano", pt: "Português" };
+    const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano", pt: "Português", ja: "日本語" };
     const wrap = document.createElement("div");
     wrap.className = "nav-lang-wrap";
     const btn = document.createElement("button");

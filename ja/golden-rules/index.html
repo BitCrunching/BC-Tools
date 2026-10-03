@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ゴールデンルール – BC Tools</title>
+<meta name="description" content="BC Toolsで画像形式、圧縮、設定を選ぶためのゴールデンルール。">
+<link rel="canonical" href="https://bitcrunching.com/ja/golden-rules/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/golden-rules/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/golden-rules/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/golden-rules/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/golden-rules/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/golden-rules/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/golden-rules/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/golden-rules/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
+<script src="/shared/i18n/ja.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="ゴールデンルール – BC Tools">
+<meta property="og:description" content="BC Toolsで画像形式、圧縮、設定を選ぶためのゴールデンルール。">
+<meta property="og:url" content="https://bitcrunching.com/ja/golden-rules/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ゴールデンルール – BC Tools">
+<meta name="twitter:description" content="BC Toolsで画像形式、圧縮、設定を選ぶためのゴールデンルール。">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=137">
+<style>
+/* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
+.golden-rules-switcher{
+  display:flex;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
+.golden-rules-tool-btn{
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  font-family:inherit;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+
+.golden-rules-tool-btn:hover{
+  border-color:var(--border-strong);
+}
+
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
+.golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+.golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
+.golden-rules-articles{
+  display:none;
+  position:relative;
+  max-width:820px;
+  margin:0 auto 80px;
+  padding:0 24px;
+}
+
+.golden-rules-articles.active{
+  display:block;
+}
+
+.golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
+
+.golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+
+.golden-rules-article summary::-webkit-details-marker{
+  display:none;
+}
+
+.golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  color:var(--text);
+  transition:.2s;
+}
+
+.golden-rules-article[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+}
+
+.golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  margin:24px 0 10px;
+}
+
+.golden-rules-body h3:first-child{
+  margin-top:0;
+}
+
+.golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Cookieを使用しています。許可するカテゴリを以下から選択してください。詳細は当社の <a data-goto="cookies">Cookieポリシー</a> の詳細をご覧ください。</p>
+  <p class="cookie-banner-text-mobile">許可するカテゴリを選択</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie設定の内容の表示を切り替え" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">開発ツール_COOKIE：</span>
+    </span>
+    <span>許可するカテゴリを選択</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="必須Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>必須（常に有効）</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>これらは、Cookieの選択、言語、ライト/ダークテーマの記憶といった、基本的な機能を維持するためのものです。無効にすることはできず、このサイトの他のすべてのものと同様に、デバイスの外に出ることは決してありません。</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="分析用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">分析 - 完全なプライバシーを望む場合は、これを無効のままにしてください。</span><span class="cookie-label-docked">分析 (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>これにより、ユーザーがWebサイトをどのように移動しているかについて（Google Analytics）を通じて貴重なデータを受け取り、ユーザー体験を改善できます。完全に匿名のままでいたい場合は、このオプションを無効にすることをお勧めします。</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="広告用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>広告 (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSenseが広告を表示するために使用します。AdSenseの承認待ちのため、現在サイト全体でオフになっており、このトグルにはまだ効果がありません。</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">すべて許可</button>
+    <button type="button" id="cookieBannerSave">選択を確定</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Toolsのロゴ" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="ライトモードとダークモードを切り替え" title="ライトモードとダークモードを切り替え">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="共有" title="共有">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">リンクをコピー</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="その他の共有オプション"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">メール</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+    <div class="hero">
+      <h1>ゴールデンルール</h1>
+      <p class="lead">各ツールを最大限に活用するための、実践的で詳細なガイド。やり方、理由、避けるべき間違い。</p>
+    </div>
+
+    <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+      <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+    </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
+
+    <div class="golden-rules-articles active" data-tool="convert">
+
+      <details class="golden-rules-article">
+        <summary>1. 画像フォーマット完全ガイド：JPG・PNG・WEBP</summary>
+        <div class="golden-rules-body">
+          <p>画像形式はそれぞれ異なる問題を解決するために設計されており、適切な形式を選ぶことは、画像を準備する際のほぼどんな決定よりも、ファイルサイズと品質に大きな影響を与えます。それぞれの内部で実際に何が起きているのか、そしてそれが本当に重要になるのはいつかを紹介します。</p>
+
+          <h3>JPG (JPEG)：写真向けの形式</h3>
+          <p>JPGは非可逆圧縮を使用しており、ファイルサイズを縮小するために、保存のたびに画像データの一部を捨てます。写真は、なだらかな色の変化、自然なノイズ、はっきりしたエッジがないという特徴を持つため、これが非常にうまく機能します。人間の目は、JPGが捨てる特定の情報に簡単には気づかないからです。だからこそ、JPGは写真向けの標準形式として、Web、カメラ、スマートフォンで使われ続けています。優れた圧縮、小さなファイル、普遍的なサポート。</p>
+          <p>JPGにできないことは透過です。形式にそもそもアルファチャンネルがないので、透明な背景が必要なら、JPGは選択肢から完全に外れます。また、再保存するたびに少しずつ劣化し（詳しくは下のミスに関する記事を参照）、文字やロゴのような鮮明なエッジを持つグラフィックでは苦手で、圧縮アーティファクトが硬い線の周りのぼやけとして目立ちます。</p>
+
+          <h3>PNG：可逆で透過に優しい形式</h3>
+          <p>PNGは可逆圧縮を使用しており、何度再保存しても品質の低下なく、すべてのピクセルが正確に保たれます。そのため、鮮明なエッジ、フラットな色、文字を含むもの（ロゴ、スクリーンショット、アイコン、図表）に適した選択です。また、部分的な透明（柔らかくぼかしたエッジ）を含む透過を完全にサポートします。JPGにはこれがまったくできません。</p>
+          <p>代償はサイズです。可逆圧縮は、JPGの非可逆アプローチほどファイルを小さくできません。特に、微妙な色の変化が多い写真ではそうです。PNGで保存した写真は、ほとんどの人が見分けられない品質の違いのために、同じ写真をJPGで保存したものの5〜10倍の大きさになることがあります。</p>
+
+          <h3>WEBP：現代のオールラウンダー</h3>
+          <p>WEBPはGoogleの新しい形式で、ほとんどの場合、本当に両方のいいとこ取りです。非可逆圧縮と可逆圧縮の両方をサポートし（必要に応じてJPGのようにも、PNGのようにも使えます）、透過をサポートし、同等の品質でJPGやPNGより小さなファイルを生成するのが一般的です。写真ではJPGより25〜35%小さくなることが多く、グラフィックではPNGよりはるかに小さくなります。</p>
+          <p>唯一の本当の制限は、古いソフトウェアとの互換性です。一部の古い画像エディタ、メールクライアント、古いデバイスは、WEBPをうまく扱えません。現代のWebサイトでは、これが実際に問題になることはもうまれですが、ソフトウェアを自分で管理できない相手にファイルを送る場合は、考慮する価値があります。</p>
+
+          <h3>HEIC：変換して離れたくなるiPhoneの形式</h3>
+          <p>HEIC（およびその近縁のHEIF）は、iOS 11以降のAppleの標準の写真形式で、同じ品質ならJPGより効率よく圧縮できるため、iPhoneが自動的に使用します。問題は互換性です。Apple以外のほとんどのソフトウェア、古い編集ツール、多くのWebサイトやアップロードフォームは、今でもHEICファイルを直接開けません。</p>
+          <p>ConvertはHEIC/HEIFを入力として受け付け、すべてブラウザ内でデコードします。iPhoneから出したばかりの写真をそのままドロップして、どこでも開けるJPG、PNG、WEBPを受け取れます。HEICの出力オプションはありません。変換する目的は、まさにその互換性のギャップをなくすことだからです。</p>
+
+          <h3>素早い判断ルール</h3>
+          <p>透過が不要な写真 → JPGまたはWEBP。透過や鮮明なエッジが必要なもの（ロゴ、スクリーンショット、グラフィック）→ PNGまたはWEBP。最新ブラウザ対応で最小のファイルが必要 → WEBP。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 写真をPDFにする方法（とその理由）</summary>
+        <div class="golden-rules-body">
+          <p>画像を1つのPDFに変換することは、Convertができる最も便利なことの一つですが、すぐには気づかれません。「この12枚の写真を、12個の別々の添付ではなく1つのファイルで送るには？」への答えです。</p>
+
+          <h3>画像をZIPにまとめるのではなく、PDFにまとめる理由</h3>
+          <p>ZIPファイルでは、受け取る側がダウンロードして展開し、画像を一つずつ開く必要があります。ほとんどの人はその手間をかけたがりません。PDFならほぼすべての端末にあるブラウザや標準のPDFビューアで直接開け、ページはあなたが設定した順序のとおりに表示されます。応募書類（カバーレター、履歴書、ポートフォリオの順）や、順番を保つ必要があるスキャン書類で非常に重要です。</p>
+          <p>また、公式・準公式の提出の非常に多くの場面で期待される形式でもあります。求人応募、保険請求、税務書類、学校の課題、賃貸申込などでは、バラバラの画像が入ったフォルダのように誤って並べ替えられたり分割されたりすることがなく、あいまいさがないため、「単一のPDFで提出してください」と指定されることがよくあります。</p>
+
+          <h3>ステップごとに</h3>
+          <p>画像をConvertにドロップします。複数を一度に選択できます。「PDF」形式ボタンをクリックしてください。他の形式と異なり、これは各画像を別々に変換せず、すべてを1つのPDFにまとめて、それぞれの画像を1ページにします。「変換してダウンロード」をクリックすると、選択したすべての画像が、アップロードした順に1ページずつ入った単一のPDFファイルが得られます。</p>
+          <p>ここでは順序が重要なので、変換する前にファイルが選択された順序をもう一度確認してください。現在、Convertは選択またはドロップされた順にファイルを処理するため、順序が重要な場合（複数ページのスキャン文書など）は、表示させたい順に選択またはドロップしてください。</p>
+
+          <h3>PDF内の画像品質についての補足</h3>
+          <p>画像はそのまま埋め込まれるため、低解像度の画像はPDFの中でも低解像度のままです。PDFへの変換は、元になかったディテールを加えません。印刷ポートフォリオのようなものを準備する場合は、不必要に巨大なカメラ原本を放り込んで、開くのが遅くメール送信しにくい肥大化したPDFにするのではなく、事前に画像を圧縮または適切な解像度にリサイズする価値があります。</p>
+
+          <h3>これが適切なツールでないとき</h3>
+          <p>すでに持っているPDF（生の画像ではなく）を結合する場合は、代わりにCombineツールを使ってください。ConvertのPDF出力は、画像から新しいPDFを作るためのもので、既存のPDF文書を結合するためのものではありません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. PDFから画像を取り出す：実践ガイド</summary>
+        <div class="golden-rules-body">
+          <p>逆方向、つまり既存のPDFから画像を取り出すことは、別の、同じくらいよくある問題を解決します。PDFがあり、1ページだけ、またはすべてのページを、独立した画像ファイルとして必要としている場合です。</p>
+
+          <h3>これが必要になるよくある理由</h3>
+          <p>PDFプレゼンテーションから1枚のスライドを取り出して、メールやチャットメッセージに入れる。スキャンした文書のページを取り出して、画像エディタで個別に編集または注釈を付ける。PDFのレポートから図表を取り出して、別の場所で再利用する。古いスキャン文書の各ページを、より普遍的に閲覧できる個別の画像ファイルとしてアーカイブする。</p>
+
+          <h3>実際にはどう動作するのか</h3>
+          <p>画像ではなくPDFをConvertにドロップすると、ツールが自動的に検出し、形式オプションがJPG、PNG、WEBPのみに切り替わります。PDFを別のPDFやSVGに変換しても意味がないためです。ニーズに合う画像形式（小さいファイルならJPG、PDFのページに透過や鮮明な文字がある場合はPNG、両方のバランスが最良ならWEBP）を選んで変換してください。</p>
+          <p>PDFの各ページは、それぞれ独立した画像ファイルになります。10ページのPDFをJPGに変換すると、ページごとに自動で番号付けされた10個の個別のJPGファイルが得られます。5ページを超えて抽出する場合は、10回の個別ダウンロードを発生させる代わりに、1つのZIPダウンロードにまとめられます。</p>
+
+          <h3>解像度と画質に関する考慮事項</h3>
+          <p>PDFのページは、一般的な文書やプレゼンテーションで鮮明で読みやすい結果が得られるよう設計された固定スケールで画像にレンダリングされます。非常に詳細な図を抽出する場合や、印刷用に特に高い解像度が必要な場合は、印刷が重要な用途に使う前に出力品質を確認する価値があります。デジタル用途ならスクリーン解像度での抽出で通常は十分以上ですが、非常に細かい印刷作業には、高DPIの抽出のために特別に作られた別のツールが必要になることがあります。</p>
+
+          <h3>複数ページのPDFとファイル名</h3>
+          <p>抽出された各画像には自動的にページ番号のラベルが付くので、どの出力が元の文書のどのページに対応するかがひと目で分かります。長いPDFから、全体ではなく必要な数ページだけを取り出したいときに便利です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 画像を変換するとき：実際のシナリオ</summary>
+        <div class="golden-rules-body">
+          <p>形式間の技術的な違いを知っていることと、目の前の状況にどれが実際に当てはまるかを知っていることは別のことです。シナリオベースの考え方を紹介します。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>状況</th><th>最適な形式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">プラットフォームが特定の形式を指定している</td><td data-label="最適な形式">プラットフォームの要件がどうあれ、まず確認する</td></tr>
+              <tr><td data-label="状況">自分のWebサイトを高速化する</td><td data-label="最適な形式">WEBP</td></tr>
+              <tr><td data-label="状況">透過背景が必要</td><td data-label="最適な形式">PNGまたはWEBP</td></tr>
+              <tr><td data-label="状況">印刷またはプロ向けの利用に備える</td><td data-label="最適な形式">PNG</td></tr>
+              <tr><td data-label="状況">長期のアーカイブ</td><td data-label="最適な形式">PNG（または可逆モードのWEBP）</td></tr>
+            </tbody>
+          </table>
+
+          <h3>特定の形式しか受け付けないプラットフォームにアップロードする</h3>
+          <p>これは、人々が変換ツールをそもそも必要とする最も一般的な理由です。Webサイト、アプリ、提出フォームが「JPGまたはPNGのみ」と指定しているのに、画像がWEBPやSVGである場合です。Convertならこれを数秒で解決できます。プラットフォームが要求する形式を選ぶだけです。推測を誤ると余計なやり取りが発生するので、必ず先にプラットフォームが明示している要件を確認してください。</p>
+
+          <h3>管理しているWebサイトを高速化する</h3>
+          <p>自分のWebサイトに画像をアップロードするなら、古いJPGやPNG画像をWEBPに変換することは、最も効果が高く、最も手間が少ない改善の一つです。ファイルが小さくなればページの読み込みが速くなり、ユーザー体験と検索順位の両方に影響します。小さなアイコンが1〜2個あるだけのページより、画像の多いページ（ギャラリー、商品一覧、写真の多いブログ）でより重要です。</p>
+
+          <h3>透過背景が必要な場合</h3>
+          <p>透過を持てないJPGがあり、色付きの背景、デザインテンプレート、別の画像の上に置く必要がある場合は変換が必要です。ただし、Convertは透過対応の形式に包むことはできても、写真自体に含まれる既存のベタ塗りの背景を魔法のように取り除くことはできない点に注意してください。背景を本当に取り除く（単に透過対応にするだけでなく）必要がある場合は、形式変換ツールではなく、背景除去ツールが必要です。</p>
+
+          <h3>印刷またはプロ向けの利用に備える</h3>
+          <p>印刷所やプロのデザインワークフローには、特定の形式要件がある場合があります。ロゴやエッジの鮮明なグラフィックにPNGを求めるのは一般的で、JPGが文字や硬い線の周りに生み出しがちな柔らかい圧縮アーティファクトを避けられるからです。特定の印刷所が何を求めているか分からない場合、PNGは通常、単純な写真でないものに対する、安全で可逆な初期値です。</p>
+
+          <h3>アーカイブまたは長期保存</h3>
+          <p>何年も最高の画質で残したいものには、繰り返し圧縮されたJPGより、可逆形式（PNG）のほうが長期的には安全な選択です。JPGは再保存するたびに少しずつ画質が失われるためです。ストレージ容量が実際の制約になっている場合は、PNGより容量効率が良く、JPGの世代劣化も避けられるWEBPの可逆モードと比べて検討してください。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 変換でよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>変換に関する問題のほとんどは、繰り返される少数の間違いに由来します。注意すべき点を紹介します。</p>
+
+          <h3>JPGをJPGとして繰り返し再保存する</h3>
+          <p>JPGを開いて、少しでも編集し、保存し直すたびに、品質が少しずつ失われます。これは世代劣化と呼ばれ、積み重なります。画像を複数回編集する場合は、編集の途中は可逆形式（PNG）で作業し、最後の書き出しの段階で、1回だけJPGに変換してください。</p>
+
+          <h3>実際には透過が必要なのにJPGを使う</h3>
+          <p>これは変換ツールが受ける最も一般的なサポート質問です。「なぜロゴが透過背景ではなく白い枠で囲まれているのか？」答えはほぼ常に、ソースまたは出力形式がJPGだったからです。JPGは透過をまったく表現できず、設定やコツでは解決できません。形式自体にアルファチャンネルという概念がないからです。透過が必要なら、ソース画像と出力形式の両方がそれをサポートしている必要があります（PNGまたはWEBP）。</p>
+
+          <h3>横だけでなく、上方向に変換する</h3>
+          <p>小さな低解像度の画像を別の形式に変換しても、ディテールは増えず、実際の解像度も上がりません。400×300ピクセルのJPGをPNGに変換しても、400×300ピクセルの画像のままで、入れ物が違うだけです。より大きな画像が必要なら、最初からより高解像度の元データが必要です。形式変換だけでは、撮影されなかったディテールは作れません。</p>
+
+          <h3>大きな写真にデフォルトでPNGを選ぶ</h3>
+          <p>PNGの可逆圧縮はグラフィックには素晴らしいですが、写真には不向きです。ほとんどの人が気づかない品質の違いのために、必要以上にはるかに大きなファイルになります。休暇の写真のバッチを「念のため」変換するのであれば、JPGやWEBPのほうがずっと役に立ちます。PNGは、透過、文字、鮮明なグラフィックエッジを持つ画像専用にとっておきましょう。</p>
+
+          <h3>大切な場所に送る前に出力を確認しない</h3>
+          <p>顧客、雇用主、公式な提出先に送るものなら、送る前に変換したファイルを一度開く価値があります。複数ページのPDFのページ順の確認、透過が正しく反映されたかの確認、ファイルが予想外に巨大でないかの確認などです。数秒で済み、提出が差し戻されたり、恥ずかしい再送が必要になったりする、はるかに時間のかかる問題を避けられます。</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="golden-rules-articles" data-tool="compress">
+      <details class="golden-rules-article">
+        <summary>1. 画像圧縮は実際どう動くのか</summary>
+        <div class="golden-rules-body">
+          <p>圧縮は単一のスライダーや1回のクリックのように見えますが、その裏には、縮小を行う2つの本当に異なるアプローチがあります。どちらが働いているかを理解すれば、このようなツールで目にする結果のほとんどを説明できます。</p>
+
+          <h3>非可逆圧縮：気づかない部分を捨てる</h3>
+          <p>JPGやWEBPが使う非可逆圧縮は、人間の目が苦手とする画像内の情報を見つけて捨てることで機能します。微妙な色のグラデーションは簡略化され、細かい高周波のディテールは滑らかにされ、その結果、気軽に見る人には正しく見えながら、元の何分の一かのファイルになります。問題は、この破棄が永久的であることです。そのディテールが失われると、再オープンも再保存も取り戻せず、すでに非可逆圧縮されたファイルを繰り返し圧縮すると、そのたびに損失が積み重なります。</p>
+          <p>選択する「品質比」または圧縮レベルが、これがどれだけ積極的に行われるかを決めます。高い品質設定ではほとんど捨てられず、ファイルは控えめに縮小されます。低い品質設定ではずっと多くが捨てられ、劇的に縮小されますが、エッジ周りのブロックノイズ、ぼやけたディテール、空やグラデーションの色の段差といった目に見えるアーティファクトを引き換えにします。</p>
+
+          <h3>可逆圧縮：何も失わずに詰め直す</h3>
+          <p>PNGが採用している可逆圧縮は、まったく異なる仕組みで動作します。ZIPファイルが中の文字を1文字も変えずにテキスト文書を縮小するのと同じように、まったく同じピクセルデータを、より賢く効率的に保存する方法を見つけます。何も捨てないため、画質をまったく変えずに、何度でも圧縮と展開ができます。トレードオフは、サイズ削減がずっと小さいことです。データを何も捨てずに縮小できる量には数学的な厳しい限界があり、特に、可逆的な再パッキングに抵抗する細かく不規則なディテールだらけの写真画像ではそうです。</p>
+
+          <h3>当社のCompressツールがPNGをJPGに変換する理由</h3>
+          <p>これが、Compressが圧縮時にPNG写真を自動的にJPGに変換する理由です。可逆圧縮だけを通したPNGの写真はほとんど縮小しませんが、同じ写真に非可逆圧縮を許せば劇的に縮小できます。実際の写真では、この取引はほぼ常に価値があります。画質の違いは通常の閲覧サイズでは見えず、ファイルサイズの違いは巨大です。写真ではないPNG（スクリーンショット、ロゴ、透過や鮮明な文字を持つグラフィック）では事情が異なり、だからこの変換はあらゆるPNGに無差別に適用されるのではなく、写真のような内容向けに特別に調整されています。</p>
+
+          <h3>品質スライダーを動かすと実際に何が起きるのか</h3>
+          <p>内部的には、品質設定を下げると、画像の色とディテールの情報が保存される前に、より粗くグループ化・簡略化されます。数字の丸めのようなものだと考えてください。「品質95」への丸めはほとんど何も変わりませんが、「品質40」への丸めははるかに多くを変え、同時に記述するスペースもはるかに少なくなります。普遍的な「正しい」数値はなく、適切な設定は画像の用途によって完全に変わります。それが次の記事の主題です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 用途に合った圧縮レベルの選び方</summary>
+        <div class="golden-rules-body">
+          <p>「最良の」圧縮設定は1つではありません。適切なレベルは、画像の行き先と、それが何に耐える必要があるかによって完全に決まります。シナリオ別の考え方を紹介します。</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>出力先</th><th>推奨レベル</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="出力先">SNS／メッセージアプリ</td><td data-label="推奨レベル">中</td></tr>
+              <tr><td data-label="出力先">自分のWebサイトまたはオンラインストア</td><td data-label="推奨レベル">中〜高</td></tr>
+              <tr><td data-label="出力先">印刷またはプロのクライアントへの納品</td><td data-label="推奨レベル">低、または圧縮しない</td></tr>
+              <tr><td data-label="出力先">長期アーカイブ</td><td data-label="推奨レベル">低</td></tr>
+              <tr><td data-label="出力先">メール添付のサイズ制限</td><td data-label="推奨レベル">高</td></tr>
+            </tbody>
+          </table>
+
+          <h3>SNSとメッセージ</h3>
+          <p>Instagram、WhatsApp、ほとんどのSNSフィードなどのプラットフォームは、送った内容に関係なく、アップロードされるすべての画像をすでに（多くは積極的に）再圧縮しています。ほとんど圧縮されていない巨大なファイルをここにアップロードしても得るものはなく、プラットフォームがどのみち向こう側で再び圧縮します。中〜高の圧縮レベルなら、プラットフォーム自身の処理後に実際に目に見える品質を犠牲にすることなく、アップロードを速く、元のファイルサイズを常識的な範囲に保てます。</p>
+
+          <h3>Webサイトとオンラインストア</h3>
+          <p>ポートフォリオサイト、ブログ、商品ページなど、自分でホスティングするものについては、ファイルサイズがページの読み込み速度に直結し、訪問者の体験に、そして商用なら成約率や検索順位にも影響します。ここでは、より強い圧縮に傾ける価値があります。Web表示で印刷レベルのディテールが必要になることはまれで、最適化されていない巨大な画像だらけのページは、サイトが重く感じられる最も一般的な理由の一つだからです。</p>
+
+          <h3>印刷とプロ向けの利用</h3>
+          <p>ここは保守的であるべき唯一の場所です。印刷は、画面が単純に表示しないディテールとアーティファクトを明らかにします。より高い実効解像度で、そしてしばしばより大きな物理サイズで見られるからです。印刷所、ギャラリーへの提出、プロのクライアントへの納品に行くものには、その特定のコピーについては軽い圧縮レベルを使うか圧縮を省き、非圧縮または軽く圧縮されたマスターファイルを信頼できる情報源として保持してください。</p>
+
+          <h3>アーカイブと長期保存</h3>
+          <p>目的が家族写真やアーカイブなど、後でフル画質で見返したいかもしれない写真を何年も保管することなら、唯一のコピーに強い非可逆圧縮をかけるのは避けてください。ディテールは一度捨てられると復元できず、後の用途で必要だと分かっても取り戻せません。妥当なアプローチは、高品質のアーカイブ用コピーを残し、特定の用途が実際に必要とするものに応じて、別々に圧縮したバージョンを都度作ることです。</p>
+
+          <h3>メール添付とファイルサイズの制限</h3>
+          <p>多くのメールプロバイダーは、添付ファイルのサイズを合計でおよそ25MBに制限しています。複数の写真を送る場合は、より強い圧縮レベルにすれば確実にその上限を下回れます。これは、実際的な制約（そもそもメールに収まるか）が、圧縮レベルの見た目の違いよりも重要になる数少ないケースの一つなので、他の用途より強く圧縮することを恐れないでください。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Web向け圧縮：画質を犠牲にせず速度を上げる</summary>
+        <div class="golden-rules-body">
+          <p>画像の重さは、Webサイトが遅くなる最大かつ最も修正しやすい要因の一つであり、どちらの方向にも間違いやすいものの一つでもあります。圧縮が少なすぎるとページが這うように遅くなり、多すぎると写真が目に見えて劣化します。ちょうどよい中間に着地する方法を紹介します。</p>
+
+          <h3>画像サイズが速度にこれほど影響する理由</h3>
+          <p>コンテンツの多いほとんどのページでは、画像がページ全体の重さの大部分を占め、HTML、CSS、JavaScriptを合わせたものをはるかに上回ります。訪問者のページ読み込み時間と、検索エンジンによるその評価は、画像の重さに不均衡なほど影響を受けます。したがって、画像を適切に圧縮することは、ほとんどのコードレベルの最適化に先んじて、利用できる最もレバレッジの高いパフォーマンス改善であることが多いです。</p>
+
+          <h3>画像が実際に表示される方法に圧縮を合わせる</h3>
+          <p>ページ上で幅400ピクセルで表示される画像を、軽く圧縮した4000ピクセルのカメラ原本として配信する必要はありません。実際の表示サイズで鮮明に見せるのに、それほどの詳細は必要ないからです。圧縮レベルを気にする前に、画像の寸法が実際の表示サイズにおおむね合っているかを確認してください。大きすぎる画像を圧縮するのは、根本原因（不要な解像度）を残したまま症状を治療しているにすぎません。</p>
+
+          <h3>Web向けの形式を選ぶ</h3>
+          <p>写真コンテンツには、中程度から強めの圧縮レベルのJPGまたはWEBPがほぼ常に正解です。ページを閲覧する訪問者には印刷レベルの忠実度は不要で、ファイルが小さいことによる速度の恩恵は、特にモバイル回線で非常に現実的で、はっきり体感できます。フラットカラーのグラフィック、スクリーンショット、文字や鮮明なエッジを含むものは、可逆のPNG（非可逆手法で劣化しない）のほうが見栄えが良く、同じグラフィックをアーティファクトだらけに非可逆圧縮したものより小さくなることもあります。</p>
+
+          <h3>収穫逓減の点</h3>
+          <p>圧縮は、失われる見た目の品質に対して線形には変化しません。非圧縮の元データからの最初の圧縮は、見た目にほとんど変化がないまま非常に大きなファイルサイズを削減しますが、圧縮を強くしていくほど、削減できるサイズはだんだん小さくなり、目に見える劣化はだんだん大きくなります。実際には、ほとんどの写真は「最大圧縮」のずっと手前で最適点に達します。速度のために圧縮は多いほどよいと決めつけず、圧縮した画像を実際の表示サイズで確認する価値があります。</p>
+
+          <h3>サイト全体の画像を一括処理する</h3>
+          <p>商品カタログ、ギャラリー、ブログの過去記事の画像など、多数の画像を一度に最適化する場合は、1枚ずつ目分量で決めるのではなく、似たコンテンツの種類ごとに一貫した圧縮レベルを適用してください。サイト全体の見た目の品質が一定に保たれ、設定を後で変えたくなったときに、ケースごとに判断し直さなくてよいので、やり直しもずっと速くなります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 圧縮するときと、画像をそのままにするとき</summary>
+        <div class="golden-rules-body">
+          <p>圧縮は本当に便利なツールですが、あらゆる状況のあらゆる画像にとって自動的に正しい手段とは限りません。使わないべきときを知ることは、使い方を知ることと同じくらい重要です。</p>
+
+          <h3>画像が圧縮に向いているサイン</h3>
+          <p>Web、メール、メッセージ向けの大きなカメラ原本の写真は、ほぼ常に圧縮の恩恵を受けます。通常、配信先が必要とするより多くの解像度とファイル容量を持っているからです。厳しいサイズ制限（メール添付の上限、アップロード制限、フォームのファイルサイズ上限）に当たるファイルも当然の候補です。画像のコンテンツをクロップや縮小することなく制限内に収める最も手早い方法が、圧縮であることが多いからです。</p>
+
+          <h3>画像をそのままにしておく（または非常に軽く圧縮する）べきサイン</h3>
+          <p>文字、鮮明な線、フラットな色を含むグラフィック（スクリーンショット、図表、ロゴ、スキャン文書）は、非可逆圧縮では劣化しやすい傾向があります。圧縮アーティファクトが、目が最も気づきやすい場所、つまりエッジや文字の周りに、ぼやけや色のにじみとして現れるからです。こうしたものは通常、PNGの可逆アプローチを使うか、アーティファクトと戦うよりも圧縮を見送るほうが適しています。</p>
+          <p>一度圧縮したものを、念のためと気軽にもう一度圧縮すべきではありません。すでに非可逆圧縮されたJPGを再圧縮しても、ほとんどの場合、意味のあるほど小さくならず、最初の劣化の上にさらに劣化が重なって、アーティファクトが取り除かれるのではなく積み重なります。</p>
+
+          <h3>マスターコピーの習慣</h3>
+          <p>ほとんどの後悔を避けられる簡単なルールがあります。再利用する可能性があるものは、高品質（または非圧縮）のマスターコピーを1つ残し、用途ごとにそのマスターから圧縮版を作ることです。唯一のコピーを圧縮版で上書きしてはいけません。ストレージは安価ですが、失われた元データは二度と作り直せません。</p>
+
+          <h3>習慣ではなく、行き先で判断する</h3>
+          <p>正しい問いは、抽象的な「この画像を圧縮すべきか」ではなく、「この画像の行き先は実際に何を必要としているのか」です。テキストメッセージ向けの写真は、元のディテールのほとんどを必要としませんが、大きな印刷バナー向けの写真は、ほぼすべてを必要とします。ワークフローを通過するすべてのものに、習慣で同じ圧縮レベルを適用するのではなく、行き先に基準を決めさせましょう。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 圧縮でよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>圧縮に関する不満のほとんどは、繰り返される少数の間違いに起因します。注意すべき点を紹介します。</p>
+
+          <h3>同じファイルを何度も圧縮する</h3>
+          <p>非可逆圧縮は、通過するたびにディテールをさらに少しずつ捨て、その損失は圧縮のたびに積み重なります。圧縮、再オープン、編集、再圧縮を何度も繰り返したファイルは、きれいな元データから1回だけ圧縮したものより明らかに見劣りします。圧縮は常に元データまたは非圧縮のマスターから行い、すでに圧縮されたコピーからは行わないでください。</p>
+
+          <h3>唯一のコピーを上書きする</h3>
+          <p>その場で圧縮して元データを削除するのは、完全な画質へのアクセスを永久に失う最も一般的な原因です。一度非可逆圧縮でディテールが捨てられると、取り戻す方法はありません。後でより高い品質が必要ないと確信できるまで、元データは安全な場所に保管してください。</p>
+
+          <h3>グラフィックを写真のように圧縮する</h3>
+          <p>スクリーンショット、ロゴ、文字の多いグラフィックは、写真にはうまく機能するのと同じ非可逆圧縮にうまく反応しません。これらの画像を成り立たせている鮮明なエッジとフラットな色は、非可逆圧縮では目に見えるにじみや色のふちどりになります。通常は、可逆形式か、写真に使うよりはるかに軽い圧縮で扱うほうが適しています。</p>
+
+          <h3>結果を確認せずに圧縮レベルを選ぶ</h3>
+          <p>最小のファイルを得て終わりにするために「最大圧縮」を選びたくなりますが、その設定では、実際のサイズで出力を見ると明らかに目立つアーティファクトが出ることがよくあります。圧縮した結果を、実際に見られるサイズで素早く確認するのは数秒で済み、意図よりも明らかに見劣りするものを送ったり公開したりするのを防げます。</p>
+
+          <h3>配信先自身の圧縮を無視する</h3>
+          <p>どのみち圧縮するプラットフォーム（ほとんどのSNSやメッセージアプリ）に、ほとんど圧縮されていない巨大なファイルをアップロードすることは、視覚的なメリットなしにアップロード時間と帯域を無駄にします。プラットフォーム自身の処理が、送った内容にかかわらず最終的な品質の大部分を決めるからです。圧縮の労力は、「入力の元の品質が高いほど出力の最終品質も高くなる」という思い込みではなく、配信先が実際に保持するものに合わせてください。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="combine">
+      <details class="golden-rules-article">
+        <summary>1. PDFを毎回正しい順序で結合する方法</summary>
+        <div class="golden-rules-body">
+          <p>Combineの仕事は一見とても簡単です。複数のファイルを取って1つのPDFに結合するだけですが、最もつまずきやすいのは結合そのものではなく、ページが意図した順序に収まるようにすることです。</p>
+
+          <h3>Combineがページ順を決める仕組み</h3>
+          <p>Combineは、選択範囲に現れる順番でファイルを結合します。ファイルブラウザで選んだ順、またはドロップされた順で、上から下へです。ファイル名、日付、内容から「正しい」順序を推測しようとはしません。どの順序が望ましいかには普遍的なルールがないため、与えられた順序をそのまま尊重します。つまり、正しい順序にする責任は、結合する前にファイルをどう選択・配置するかにすべてかかっています。</p>
+
+          <h3>ファイル名が誤解を招くことがある理由</h3>
+          <p>ファイルは自動的にアルファベット順や数字順に結合されると思われがちです。OSのファイル選択ダイアログがたまたまその順に並べていて、リスト全体をドラッグして選択した場合は、その順になることが多いですが、それはダイアログの表示順の副産物であり、保証ではありません。マウスでファイルを一つずつ順不同に選んだり、一つずつドラッグしたりした時点で、結合順はファイル名ではなくクリックした順に従います。</p>
+
+          <h3>結合前の確実な事前チェック</h3>
+          <p>結合をクリックする前に、Combineが表示するプレビューリストを見てください。これが実際の結合順を反映しています。順序がおかしければ、削除して正しい位置に追加し直すか、アップロード前に選択順を並べ替えてください。この30秒のチェックは、結合したPDFをダウンロードして4ページ目が本当は2ページ目だったと気づき、やり直すよりずっと速くすみます。</p>
+
+          <h3>ファイル名で順序を確実にする</h3>
+          <p>スキャンしたページ、複数部構成のレポート、連続した章など、複数ファイルのセットを定期的に結合する場合、順序の当てずっぽうを完全になくす簡単な習慣は、結合する前にファイル名の頭に番号を付けることです：01-cover.pdf、02-resume.pdf、03-portfolio.pdf。ファイルブラウザですべてを一度に選択すれば、自然にその数字順になり、Combine側で手動で並べ替える必要なく正しい順序が得られます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 応募書類を結合する：カバーレター、履歴書、ポートフォリオ</summary>
+        <div class="golden-rules-body">
+          <p>求人やインターンへの応募は、PDF結合ツールを使う最も一般的な理由の一つで、構成を正しく整えることが、応募の受け取られ方に実際に影響することがあります。</p>
+
+          <h3>雇用主が複数の添付ファイルより1つのPDFを好む理由</h3>
+          <p>採用担当者は何十、何百という応募を、たいていスマートフォンで、あるいは会議の合間にざっと確認します。応募書類が3〜4個の別々の添付ファイル（カバーレター、履歴書、ポートフォリオ、推薦状）で届くと、全体像をつかむために複数のファイルを開いて行き来する必要があり、一つが見落とされたり、別の場所に保存されたり、そもそも開かれなかったりしがちです。きちんと順序が整った1つのPDFなら、その手間が完全になくなります。1クリックですべてが、意図した読み順で開きます。</p>
+
+          <h3>ほとんどの応募書類でうまくいく順序</h3>
+          <p>妥当な初期の並び順は、最初にカバーレター（最も短く、文脈を示す）、次に履歴書（ほとんどの審査担当者が最も見たい中核）、最後にポートフォリオ、資格証明書、推薦状などの補足資料です。応募のどの職種かも分からないままポートフォリオから始めるのではなく、文脈、中身、裏付けの順で読みたいという、ほとんどの人の自然な読み方に沿っています。</p>
+
+          <h3>異なる形式で始まったファイルを結合する</h3>
+          <p>カバーレターはWordから書き出したPDF、履歴書は別のPDF、ポートフォリオの作品は画像ファイル（実物作品の写真、デジタルプロジェクトのスクリーンショット、スキャンした証明書など）という構成はよくあります。ポートフォリオの作品がPDFではなく画像の場合は、まずConvertのPDF出力を使ってPDFに変換してください。画像のバッチが、各画像を1ページとした1つのPDFになります。そのうえで、そのPDFをカバーレターと履歴書のPDFと、見せたい順に結合します。</p>
+
+          <h3>ファイルサイズを妥当に保つ</h3>
+          <p>ポートフォリオの画像、特に実物作品のカメラ写真や高解像度のスクリーンショットは、不必要に大きいことがあります。結合した応募書類のPDFが巨大になる場合は、PDFへの変換と結合の後ではなく前に、ソース画像を圧縮する価値があります。大きくて開くのが遅い添付ファイルは、時間に追われながら確認する人にとって、小さいながらも現実の摩擦です。</p>
+
+          <h3>提出前の再確認</h3>
+          <p>結合したら、最終的なPDFを開いて、最初から最後まで一度スクロールしてください。順序違いのページ、誤って含まれた下書きバージョン、想定どおりに変換されなかったポートフォリオ画像など、実際に見るまで気づけない小さなミスが見つかります。雇用主がすでに開いてしまってから発見するのは、はるかに恥ずかしいものです。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. ページ順を崩さずにスキャン文書を結合する</summary>
+        <div class="golden-rules-body">
+          <p>契約書、フォーム、身分証明書、複数ページの手紙といったスキャンされた書類には、スキャンが行われる方法ゆえの、独特な順序の問題があります。</p>
+
+          <h3>スキャンされたページが他のファイルより順序を崩しやすい理由</h3>
+          <p>多くのスキャナーやスキャンアプリは、各ページを汎用的な自動生成の名前（scan001.pdf、IMG_2024.jpgなど）の別々のファイルとして保存し、ページが物理的にスキャナーに送られた順に番号が付くこともあれば、そうでないこともあります。ページの束を物理的な順序と違う順でスキャンしたり、複合機が予想外に番号を振ったりすると、ファイル名は文書の本当の読み順を確実に反映しません。つまり、ファイルを「名前順」に選択すると、気づかないうちにページの順序が崩れた結合文書ができてしまうことがあります。</p>
+
+          <h3>最も安全な方法：ファイル名だけでなく、内容を確認する</h3>
+          <p>結合する前に、ファイル名だけを信じるのではなく、各スキャンページの実際の内容を見てください（Combineのプレビューサムネイルがあればすぐ確認できます）。1ページ目が本当に文書の先頭で、2ページ目が論理的にその次かを確認するのに数秒しかかかりませんが、銀行、役所、大家さんなど、順序違いの書類が実際の遅延を招く提出先に、バラバラの文書を出してしまうのを避ける最も確実な方法です。</p>
+
+          <h3>混在するスキャン：一部のページは撮影、一部はスキャン</h3>
+          <p>ほとんどのページは本物のスキャンで、1〜2ページだけスマートフォンで撮った写真という構成はよくあります（スキャナーの台に収まらなかったページや、後から思い出してスキャンしたページなど）。Combineは画像とPDFを区別なく扱うため、技術的には問題ありませんが、視覚的には、撮影したページは照明や構図が本物のスキャンと異なって見えることがよくあります。文書の見た目の一貫性が重要なら、形式を混ぜるのではなく、浮いたページを正しく再スキャンする価値があります。ただし、これは機能面ではなく見た目の問題です。</p>
+
+          <h3>複数ページの契約書と署名ページ</h3>
+          <p>署名ページのある契約書やフォームでは、そのページが文書の他の部分に対して正確な位置に収まる必要があります。署名ページが間違った位置に結合されると、法的文書が無効または不完全に見えることがあるからです。上の結合前プレビューチェックが最も重要になるケースとして扱ってください。順序付きのプレビューリストを5秒見るだけで、署名し直して再送する羽目になる文書を避けられます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 結合するときと、ファイルを分けておくとき</summary>
+        <div class="golden-rules-body">
+          <p>すべてを1つのPDFにまとめるのが常に最善とは限りません。別々のファイルのほうが本当に受け取る人のためになることもあるので、今どちらの状況なのかを知る価値があります。</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>状況</th><th>結合するか、分けておくか</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">順番に読まれる複数ページの応募書類やレポート</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">プラットフォームが単一のPDFを明示的に求めている</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">受け取る人が各ファイルを個別に扱う必要がある</td><td data-label="結合するか、分けておくか">分けておく</td></tr>
+              <tr><td data-label="状況">無関係な参照ファイルの大量のバッチ</td><td data-label="結合するか、分けておくか">分けておく、またはZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h3>結合が明らかに正しい選択のとき</h3>
+          <p>特定の順序で読まれるべきもの（複数ページの応募書類、スキャンした契約書、導入のあとに裏付けデータが続く報告書）は、1つのファイルにすることで大きなメリットがあります。読み手が意図した順にすべてに触れることが保証され、ページを順不同に開いたり、何かを飛ばしたりすることがなくなります。フォームやプラットフォームが「単一のPDF」を明示的に求める場面も判断は簡単です。要求されたものを結合して提出するだけです。</p>
+
+          <h3>別々のファイルのほうが受け取る人のためになるとき</h3>
+          <p>受け取る側がドキュメントを個別に扱う必要がある場合（たとえば、請求書だけを経理に転送し、納品書は自分の記録用に残す場合）、1つのファイルにまとめると、必要な部分だけを取り出したり印刷し直したりする必要が生じ、作業が楽にならずむしろ難しくなります。同様に、別々の場所に保管する本当に無関係な複数の文書を送る場合は、まとめたPDFと格闘させるよりも、別々のファイルのほうが、それぞれを自分のやり方で扱えます。</p>
+
+          <h3>参考資料の大規模なコレクション</h3>
+          <p>順番に読むことを想定していない、緩やかに関連した画像や文書の大きなセット（たとえば参考写真の大量のバッチ）を送る場合、バラバラのファイルのZIPアーカイブのほうが、巨大な1つのPDFより実際に役立つことがあります。受け取る側は、1枚の写真を探すために巨大な文書をスクロールするのではなく、個々のアイテムを閲覧して開けるからです。</p>
+
+          <h3>手早く判断する方法</h3>
+          <p>ファイルが最初から最後まで通して読むべき一つのまとまり（結合する）なのか、たまたま一緒に送られる複数の独立したもの（分けておく、またはZIPにする）なのかを考えましょう。ほとんどの応募書類、契約書、複数ページのスキャン文書は明らかに前者に当たり、ほとんどの参考資料、まとめて納品する成果物、個別に扱える文書は後者に当たります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 結合でよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>Combineはシンプルなツールですが、避けられるミスがいくつかあるだけで、使う人が感じる不満のほとんどを占めます。</p>
+
+          <h3>プレビューを確認せず、ファイル名で順序を信用する</h3>
+          <p>上の順序に関する記事で述べたとおり、ファイル名は本当に望む順序を必ずしも反映しません。特にスキャンや自動生成された名前のダウンロードではそうです。選択順が意図と合っていたと思い込まず、結合する前に必ずプレビューリストを確認してください。</p>
+
+          <h3>「便宜上」無関係な文書を1つのファイルにまとめる</h3>
+          <p>管理するファイルを減らすためだけに無関係な複数の文書を結合すると、逆効果になることがよくあります。受け取る側は、大きな結合ファイルを開いて、実際に必要なセクションを探してスクロールする羽目になり、特定のファイルを直接開くことができません。結合は、本当に一つのまとまった読み物として属する文書に限りましょう。</p>
+
+          <h3>送信前に最終ファイルを確認しない</h3>
+          <p>結合したPDFは、大切な場所に送る前に一度開いてざっと見るべきです。ページの順序違い、誤って重複した文書、想定どおりに表示されなかったページを見つける作業で、送信前なら簡単に直せますが、後から説明するのははるかに気まずくなります。</p>
+
+          <h3>PDFと結合する前に画像を変換し忘れる</h3>
+          <p>既存のPDFと同じ結合文書に含めたいバラバラの画像がある場合、Combineはファイルを渡されたとおりに結合することを覚えておいてください。最もスムーズな結果にするには、画像があらかじめ目的の形式と順序になっているようにしましょう。結合後のPDFの一部になってから画像の向きや内容を直すのは、事前に直すよりはるかに面倒です。</p>
+
+          <h3>必要以上に巨大な結合ファイルを送る</h3>
+          <p>すでに大きい複数のPDFや高解像度のスキャン画像を結合すると、そのすべての重さを引き継いだファイルになります。結果が予想外に大きい場合は、結合した後ではなく結合する前にソース画像を圧縮する価値があります。開くのが遅く、肥大化したPDFは、低速な回線や古いデバイスの受信者からの苦情の一般的な原因だからです。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="exif">
+      <details class="golden-rules-article">
+        <summary>1. EXIFメタデータがあなたについて実際に明かすこと</summary>
+        <div class="golden-rules-body">
+          <p>スマートフォンやカメラで撮影した写真には、画像そのもの以外のものがたくさん含まれています。ファイルの内部には、メタデータのブロック（EXIFデータ）が隠れており、写真がいつ、どこで、どのように撮影されたかについて、驚くほど多くの詳細を静かに記録しています。</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>メタデータの種類</th><th>何が明らかになるか</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="メタデータの種類">GPS位置情報</td><td data-label="何が明らかになるか">写真が撮影された正確な場所、多くの場合数メートル以内</td></tr>
+              <tr><td data-label="メタデータの種類">デバイスのメーカーとモデル</td><td data-label="何が明らかになるか">使用された特定のカメラやスマートフォン</td></tr>
+              <tr><td data-label="メタデータの種類">タイムスタンプ</td><td data-label="何が明らかになるか">正確な日付と時刻、秒単位まで</td></tr>
+              <tr><td data-label="メタデータの種類">カメラ設定</td><td data-label="何が明らかになるか">絞り、シャッタースピード、ISO、焦点距離</td></tr>
+            </tbody>
+          </table>
+
+          <h3>位置情報：最大の問題</h3>
+          <p>撮影時に位置情報サービスが有効だった場合、ほとんどのスマートフォンは撮影場所の正確なGPS座標を埋め込み、数メートル以内の精度であることも少なくありません。適切なビューアで元ファイルを開いたり、メタデータリーダーに通したりした人は誰でも、その場所を地図上に表示できます。つまり、自宅、職場、子どもの学校で撮った写真は、住所をどこにも書いていなくても、その場所の正確な位置を明かしてしまうおそれがあります。</p>
+
+          <h3>デバイスの詳細</h3>
+          <p>EXIFには通常、写真を撮影したカメラやスマートフォンの正確なメーカーとモデルが含まれ、ときには特定のソフトウェアバージョンまで記録されています。単独では無害に見えますが、他のメタデータと組み合わせると、写真に識別につながる詳細がもう一つ加わります。マーケットプレイスの出品や匿名アカウントなどの状況では、写真を特定の人物が持つ既知のデバイスに結びつける糸になりえます。</p>
+
+          <h3>タイムスタンプ</h3>
+          <p>写真が撮影された正確な日時は秒単位まで記録されており、ほとんどの人が思っているより正確です。「何気なく」投稿された写真が、ある人が特定の場所にいた正確な時刻を明かしてしまうことがあり、時間とともに投稿された写真のパターンから、日課や居場所を組み立てられることを気にする人にとって問題になります。</p>
+
+          <h3>カメラ設定とそれ以外の情報</h3>
+          <p>絞り、シャッタースピード、ISOなどの技術的な詳細も保存されます。自分の撮影を見直す写真家にとっては重要ですが、それ自体はプライバシー上の重みはありません。デバイスや編集アプリによっては、設定によりサムネイルのプレビュー、ソフトウェア/編集履歴、さらには著作権や作者名のフィールドまで追加で埋め込むこともあります。存在する具体的なフィールドはデバイスやアプリによって異なりますが、位置情報とタイムスタンプのデータが、プライバシー上最も実質的な重みを持つ2つです。</p>
+
+          <h3>「重要でない」写真でもこれが重要な理由</h3>
+          <p>個々の写真は単体では重要度が低く感じられますが、メタデータは積み重なります。複数の写真の位置情報にアクセスできる見知らぬ人は、自宅、職場、ジム、子どもの学校といった、どの写真単体でも明かさない、あなたがよく行く場所のパターンを描き出せます。これはまさにCleanlyが埋めるために存在するギャップです。写真がデバイスを離れる前にこのメタデータを削除すれば、隠れた情報の層全体がなくなり、見える画像はまったく変わりません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 写真を売る・投稿する前にメタデータを削除する方法</summary>
+        <div class="golden-rules-body">
+          <p>EXIFデータが静かに実際の問題を引き起こす最も一般的な状況の二つは、オンラインでの物の販売と、写真の公開投稿です。どちらも写真が見知らぬ人に渡る場面であり、隠れたメタデータが最も重要になる状況です。</p>
+
+          <h3>マーケットプレイスで販売する</h3>
+          <p>販売する物（家具、電子機器、車、賃貸物件）の写真は、ほぼ必ず出品者の自宅または職場で撮影されます。そのままにしておくと、写真の画像メタデータを開くだけで、会う前や何かに合意する前から、買い手にあなたの正確な住所を渡すことになりかねません。これは、そもそも知る正当な理由のない見知らぬ人に、自宅の場所が知られてしまった事例として、実際に記録されている方法です。アップロードする前に出品写真をCleanlyに通せば、買い手から見た違いはまったくなく、このリスクを完全に取り除けます。</p>
+
+          <h3>SNSやフォーラムへの投稿</h3>
+          <p>主要なSNSの多くはアップロード時にメタデータを自動的に削除しますが、これは良いニュースです。ただしすべてのプラットフォームがそうではなく、写真の転送やダウンロードされたコピー（スクリーンショット、保存、リポスト）が、確実に同じ削除プロセスを通るわけでもありません。投稿先からダウンロードされて別の場所で再共有された場合、元のアップロードを生き延びたメタデータはそのまま付いていきます。投稿前にメタデータを削除することが、チェーンのどこにも存在しないことを保証する唯一の方法です。</p>
+
+          <h3>投稿前の簡単な習慣</h3>
+          <p>個人的に知らない人が見る場所（マーケットプレイスの出品、公開のSNS投稿、フォーラム、マッチングアプリのプロフィール）に写真をアップロードする前に、まずCleanlyに通してください。数秒で済み、写真をまとめて処理でき、隠れたデータなしで見た目が同じコピーを作れます。「機密性が高い」写真のときだけ思い出すのではなく、これを標準の手順にしておけば、気にも留めなかった写真で思わぬ目にあうことがなくなります。</p>
+
+          <h3>削除しても変わらないもの</h3>
+          <p>Cleanlyにできることとできないことを明確にしておく価値があります。ファイルから隠れたメタデータを削除しますが、画像そのものに見えている情報（背景の道路標識、見える番地、あなたの位置を示す反射など）は削除できません。メタデータの削除は見えない層を扱うもので、写真自体に写っているものは、投稿前に自分の目で確認する必要がある別の検討事項です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 写真家のためのCleanly：画質を損なわずにプライバシーを守る</summary>
+        <div class="golden-rules-body">
+          <p>写真家は、気軽なスマートフォンユーザーとは少し違う関係をメタデータに対して持っています。その一部は自分の記録として保持する価値が本当にあるため、「常にすべてを削除」は完全に正しい本能とは言えません。</p>
+
+          <h3>写真家が一部のメタデータをローカルに残したがる理由</h3>
+          <p>カメラ設定（絞り、シャッタースピード、ISO、焦点距離）は、自分の撮影を後で見直すときに役立ちます。気に入った写真がどの設定で撮れたかが分かれば、再現しやすくなります。非公開で保管する自分用の作業コピーなら、ファイルが手元にある限りプライバシー上のリスクはなく、本当に便利な参照データなので、この情報を削除する理由はありません。</p>
+
+          <h3>納品または公開されたコピーが別の話である理由</h3>
+          <p>写真がクライアントに納品されたり、ポートフォリオサイトで公開されたり、一般に投稿されたりした瞬間に、計算が変わります。特に位置情報は、クライアント向けや公開用のファイルにあってはなりません。非公開のままであるべき撮影場所（家族写真撮影のクライアントの自宅、プライベートな会場、公開すべきでないスタジオの正確な住所）が明らかになりうるからです。Cleanlyはまさにこのステップのためにあります。納品や公開の前に、外部向けの最終エクスポートをここに通し、手元の作業用ファイルは、自分の参照のために完全なメタデータを保ったままにしておいてください。</p>
+
+          <h3>画質の劣化は一切なし</h3>
+          <p>メタデータを削除すると画質に影響するのでは、というのはよくある（もっともな）心配ですが、影響しません。メタデータはピクセルデータとは別に、テキストのような情報として並べて保存されているブロックで、ピクセルに混ざっていません。そのため、削除しても解像度、色、シャープさには一切影響しません。Cleanlyの出力は、隠れたデータが付いていないだけで、ピクセル単位で同じ写真です。</p>
+
+          <h3>納品ワークフローへの組み込み</h3>
+          <p>ギャラリーを納品したり、定期的に一括で書き出したりする写真家には、メタデータの削除を書き出し前の最終ステップとして扱い、写真ごとではなくバッチ全体に一度に適用するのが最も簡単な方法です。そうすれば、最終品質チェックのように、仕事を仕上げる定型作業の一部になり、顧客やギャラリーの共有先のプラットフォームごとに別々に思い出す必要がなくなります。</p>
+
+          <h3>自分だけでなく、顧客も守る</h3>
+          <p>クライアントの写真で危険にさらされる位置情報やデバイスのデータは、多くの場合あなたではなくクライアントの生活に関するものだということを覚えておく価値があります。自宅で撮影した家族のポートレート撮影、意味のあるプライベートな場所での婚約写真などです。納品前にメタデータを削除することは、あなた自身の、クライアントの画像を丁寧に扱うというプロとしての評判と同じくらい、クライアントのプライバシーを守ります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. メタデータの削除が特に重要なとき</summary>
+        <div class="golden-rules-body">
+          <p>すべての写真が同じプライバシー上の重みを持つわけではありません。メタデータの削除が本当に必要な状況を知ることで、最も重要な場面に習慣を集中させられます。</p>
+
+          <h3>自宅や職場で撮影した写真</h3>
+          <p>自宅や職場の中、またはすぐ周辺で撮った写真（マーケットプレイスの出品写真、「在宅勤務」の写真、リビングで撮った何気ない写真を含む）には、あなたが定期的に決まった時間を過ごす場所に直接つながる位置情報メタデータが含まれています。他人にとって最も価値のある位置情報であり、ほとんどの人が守ろうと考えない情報でもあるため、常に最もリスクの高いカテゴリです。</p>
+
+          <h3>子どもが写っている写真</h3>
+          <p>子どもの写真（学校、習い事、近所など）は、位置情報メタデータが残っていると、子どもが決まった時間にどこにいるかを明かしうるため、追加のリスクがあります。多くの親は、投稿する前に写真に何が写っているかを慎重に考えますが、メタデータに見えない形で入っているものにも、同じ注意を払う価値があります。</p>
+
+          <h3>信頼関係ができる前に見知らぬ相手に送るものすべて</h3>
+          <p>マーケットプレイスの購入者、オンラインのマッチング相手、そして自分で確認したことのない人と写真を共有するその他の状況は、意図した以上の情報を渡したくない、まさにその場面です。出品写真やプロフィール写真が最も分かりやすい例です。受け取る相手とはまだ関係がなく、メタデータを削除しておけば、写真は写っているものだけを明かし、それ以上は何も明かしません。</p>
+
+          <h3>重要度が下がるとき</h3>
+          <p>すでに知っていて信頼している人と非公開で共有する写真では、メタデータの削除はそれほど重要ではありません。家族や親しい友人に非公開のチャンネルで写真を直接送ることには、公開投稿や見知らぬ人への送信と同じ露出リスクはありません。プライバシーのためにメタデータを残すことが積極的に有益だというわけではなく、受信者がどれだけ公開的か、信頼できないかに応じて、実際の緊急性が変わるということです。</p>
+
+          <h3>妥当な初期値</h3>
+          <p>処理が速く、劣化もないことを考えると、身近で信頼できる範囲を出るものには、メタデータの削除を初期の習慣にしておくデメリットはほとんどありません。画質も手間もかからず、結局重要になる特定の写真にだけ選択的に削除するのを思い出す、という必要もなくなります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 写真でよくあるプライバシー上の間違い</summary>
+        <div class="golden-rules-body">
+          <p>写真のプライバシーに関する問題のほとんどは、その瞬間には無害に感じられる少数の習慣に起因します。注意すべき点を紹介します。</p>
+
+          <h3>プラットフォームがすでに処理してくれると思い込む</h3>
+          <p>多くの主要なSNSがアップロード時にメタデータを自動的に削除するのは事実ですが、すべてのプラットフォームがそうではなく、転送、ダウンロード、再共有されたコピーが同じ削除を確実に通るわけでもありません。「プラットフォームがたぶん処理してくれる」と頼るのは賭けです。投稿前に自分でメタデータを削除すれば、不確実性は完全になくなります。</p>
+
+          <h3>写真に見えているものだけを考える</h3>
+          <p>人はよく、写真の見える詳細（背景に機密文書がないか、読める道路標識がないか）を慎重に確認する一方、見えないメタデータが、画像自体は完全に安全に見えても、まったく同じ種類の情報（具体的には位置情報）を漏らす可能性があることを忘れがちです。見えるコンテンツの確認とメタデータの削除は、別々の、どちらも必要なステップです。</p>
+
+          <h3>出品写真に何もせず物を売る</h3>
+          <p>マーケットプレイスの出品は、位置情報が誤って流出する現実世界で最も一般的な原因の一つです。出品者は自分が住んでいるまさにその場所で商品を撮影し、写真をそのままアップロードするからです。リスク（自宅の住所が見知らぬ人に知られる）は具体的で、対策は数秒で済むため、投稿前にメタデータを削除する最も明確で価値の高いケースの一つです。</p>
+
+          <h3>すでに投稿した古い写真を忘れる</h3>
+          <p>メタデータの削除が保護するのは、共有する前に削除した写真だけです。メタデータが付いたまますでにどこかに投稿された写真を、さかのぼって修復することはできません。過去の投稿が気になる場合は、そうした特定の写真に戻り、プラットフォームが許可するなら削除して削除済みのバージョンに置き換えることが解決策であり、これからの習慣がすでに出回っているものすべてをカバーしていると思い込んではいけません。</p>
+
+          <h3>単発のタスクとして、すべてか無かで扱う</h3>
+          <p>「機密性が高そうな」写真だけメタデータの削除を後回しにすると、毎回自分の判断に頼ることになり、それはいつか一つ見逃してしまうタイプの習慣です。信頼できる範囲を出るあらゆるものについて、メタデータの削除をデフォルトの習慣に組み込めば、判断そのものが不要になり、選択的ではなく一貫して適用されます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. SVG向けのCleanly：EXIFではなくエディタのメタデータを削除</summary>
+        <div class="golden-rules-body">
+          <p>上記はすべて、写真に埋め込まれたEXIFデータ（GPS、カメラモデル、タイムスタンプ）に関する話です。SVGファイルは写真ではなく、図形を記述したXMLテキストなので、EXIFがそもそもありません。しかしデザインツールは独自の種類の隠れたメタデータをSVGに埋め込むことがあり、Cleanlyはドロップされたときにそれも検出して削除します。</p>
+
+          <h3>デザインツールがSVGに埋め込むもの</h3>
+          <p>Illustrator、Inkscape、Sketch、Figmaはどれも、描いた図形以上のものをファイルに書き込みます。埋め込まれた <code>&lt;metadata&gt;</code>/RDFブロック（Dublin Coreタグ経由で作者やライセンス情報が含まれることもあります）、エディタ固有の名前空間付き属性（よく見られるのは <code>sodipodi:</code> のタグ）、そしてエクスポート処理が残した通常のXMLコメントが含まれています。SVGが描画されるときには見えませんが、送った相手にはファイルとともにすべて届きます。</p>
+
+          <h3>共有においてこれが重要な理由</h3>
+          <p>写真のGPSタグにあてはまるのと同じ理屈がここにもあてはまります。自分で意識して追加したわけではないメタデータも、ファイルとともに外に出ていくメタデータです。クライアント、マーケットプレイスの出品、公開リポジトリ向けに書き出したアイコンやロゴには、公開するつもりのなかったソフトウェアのバージョン情報や作者表記が含まれている可能性があります。共有する前にそれを削除するのは、写真からEXIFを削除するのと同じ「何もコストがかからず、思わぬ事態を防げる」習慣です。</p>
+
+          <h3>削除前にCleanlyが表示するもの</h3>
+          <p>写真で見つかったGPS、カメラ、日付のタグを一覧にするのと同様に、CleanlyはドロップされたSVGをスキャンして、見つかったもの（埋め込みメタデータ、エディタのオーサリングデータ、コメント）を正確に表示します。盲目的に削除するのではなく、削除する前にファイルに実際に何が含まれているのかを確認できます。</p>
+
+          <h3>非可逆ではなく、可逆</h3>
+          <p>写真の圧縮とは異なり、これは品質のトレードオフではありません。クリーンアップは、ブラウザが最初から描画していなかった余分なものだけを取り除きます。デザインツールが作った図形、色、構造にはまったく手が加わらないので、クリーンされたファイルはピクセル単位で同一に見え、その後もベクターエディタで開いて編集できます。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="context">
+      <details class="golden-rules-article">
+        <summary>1. PDFへのテキスト追加は実際どう動くのか</summary>
+        <div class="golden-rules-body">
+          <p>PDFのページは、クリックして入力できるテキスト文書ではありません。テキストやグラフィックが正確な位置に配置された、印刷された紙面のようなものです。この違いを理解すると、Contextが何をするのか、なぜそのように動作するのかが分かります。</p>
+
+          <h3>ページは文書ではなく、画像である</h3>
+          <p>ほとんどのPDF（入力可能なフォームとして特別に作られたもの以外）には、「入力できる空白スペース」という概念がありません。線、ボックス、空欄に見えるものは、実際には固定された座標に置かれたインクにすぎず、WordのドキュメントやWebフォームのように、入力を待っている下地のテキストフィールドは存在しません。ContextでPDFに「テキストを追加」するとき、隠れたフィールドを見つけて入力しているのではなく、ドラッグした場所に、既存のページの上に完全に新しい独立したテキストの層を置いています。</p>
+
+          <h3>重ねるのと編集するのは違う</h3>
+          <p>この重ね合わせ方式は、このツールだけでなく、事実上すべてのPDF注釈ツールが使っているものと同じです。PDFの元のテキストを実際に編集する（すでにページに印刷された文章を変更する）には専門のソフトウェアが必要で、元のファイルが編集可能なテキストレイヤーを保持していなければ、まったく不可能なことも多くあります。Contextが代わりに行うことは、より単純で、はるかに広く役立ちます。ページの上に視覚的に載る、新しい別のテキストを追加します。これは、キャプション、メモ、イニシャル、フォームの空白行への記入にまさに必要なことです。</p>
+
+          <h3>ピクセルではなくポイント</h3>
+          <p>PDFのページは、指やカーソルでドラッグする画面上のピクセルではなく、ポイント（1/72インチ）で位置を測ります。Contextがその変換を行ってくれるので、どのズームレベルでページを見ていても、画面に見えているものは常に実際のPDFの正しい固定位置に対応します。ページの上部に置いたテキストボックスは、後で他の人がどのデバイスやズームレベルで開いても、ページの上部に残ります。</p>
+
+          <h3>ダウンロードするとどうなりますか</h3>
+          <p>ダウンロードをクリックすると、配置したすべてのテキストボックスと図形が、色、太字/斜体/下線のスタイル、正確な位置とサイズも含めて、PDFのページに恒久的に描き込まれ、通常の単一のPDFファイルとして出力されます。特別な「Context形式」はなく、別途管理するものもありません。出力されたファイルは、どのPDFリーダーでも、どのデバイスでも、他のPDFとまったく同じように開き、印刷できます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 文書ごとに合ったフォントサイズと配置の選び方</summary>
+        <div class="golden-rules-body">
+          <p>適切なテキストサイズと位置は、あなたがどのような文書に書き込むのか、そして次に誰がそれを読むのかによって完全に決まります。シナリオ別の考え方を紹介します。</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>文書の種類</th><th>推奨される方法</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="文書の種類">フォームの空白の行を埋める</td><td data-label="推奨される方法">印刷されたラベルのサイズに合わせ、行のすぐ上に置く</td></tr>
+              <tr><td data-label="文書の種類">メモやコメントの追加</td><td data-label="推奨される方法">コントラストのある色を使い、元のテキストとははっきり分ける</td></tr>
+              <tr><td data-label="文書の種類">署名またはイニシャル</td><td data-label="推奨される方法">周囲のテキストよりわずかに大きく、行の中央に</td></tr>
+              <tr><td data-label="文書の種類">画像の多いPDFにキャプションを付ける</td><td data-label="推奨される方法">すべてのページのすべてのキャプションで一貫したサイズ</td></tr>
+              <tr><td data-label="文書の種類">正式文書や法的文書</td><td data-label="推奨される方法">文書自体のフォントサイズに近づけ、黒を使う</td></tr>
+            </tbody>
+          </table>
+
+          <h3>文書の既存テキストに合わせる</h3>
+          <p>追加した行を、貼り付けたものではなく意図的に見せる最大のポイントは、サイズを近くにすでに印刷されているものに合わせることです。フォームのラベルが約11〜12ptで印刷されているなら、位置が完璧でも、24ptで回答を加えると場違いに見えます。まず周囲の印刷された文字を拡大して、そのスケールをおおまかにつかみ、近いサイズを選んでください。Contextは最後に使ったサイズを覚えているので、一度合わせれば、その後のすべてのボックスが自動的に同じサイズから始まります。</p>
+
+          <h3>文字どおり、線の内側に収める</h3>
+          <p>フォームの空白の行やボックスは、通常、特定のサイズで特定の量のテキストが入るよう作られています。短い行に長い回答を入力する前に、収まるよう少し小さくする必要があるかを検討してください。印刷された行の端からはみ出したテキストは、技術的には何も壊れていなくても、完成した文書を次に読む人にはミスのように見えます。</p>
+
+          <h3>「隠れている」ではなく「追加された」と読める色を選ぶ</h3>
+          <p>黒いテキストは通常、最も安全な初期値です。ほとんどのフォームや文書がすでに印刷されている色と一致し、後から追加したものとして目立たないからです。色付きのテキストは、メモや訂正、元の内容から特に目立たせたいものにとても便利です。ただし、選んだ色が背後のページと十分なコントラストを持つようにしてください。黄色のような明るい色は、白いページでは簡単に見えなくなります。</p>
+
+          <h3>予期せぬことに備えて余白を残す</h3>
+          <p>ページのまさに端にテキストを置くと、後で文書が想定とわずかに異なる用紙サイズや余白設定で印刷された場合に、切り取られるおそれがあります。テキストとページの端、およびテキストと近くの印刷内容との間に小さな余裕を残しておくと、最終的にどのように印刷・表示されても、きれいな結果が保たれます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. プリンターなしでフォームに記入して署名する</summary>
+        <div class="golden-rules-body">
+          <p>印刷、署名、スキャンしてメールで返送という方法は、いまだに多くの書類手続きで使われていますが、ほぼ常に不要です。ブラウザだけでこれを省く方法を紹介します。</p>
+
+          <h3>印刷・署名・スキャンのループを置き換える</h3>
+          <p>フォームに名前、日付、いくつかの短い回答、署名の位置の印だけが必要なら、プリンターやスキャナーを使う本当の理由はほとんどありません。PDFをContextで直接開き、空白の行ごとにテキストボックスを置き、回答を入力してダウンロードします。かつては紙が必要だった一連のやり取りがすべて画面上で完結し、結果としてはスキャンした紙のコピーよりきれいで読みやすいPDFになります。チェックボックスや選択式の項目には、フォントに存在しないかもしれないチェックマークの文字を入力しようとするのではなく、図形（印をつける十字、選択する円）を置いてください。</p>
+
+          <h3>入力した署名とイニシャル</h3>
+          <p>署名欄に、筆記体や手書き風のスタイルで名前を入力することは、日常の書類手続きの大部分（社内フォーム、非公式な合意書、受領確認書、同様の重要度の低い書類）で一般的な慣行です。ただし、一点については冷静に理解しておく価値があります。入力した名前は、eIDASや米国のESIGN法などの法律のもとで法的に認められた電子署名と同じではなく、これらは通常、単純な入力による重ね合わせでは満たせない、特定の同意と確認の手順を求めます。契約書、法的書類、署名の有効性が実際に重要なものには、専用の電子署名サービスを使用してください。Contextは非公式な書類手続き向けの適切なツールであり、それに代わるものではありません。</p>
+
+          <h3>回答を印刷されたラベルに揃える</h3>
+          <p>ほとんどのフォームは、ラベル（「名前：」「日付：」など）の後に、回答用の空白の行やボックスを印刷しています。テキストボックスは行の上に重ねるのではなく、そのすぐ上に載るようにドラッグしてください。印刷された行の真上に置いたテキストは、重なったときに読みにくくなりますが、すぐ上に浮かんだテキストは、はっきり読めるまま、完成したページを見る人にとって「そのラベルへの回答」として読めます。</p>
+
+          <h3>送信前の再確認</h3>
+          <p>すべての項目を入力し終えたら、各ページを実際のサイズで（入力していたサムネイルだけでなく）見て回る価値があります。何も重なっていない、行の端からはみ出していない、必須項目がすべて実際に入力されているかを確認しましょう。編集中は問題なく見えるテキストボックスも、完成したページ全体で見ると、ときどき少し違う位置にあることがあります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 複数ページのPDFを扱う：一貫性とページごとの編集</summary>
+        <div class="golden-rules-body">
+          <p>複数ページの契約書、報告書、フォームは、1ページの簡単な編集とは少し違うアプローチが必要です。主に、文書を進める際に一貫性を保つことが焦点です。</p>
+
+          <h3>位置を見失わずにページ間を移動する</h3>
+          <p>Contextのページナビゲーションは、各テキストボックスを配置した特定のページに紐づけたままにします。長い文書の異なるセクションを入力するためにページを移動しても、何も混ざる心配はありません。3ページ目に追加したボックスは、ダウンロードするまでに他のページをいくつ訪れても3ページ目のままです。</p>
+
+          <h3>ページ間でサイズと色を一貫させる</h3>
+          <p>複数ページにわたって構造が繰り返されるもの（たとえば複数ページのフォームの各ページに同じ種類のラベルが現れる場合など）では、毎回あえて同じフォントサイズと色を使うことで、完成した文書がバラバラな編集の寄せ集めではなく、一貫した1回の作業のように見えます。最後に使ったサイズと色は、次に追加するテキストボックスに自動的に引き継がれるため、長い文書で一貫性を保つには、本当に変更したいとき以外は変えないだけで済みます。</p>
+
+          <h3>入力を始める前に、一巡する計画を立てる</h3>
+          <p>長い文書では、1ページ目のサイズと位置を決める前に、各ページをざっと一巡して（見るだけで、まだ入力はしない）、何を記入する必要があるかの全体像を把握する価値があります。まばらな1ページ目では適切に見えるサイズも、先の密度の高いページには大きすぎることがあり、早く気づけば、すでに配置したボックスを戻って調整する手間を省けます。</p>
+
+          <h3>ダウンロードする前に文書全体を見直す</h3>
+          <p>各ページは独立して描画・編集されるため、今作業しているページに集中するあまり、文書全体を見失いがちです。ダウンロードする前に、最初からページをめくって確認しましょう。完全に飛ばしたページや、作業中に気づかないうちに他と違って見えるようになったボックスを見つける唯一の方法です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. PDFへのテキスト追加でよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>編集したPDFのほとんどの問題は、見落としやすい少数の間違いに起因します。注意すべき点を紹介します。</p>
+
+          <h3>ズームアウトすると小さすぎるテキスト</h3>
+          <p>ズームして1つのボックスに集中している間は完璧に読めるように見えるサイズで入力しても、ページを通常のフルサイズで見たとき、明らかに小さいことに気づくことは簡単に起こります。ダウンロードする前に、ズームを戻して（または完成したPDFを別のビューアで確認して）、すべてのボックスが編集サイズではなく実際のサイズで読めることを確認してください。</p>
+
+          <h3>既存のコンテンツの横ではなく上にテキストを置く</h3>
+          <p>印刷された文字や線の真上にテキストボックスを置くと、重なったときに両方とも読みにくくなります。下の内容は避けてくれません。すでに印刷されているものの上に重ねるのではなく、近くの本当に空いているスペースに新しいテキストを寄せましょう。</p>
+
+          <h3>間違ったページを編集する</h3>
+          <p>長い文書では、特にズームやスクロールのあとに、現在どのページがアクティブか分からなくなり、まったく別のページにテキストを追加してしまいがちです。1ページを超える文書でボックスを追加する前、特に新しいページに移動した直後は、ページインジケーターを確認してください。</p>
+
+          <h3>コントラストの低い色を使う</h3>
+          <p>明るい色、特に淡い黄色は、明るい画面の編集サイズでは問題なく見えても、印刷したり別のディスプレイで見たりすると、本当に読みにくくなることがあります。単に目立たせるだけでなく、実際に読まれる必要があるものには、黒や彩度の高い色のような、白に対して強いコントラストのある色を使いましょう。</p>
+
+          <h3>共有する前にファイル名を変更し忘れる</h3>
+          <p>アップロード時の汎用的なファイル名のままダウンロードすると、自分（または送った相手）の手元に、単に「document」といった名前のファイルが残り、同じ初期名の他の十数個のファイルと区別できなくなります。ダウンロードする前に、それが何であるか、そして多くの場合は日付を入れた、分かりやすく具体的なファイル名を付けておけば、後で本当に混乱せずにすみます。特に同じフォームの複数バージョンがダウンロードフォルダに溜まってきたときに役立ちます。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="gif">
+      <details class="golden-rules-article">
+        <summary>1. GIF完全ガイド：フレームレート、サイズ、そして今もあちこちで使われる理由</summary>
+        <div class="golden-rules-body">
+          <p>GIF形式は数十年前の技術で、現代の動画と比べると技術的に原始的ですが、それでも消えたことがありません。プレーヤーのコントロールも、音も、「クリックして再生」という障壁もなしに、どこでも自動再生される唯一の動画像形式だからです。それが実際に何であるかを理解することで、その限界と、Congifyの設定がなぜそうした形になっているのかの両方が分かります。</p>
+
+          <h3>GIFとは実際何なのか</h3>
+          <p>GIFは圧縮された動画ではありません。最大256色のパレットに限られた個別の画像を、ループで次々に再生するものです。音声トラックはなく、追加する方法もありません。GIFは定義上無音で、だからこそ動画では自動再生されない場所（チャットアプリ、SNSのフィード、フォーラムの投稿）でも、ミュートボタンやタップなしで自動的に再生されます。</p>
+          <p>256色の制限は、この形式の最大の技術的制約です。空間を節約するためにディテールをぼかすJPGの非可逆圧縮とは違います。GIFは1フレームに256色を超える色を本当に表示できないので、滑らかなグラデーションや写真の色深度は、より小さなパレットに減らされます。日常的なほとんどのクリップ（画面録画、リアクションクリップ、支配的な色が数色の短い映像）では、これは見えないか、ほぼ気づきません。広く微妙な色のグラデーションがある夕焼けでは、ときどき目に見える段差が出ることがあります。</p>
+
+          <h3>フレームレート：fpsのトレードオフ</h3>
+          <p>Congifyは毎秒5、10、15、20フレームを提供します。フレームが増えるごとにファイルにフル画像が1枚追加されるため、フレームレートはファイルサイズに対する最大のレバーです。10 fpsから20 fpsにすると、同じクリップの長さでフレーム数がおよそ2倍（ファイルサイズもおよそ2倍）になりますが、GIFの解像度や一般的な表示サイズでは、滑らかさの向上はほとんど気づかないことも多くあります。</p>
+          <p>10 fpsはほとんどのクリップにとって妥当な初期値です。ファイルを膨らませずに動きが滑らかに見えます。長いものやほぼ静止しているもの（文字のスライド、ゆっくりしたパンなど）は、フレームが少なくても気づかれにくいので5 fpsに下げましょう。15〜20 fpsにするのは、動きが速くてカクつきが本当に気になる場合（素早いゲームプレイ、速い手の動き、フレームごとの変化が大きいもの）だけにしてください。</p>
+
+          <h3>サイズとクロップ：フル、正方形、縦型</h3>
+          <p>「フル」はソース動画の元のアスペクト比をそのまま保ちます。GIFがどこに行き着くか分からないときの最も安全な初期値です。「正方形（1:1）」は中央の正方形に切り抜きます。ほとんどのSNSが、レターボックスや向こう側の予測できないクロップなしにフィードできれいに表示する形です。「縦型」はストーリーや縦動画の配置に適しており、横長のクリップだと両側に黒帯が入って小さく表示されてしまいます。</p>
+          <p>クロップはGIFを生成した後ではなく、生成する前に行われるため、正方形や縦型で切り取られた部分は出力から本当になくなります。常にうまく収まると思い込まず、実際の被写体に対してクロップをプレビューしてみる価値があります（フレームの重要な部分は中央にありますか？）。</p>
+
+          <h3>素早い判断ルール</h3>
+          <p>人や動きがある短い日常のクリップ → 10 fps、フル。どのみち正方形にクロップするフィードに投稿する → 正方形にして、プラットフォームではなくあなたがクロップを管理する。長い、またはほとんど静止している映像 → 他のサイズ削減を試す前に、まず5 fpsに下げる。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. トリミング：クリップの適切な長さを選ぶ</summary>
+        <div class="golden-rules-body">
+          <p>GIFのファイルサイズと実際の読みやすさについて、あなたが最も左右できるのは、fpsやクロップではなく、そもそもどれだけの映像を入れるかです。うまくトリミングすることは、その後のどんな設定よりも重要です。</p>
+
+          <h3>短いほうがほぼ常に良い理由</h3>
+          <p>GIFはループするので、見る人は通常2回以上目にします。優れたGIFは、何が起きたか理解するために1回見る必要があるのではなく、2回目や3回目のループにも価値があります。前後の数秒ではなく、肝心な瞬間（ジェスチャー、リアクション、オチ、画面上の特定の動作）だけに絞ると、小さくなるだけでなく、ほぼ確実により効果的になります。意味が伝わるのに10秒かかるGIFは、たいていGIFに向いていません。</p>
+          <p>ファイルサイズはクリップの長さに比例してそのまま増減します。他の条件が同じなら、同じfpsとサイズ設定で、6秒のトリミングは3秒のトリミングの約2倍のファイルサイズになります。GIFはチャットアプリや低速な回線で共有されることが多いため、fpsを下げたりクロップを小さくしたりするより、トリミングを短くするほうが効果が大きいのが普通です。</p>
+
+          <h3>スクラバーを正確に使う</h3>
+          <p>フィルムストリップ上の2つのハンドルをドラッグして、クリップの開始位置と終了位置を正確に設定します。プレビューがリアルタイムで更新されるので、フレームレートやサイズを決める前に、何を残すのかを正確に確認できます。特にイン点とアウト点の付近はゆっくりスクラブしてください。冒頭の0.5秒の間や、末尾に残った余計な1フレームは、トリミングしたGIFが本来イメージしていた瞬間より弱い印象になる、よくある原因です。</p>
+
+          <h3>再生方向：通常、逆再生、ブーメラン</h3>
+          <p>「通常」は、トリミングしたクリップを一度再生し、最後から最初へそのままループします。ほとんどの映像には問題ありませんが、最初と最後のフレームが自然につながらない場合、冒頭への急な切り替わりが唐突に見えることがあります。「逆再生」は同じクリップを逆方向に再生しますが、汎用の設定というより意図的な効果として役立ちます。「ブーメラン」は順方向のあとすぐ逆方向に再生してからループするため、GIFは冒頭に飛び戻るのではなく行き来します。ループの切れ目が不自然に見える場合に使う設定で、短いループクリップにおいて、それ自体が広く知られた独自のスタイルになっています。</p>
+
+          <h3>速度：ループの減速または加速</h3>
+          <p>速度は、クリップを抽出したfpsとは独立して再生レートを変えます。0.5倍は強調やスローモーション感のために半分の速度で再生し、2倍や4倍は長い動作をより引き締まった印象的なループに圧縮します。これはフレームレートとは別のコントロールです。fpsは存在するフレームの数を決め、速度は、すでにあるフレームをGIFがどれだけ速く循環するかを決めます。低fpsで速度を落としたGIFはそれでもカクつくことがあるので、滑らかさとスローモーション感の両方が必要なら、遅い速度と高いfpsを組み合わせてください。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 本当に役立つキャプションの付け方</summary>
+        <div class="golden-rules-body">
+          <p>キャプションがあれば、ページ上のどこでも音を消した状態でもGIFを読めます。GIFにはそもそも音がないので、いつもそうです。動いて予測できない背景の上でキャプションを読みやすく保つには、静止画にテキストを置くより少しだけ手間がかかります。</p>
+
+          <h3>フォントの選択と読みやすさ</h3>
+          <p>Impact（古典的な太く細身のミームフォント）は、小さなサイズでも読みやすく、細い軽い書体より、動きの多い背景に強いです。単なる標準スタイルではなく、意図的で実用的な選択です。ミームではなく情報として読ませたいものには、Arialがより安全で中立的な選択です。TimesとComic Sansは、トーンとして特定のものが求められるときのためにありますが、どちらも、小さなキャプションサイズでは動きのある背景に対して同じようには持ちこたえません。</p>
+
+          <h3>縁取り：背景を問わず縁取り付きの文字が読みやすい理由</h3>
+          <p>GIFの背景はフレームごとに変わります。縁取りのない文字は、背景が暗いところから明るいところに移ると、あるフレームでは完全に読めても次のフレームではほとんど見えなくなります。コントラストの強い色の縁取り（白文字なら黒、黒文字なら白）は、こうした変化の中でもキャプションを読みやすく保ちます。目が背景に紛れずに捉えるのは、塗りだけでなく縁取りだからです。背景に実際の動きがあるものにはほぼ必ずオンにしてください。オフよりオンを初期値にしておく価値のある数少ない設定です。</p>
+
+          <h3>色のコントラストの基本</h3>
+          <p>黒い縁取りの付いた白または黄色のテキストは、古典的で信頼できる組み合わせで、ほとんどどんな映像でも通用します。黒いテキストは一貫して明るい映像の上では機能しますが、クリップのどこかが暗くなった時点で危うくなります。迷ったら、入力しているときに見ていたフレームだけでなく、トリミングしたクリップの最も暗い瞬間と最も明るい瞬間の両方でキャプションをプレビューしてください。</p>
+
+          <h3>配置と複数のキャプション</h3>
+          <p>キャプションはフレーム内のどこにでもドラッグでき、角のハンドルをドラッグしてサイズ変更もできるので、「上」や「下」といった固定位置を強制されません。映像の大事な部分を隠さない場所に、それぞれ配置しましょう。Congifyは同じGIFに複数のキャプションを付けられ、複数段階のジョークやラベル付きのシーケンスに便利ですが、増やすほど視覚的にごちゃつくので、いくつも重ねる前に、うまく置いた1行で足りないか考えてみましょう。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. GIF、MP4、静止画の使い分け</summary>
+        <div class="golden-rules-body">
+          <p>ソースが動画クリップだからといって、GIFが常に正解とは限りません。GIFが本当に他の選択肢より優れている場面を知っておけば、動画のほうが適していた肥大化したファイルや、動きが不要だったキャプションだけの画像を避けられます。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>状況</th><th>最適な選択</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">チャットアプリとメッセージアプリ</td><td data-label="最適な選択">GIF：自動再生、タップ不要</td></tr>
+              <tr><td data-label="状況">重要な音声を含む長めのクリップ</td><td data-label="最適な選択">MP4：GIFには音をまったく載せられません</td></tr>
+              <tr><td data-label="状況">単一の瞬間、動きは不要</td><td data-label="最適な選択">静止画：より小さくシンプル</td></tr>
+              <tr><td data-label="状況">チュートリアルまたはドキュメントの手順</td><td data-label="最適な選択">短く繰り返せる操作にはGIF、長めの解説には動画</td></tr>
+              <tr><td data-label="状況">SNSフィードの投稿</td><td data-label="最適な選択">どちらでも問題ありません。プラットフォームが実際に自動再生するものを確認しましょう</td></tr>
+            </tbody>
+          </table>
+
+          <h3>メッセージアプリとリアクション</h3>
+          <p>ここがこの形式の本拠地です。GIFはチャットにそのまま落ちて、タップも、読み込みスピナーも、別の動画プレーヤーも不要で、すぐに再生されます。素早いリアクション、繰り返し再生できるループ、会話の中で瞬時に届くことを意図した短いクリップでは、他のどの形式もこのようには動作しません。</p>
+
+          <h3>SNS投稿</h3>
+          <p>ほとんどのプラットフォームは、アップロードされたGIFを内部で自動的にループ動画に変換するため、MP4を直接投稿する場合との実際的な違いは小さいことが多いです。ただし、プラットフォームや埋め込みがアップロードされたMP4を同じように扱ってくれるか（自動再生、音のアイコンなし、プレーヤーのUIなし）確信が持てない場合は、GIFのほうが安全な選択です。</p>
+
+          <h3>ドキュメントとチュートリアル</h3>
+          <p>短くループするGIFは、再現可能な単一のUI操作（ここをクリック、あれをドラッグ、このメニューが開くのを見る）を見せるのに本当に優れています。読み手が再生ボタンを押したり巻き戻したりしなくても、勝手にループするからです。数秒より長いものやナレーションが必要なものには、再生コントロール付きの本物の動画のほうが、長く無音で自動再生されるループより読み手のためになります。</p>
+
+          <h3>メールとプレゼンテーション</h3>
+          <p>メールクライアントやプレゼンテーションソフトでのアニメーションGIFの対応は一貫していません。意図どおりにすべてのフレームを表示するものもあれば、最初のフレームだけを静止画として表示するものもあります。これらの環境で伝える内容にアニメーションが不可欠なら、ブラウザと同じように動くと思い込まず、まず実際の配信先でテストする価値があります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. GIFでよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>期待外れのGIFのほとんどは、キャプションやクロップ設定が関わる前の、プロセスの初期段階で行われた、避けられる少数の選択に起因します。</p>
+
+          <h3>最初からfpsを最大にしてしまう</h3>
+          <p>高いほうが単純に良いと思って毎回20 fpsにしたくなりますが、ほとんどの日常的なクリップでは、10 fpsとの滑らかさの差はほとんど見えない一方、ファイルサイズはおよそ2倍になります。高いフレームレートは、動きが本当にそれを必要とするほど速い映像のために取っておきましょう。</p>
+
+          <h3>ゆるくトリミングしすぎる</h3>
+          <p>本当の瞬間の前後に数秒の余白を足すと、ファイルが膨らむだけでなく、GIFの要点もぼやけます。もっと短くトリミングしていれば飛ばせた導入を、見る人に我慢させることになるからです。迷ったら、快適に感じるより短くトリミングしてプレビューで確認しましょう。短すぎることはまずありません。</p>
+
+          <h3>動きの多い映像に縁取りなしのキャプション</h3>
+          <p>入力しているときに見つめていた1フレームでは完璧に読めたテキストも、背景が変わった次の瞬間には完全に見えなくなることがあります。背景に実際の動きがあるものには、縁取りをデフォルトでオンにすることで、GIFがすでに共有されてしまってから気づく事態を避けられます。</p>
+
+          <h3>モバイル回線でファイルサイズを無視する</h3>
+          <p>長く、高fpsで、フルサイズのGIFは、同じクリップを正しくエンコードした動画の数倍の大きさになることがあります。また動画と違い、GIFは共有される多くの場所で「完全に読み込まれる前に一時停止」できないため、ファイル全体が届いてからでないと再生されません。GIFが予想外に大きくなったら、小さいクロップに手を出す前に、トリミングを短くすることとfpsを下げることの二つをまず確認してください。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="coudio">
+      <details class="golden-rules-article">
+        <summary>1. 音声フォーマット完全ガイド：MP3とWAV</summary>
+        <div class="golden-rules-body">
+          <p>音声フォーマットは、画像フォーマットと同じ非可逆と可逆の線で分かれており、どちらを選ぶかも同じ根本的な問いで決まります。聴いて共有するためのものを用意しているのか、それともさらなる作業のために最高の品質で保管するものなのか、ということです。</p>
+
+          <h3>MP3：普遍的な非可逆形式</h3>
+          <p>MP3は非可逆圧縮を使い、人間の聴覚に気づかれにくい音声ディテールを捨ててファイルを大幅に縮小します。使用するビットレートによっては、非圧縮の元データの10分の1以下になることもあります。ほぼすべてのものが対応しており、すべてのスマートフォン、カーステレオ、音楽アプリ、Webサイトで使えます。聴く、共有する、日常的に使うといった用途では、MP3がほぼ常に正しい初期値です。</p>
+          <p>トレードオフはJPGと同じです。圧縮後にはディテールの一部が本当に失われ、あとでMP3を別の形式に変換しても戻ってきません。気軽なリスニングでは、妥当なビットレートなら聞き取れませんが、クリティカルなリスニング、マスタリング、アーカイブでは問題になり始めます。</p>
+
+          <h3>WAV：可逆で非圧縮の形式</h3>
+          <p>WAVは音声を非圧縮で保存し、すべてのサンプルが正確に保たれ、データは何も捨てられません。そのため、さらに編集、ミキシング、処理される予定のものには適した選択です。繰り返し再保存されるMP3のように、複数回の編集を経て非可逆圧縮のアーティファクトが積み重なることがないからです。また、元の録音を無傷のまま保つのに最も近いものであるため、アーカイブのマスターの標準形式でもあります。</p>
+          <p>代償はサイズです。WAVファイルは、圧縮が何の役にも立たないため、通常、妥当なビットレートの同じ音声のMP3の5〜10倍の大きさになります。数分のWAV音声でもすでに数十MBになりえて、メールで送ったり大量に保存したりする場合には問題になります。</p>
+
+          <h3>素早い判断ルール</h3>
+          <p>共有、リスニング、ほとんどのプラットフォームへのアップロード → MP3。編集、ミキシング、あとで戻ってくるマスターコピーのアーカイブ → WAV。迷う場合で一度きりなら → MP3が安全な初期値です。ほぼすべてのものが再生できます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. ビットレートの解説：MP3に合った数値の選び方</summary>
+        <div class="golden-rules-body">
+          <p>ビットレートは、ファイルサイズと品質の両方にとって本当に重要な唯一のMP3設定で、やりたいことに合った妥当な数値を選ぶことは、当てずっぽうよりも理解しておく価値があります。</p>
+
+          <h3>ビットレートが実際に制御するもの</h3>
+          <p>ビットレートは、音声1秒分を符号化するのに使うデータ量で、キロビット毎秒（kbps）で測ります。ビットレートが高いほど元のディテールが多く残り、非圧縮のソースに近い音になります。低いと、より強く圧縮して多くを捨てる代わりにファイルが小さくなります。これは直接的でほぼ線形のトレードオフで、ビットレートを2倍にすると、同じ長さの音声のファイルサイズもおおむね2倍になります。</p>
+
+          <h3>実際にエンコードするものにビットレートを合わせる</h3>
+          <p>話し言葉（ポッドキャスト、ボイスメモ、オーディオブック、ナレーション）には、まったく高いビットレートは必要ありません。声は音楽よりはるかに複雑さが少なく、低いビットレートでもクリアで完全に聞き取れる音のまま、ファイルを小さく保てます。音楽、特にダイナミックレンジが広いものや多くの楽器が同時に鳴るものは、圧縮アーティファクト（複雑な箇所での軽いきつさや「水中のような」質感）が聞こえるようになる前に、はっきり高いビットレートの恩恵を受けます。</p>
+          <p>高い側には、収穫逓減の本当の点があります。あるビットレートを超えると、通常のヘッドホンやスピーカーで聴くほとんどのリスナーは、ソースとの違いを確実に聞き分けられなくなり、数値をさらに上げてもファイルが膨らむだけで、知覚できる品質の向上はありません。迷ったら、中程度のビットレートが安全な汎用的な選択です。低ビットレートの音声設定より明らかに良く、日常の共有には不要な最高品質の音楽マスタリング設定ほどのファイルサイズにもなりません。</p>
+
+          <h3>ビットレートがまったく関係ないとき</h3>
+          <p>MP3ではなくWAVに変換する場合、ビットレートは関係ありません。WAVは非圧縮なので、そもそも選ぶビットレート設定がありません。ビットレートが関わってくるのは、より小さなファイルのために意図的に画質を少し犠牲にするときだけで、それがMP3をWAVより選ぶ理由のすべてです。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 動画ファイルから音声を抽出する</summary>
+        <div class="golden-rules-body">
+          <p>Coudioは既存の音声ファイルを変換するだけでなく、動画から音声トラックを取り出し、映像を完全に捨てて音だけを渡すこともできます。</p>
+
+          <h3>これが必要になるよくある理由</h3>
+          <p>録画された講義、会議、インタビュー動画を、はるかに小さく、外出先でも聴きやすいポッドキャスト風の音声ファイルにする。音声だけが本当に必要なときに、動画から曲や音の一部を取り出す。ストレージを節約するため、古い動画映像の音声部分だけをアーカイブする。画面録画のナレーションを、他の場所で編集や文字起こしをするための独立した音声ファイルに変換する。</p>
+
+          <h3>実際にはどう動作するのか</h3>
+          <p>MP4、WEBM、MOV、OGVファイルを、音声ファイルをドロップするのと同じ要領でCoudioにドロップします。ツールが動画であることを検出し、映像を捨てて自動的に音声トラックを抽出します。通常の音声ファイルと同様に出力としてMP3またはWAVを選び、（MP3の場合は）ビットレートを選びます。動画自体が再エンコードされたり変更されたりすることはなく、既存の音声トラックだけが取り出されます。</p>
+
+          <h3>動画に音声トラックがない場合はどうなりますか</h3>
+          <p>音がまったくない動画（ミュートの画面収録、音声なしで撮影した映像など）では、ファイルにそもそも音声トラックがないため、Coudioが抽出するものがありません。これはツール側で回避できることではなく、元の録画に本当に音がなければ、取り出せる音声はありません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. MP3とWAVの使い分け：実際のシナリオ</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>状況</th><th>最適な形式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">曲、録音、ボイスメモを共有する</td><td data-label="最適な形式">MP3</td></tr>
+              <tr><td data-label="状況">ポッドキャストプラットフォームにアップロードする</td><td data-label="最適な形式">MP3、中程度のビットレート</td></tr>
+              <tr><td data-label="状況">音声をさらに編集・ミックスする</td><td data-label="最適な形式">WAV</td></tr>
+              <tr><td data-label="状況">マスター録音のアーカイブ</td><td data-label="最適な形式">WAV</td></tr>
+              <tr><td data-label="状況">手早いボイスメモをメールで送る</td><td data-label="最適な形式">MP3、低ビットレートで十分（話し声）</td></tr>
+            </tbody>
+          </table>
+
+          <h3>ポッドキャスト、ボイスメモ、話し言葉</h3>
+          <p>ここでは控えめなビットレートのMP3が標準です。エピソードは長いことが多く、音楽より話し声は圧縮に非常に強く、聞き手に聞き取れる品質の低下がないため、ファイルサイズのほうが重要です。</p>
+
+          <h3>共有したり聴いたりする音楽</h3>
+          <p>中〜高ビットレートのMP3は、友人に曲を送る、ほとんどのプラットフォームにアップロードする、ストレージ容量が気になるスマートフォンに音楽を入れておくなど、日常のほぼすべてのケースをカバーします。WAVを選ぶのは、編集、サンプリング、本格的な試聴アーカイブのために非圧縮のオリジナルが特に必要なときだけにしましょう。</p>
+
+          <h3>あとで編集・ミックスする音声</h3>
+          <p>WAVは、ミキシング、トリミング、レイヤリング、レベル調整といったあらゆる編集の上に、追加の圧縮劣化を積み重ねることを避けられます。ファイルに非可逆圧縮がそもそも含まれていないからです。MP3への変換は、編集が終わった最終的な書き出しステップでのみ行ってください。JPGを繰り返し再保存するのに当てはまるのと同じルールです。</p>
+
+          <h3>長期アーカイブ</h3>
+          <p>最高の画質で無期限に保存したいもの（オリジナルの録音、マスタートラック、大切なインタビュー）には、WAVが長期的に安全な選択です。何度コピーやバックアップをしても、ディテールがさらに失われることがないからです。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 音声変換でよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>音質に関する不満のほとんどは、避けられるごく少数の選択に起因します。</p>
+
+          <h3>MP3をMP3へ繰り返し変換する</h3>
+          <p>JPGを再保存するのと同じで、すでに圧縮されたMP3をMP3に再エンコードすると、毎回ディテールが少しずつ失われます。2回目の圧縮は、1回目より元の情報が少ない状態で行われるからです。可能であれば可逆ソース（WAV）から保管・編集し、最後に1回だけMP3に書き出してください。</p>
+
+          <h3>内容に合わないビットレートを使う</h3>
+          <p>話し声には十分な低いビットレートも、楽器が重なるフルミックスの音楽では明らかに圧縮されて聞こえます。逆に、シンプルなボイスメモに最大ビットレートを使っても、聞こえる違いはなくファイルサイズが無駄になるだけです。ビットレートは、すべてに使う単一の数値ではなく、録音に実際に入っているものに合わせましょう。</p>
+
+          <h3>抽出する前に音声トラックの有無を確認しない</h3>
+          <p>ミュートで録画された動画や、以前の別の工程で音声が取り除かれた動画から音声を取り出そうとしても、空の結果が返ります。抽出するものがないからです。抽出がCoudio側で失敗したと思い込む前に、元の動画をさっと確認する（またはさっと聴いてみる）価値があります。元からただ音がなかっただけかもしれません。</p>
+
+          <h3>長い録音でファイルサイズを無視する</h3>
+          <p>講義や会議の長い録音をWAVで書き出したり、必要以上に高いMP3ビットレートで書き出したりすると、メール送信やアップロードが面倒なサイズに膨らむことがあります。特に長い音声コンテンツでは、控えめなMP3ビットレートにしておけば、聞き取りやすさを実質的に損なわずにファイルを扱いやすく保てます。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="codify">
+      <details class="golden-rules-article">
+        <summary>1. コードのスクリーンショットが重要な理由と読みやすくするコツ</summary>
+        <div class="golden-rules-body">
+          <p>プレーンテキストのコードスニペットをチャットやスライド、SNSの投稿に貼ると、本物のコードをひと目で読みやすくしているものがすべて失われます。構文の色もなく、一貫した字下げもなく、改行すら保たれないことがよくあります。スタイル付きのスクリーンショットはこれを解決しますが、実際に見られるサイズで読めることが前提です。</p>
+
+          <h3>シンタックスハイライトが単なる装飾ではない理由</h3>
+          <p>キーワード、文字列、コメント、関数名の色分けは、見た目だけのものではなく、本物の読み取り補助です。経験豊富な開発者は、ハイライトされたコードを一語ずつ読む前に、形と色でざっと走査します。だからこそ、スクリーンショットやコントラストの低いメッセージアプリに貼られた色のないコードは、その言語に精通した人でも明らかに読むのが遅くなります。</p>
+
+          <h3>スニペットを短く保つ</h3>
+          <p>コードのスクリーンショットは、スクロールせずひと目で読めることが目的です。フレームに収めるために快適な読みやすさ以下まで縮める必要があるなら、そのコードは長すぎてスクリーンショット向きではなく、リンクしたファイルやgistのほうが読み手のためになります。要点になる行だけに絞りましょう。短くて大きく読みやすいスニペットは、完全だが小さすぎるものにほぼ必ず勝ります。</p>
+
+          <h3>投稿先で実際に読めるサイズを選ぶ</h3>
+          <p>自分のモニターで等倍なら完全にシャープに見えるスクリーンショットも、チャットのサムネイルや埋め込みツイート、会場の後ろから見るスライドでは読めないほど小さくなることがあります。画像の行き先が分かっているなら、仕上げる前にその程度のサイズでプレビューしましょう。フルスクリーンで快適に読めるものが、サムネイルでも快適とは限りません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. テーマの選び方：Dracula、VS Code Dark、Monokai、GitHub Light</summary>
+        <div class="golden-rules-body">
+          <p>4つのテーマは、単に色のパレットが違うだけのものではありません。それぞれが、広く使われている実在のエディタテーマに由来する（または非常に近い）ものであり、見栄えのよいものを選ぶことと同じくらい、読者に馴染みのあるものを選ぶことが重要になりえます。</p>
+
+          <h3>Dracula：高コントラストで個性的</h3>
+          <p>Draculaの濃い紫の背景に鮮やかなピンク、緑、シアンのハイライトという配色は、現在使われているエディタテーマの中で最も知られたものの一つです。多くの開発者にすぐ馴染みがあり、縮小しても読みやすいコントラストがあります。誰が見るのか、画像がどこに行き着くのか分からないときの、頼もしい初期値です。</p>
+
+          <h3>VS Code Dark：最も一般的な基準</h3>
+          <p>Visual Studio Codeは最も広く使われているコードエディタであるため、そのデフォルトのダークテーマは、最も多くの閲覧者がすでに「コードの普通の見た目」と結びつけているものです。特にVS Codeユーザーを含む可能性が高い読者（統計的にはほとんどの開発者）に対して、安全で驚きのない選択です。</p>
+
+          <h3>Monokai：暖かく、長く愛されている</h3>
+          <p>Monokaiは新しいテーマの多くより前から存在し、オリーブ系の背景のトーンとオレンジ、ピンクのアクセントを持つ独特の暖かいパレットを備えています。Sublime Textや古い環境を使っていた多くの開発者がすぐに分かるでしょう。Draculaよりもコントラストがやや柔らかく、長時間の閲覧で目に優しいと感じる人もいます。</p>
+
+          <h3>GitHub Light：明るい環境向け</h3>
+          <p>上の3つはどれもダークテーマです。GitHub Lightは唯一の本当に明るい選択肢で、GitHub自身のデフォルトのコード表示に合わせています。それ以外は明るいスライドや文書に最適で、暗いコードブロックだと周囲のデザインに馴染まず、浮いて見えます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 言語の選択とシンタックスハイライトを正しく行う</summary>
+        <div class="golden-rules-body">
+          <p>正しい言語を選ぶことは単なるラベルではありません。ハイライターに、どの単語がキーワードで、どれが文字列で、どれがコメントかを伝えるものなので、正しく（あるいは誤って）選ぶことは、結果に直接的で目に見える影響を与えます。</p>
+
+          <h3>間違った言語を選ぶとどうなりますか</h3>
+          <p>ハイライトは、特定の言語の構文規則に対するパターンマッチングで行われるため、間違った言語を選ぶとエラーではなく、自信たっぷりに間違った結果が出ます。別の言語のキーワードはまったく色付けされないか、さらに悪いことに別の単語がキーワードとして誤分類され、色が付いてしまいます。特にテンプレートから貼り付けたあとや、編集中に言語を切り替えたあとは、言語セレクタが実際のボックスの内容と一致していることを必ず再確認してください。</p>
+
+          <h3>複数言語が混在するスニペット</h3>
+          <p>ある言語の中に別の言語を埋め込むスニペット（Python文字列内のSQL、JavaScriptテンプレートリテラル内のHTMLなど）は、選択した1つの言語に対してのみ正しくハイライトされます。1つのスニペット内で両方を同時にハイライトする方法はありません。本当に混在したコンテンツなら、スニペットの大部分を占める言語を選ぶか、両方の半分を読みやすくする必要があるなら2つのスクリーンショットに分けましょう。</p>
+
+          <h3>ハイライトがあまり重要でないとき</h3>
+          <p>1行だけ、短い設定値、1行のコマンドなど非常に短いスニペットでは、読み手が色分けに関係なく正しく解釈できるほど内容が少ないため、特定の言語はあまり重要ではありません。ロジック、文字列、コメントを区別するうえで色が実際に役立つ、より長く構造的に複雑なスニペットでこそ重要になります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. コードのスクリーンショット、ライブスニペット、gistの使い分け</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>状況</th><th>最適な選択</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">SNS投稿</td><td data-label="最適な選択">スクリーンショット：ほとんどのプラットフォームはコードブロックをまったく表示しません</td></tr>
+              <tr><td data-label="状況">スライドまたはプレゼンテーション</td><td data-label="最適な選択">スクリーンショット：部屋のセットアップに関係なく一貫した見た目</td></tr>
+              <tr><td data-label="状況">コピー＆ペーストしてくれる同僚とのチャット</td><td data-label="最適な選択">プレーンテキストまたはライブスニペット：スクリーンショットはコードとしてコピーできません</td></tr>
+              <tr><td data-label="状況">ドキュメントまたはブログ記事</td><td data-label="最適な選択">本物のコードブロック：検索でき、コピーでき、アクセシブル</td></tr>
+              <tr><td data-label="状況">完全なファイルや長い例を共有する</td><td data-label="最適な選択">gistまたはリポジトリへのリンク：スクリーンショットではその長さに対応できません</td></tr>
+            </tbody>
+          </table>
+
+          <h3>コードに対応していないSNSやチャットアプリ</h3>
+          <p>ほとんどのSNSには、整形されたコードブロックの概念そのものがありません。生のコードをツイートや投稿に貼ると、インデント、改行、色付けがすべて失われ、読めない文字の壁になりがちです。スクリーンショットは単なる画像なので、画像が表示される場所ならどこでも同じように表示され、この問題を完全に回避できます。</p>
+
+          <h3>受け取る人が実際にコードを使う必要があるとき</h3>
+          <p>スクリーンショットは画像です。選択も、コピーも、エディタへの貼り戻しもできません。送る相手がコードを実行、編集、コピーする必要がある場合（見るだけではなく）、プレーンテキスト、対応するチャットアプリのライブスニペット、gistのリンクのほうが、手で打ち直さなければならない画像よりずっと役に立ちます。</p>
+
+          <h3>ドキュメントと技術文書の作成</h3>
+          <p>ドキュメント内のテキストベースの本物のコードブロックは、検索でき、スクリーンリーダーでも読め、コピーもできます。スクリーンショットはこれらすべてを手放します。ドキュメントでスクリーンショットが活きるのは主に、スクリーンショットが本当に得意なものを見せるときです。注釈付きのUI、特定の方法でハイライトされた差分、読者がコピーするためではなく説明用に特定のエディタでの見え方を示すコードなどです。</p>
+
+          <h3>より長い例と完全なファイル</h3>
+          <p>コードのスクリーンショットは、ひと目かふた目で読める焦点を絞った抜粋に最適です。ファイル全体、複数の関数を含む例、縦長の画像をスクロールしないと読めないものには、gistやリポジトリへのリンクのほうが実用的で使いやすい選択です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. コードのスクリーンショットでよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>読みにくいコードのスクリーンショットのほとんどは、避けられる少数の原因のいずれかを共有しています。</p>
+
+          <h3>要点に必要な量よりはるかに多くのコードを含める</h3>
+          <p>関連する1行を示すのに前後40行分のコンテキストを含めたスクリーンショットは、読み手に重要な部分を探させることになります。要点になる行だけに絞りましょう。import、定型コード、無関係な関数は、ほぼ常に、肝心のメッセージを失わずに削れます。</p>
+
+          <h3>シンタックスハイライト用に間違った言語を選ぶ</h3>
+          <p>以前のスニペットから引き継がれた言語の選択や、正確なものではなく響きが近い選択肢を選ぶことは、ひと目では気づきにくくても、その言語を知っている人には違和感のある、微妙に間違ったハイライトを生みます。特にテンプレートを貼り付けたあとは、書き出す前に言語が合っているか再確認してください。</p>
+
+          <h3>投稿先に合わないテーマ</h3>
+          <p>明るい文書やスライドに暗いテーマのスクリーンショットを置くと、周囲のデザインに溶け込まず、浮いた四角形として目立ってしまいます。GitHub Lightはまさにこのケースのために存在します。習慣でどこでも暗いテーマを使うのではなく、切り替えてみる価値があります。</p>
+
+          <h3>共有後に読めないほど小さいサイズで書き出す</h3>
+          <p>自分の画面で等倍なら鮮明で読みやすいものも、チャットアプリのサムネイルやSNS投稿の小さな埋め込みになると、読めないほど小さくなることがあります。行き先が分かっているなら、仕上がりとする前に、おおよそその表示サイズで画像を確認してください。長いスニペットを無理に縮小して収めるより、短くて文字が大きいスニペットのほうが、しばしばうまく伝わります。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="colorfy">
+      <details class="golden-rules-article">
+        <summary>1. HEX・RGB・HSB・HSL：各カラーコードの本当の意味</summary>
+        <div class="golden-rules-body">
+          <p>画面上のすべての色は、同じ赤・緑・青の光の値に帰着します。HEX、RGB、HSB、HSLは、同じ色を書き表す4つの異なる方法にすぎず、それぞれ別の種類の作業に向いています。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>形式</th><th>最適な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="形式">HEX (<code>#FF8A4C</code>)</td><td data-label="最適な用途">CSS、デザインツールなど、コンパクトな単一コードが求められるあらゆる場所</td></tr>
+              <tr><td data-label="形式">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="最適な用途">別々の数値から色を作るコード、またはチャンネルの合成・演算を行うコード</td></tr>
+              <tr><td data-label="形式">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="最適な用途">同じ色相のまま、色の明るさや彩度を調整する</td></tr>
+              <tr><td data-label="形式">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="最適な用途">ホバー・アクティブ状態のために、色を予測どおりに明るく、または暗くする</td></tr>
+            </tbody>
+          </table>
+
+          <h3>HEX：コンパクトで、どこでも使える標準</h3>
+          <p>HEXコードは赤・緑・青を6桁の文字列にまとめたもので、ほとんどすべてのデザインツール、CSS、画像エディタが標準で期待する形式です。コンパクトで貼り付けやすい反面、中身の数値（16進数のペア）は、普通の10進数のようには一目で読み取れません。</p>
+
+          <h3>RGB：同じ値を、そのまま書き出したもの</h3>
+          <p>RGBは、HEXがエンコードするのと同じ3つのチャンネルを、16進数のペアにまとめるのではなく、0〜255の3つの普通の数値として書き出したものです。1つのチャンネルを手で調整する場合や、別々の赤・緑・青の入力から色を作るコードを書く場合に、考えやすくなります。</p>
+
+          <h3>HSBとHSL：色の実際の感じ方を軸に設計</h3>
+          <p>どちらも色を色相（色そのもの、色相環上の位置）と、鮮やかさや明るさを表す他の2つの要素に分けます。HSBは彩度と明度、HSLは彩度と輝度を使います。「同じ色でもっと暗く」「同じ色でもっとくすんだ」にしたいとき、どちらもずっと考えやすいです。3つのRGBチャンネルを手計算し直す代わりに、色相はそのままにして、もう一方の数値だけを調整すればよいからです。</p>
+
+          <h3>Colorfyでの形式の選び方</h3>
+          <p>Colorfyの形式ドロップダウンは、すべてのピッカーと保存した色の表示に一度に適用されます。貼り付け先に合うもの（CSSならHEX、色合いを手で微調整するならHSB/HSL）に切り替えるだけで、コピーしたコードを後から自分で変換する必要がありません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. スクリーンショット、写真、デザイン資料から色を取る</summary>
+        <div class="golden-rules-body">
+          <p>目分量で色を合わせようとする（ブランドの正確な青、ムードボード写真の色合い、競合サイトの色）ことは、記憶から、あるいはHEXコードを当てずっぽうで入れても、正確に合うことはまずありません。実際のピクセルをサンプリングすることが、正確な値を得る唯一の方法です。</p>
+
+          <h3>「ほぼ合っている」では足りないことが多い理由</h3>
+          <p>並べて見るとほぼ同じに見える2つの色でも、実際のコードを比べると測定できるほど違っていることがあります。RGBの1つのチャンネルだけがわずかに違う色合いは、単独では目に見えないことが多いですが、本物の参照色のすぐ隣に置かれた瞬間にはっきり分かります。サンプリングは推測を完全に取り除きます。ピッカーは近似値ではなく、ファイルにあるものを正確に読み返します。</p>
+
+          <h3>スクリーンショットから作業する</h3>
+          <p>Webページ、アプリ、他人のデザインのスクリーンショットは、他の画像とまったく同じように扱われます。ドロップして、合わせたい正確なピクセルまでピッカーをドラッグし、コードをコピーするだけです。元のソースファイルを持っていない参照物から、ブランドカラーやUIカラーを取り出す最も確実な方法です。</p>
+
+          <h3>圧縮や照明によるアーティファクトに注意</h3>
+          <p>強く圧縮されたJPEGや、色のついた・暖色の照明で撮った写真は、色の実際のピクセル値が本来の色から外れることがあります。黄色い屋内照明の下で撮影したロゴの本当のHEXコードは、実際のロゴより少し暖かく読み取られます。正確さが重要な場合（公式ブランドカラーに合わせるときなど）は、写真ではなく、きれいなスクリーンショットや非圧縮のソースから色を取るのが望ましいです。</p>
+
+          <h3>複数の箇所をサンプリングして一貫性を確認する</h3>
+          <p>1枚の写真でも、一見「均一」に見える領域に、見た目以上の色の変化があることがよくあります。JPEG圧縮、微妙なグラデーション、照明が、ピクセル間に小さな違いを生みます。1つのサンプルを信じるのではなく、同じ領域の異なる点に2〜3個のピッカーを使うと、本当の色の変化なのか、単なるノイズなのかをつかみやすくなります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 作業しながら再利用できるパレットを作る</summary>
+        <div class="golden-rules-body">
+          <p>Colorfyの保存色パレットは、1つの画像から複数の色を取り出し、後でそのすべてに戻りたいときのためにあります。ファイルを開き直して、1色ずつ最初から選び直す必要がありません。</p>
+
+          <h3>作業しながら保存する</h3>
+          <p>サンプリングした色の横にある「保存」をクリックすると、その色がブラウザに保持されるパレットに追加されます。画像とは別に保存されるので、次にColorfyを開いたときも、別の画像を読み込んでいても、画像を読み込んでいなくても残っています。一度に最大20色まで保持でき、複数の参照画像から集めた完全なパレットを、先にコードをどこかへコピーしなくても作れます。</p>
+
+          <h3>保存した色に名前を付ける</h3>
+          <p>保存した色をダブルクリックすると、短い名前（最大25文字）を付けられます。パレットのエントリが数個を超えると、「3つ目のオレンジ」では見分けにくくなるので便利です。名前はホバー時のツールチップとして表示されるため、スウォッチ自体は見た目をすっきり保ったまま、必要なときに名前ですぐ見分けられます。</p>
+
+          <h3>パレットを空にする</h3>
+          <p>保存した色を1つずつ削除するには、このサイトのすべてのファイルリストで使われているものと同じ「×」ボタンを使います。そのボタンをクリックするときにShiftキーを押したままにすると、クリックした色を含め、保存したすべての色を一度に消去します。完了したプロジェクトのパレットが不要になり、各エントリを個別に削除するより次のパレットを空から始めたい場合の、より速い方法です。</p>
+
+          <h3>パレットを開いたままにしておく価値があるとき</h3>
+          <p>保存したパレットが最も役立つのは、一度きりの色の調べ物ではなく、複数のセッションにわたってブランドカラーやUIカラーの一貫したセットを作り上げる継続的なプロジェクトです。一度きりなら、コードを直接コピーして先に進むほうが保存するより簡単です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 複数のカラーピッカーで色を並べて比較する</summary>
+        <div class="golden-rules-body">
+          <p>1色を取るだけなら1つのピッカーで十分ですが、同じ画像から2色以上を比較する場合（コントラストの確認、グラデーションの両端の一致、1枚の写真に散らばったパレットのサンプリング）は、複数のピッカーを同時に有効にしたほうがはるかに簡単です。</p>
+
+          <h3>2つ目（3つ目、4つ目）のピッカーを追加する</h3>
+          <p>同じ画像で最大4つのピッカーを同時に有効にでき、それぞれに番号が付くため、下の結果行を画像上のリングに簡単に対応づけられます。ピッカーリストの下の「+」ボタンで追加するか、Shiftキーを押しながら画像上の任意の場所をクリックすると、その位置に番号付きの新しいピッカーを直接置けます。サンプリングしたい大まかな場所がすでに分かっている場合は、後者のほうが速い方法です。</p>
+
+          <h3>結果をまとめて読む</h3>
+          <p>有効なピッカーにはそれぞれ専用の行があり、独自のコードと保存ボタンが同時に表示されます。画像上では同じ色に見える2つの領域が実際に同じコードを共有しているか確認したり、1つずつサンプリング、保存、再サンプリングを繰り返すのではなく、1枚の画像から小さな複数色のパレットを一度に作ったりするのに便利です。</p>
+
+          <h3>追加せずに位置を変える</h3>
+          <p>通常のクリック（Shiftなし）は、新しいピッカーを追加せず、直前に操作したピッカーを動かします。ピッカーを削除して追加し直さなくても、サンプル位置を微調整するのに便利です。ピッカーを直接ドラッグしたり、フォーカスしてから矢印キーを使ったりしても、同じようにピクセル単位の細かな調整ができます。</p>
+
+          <h3>1つのピッカーで十分なとき</h3>
+          <p>1色をさっと取るだけなら、ピッカーを増やすのは余計な手間です。ピッカーが役に立つのは、同じ画像から1回のセッションで2色以上を比較、対比、収集する必要があるときです。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 色選びでよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>不正確な色の選択のほとんどは、ツールそのものに問題があるのではなく、ピッカーが正確にどこに着地するかについての、避けられる習慣に起因します。</p>
+
+          <h3>エッジの真上でサンプリングする</h3>
+          <p>二つの色の境界にあるピクセルは、どちらの側のきれいなサンプルでもなく、アンチエイリアスで混ざった中間色であることがよくあります。縮小表示のままシェイプの輪郭付近をクリックすると特に起きやすいです。ズームして（プレビューを大きくして）、縁から十分離れた、取りたい領域の均一な内部を狙ってください。</p>
+
+          <h3>強く圧縮された画像を信用する</h3>
+          <p>JPEG圧縮は、特に写真の複雑なエリアやディテールの多いエリアで、個々のピクセル値を元の色から少しずらすことがあります。「ベタ」の色の領域でも、元のシーンにはなかったピクセルごとの小さなノイズが含まれることがあります。正確さが重要な場合は、可能であれば圧縮されたJPEGより、PNGなどの可逆ソースを選んでください。</p>
+
+          <h3>自分の画面を考慮しない</h3>
+          <p>Colorfyが読み返すコードは、画像ファイルに保存されている正確な値ですが、その色が実際にどう見えるかは、表示する画面に依存し、ディスプレイごとにキャリブレーションが異なります。サンプリングした色を物理的な参照物（印刷物、物理的な製品）に正確に合わせる必要がある場合は、サンプリングしたコードを正確な出発点として扱い、モニター上での見え方だけでなく、物理的な参照物そのものと照らして最終結果を確認することを想定してください。</p>
+
+          <h3>保存した色が画像をまたいで残ることを忘れる</h3>
+          <p>保存したパレットは読み込んだ画像に紐づかないため、ときどき空にしないと、無関係な複数のプロジェクトの色が同じパレットに混ざりがちです。無関係な新しいプロジェクトを始めるときは、保存した色の削除ボタンをShift+クリックするとパレット全体を一度に消去でき、新旧の色が一緒に溜まるのを防げます。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
+  </main>
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>会社</h3>
+      <button type="button" class="footer-dash-link" data-goto="about"><span class="footer-link-fun">私たちの宇宙</span><span class="footer-link-plain">私たちについて</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq"><span class="footer-link-fun">回答済み</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms"><span class="footer-link-fun">銀河ハンドブック</span><span class="footer-link-plain">利用規約</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy"><span class="footer-link-fun">エイリアン・プライバシー・プロトコル</span><span class="footer-link-plain">プライバシーポリシー</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies"><span class="footer-link-fun">Cookie一覧</span><span class="footer-link-plain">Cookieポリシー</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>はじめに：</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>お問い合わせ</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discordに参加</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=71" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
+</body>
+</html>
