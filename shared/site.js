@@ -1457,7 +1457,8 @@ bcRegisterEscapable(
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-wrap")) return;
     const current = document.documentElement.lang || "en";
-    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default");
+    const ORDER = ["en", "nl", "de", "es", "fr", "it", "pl", "pt", "cs", "id"];
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default").sort((a, b) => ORDER.indexOf(a.hreflang) - ORDER.indexOf(b.hreflang));
     if (alts.length < 2) return;
     const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano", pt: "Português" };
     const wrap = document.createElement("div");
