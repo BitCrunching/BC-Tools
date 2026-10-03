@@ -38,6 +38,8 @@ PAGES = [
     "congify/index.html",
     "coudio/index.html",
     "codify/index.html",
+    "faq/index.html",
+    "golden-rules/index.html",
 ]
 
 SKIP_TEXT_IN = {"script", "style", "code", "pre", "textarea", "svg", "noscript"}
