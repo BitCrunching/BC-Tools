@@ -1429,6 +1429,11 @@ bcRegisterEscapable(
    the other language's copy of the same page; it never redirects on its
    own and just remembers the last choice. */
 (function(){
+  const FLAGS = {
+      en: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="8"/></svg>',
+      cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
+      pl: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#DC143C"/></svg>'
+    };
   function addLangButton(){
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-btn")) return;
@@ -1440,7 +1445,7 @@ bcRegisterEscapable(
     link.className = "nav-theme-btn nav-lang-btn";
     link.href = new URL(other.href, location.href).pathname + location.search;
     link.hreflang = other.hreflang;
-    link.textContent = other.hreflang.toUpperCase();
+    link.innerHTML = FLAGS[other.hreflang] || other.hreflang.toUpperCase();
     link.title = { cs: "Česky", pl: "Polski" }[other.hreflang] || "English";
     link.setAttribute("aria-label", link.title);
     link.addEventListener("click", () => { try { localStorage.setItem("bc-lang", other.hreflang); } catch (e) { /* storage unavailable */ } });
