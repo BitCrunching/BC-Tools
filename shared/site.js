@@ -866,7 +866,7 @@ function showNavTerminal(text){
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
-        closeTimer = setTimeout(closeShare, 250);
+        closeTimer = setTimeout(closeShare, 150);
       });
     }
 
