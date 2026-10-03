@@ -1434,6 +1434,18 @@ bcRegisterEscapable(
       cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
       pl: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#DC143C"/></svg>'
     };
+  function applySavedLang(){
+    let saved = null;
+    try { saved = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
+    const current = document.documentElement.lang || "en";
+    if (!saved || saved === current) return;
+    const target = document.querySelector('link[rel="alternate"][hreflang="' + saved + '"]');
+    if (!target) return;
+    const internal = document.referrer && new URL(document.referrer).origin === location.origin;
+    if (current !== "en" && !internal) return;
+    location.replace(new URL(target.href, location.href).pathname + location.search + location.hash);
+  }
+  applySavedLang();
   function addLangButton(){
     const nav = document.querySelector(".nav-right");
     if (!nav || nav.querySelector(".nav-lang-wrap")) return;
