@@ -149,6 +149,7 @@
      own banner can opt into the same treatment its homepage card uses,
      instead of the homepage keeping a private copy only it can see. -->
 <link rel="stylesheet" href="/shared/textures.css?v=2">
+<link rel="stylesheet" href="/shared/buttons.css?v=21">
 
 <style>
 html{ min-width:335px; }
@@ -1096,8 +1097,8 @@ html[data-theme="light"] .engine-status-dot{
   margin-left:6px;
   font-size:15px;
   font-weight:700;
-  color:#e5e7eb;
-  opacity:.8;
+  color:#F1F5F9;
+  opacity:1;
 }
 
 html[data-theme="light"] .engine-status-title{
@@ -1147,8 +1148,8 @@ html[data-theme="light"] .engine-status-title{
 .engine-status-row{
   font-size:15px;
   font-weight:400;
-  color:#e5e7eb;
-  opacity:.8;
+  color:#F1F5F9;
+  opacity:1;
   white-space:pre-wrap;
 }
 
@@ -1393,23 +1394,12 @@ html[data-theme="light"] .tool-card-star{
   height:40px;
   padding:0 22px;
   border-radius:20px;
-  border:1px solid var(--border-strong);
-  background:transparent;
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
-  cursor:pointer;
-  transition:.2s;
 }
-#page-mainpage .category-filter-btn:hover{
-  background:rgba(127,127,127,.15);
-}
-#page-mainpage .category-filter-btn[aria-pressed="true"]{
-  background:var(--accent);
-  border-color:var(--accent);
-  color:var(--bg);
-}
+
+
 
 #page-mainpage .cards{
   display:grid;
@@ -1615,6 +1605,10 @@ html[data-theme="dark"] #page-mainpage .card-open:hover{
   text-align:center;
 }
 
+/* Colors / hover come from shared .bc-hover-fill (shared/buttons.css):
+   transparent at rest, theme fill on hover. Plain background/color hover,
+   no transform — a transform here combined with the one on .card caused a
+   real hover flicker (the hit-box shifted at the boundary between the two). */
 #page-mainpage .card-readmore{
   position:relative;
   z-index:2;
@@ -1626,39 +1620,12 @@ html[data-theme="dark"] #page-mainpage .card-open:hover{
   width:100%;
   padding:0;
   margin:0;
-  border:none;
-  border-top:1px solid rgba(255,255,255,.3);
-  background:rgba(255,255,255,.16);
+  border-width:1px 0 0;
   font-weight:400;
   font-size:15px;
   font-family:inherit;
-  color:var(--text);
   text-decoration:none;
-  cursor:pointer;
   border-radius:0;
-  transition:background .2s ease, color .2s ease;
-}
-
-/* Plain background/color hover — no transform. This used to have its
-   own scale/wobble reaction, but combining a transform here with one
-   on .card (above) turned out to cause a real hover flicker: either
-   one moving could shift Read More's hit-box right at the boundary
-   between the two, flipping :hover on/off mid-transition. Simpler and
-   collision-free this way. */
-#page-mainpage .card-readmore:hover,
-#page-mainpage .card-readmore:focus-visible{
-  color:var(--text);
-  background:rgba(255,255,255,.3);
-}
-
-html[data-theme="dark"] #page-mainpage .card-readmore{
-  border-top:1px solid rgba(255,255,255,.16);
-  background:rgba(0,0,0,.1);
-}
-
-html[data-theme="dark"] #page-mainpage .card-readmore:hover,
-html[data-theme="dark"] #page-mainpage .card-readmore:focus-visible{
-  background:rgba(0,0,0,.18);
 }
 
 @media (max-width:768px){
@@ -1701,33 +1668,10 @@ html[data-theme="light"] .tool-preview-modal{
   border-color:rgba(29,36,54,.3);
 }
 
-/* Same style + logic as the top nav's own "go back" button
-   (.nav-close-btn, shared/site.css) — a bordered arrow-in-a-box rather
-   than a red-hover "×", since this genuinely is going back to where you
-   were (the homepage grid), not a destructive close. Kept as its own
-   class (this page is the SPA, doesn't load shared/site.css) but the
-   values are copied 1:1 from .nav-close-btn's recipe. */
+/* Back button: shared .bc-icon-btn + .bc-hover-fill (shared/buttons.css);
+   only its spot in the modal is local. */
 .tool-preview-close{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  height:36px;
   margin:0 0 12px auto;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:none;
-  color:var(--text);
-  line-height:1;
-  cursor:pointer;
-  transition:.2s;
-}
-.tool-preview-close svg{
-  width:20px;
-  height:20px;
-}
-.tool-preview-close:hover{
-  border-color:var(--border-strong);
 }
 
 .tool-preview-peek{
@@ -1760,22 +1704,10 @@ html[data-theme="light"] .tool-preview-modal{
   margin-top:20px;
   padding:12px 20px;
   border-radius:14px;
-  border:1px solid rgba(255,255,255,.14);
-  background:rgba(255,255,255,.08);
-  color:var(--text);
   text-align:center;
   text-decoration:none;
   font-weight:700;
   font-size:15px;
-  transition:.2s;
-}
-html[data-theme="light"] .tool-preview-open{
-  border-color:rgba(29,36,54,.3);
-  background:rgba(29,36,54,.06);
-}
-.tool-preview-open:hover{
-  border-color:#7c9dff;
-  background:rgba(124,157,255,.15);
 }
 
 footer{
@@ -2241,6 +2173,57 @@ footer a{
   margin-bottom:32px;
 }
 
+
+/* Header nav buttons use the same theme-fill hover as .bc-hover-fill. */
+.nav-theme-btn,
+.nav-share-btn,
+.nav-help-btn,
+.nav-close-btn{
+  border:var(--border-normal) solid var(--btn-fill);
+  transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out;
+}
+.nav-theme-btn:hover,
+.nav-share-btn:hover,
+.nav-help-btn:hover,
+.nav-close-btn:hover{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.nav-theme-btn:focus,
+.nav-share-btn:focus,
+.nav-help-btn:focus,
+.nav-close-btn:focus{ outline:none; }
+.nav-theme-btn:focus-visible,
+.nav-share-btn:focus-visible,
+.nav-help-btn:focus-visible,
+.nav-close-btn:focus-visible{ outline:2px solid var(--btn-fill); outline-offset:2px; }
+
+/* Dropdown menus (language, share) follow the theme and use the same
+   theme-fill hover; the currently selected language stays filled. */
+html[data-theme="light"] .nav-lang-menu,
+html[data-theme="light"] .nav-share-menu{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+.nav-lang-menu a,
+.nav-share-menu button{
+  background:transparent;
+  color:var(--text);
+  transition:background-color .3s ease-in-out, color .3s ease-in-out;
+}
+.nav-lang-menu a:hover,
+.nav-lang-menu a[aria-current],
+.nav-share-menu button:hover{
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.nav-share-menu .nav-share-more-toggle,
+.nav-share-menu .nav-share-more-toggle:hover{
+  background:transparent !important;
+  color:var(--text) !important;
+  opacity:.7;
+}
 </style>
 </head>
 <body>
@@ -2344,11 +2327,11 @@ footer a{
     <h2 class="cards-heading">Starte mit dem Creative Hub:</h2>
 
     <div class="category-filter" id="categoryFilter" role="group" aria-label="Tools nach Kategorie filtern">
-      <button type="button" class="category-filter-btn" data-category="all" aria-pressed="true">Alle</button>
-      <button type="button" class="category-filter-btn" data-category="image" aria-pressed="false">Bild</button>
-      <button type="button" class="category-filter-btn" data-category="video" aria-pressed="false">Video</button>
-      <button type="button" class="category-filter-btn" data-category="sound" aria-pressed="false">Ton</button>
-      <button type="button" class="category-filter-btn" data-category="code" aria-pressed="false">Code</button>
+      <button type="button" class="category-filter-btn bc-hover-fill" data-category="all" aria-pressed="true">Alle</button>
+      <button type="button" class="category-filter-btn bc-hover-fill" data-category="image" aria-pressed="false">Bild</button>
+      <button type="button" class="category-filter-btn bc-hover-fill" data-category="video" aria-pressed="false">Video</button>
+      <button type="button" class="category-filter-btn bc-hover-fill" data-category="sound" aria-pressed="false">Ton</button>
+      <button type="button" class="category-filter-btn bc-hover-fill" data-category="code" aria-pressed="false">Code</button>
     </div>
 
     <div class="cards" id="cardsGrid">
@@ -2360,7 +2343,7 @@ footer a{
           </div>
           <p>Konvertiere Bilder zwischen JPG, PNG, WEBP und PDF. Du kannst auch HEIC/HEIF hochladen!</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/convert-dark.mp4?v=1" data-preview-img-light="/shared/previews/convert-light.mp4?v=1" data-preview-name="Convert" data-preview-desc="Verwandle jedes Bild oder PDF in genau das Format, das du brauchst – JPG, PNG, WEBP, PDF, sogar HEIC direkt vom iPhone. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/convert/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/convert-dark.mp4?v=1" data-preview-img-light="/shared/previews/convert-light.mp4?v=1" data-preview-name="Convert" data-preview-desc="Verwandle jedes Bild oder PDF in genau das Format, das du brauchst – JPG, PNG, WEBP, PDF, sogar HEIC direkt vom iPhone. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/convert/">Mehr lesen</button>
       </div>
 
       <div class="card compress" data-category="image" title="Die Farbe ist: Himmelblau">
@@ -2371,7 +2354,7 @@ footer a{
           </div>
           <p>Verkleinere Bilddateien, ohne die Qualität zu opfern.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/compress-dark.mp4?v=1" data-preview-img-light="/shared/previews/compress-light.mp4?v=1" data-preview-name="Compress" data-preview-desc="Verkleinere deine Fotos, ohne die Qualität zu ruinieren. Wähle Niedrig, Mittel oder Hoch und lade herunter – eine Datei oder gleich einen ganzen Stapel, in Sekunden fertig, ganz ohne Upload auf Server." data-preview-href="/compress/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/compress-dark.mp4?v=1" data-preview-img-light="/shared/previews/compress-light.mp4?v=1" data-preview-name="Compress" data-preview-desc="Verkleinere deine Fotos, ohne die Qualität zu ruinieren. Wähle Niedrig, Mittel oder Hoch und lade herunter – eine Datei oder gleich einen ganzen Stapel, in Sekunden fertig, ganz ohne Upload auf Server." data-preview-href="/compress/">Mehr lesen</button>
       </div>
 
       <div class="card combine" data-category="image" title="Die Farbe ist: Korallenrot">
@@ -2382,7 +2365,7 @@ footer a{
           </div>
           <p>Füge mehrere PDF-Dateien in beliebiger Reihenfolge zu einem Dokument zusammen.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/combine-dark.mp4?v=1" data-preview-img-light="/shared/previews/combine-light.mp4?v=1" data-preview-name="Combine" data-preview-desc="Füge zwei oder mehr PDFs zu einem zusammen – zieh sie in die gewünschte Reihenfolge und lade herunter. Direkt im Browser zusammengefügt, ganz ohne Upload auf Server." data-preview-href="/combine/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/combine-dark.mp4?v=1" data-preview-img-light="/shared/previews/combine-light.mp4?v=1" data-preview-name="Combine" data-preview-desc="Füge zwei oder mehr PDFs zu einem zusammen – zieh sie in die gewünschte Reihenfolge und lade herunter. Direkt im Browser zusammengefügt, ganz ohne Upload auf Server." data-preview-href="/combine/">Mehr lesen</button>
       </div>
 
       <div class="card exif" data-category="image" title="Die Farbe ist: Limettengrün">
@@ -2393,7 +2376,7 @@ footer a{
           </div>
           <p>Entferne versteckte Metadaten wie GPS-Standort, Kameramodell oder Editor-Daten in SVGs – vor dem Teilen.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/cleanly-dark.mp4?v=1" data-preview-img-light="/shared/previews/cleanly-light.mp4?v=1" data-preview-name="Cleanly" data-preview-desc="Lösche versteckte GPS-, Kamera- und Zeitstempel-Daten aus deinen Fotos, bevor du sie teilst – sofort geprüft und bereinigt, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/cleanly/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/cleanly-dark.mp4?v=1" data-preview-img-light="/shared/previews/cleanly-light.mp4?v=1" data-preview-name="Cleanly" data-preview-desc="Lösche versteckte GPS-, Kamera- und Zeitstempel-Daten aus deinen Fotos, bevor du sie teilst – sofort geprüft und bereinigt, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/cleanly/">Mehr lesen</button>
       </div>
 
       <div class="card context" data-category="image" title="Die Farbe ist: Gelb">
@@ -2404,7 +2387,7 @@ footer a{
           </div>
           <p>Füge deinen eigenen Text direkt in ein PDF ein – Beschriftungen, Notizen, Unterschriften, Formen.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/context-dark.mp4?v=1" data-preview-img-light="/shared/previews/context-light.mp4?v=1" data-preview-name="Context" data-preview-desc="Klicke irgendwo in ein PDF, um Text, eine Unterschrift oder eine Form zu platzieren, gestalte sie nach Wunsch und lade herunter – sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/context/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/context-dark.mp4?v=1" data-preview-img-light="/shared/previews/context-light.mp4?v=1" data-preview-name="Context" data-preview-desc="Klicke irgendwo in ein PDF, um Text, eine Unterschrift oder eine Form zu platzieren, gestalte sie nach Wunsch und lade herunter – sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/context/">Mehr lesen</button>
       </div>
 
       <div class="card gif" data-category="video" title="Die Farbe ist: Petrol">
@@ -2415,7 +2398,7 @@ footer a{
           </div>
           <p>Verwandle einen Videoclip in ein GIF – Bereich kürzen, fps und Größe wählen.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/congify-dark.mp4?v=1" data-preview-img-light="/shared/previews/congify-light.mp4?v=1" data-preview-name="Congify" data-preview-desc="Verwandle einen Videoclip in ein GIF – kürze den gewünschten Bereich, füge bei Bedarf Untertitel hinzu, wähle Bildrate und Größe und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/congify/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/congify-dark.mp4?v=1" data-preview-img-light="/shared/previews/congify-light.mp4?v=1" data-preview-name="Congify" data-preview-desc="Verwandle einen Videoclip in ein GIF – kürze den gewünschten Bereich, füge bei Bedarf Untertitel hinzu, wähle Bildrate und Größe und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/congify/">Mehr lesen</button>
       </div>
 
       <div class="card coudio" data-category="sound" title="Die Farbe ist: Smaragdgrün">
@@ -2426,7 +2409,7 @@ footer a{
           </div>
           <p>Konvertiere Audio zwischen MP3, WAV, OGG und mehr – wähle eine oder mehrere Dateien und ein Format.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/coudio-dark.mp4?v=1" data-preview-img-light="/shared/previews/coudio-light.mp4?v=1" data-preview-name="Coudio" data-preview-desc="Konvertiere Audio (oder extrahiere die Tonspur aus einem Video) zwischen MP3, WAV, OGG, AIFF, AU, CAF und VOC – wähle eine oder mehrere Dateien, ein Format und eine Bitrate und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/coudio/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/coudio-dark.mp4?v=1" data-preview-img-light="/shared/previews/coudio-light.mp4?v=1" data-preview-name="Coudio" data-preview-desc="Konvertiere Audio (oder extrahiere die Tonspur aus einem Video) zwischen MP3, WAV, OGG, AIFF, AU, CAF und VOC – wähle eine oder mehrere Dateien, ein Format und eine Bitrate und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/coudio/">Mehr lesen</button>
       </div>
 
       <div class="card codify" data-category="code" title="Die Farbe ist: Pink">
@@ -2437,7 +2420,7 @@ footer a{
           </div>
           <p>Verwandle ein Code-Snippet in einen schönen, gestalteten Screenshot – wähle eine Sprache.</p>
         </a>
-        <button type="button" class="card-readmore" data-preview-img-dark="/shared/previews/codify-dark.mp4?v=3" data-preview-img-light="/shared/previews/codify-light.mp4?v=3" data-preview-name="Codify" data-preview-desc="Verwandle ein Code-Snippet in einen schönen, gestalteten Screenshot – wähle Sprache und Design oder starte mit einer Vorlage und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/codify/">Mehr lesen</button>
+        <button type="button" class="card-readmore bc-hover-fill" data-preview-img-dark="/shared/previews/codify-dark.mp4?v=3" data-preview-img-light="/shared/previews/codify-light.mp4?v=3" data-preview-name="Codify" data-preview-desc="Verwandle ein Code-Snippet in einen schönen, gestalteten Screenshot – wähle Sprache und Design oder starte mit einer Vorlage und lade herunter. Sofort, direkt im Browser, ganz ohne Upload auf Server." data-preview-href="/codify/">Mehr lesen</button>
       </div>
 
       <div class="card colorfy" data-category="image" title="Die Farbe ist: Orange">
@@ -2591,7 +2574,7 @@ footer a{
 
 <div class="tool-preview-overlay" id="toolPreviewOverlay" hidden>
   <div class="tool-preview-modal" role="dialog" aria-modal="true" aria-labelledby="toolPreviewTitle">
-    <button type="button" class="tool-preview-close" id="toolPreviewClose" aria-label="Vorschau schließen">
+    <button type="button" class="tool-preview-close bc-icon-btn bc-hover-fill" id="toolPreviewClose" aria-label="Vorschau schließen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19 12H5"></path>
         <path d="M11 18l-6-6 6-6"></path>
@@ -2600,7 +2583,7 @@ footer a{
     <video class="tool-preview-peek" id="toolPreviewPeek" muted loop playsinline aria-label=""></video>
     <h3 class="tool-preview-title" id="toolPreviewTitle"></h3>
     <p class="tool-preview-desc" id="toolPreviewDesc"></p>
-    <a class="tool-preview-open" id="toolPreviewOpen" href="#">Tool öffnen</a>
+    <a class="tool-preview-open bc-hover-fill bc-hover-fill--primary" id="toolPreviewOpen" href="#">Tool öffnen</a>
   </div>
 </div>
 
@@ -3590,7 +3573,7 @@ if (VALID_PAGES.includes(startPage)) {
       it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
       pt: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#009C3B"/><polygon points="30,5 55,20 30,35 5,20" fill="#FFDF00"/><circle cx="30" cy="20" r="8" fill="#002776"/></svg>',
       ja: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="12" fill="#BC002D"/></svg>',
-      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="9" fill="#CD2E3A"/><path d="M21 20a9 9 0 0 1 18 0a4.5 4.5 0 0 1-9 0a4.5 4.5 0 0 0-9 0z" fill="#0047A0"/></svg>',
+      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><g transform="rotate(-33.7 30 20)"><path d="M20 20A10 10 0 0 1 40 20A5 5 0 0 1 30 20A5 5 0 0 0 20 20z" fill="#CD2E3A"/><path d="M20 20A5 5 0 0 1 30 20A5 5 0 0 0 40 20A10 10 0 0 1 20 20z" fill="#0047A0"/></g><g fill="#000"><g transform="translate(10 8) rotate(-57)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 8) rotate(57)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g><g transform="translate(10 32) rotate(-123)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 32) rotate(123)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g></g></svg>',
       cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
       es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
       id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',

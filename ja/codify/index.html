@@ -72,7 +72,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=159">
+<link rel="stylesheet" href="/shared/site.css?v=189">
 <script>window.Prism = { manual: true };</script>
 <script src="/vendor/prism.min.js?v=3"></script>
 <link rel="stylesheet" href="/vendor/prism-dracula.css" id="cfThemeLink">
@@ -228,41 +228,6 @@ html[data-theme="light"] .help-banner-header{
   align-items:center;
   gap:8px;
   margin-left:auto;
-}
-.help-banner-term-btn{
-  padding:6px 12px;
-  border-radius:6px;
-  border:1px solid rgba(255,255,255,.14);
-  background:none;
-  color:#e5e7eb;
-  opacity:.8;
-  font-family:var(--bc-mono);
-  font-size:13px;
-  font-weight:700;
-  letter-spacing:.02em;
-  cursor:pointer;
-  transition:.2s;
-}
-html[data-theme="light"] .help-banner-term-btn{
-  border-color:rgba(29,36,54,.3);
-  color:#1d2436;
-}
-.help-banner-term-btn:hover{
-  opacity:1;
-  border-color:var(--border-strong);
-  color:var(--text);
-}
-.help-banner-term-btn:disabled{
-  opacity:.3;
-  cursor:default;
-}
-.help-banner-term-btn:disabled:hover{
-  border-color:rgba(255,255,255,.14);
-  color:#e5e7eb;
-}
-html[data-theme="light"] .help-banner-term-btn:disabled:hover{
-  border-color:rgba(29,36,54,.3);
-  color:#1d2436;
 }
 
 /* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
@@ -861,15 +826,8 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   height:40px;
   padding:0 12px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   cursor:pointer;
   user-select:none;
-}
-html[data-theme="dark"] .cf-toggle-switch{
-  border:1px solid rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
 }
 /* ===== .cf-hod-btn — plain press-and-hold button, not a toggle =====
    Used to share .cf-toggle-switch's on/off track+knob visual, which
@@ -889,33 +847,17 @@ html[data-theme="dark"] .cf-toggle-switch{
   flex:none;
   padding:0 12px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   font-family:inherit;
   font-weight:700;
   font-size:14px;
   cursor:pointer;
   user-select:none;
-  transition:background .1s, border-color .1s;
-}
-html[data-theme="dark"] .cf-hod-btn{
-  border:1px solid rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
 }
 /* Pressed/held feedback — driven by aria-pressed (set in codify-tool.js
    alongside the actual hold-state flag), not :active, since the real
    "held" state can outlive a plain :active (mouseup fires on
    `document`, so a drag that ends away from the button itself would
    leave :active cleared while still genuinely held). */
-.cf-hod-btn[aria-pressed="true"]{
-  background:rgba(255,255,255,.5);
-  border-color:rgba(255,255,255,.7);
-}
-html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
-  background:rgba(0,0,0,.4);
-  border-color:rgba(0,0,0,.6);
-}
 /* Presets moved here from .cf-settings, right next to HOD — same
    fixed-cap idea as .cf-hod-btn just above, sized to its own
    longest option ("Midnight Purple") rather than the 120px HOD uses.
@@ -1372,14 +1314,10 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
   height:40px;
   padding:0 14px;
   border-radius:0;
-  border:1px solid var(--border-strong);
-  background:transparent;
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   cursor:pointer;
-  transition:.2s;
 }
 .cf-format-toggle button:first-child{
   border-top-left-radius:20px;
@@ -1395,15 +1333,6 @@ html[data-theme="dark"] .cf-hod-btn[aria-pressed="true"]{
    doesn't double up against PNG's right border either. */
 .cf-format-toggle button:not(:first-child){
   border-left:none;
-}
-.cf-format-toggle button[aria-pressed="true"]{
-  border-color:rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-}
-html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
 }
 /* border-color (not the border shorthand) on the selected state — same
    fix Congify's own toggle needed — so the border-left:none above
@@ -1484,30 +1413,6 @@ html[data-theme="dark"] .cf-format-toggle button[aria-pressed="true"]{
   }
 }
 
-/* Copy never carries [aria-pressed] (see above), so without its own
-   rule it never got any fill/color feedback on click — just the plain
-   border-hover every segment gets. Gives it real color feedback using
-   the exact same shared on-banner flip recipe (CLAUDE.md) every other
-   control on this site already uses, rather than a bespoke one-off:
-   light rgba(255,255,255,.35)/.45, dark rgba(0,0,0,.25)/.35 for
-   hover/active respectively — the same numbers PNG/SVG's own
-   [aria-pressed="true"] state already uses two rules up. */
-#cfCopyBtn:hover:not(:disabled){
-  border-color:rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-}
-#cfCopyBtn:active:not(:disabled){
-  border-color:rgba(255,255,255,.65);
-  background:rgba(255,255,255,.45);
-}
-html[data-theme="dark"] #cfCopyBtn:hover:not(:disabled){
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
-  border-color:rgba(0,0,0,.55);
-  background:rgba(0,0,0,.36);
-}
 </style>
 </head>
 <body>
@@ -1613,9 +1518,9 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
     <span class="help-banner-dot" aria-hidden="true"></span>
     <span class="engine-status-title" id="cfHelpStep"></span>
     <div class="help-banner-nav">
-      <button type="button" class="help-banner-term-btn" id="cfHelpBack">&lt; 戻る</button>
-      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="cfHelpCloseMobile">閉じる</button>
-      <button type="button" class="help-banner-term-btn" id="cfHelpNext">次へ &gt;</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cfHelpBack">&lt; 戻る</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cfHelpCloseMobile">閉じる</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cfHelpNext">次へ &gt;</button>
     </div>
   </div>
   <div class="engine-status-body" id="cfHelpBody">
@@ -1961,9 +1866,9 @@ html[data-theme="dark"] #cfCopyBtn:active:not(:disabled){
 </footer>
 </div>
 
-<script src="/shared/site.js?v=83" defer></script>
+<script src="/shared/site.js?v=88" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=121" defer></script>
+<script src="/codify/codify-tool.js?v=125" defer></script>
 </body>
 </html>
