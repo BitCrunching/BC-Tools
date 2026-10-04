@@ -740,6 +740,7 @@ function startPrivacyCheck(){
    same as before this list existed. */
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
+  bcRecordUse();
   if (!badgeEl) return;
   const actionWord = action === "convert" ? "convert" : action === "save" ? "save" : "download";
   if (privacyCheckExternalCount === 0){
@@ -1520,3 +1521,94 @@ bcRegisterEscapable(
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addLangButton);
   else addLangButton();
 })();
+
+
+/* ===== Share nudge — one-time floating banner =====
+   Counts which tools a visitor has finished using (hooked into
+   finishPrivacyCheck, which every tool already calls when a download /
+   conversion / save completes) and, the first time three different ones
+   are done, offers a friendly "tell a friend" banner. Everything stays in
+   this browser's localStorage — nothing is sent anywhere. Independent of
+   the nav share menu. bcShowShareNudge() can be called from the console
+   to preview it. */
+const BC_NUDGE_USES_KEY = "bc-uses";
+const BC_NUDGE_SHOWN_KEY = "bc-share-nudge";
+const BC_NUDGE_TOOLS_NEEDED = 3;
+
+function bcCurrentTool(){
+  const seg = location.pathname.split("/").filter(Boolean);
+  if (seg.length && window.BC_LANG && seg[0] === window.BC_LANG) seg.shift();
+  return seg[0] || "";
+}
+
+function bcRecordUse(){
+  const tool = bcCurrentTool();
+  if (!tool) return;
+  let uses = {};
+  try {
+    if (localStorage.getItem(BC_NUDGE_SHOWN_KEY)) return;
+    uses = JSON.parse(localStorage.getItem(BC_NUDGE_USES_KEY) || "{}");
+    uses[tool] = (uses[tool] || 0) + 1;
+    localStorage.setItem(BC_NUDGE_USES_KEY, JSON.stringify(uses));
+  } catch (e) { return; }
+  if (Object.keys(uses).length >= BC_NUDGE_TOOLS_NEEDED) setTimeout(bcShowShareNudge, 1800);
+}
+
+function bcShowShareNudge(){
+  if (document.getElementById("bcShareNudge")) return;
+  const cookieBanner = document.getElementById("cookieBanner");
+  if (cookieBanner && !cookieBanner.hidden && getComputedStyle(cookieBanner).display !== "none") return;
+  try { localStorage.setItem(BC_NUDGE_SHOWN_KEY, "1"); } catch (e) { /* storage unavailable */ }
+
+  const box = document.createElement("div");
+  box.id = "bcShareNudge";
+  box.className = "bc-nudge";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", bcT("Share BC Tools"));
+  box.innerHTML = `
+    <p class="bc-nudge-title"></p>
+    <p class="bc-nudge-text"></p>
+    <div class="bc-nudge-actions">
+      <button type="button" class="bc-nudge-primary"></button>
+      <button type="button" class="bc-nudge-copy"></button>
+      <button type="button" class="bc-nudge-later"></button>
+    </div>`;
+  box.querySelector(".bc-nudge-title").textContent = bcT("Enjoying so far?");
+  box.querySelector(".bc-nudge-text").textContent = bcT("Be sure to show your friends and colleagues.");
+  const copyBtn = box.querySelector(".bc-nudge-copy");
+  const shareBtn = box.querySelector(".bc-nudge-primary");
+  const laterBtn = box.querySelector(".bc-nudge-later");
+  copyBtn.textContent = bcT("Copy link");
+  shareBtn.textContent = bcT("Share with a friend");
+  laterBtn.textContent = bcT("Maybe later");
+
+  const track = (name) => { if (typeof gtag === "function") gtag("event", name); };
+  const close = () => { box.classList.remove("visible"); setTimeout(() => box.remove(), 250); };
+
+  shareBtn.addEventListener("click", async () => {
+    const url = location.origin + bcLangPath("/");
+    track("share_nudge_click");
+    if (navigator.share){
+      try { await navigator.share({ title: "BC Tools", text: bcT("Free, private tools that run in your browser. Your files never leave your device."), url }); close(); }
+      catch (e) { /* cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showNavTerminal("URL copied to clipboard");
+      setTimeout(close, 1400);
+    } catch (e) { /* clipboard unavailable */ }
+  });
+  copyBtn.addEventListener("click", async () => {
+    track("share_nudge_copy");
+    try {
+      await navigator.clipboard.writeText(location.origin + bcLangPath("/"));
+      showNavTerminal("URL copied to clipboard");
+    } catch (e) { /* clipboard unavailable */ }
+  });
+  laterBtn.addEventListener("click", () => { track("share_nudge_dismiss"); close(); });
+
+  document.body.appendChild(box);
+  setTimeout(() => box.classList.add("visible"), 30);
+  track("share_nudge_shown");
+}
