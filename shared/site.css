@@ -30,6 +30,7 @@
    instead of that logic staying private to index.html's card grid.
    Versioned for the same cache-busting reason as icons.css above. */
 @import url("textures.css?v=2");
+@import url("buttons.css?v=21");
 
 /* ===== TOKENS ===== */
 :root{
@@ -1099,7 +1100,6 @@ footer a{
   line-height:1;
   font-size:0;
   white-space:nowrap;
-  border-color:var(--border-strong);
   /* padding-box clip so the hover fill stops at the inner edge of the
      2px border instead of bleeding out under it once the border goes
      transparent on hover. */
@@ -1132,12 +1132,6 @@ footer a{
 }
 .tool-drop-addpill.tool-drop-revealed:hover{
   transform:none;
-  border-color:transparent;
-  outline-color:var(--border-strong);
-  background:rgba(255,255,255,.08);
-}
-html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
-  background:rgba(0,0,0,.1);
 }
 
 .tool-continue-btn{
@@ -1236,19 +1230,11 @@ html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
   height:74px;
   padding:0 12px;
   border-radius:26px;
-  border:1px solid var(--border-strong);
-  background:transparent;
-  color:var(--text);
   font-size:18px;
   font-weight:800;
   line-height:1.1;
   cursor:pointer;
   transition:.2s;
-}
-
-.tool-format-btn:hover{
-  border-color:var(--border-strong);
-  background:rgba(127,127,127,.1);
 }
 
 .tool-format-btn:focus-visible{
@@ -1258,25 +1244,6 @@ html[data-theme="dark"] .tool-drop-addpill.tool-drop-revealed:hover{
 
 html[data-theme="dark"] .tool-format-btn:focus-visible{
   outline-color:rgba(0,0,0,.4);
-}
-
-/* .35/.5 read fine as "selected" against a deep, saturated banner
-   (Convert's purple) but nearly vanished against a pale, high-luminance
-   one (Compress's light blue) — translucent white blended into a
-   light background reads as almost no fill at all, so "Low" looked
-   indistinguishable from the unselected pills next to it. Strong
-   enough opacity here to read as a real filled pill regardless of how
-   light the tool's own brand color happens to be. */
-.tool-format-btn.active{
-  background:rgba(255,255,255,.65);
-  color:#1d2436;
-  border-color:rgba(255,255,255,.9);
-}
-
-html[data-theme="dark"] .tool-format-btn.active{
-  background:rgba(0,0,0,.28);
-  border-color:rgba(0,0,0,.4);
-  color:var(--text);
 }
 
 .tool-format-btn span.level-sub{
@@ -1332,18 +1299,9 @@ html[data-theme="dark"] .tool-format-select option{
   height:74px;
   padding:0 32px;
   border-radius:26px;
-  border:1px solid rgba(255,255,255,.5);
   cursor:pointer;
   font-weight:900;
   font-size:20px;
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-  transition:.2s;
-}
-
-.tool-primary-btn:hover{
-  border-color:rgba(255,255,255,.65);
-  background:rgba(255,255,255,.45);
 }
 
 .tool-primary-btn:focus-visible{
@@ -1354,26 +1312,12 @@ html[data-theme="dark"] .tool-format-select option{
 .tool-primary-btn:disabled{
   cursor:not-allowed;
   transform:none;
-  background:rgba(255,255,255,.2);
-}
-
-html[data-theme="dark"] .tool-primary-btn{
-  border:1px solid rgba(0,0,0,.4);
-  background:rgba(0,0,0,.28);
 }
 
 html[data-theme="dark"] .tool-primary-btn:focus-visible{
   outline-color:rgba(0,0,0,.4);
 }
 
-html[data-theme="dark"] .tool-primary-btn:hover{
-  border-color:rgba(0,0,0,.55);
-  background:rgba(0,0,0,.36);
-}
-
-html[data-theme="dark"] .tool-primary-btn:disabled{
-  background:rgba(0,0,0,.14);
-}
 
 .tool-status{
   color:var(--text);
@@ -1449,6 +1393,11 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
 
 .tool-results .result{
   flex:0 0 160px;
+  width:160px;
+  min-width:0;
+  max-width:160px;
+  box-sizing:border-box;
+  overflow:hidden;
 }
 
 /* ===== .bc-add-tile — 160x160 "add more" dropzone, sits inline with
@@ -1471,25 +1420,11 @@ html[data-theme="dark"] .tool-primary-btn:disabled{
   display:flex;
   align-items:center;
   justify-content:center;
-  border:2px dashed rgba(255,255,255,.5);
   border-radius:16px;
-  background:rgba(255,255,255,.12);
-  color:var(--text);
   font-size:40px;
   font-weight:300;
   line-height:1;
   cursor:pointer;
-  transition:.2s;
-}
-.bc-add-tile:hover{
-  background:rgba(255,255,255,.2);
-}
-html[data-theme="dark"] .bc-add-tile{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.12);
-}
-html[data-theme="dark"] .bc-add-tile:hover{
-  background:rgba(0,0,0,.2);
 }
 /* Matches the drag-over highlight every tool's own banner uses
    (.active class, shared/site.js's bcSetupBannerDropTarget) — a
@@ -1525,16 +1460,9 @@ html[data-theme="dark"] .bc-add-tile:hover{
    the background too. */
 .result{
   position:relative;
-  background:rgba(255,255,255,.35);
-  border:1px solid rgba(255,255,255,.5);
   border-radius:16px;
   padding:10px;
   font-size:15px;
-  transition:background .2s, border-color .2s;
-}
-html[data-theme="dark"] .result{
-  background:rgba(0,0,0,.25);
-  border-color:rgba(0,0,0,.4);
 }
 
 .nav-right{
@@ -1827,6 +1755,16 @@ html[data-theme="light"] .engine-status-title{
 }
 
 html[data-theme="light"] .engine-status-row{
+  color:#1d2436;
+}
+
+.engine-status-card .engine-status-title,
+.engine-status-card .engine-status-row{
+  color:#F1F5F9;
+  opacity:1;
+}
+html[data-theme="light"] .engine-status-card .engine-status-title,
+html[data-theme="light"] .engine-status-card .engine-status-row{
   color:#1d2436;
 }
 
@@ -2184,15 +2122,13 @@ html[data-theme="light"] .engine-status-error{
    file, above) — added as a second class on the markup
    (class="exif-file-item result") rather than repeated here, same
    split as Convert's own .result border-color override. This only
-   keeps the row layout and Cleanly's brand-tinted border, the two
-   genuinely tool-specific pieces .result has no opinion on. */
+   keeps the row layout. */
 .exif-file-item{
   display:flex;
   align-items:center;
   gap:14px;
   padding:12px 16px;
   border-radius:14px;
-  border-color:#4ade8055;
 }
 
 .exif-file-thumb{
@@ -2485,14 +2421,13 @@ html[data-theme="dark"] .exif-tag{
 }
 
 .result-name{
-  color:var(--text);
   font-weight:700;
-  word-break:break-all;
-  transition:color .2s;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .result-size{
-  color:var(--text);
   margin-top:2px;
 }
 
@@ -2535,10 +2470,7 @@ html[data-theme="dark"] .exif-tag{
   gap:8px;
   width:100%;
   padding:0 12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
   cursor:pointer;
-  transition:.2s;
 }
 /* Size/roundness split out of the base rule above, same reasoning as
    .bc-dropdown-trigger's own companion selector just below it — a tool
@@ -2548,18 +2480,6 @@ html[data-theme="dark"] .exif-tag{
 .bc-combo-trigger:not(.bc-combo-trigger-lg){
   height:40px;
   border-radius:12px;
-}
-.bc-combo-trigger:hover,
-.bc-combo-trigger[aria-expanded="true"]{
-  background:rgba(255,255,255,.45);
-}
-html[data-theme="dark"] .bc-combo-trigger{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .bc-combo-trigger:hover,
-html[data-theme="dark"] .bc-combo-trigger[aria-expanded="true"]{
-  background:rgba(0,0,0,.35);
 }
 /* .bc-combo-trigger-lg — 74px variant, mirroring .bc-dropdown-trigger-lg
    exactly (same height/padding/radius/font recipe — see that class's
@@ -2731,14 +2651,10 @@ html[data-theme="dark"] .bc-combo-option-check{
   gap:8px;
   width:100%;
   padding:0 12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   cursor:pointer;
-  transition:.2s;
 }
 /* Size/roundness live here, not on the base rule above — a tool that
    needs its own height (Coudio's 74px Input/Output/Bitrate row, scoped
@@ -2750,18 +2666,6 @@ html[data-theme="dark"] .bc-combo-option-check{
 .bc-dropdown-trigger:not(.bc-dropdown-trigger-lg){
   height:40px;
   border-radius:12px;
-}
-.bc-dropdown-trigger:hover,
-.bc-dropdown-trigger[aria-expanded="true"]{
-  background:rgba(255,255,255,.45);
-}
-html[data-theme="dark"] .bc-dropdown-trigger{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .bc-dropdown-trigger:hover,
-html[data-theme="dark"] .bc-dropdown-trigger[aria-expanded="true"]{
-  background:rgba(0,0,0,.35);
 }
 .bc-dropdown-trigger-label{
   flex:1;
@@ -2818,24 +2722,10 @@ html[data-theme="dark"] .bc-dropdown-trigger[aria-expanded="true"]{
   height:40px;
   padding:0 12px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   cursor:pointer;
-  transition:.2s;
-}
-.option-change-btn:hover{
-  background:rgba(255,255,255,.45);
-}
-html[data-theme="dark"] .option-change-btn{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .option-change-btn:hover{
-  background:rgba(0,0,0,.35);
 }
 .option-change-btn-label{
   flex:1;
@@ -3053,44 +2943,14 @@ html[data-theme="dark"] .bc-dropdown-option.active{
   padding:0 14px;
   height:40px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   font-family:inherit;
   font-size:15px;
   font-weight:700;
   cursor:pointer;
-  transition:.2s;
-}
-.bc-toggle-btn:hover{
-  background:rgba(255,255,255,.45);
-}
-.bc-toggle-btn.active,
-.bc-toggle-btn[aria-pressed="true"]{
-  background:rgba(255,255,255,.6);
-  border-color:#1d2436;
 }
 .bc-toggle-btn:disabled{
   opacity:.45;
   cursor:not-allowed;
-}
-.bc-toggle-btn:disabled:hover{
-  background:rgba(255,255,255,.35);
-}
-html[data-theme="dark"] .bc-toggle-btn{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .bc-toggle-btn:hover{
-  background:rgba(0,0,0,.35);
-}
-html[data-theme="dark"] .bc-toggle-btn.active,
-html[data-theme="dark"] .bc-toggle-btn[aria-pressed="true"]{
-  background:rgba(0,0,0,.5);
-  border-color:#fff;
-}
-html[data-theme="dark"] .bc-toggle-btn:disabled:hover{
-  background:rgba(0,0,0,.25);
 }
 /* Modifier for an icon-only square button (B/I/U-style single glyph)
    instead of the padded text/label pill above. */
@@ -3150,9 +3010,6 @@ html[data-theme="dark"] .bc-toggle-btn:disabled:hover{
   height:40px;
   padding:0 14px;
   border-radius:0;
-  border:1px solid rgba(255,255,255,.5);
-  background:transparent;
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
@@ -3197,24 +3054,12 @@ html[data-theme="dark"] .bc-toggle-btn:disabled:hover{
 .bc-segmented-toggle button:not(:first-child){
   border-left:none;
 }
-.bc-segmented-toggle button[aria-pressed="true"]{
-  border-color:rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-}
 .bc-segmented-toggle button:not(:first-child)[aria-pressed="true"]{
   border-left:none;
 }
 .bc-segmented-toggle button:disabled{
   opacity:.4;
   cursor:not-allowed;
-}
-html[data-theme="dark"] .bc-segmented-toggle button{
-  border-color:rgba(0,0,0,.4);
-}
-html[data-theme="dark"] .bc-segmented-toggle button[aria-pressed="true"]{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
 }
 /* Modifier for when only one segment is left standing (the sibling is
    [hidden], not removed from the DOM — see the download-mode toggle's
@@ -3258,10 +3103,6 @@ html[data-theme="dark"] .bc-segmented-toggle button.bc-segmented-toggle-solo{
    hand-rolling the chrome again for the next tool that needs an
    editor-style input. */
 .bc-editor-input{
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-  transition:background .2s, border-color .2s, color .2s;
   scrollbar-width:none;
   -ms-overflow-style:none;
 }
@@ -3272,18 +3113,8 @@ html[data-theme="dark"] .bc-segmented-toggle button.bc-segmented-toggle-solo{
   color:var(--text);
   opacity:.5;
 }
-.bc-editor-input:hover{
-  background:rgba(255,255,255,.45);
-}
 .bc-editor-input:focus{
   outline:none;
-}
-html[data-theme="dark"] .bc-editor-input{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .bc-editor-input:hover{
-  background:rgba(0,0,0,.32);
 }
 
 /* ===== .bc-info-btn / .bc-info-tooltip — small "i" info toggle =====
@@ -3752,82 +3583,84 @@ html[data-theme="light"] .bc-nudge .bc-nudge-title{
   height:40px;
   padding:0 18px;
   border-radius:14px;
-  border:1px solid rgba(255,255,255,.14);
-  cursor:pointer;
   font-weight:700;
   font-size:14px;
-  background:rgba(255,255,255,.08);
-  color:#e5e7eb;
 }
-.bc-nudge-actions button:hover{
-  background:rgba(255,255,255,.14);
-}
-.bc-nudge-actions .bc-nudge-primary{
-  background:var(--accent);
-  color:var(--bg);
-  border-color:var(--accent);
-}
-.bc-nudge-actions .bc-nudge-primary:hover{
-  background:var(--accent);
-  opacity:.88;
-}
-html[data-theme="light"] .bc-nudge-actions button{
-  border-color:rgba(29,36,54,.25);
-  background:rgba(29,36,54,.06);
-  color:#1d2436;
-}
-html[data-theme="light"] .bc-nudge-actions button:hover{
-  background:rgba(29,36,54,.12);
-}
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-primary{
-  background:var(--accent);
-  border-color:var(--accent);
-  color:var(--bg);
-}
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-primary:hover{
-  background:var(--accent);
-}
-
+.bc-nudge-actions .bc-nudge-later{ margin-left:auto; }
 @media (max-width:768px){
   .bc-nudge-actions .bc-nudge-copy{ display:none; }
-}
-
-.bc-nudge-actions .bc-nudge-later{ margin-left:auto; }
-
-.bc-nudge-actions .bc-nudge-copy,
-.bc-nudge-actions .bc-nudge-later,
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-copy,
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-later{
-  background:transparent;
-}
-.bc-nudge-actions .bc-nudge-copy:hover,
-.bc-nudge-actions .bc-nudge-later:hover{
-  background:rgba(255,255,255,.1);
-}
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-copy:hover,
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-later:hover{
-  background:rgba(29,36,54,.08);
-}
-
-.bc-nudge-actions .bc-nudge-copy:hover,
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-copy:hover{
-  background:#fff;
-  color:#1d2436;
-}
-
-.bc-nudge-actions button{
-  transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out;
-}
-.bc-nudge-actions .bc-nudge-primary:hover{
-  background:transparent;
-  color:#e5e7eb;
-  opacity:1;
-}
-html[data-theme="light"] .bc-nudge-actions .bc-nudge-primary:hover{
-  background:transparent;
-  color:#1d2436;
 }
 
 html{ min-width:335px; }
 
 ins.adsbygoogle{ max-width:100%; overflow:hidden; }
+
+/* Header nav buttons use the same theme-fill hover as .bc-hover-fill. */
+.nav-theme-btn,
+.nav-share-btn,
+.nav-help-btn,
+.nav-close-btn{
+  border:var(--border-normal) solid var(--btn-fill);
+  transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out;
+}
+.nav-theme-btn:hover,
+.nav-share-btn:hover,
+.nav-help-btn:hover,
+.nav-close-btn:hover{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.nav-theme-btn:focus,
+.nav-share-btn:focus,
+.nav-help-btn:focus,
+.nav-close-btn:focus{ outline:none; }
+.nav-theme-btn:focus-visible,
+.nav-share-btn:focus-visible,
+.nav-help-btn:focus-visible,
+.nav-close-btn:focus-visible{ outline:2px solid var(--btn-fill); outline-offset:2px; }
+
+/* Dropdown menus (language, share) follow the theme and use the same
+   theme-fill hover; the currently selected language stays filled. */
+html[data-theme="light"] .nav-lang-menu,
+html[data-theme="light"] .nav-share-menu{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+.nav-lang-menu a,
+.nav-share-menu button{
+  background:transparent;
+  color:var(--text);
+  transition:background-color .3s ease-in-out, color .3s ease-in-out;
+}
+.nav-lang-menu a:hover,
+.nav-lang-menu a[aria-current],
+.nav-share-menu button:hover{
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.nav-share-menu .nav-share-more-toggle,
+.nav-share-menu .nav-share-more-toggle:hover{
+  background:transparent !important;
+  color:var(--text) !important;
+  opacity:.7;
+}
+
+/* Help banner Back / Next / Close — shape here, colors and hover from
+   .bc-hover-fill (buttons.css). */
+.help-banner-term-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  font-family:var(--bc-mono);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+.help-banner-term-btn:disabled,
+.help-banner-term-btn:disabled:hover{
+  opacity:.3;
+  cursor:default;
+  background:transparent;
+  border-color:var(--border-strong);
+  color:var(--text);
+}

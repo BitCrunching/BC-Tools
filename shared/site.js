@@ -403,7 +403,7 @@ function bcRegisterCombo(trigger, input, menu, emptyEl, onSelect){
     return menu.querySelector(".bc-combo-option.active");
   }
   function open(){
-    bcCombos.forEach(c => { if (c !== combo) bcCloseCombo(c); });
+    bcCloseAllPopups(combo);
     menu.hidden = false;
     trigger.setAttribute("aria-expanded", "true");
     input.removeAttribute("readonly");
@@ -470,6 +470,13 @@ function bcCloseCombo(combo){
   const active = combo._activeOptionGetter();
   combo.input.value = active ? active.dataset.label : "";
 }
+const bcPopupClosers = [];
+function bcRegisterPopup(closeFn){ bcPopupClosers.push(closeFn); }
+function bcCloseAllPopups(exceptCombo){
+  bcCombos.forEach(c => { if (c !== exceptCombo && !c.menu.hidden) bcCloseCombo(c); });
+  bcCloseAllDropdowns();
+  bcPopupClosers.forEach(fn => fn());
+}
 document.addEventListener("click", (e) => {
   bcCombos.forEach(c => {
     if (!c.menu.hidden && !c.trigger.contains(e.target) && !c.menu.contains(e.target)) bcCloseCombo(c);
@@ -531,7 +538,7 @@ function bcRegisterDropdown(trigger, menu, onSelect){
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
     const wasOpen = !menu.hidden;
-    bcCloseAllDropdowns();
+    bcCloseAllPopups();
     if (!wasOpen){
       menu.hidden = false;
       trigger.setAttribute("aria-expanded", "true");
@@ -1464,7 +1471,7 @@ bcRegisterEscapable(
       it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
       pt: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#009C3B"/><polygon points="30,5 55,20 30,35 5,20" fill="#FFDF00"/><circle cx="30" cy="20" r="8" fill="#002776"/></svg>',
       ja: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="12" fill="#BC002D"/></svg>',
-      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="9" fill="#CD2E3A"/><path d="M21 20a9 9 0 0 1 18 0a4.5 4.5 0 0 1-9 0a4.5 4.5 0 0 0-9 0z" fill="#0047A0"/></svg>',
+      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><g transform="rotate(-33.7 30 20)"><path d="M20 20A10 10 0 0 1 40 20A5 5 0 0 1 30 20A5 5 0 0 0 20 20z" fill="#CD2E3A"/><path d="M20 20A5 5 0 0 1 30 20A5 5 0 0 0 40 20A10 10 0 0 1 20 20z" fill="#0047A0"/></g><g fill="#000"><g transform="translate(10 8) rotate(-57)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 8) rotate(57)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g><g transform="translate(10 32) rotate(-123)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 32) rotate(123)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g></g></svg>',
       cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
       es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
       id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',
@@ -1569,9 +1576,9 @@ function bcShowShareNudge(){
     <p class="bc-nudge-title"></p>
     <p class="bc-nudge-text"></p>
     <div class="bc-nudge-actions">
-      <button type="button" class="bc-nudge-primary"></button>
-      <button type="button" class="bc-nudge-copy"></button>
-      <button type="button" class="bc-nudge-later"></button>
+      <button type="button" class="bc-nudge-primary bc-hover-fill bc-hover-fill--primary"></button>
+      <button type="button" class="bc-nudge-copy bc-hover-fill"></button>
+      <button type="button" class="bc-nudge-later bc-hover-fill"></button>
     </div>`;
   box.querySelector(".bc-nudge-title").textContent = bcT("Enjoying so far?");
   box.querySelector(".bc-nudge-text").textContent = bcT("Be sure to show your friends and colleagues.");

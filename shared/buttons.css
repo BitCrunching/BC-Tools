@@ -1,0 +1,122 @@
+/* shared/buttons.css — theme-fill button style, linked by index.html and
+   @imported by site.css (so every page gets the same source). */
+
+:root{
+  --border-normal:1px;
+  --border-bold:2px;
+  --btn-fill:#1C2436;
+  --btn-fill-text:#ffffff;
+}
+:root[data-theme="dark"]{
+  --btn-fill:#F1F5F9;
+  --btn-fill-text:#1C2436;
+}
+
+/* Transparent at rest, filled with the theme color on hover; a selected /
+   active one stays filled. Add .bc-hover-fill to any button or link. */
+.bc-hover-fill{
+  background:transparent;
+  border:var(--border-bold) solid var(--btn-fill);
+  color:var(--text);
+  cursor:pointer;
+  transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out;
+}
+.bc-hover-fill:hover,
+.bc-hover-fill[aria-pressed="true"],
+.bc-hover-fill.is-active{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.bc-hover-fill:focus{ outline:none; }
+.bc-hover-fill:focus-visible{ outline:var(--border-bold) solid var(--btn-fill); outline-offset:2px; }
+
+/* Primary variant: filled at rest, goes transparent on hover. */
+.bc-hover-fill.bc-hover-fill--primary{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.bc-hover-fill.bc-hover-fill--primary:hover{
+  background:transparent;
+  border-color:var(--btn-fill);
+  color:var(--text);
+}
+
+/* Square icon button (back / close arrows). */
+.bc-icon-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  padding:0;
+  border-radius:10px;
+  line-height:1;
+  font-family:inherit;
+}
+.bc-icon-btn svg{
+  width:20px;
+  height:20px;
+}
+
+/* ===== Theme-fill skin for tool-page controls (single source of truth) =====
+   Layout/size/shape live in site.css; every fill/border/text color lives here. */
+.bc-add-tile{ background:transparent; border:var(--border-bold) dashed var(--btn-fill); color:var(--text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.bc-add-tile:hover{ background:var(--btn-fill); color:var(--btn-fill-text); }
+
+.result{ background:transparent; border:var(--border-bold) solid var(--btn-fill); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.result .result-name,.result .result-size{ color:var(--text); transition:color .3s ease-in-out; }
+
+.tool-primary-btn{ background:var(--btn-fill); border:var(--border-bold) solid var(--btn-fill); color:var(--btn-fill-text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.tool-primary-btn:hover:not(:disabled){ background:transparent; border-color:var(--btn-fill); color:var(--text); }
+.tool-primary-btn:disabled{ opacity:.4; }
+
+.tool-format-btn,.option-change-btn,.bc-dropdown-trigger,.bc-combo-trigger,.bc-toggle-btn,.gif-results-toggle,.context-tool-btn,.cf-toggle-switch,.cf-hod-btn,.colorfy-code-btn,.colorfy-save-btn,.colorfy-add-btn{ background:transparent; border:var(--border-bold) solid var(--btn-fill); color:var(--text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.tool-format-btn:hover,.tool-format-btn.active,.bc-toggle-btn:hover:not(:disabled),.bc-toggle-btn.active,.bc-toggle-btn[aria-pressed="true"],.gif-results-toggle:hover,.option-change-btn:hover,.bc-dropdown-trigger:hover,.bc-dropdown-trigger[aria-expanded="true"],.bc-combo-trigger:hover,.bc-combo-trigger[aria-expanded="true"],.context-tool-btn:hover,.cf-toggle-switch:hover,.colorfy-code-btn:hover,.colorfy-save-btn:hover:not(:disabled),.colorfy-add-btn:hover:not(:disabled),.cf-hod-btn:hover,.cf-hod-btn[aria-pressed="true"]{ background:var(--btn-fill); border-color:var(--btn-fill); color:var(--btn-fill-text); }
+
+.bc-segmented-toggle button,.gif-mode-toggle button,.cf-format-toggle button{ background:transparent; border:var(--border-bold) solid var(--btn-fill); color:var(--text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.bc-segmented-toggle button:not(:first-child),.gif-mode-toggle button:last-child,.cf-format-toggle button:not(:first-child){ border-left:none; }
+.bc-segmented-toggle button[aria-pressed="true"],.gif-mode-toggle button[aria-pressed="true"],.cf-format-toggle button[aria-pressed="true"],#cfCopyBtn:active:not(:disabled){ background:var(--btn-fill); border-color:var(--btn-fill); color:var(--btn-fill-text); }
+
+.tool-drop-addpill.tool-drop-revealed:not(.active){ background:transparent; border-color:var(--btn-fill); color:var(--text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.tool-drop-addpill.tool-drop-revealed:not(.active):hover{ background:var(--btn-fill); border-color:var(--btn-fill); outline-color:transparent; color:var(--btn-fill-text); }
+
+/* Combine file rows: same rest/hover as .result */
+.combine-file-item.result{
+  background:transparent;
+  border-color:var(--btn-fill);
+  transition:opacity .15s ease, transform .15s ease, background-color .3s ease-in-out, border-color .3s ease-in-out;
+}
+.combine-file-item.result .combine-file-name,
+.combine-file-item.result .combine-file-size,
+.combine-file-item.result .combine-drag-handle,
+.combine-file-item.result .combine-file-index,
+.combine-file-item.result .combine-file-thumb-fallback{
+  color:var(--text);
+  transition:color .3s ease-in-out, background-color .3s ease-in-out;
+}
+
+/* Cleanly file rows: same rest/hover as .result; contents flip on hover */
+.exif-file-item.result .exif-file-name,
+.exif-file-item.result .exif-file-size,
+.exif-file-item.result .exif-tag,
+.exif-file-item.result .exif-scan-note{
+  color:var(--text);
+  transition:color .3s ease-in-out, background-color .3s ease-in-out;
+}
+
+.bc-hover-fill.help-banner-term-btn{ border-width:var(--border-normal); }
+.bc-combo-trigger:hover .bc-combo-input,.bc-combo-trigger[aria-expanded="true"] .bc-combo-input{ color:var(--btn-fill-text); }
+.bc-combo-trigger .bc-combo-input{ transition:color .3s ease-in-out; }
+
+/* Context signature modal */
+.context-signature-action-btn{ background:var(--btn-fill); border:var(--border-bold) solid var(--btn-fill); color:var(--btn-fill-text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.context-signature-action-btn:hover:not(:disabled){ background:transparent; color:var(--text); }
+.context-signature-action-btn--ghost{ background:transparent; color:var(--text); }
+.context-signature-action-btn--ghost:hover:not(:disabled){ background:var(--btn-fill); color:var(--btn-fill-text); }
+.context-signature-back,.context-signature-history-btn{ background:transparent; border:var(--border-normal) solid var(--btn-fill); color:var(--text); transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out; }
+.context-signature-back:hover,.context-signature-history-btn:hover:not(:disabled){ background:var(--btn-fill); color:var(--btn-fill-text); }
+
+/* Shared editor surface (Codify code input) */
+.bc-editor-input{ border:var(--border-bold) solid var(--btn-fill); background:rgba(241,245,249,.2); color:var(--text); transition:border-color .3s ease-in-out, color .3s ease-in-out; }
