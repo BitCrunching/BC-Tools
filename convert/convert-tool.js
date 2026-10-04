@@ -75,8 +75,13 @@
      something rebuilt on every render. Plain results.innerHTML=""
      would delete it outright (it's a real DOM node, not recreated),
      the same bug this exact pattern hit in Coudio first. */
+  let lastOutputs = [];
+  let lastZipName = "";
+  let lastDoneText = "";
+
   function clearResultCards(){
     results.querySelectorAll(".result").forEach(el => el.remove());
+    lastOutputs = [];
   }
 
   /* "Convert and download" is the idle label everywhere except mobile,
@@ -642,7 +647,7 @@
     card.appendChild(btn);
   }
 
-  function addResultRemoveButton(card){
+  function addResultRemoveButton(card, output){
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cv-file-remove-btn bc-file-remove-btn";
@@ -653,6 +658,8 @@
       const img = card.querySelector("img");
       if (img && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
       card.remove();
+      lastOutputs = lastOutputs.filter(o => o !== output);
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
     });
     card.appendChild(btn);
   }
@@ -961,7 +968,39 @@
     return outputs;
   }
 
+  async function redownloadOutputs(){
+    convertBtn.disabled = true;
+    startPrivacyCheck();
+    try {
+      const outputs = lastOutputs.slice();
+      const useZip = outputs.length > 1 && lastZipName && effectiveUseZip(outputs.length);
+      if (useZip){
+        const zip = new JSZip();
+        outputs.forEach(({ blob, outputName }) => zip.file(outputName, blob));
+        status.textContent = bcT("Building ZIP file...");
+        downloadBlob(await zip.generateAsync({ type: "blob" }), lastZipName);
+        status.textContent = bcT("Done. ZIP contains {n} images.", { n: outputs.length });
+      } else {
+        for (const { blob, outputName } of outputs){
+          downloadBlob(blob, outputName);
+          if (outputs.length > 1) await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        status.textContent = lastDoneText || bcT("Done. Downloaded {n} {word}.", { n: outputs.length, word: outputs.length === 1 ? "image" : "images" });
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = bcT("Something went wrong during conversion.");
+    } finally {
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
+      finishPrivacyCheck(document.getElementById("cvPrivacyBadge"));
+    }
+  }
+
   convertBtn.addEventListener("click", async () => {
+    if (files.length === 0 && lastOutputs.length > 0){
+      await redownloadOutputs();
+      return;
+    }
     if (files.length === 0){
       status.textContent = bcT("Please select at least one file first.");
       return;
@@ -990,6 +1029,8 @@
         status.textContent = bcT("Building PDF...");
         const pdfBlob = await imagesToSinglePdf(files);
         clearResultsOnce();
+        lastOutputs = [{ blob: pdfBlob, outputName: "bcconvert-images.pdf" }];
+        lastZipName = "";
         downloadBlob(pdfBlob, "bcconvert-images.pdf");
         status.textContent = bcT("Done. Created a PDF with {n} pages.", { n: files.length });
 
@@ -1026,13 +1067,16 @@
         }
 
         clearResultsOnce();
-        allOutputs.forEach(({ blob, outputName }) => {
+        lastOutputs = allOutputs.slice();
+        lastZipName = "bcconvert-pages.zip";
+        allOutputs.forEach((output) => {
+          const { blob, outputName } = output;
           const resultCard = appendPreviewCard({
             src: URL.createObjectURL(blob),
             name: outputName,
             info: `${bcFormatFileSize(blob.size)} • .${extension.toUpperCase()}`
           });
-          addResultRemoveButton(resultCard);
+          addResultRemoveButton(resultCard, output);
         });
 
         if (useZip){
@@ -1082,13 +1126,16 @@
         }
 
         clearResultsOnce();
-        finishedResults.forEach(({ blob, outputName, info }) => {
+        lastOutputs = finishedResults.slice();
+        lastZipName = "bcconvert-images.zip";
+        finishedResults.forEach((output) => {
+          const { blob, outputName, info } = output;
           const resultCard = appendPreviewCard({
             src: URL.createObjectURL(blob),
             name: outputName,
             info
           });
-          addResultRemoveButton(resultCard);
+          addResultRemoveButton(resultCard, output);
         });
 
         if (useZip){
@@ -1106,13 +1153,14 @@
       // "files" array can't be reconverted by clicking the button again
       // after removing a result card (result cards only remove themselves
       // from view, they never represented the source files anymore).
+      lastDoneText = status.textContent;
       files = [];
       bcDbClear(CV_DB_NAME, CV_DB_STORE);
     } catch (err){
       console.error(err);
       status.textContent = bcT("Something went wrong during conversion.");
     } finally {
-      convertBtn.disabled = files.length === 0;
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
       convertBtn.textContent = convertBtnIdleLabel();
       finishPrivacyCheck(document.getElementById("cvPrivacyBadge"));
     }

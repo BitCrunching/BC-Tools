@@ -524,7 +524,7 @@
 
     const cached = getCachedEstimate(entry.file, selectedQuality);
     if (cached){
-      entry.infoEl.innerHTML = `${originalText}<br>${bcT("New size:")} ${bcFormatFileSize(cached.size)} (-${cached.savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText} &gt; ${bcFormatFileSize(cached.size)}<br>(-${cached.savedPercent}%)`;
       return;
     }
 
@@ -536,7 +536,7 @@
       if (entry.token !== myToken) return;
       const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / entry.file.size) * 100));
       setCachedEstimate(entry.file, selectedQuality, { size: compressedBlob.size, savedPercent });
-      entry.infoEl.innerHTML = `${originalText}<br>${bcT("New size:")} ${bcFormatFileSize(compressedBlob.size)} (-${savedPercent}%)`;
+      entry.infoEl.innerHTML = `${originalText} &gt; ${bcFormatFileSize(compressedBlob.size)}<br>(-${savedPercent}%)`;
     } catch (err){
       if (entry.token !== myToken) return;
       entry.infoEl.textContent = originalText;

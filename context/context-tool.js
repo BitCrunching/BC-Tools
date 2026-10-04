@@ -1348,8 +1348,14 @@
     }
   }
 
+  const closeColorMenu = () => {
+    colorMenu.hidden = true;
+    colorTrigger.setAttribute("aria-expanded", "false");
+  };
+  bcRegisterPopup(closeColorMenu);
   colorTrigger.addEventListener("click", () => {
     const willOpen = colorMenu.hidden;
+    if (willOpen) bcCloseAllPopups();
     colorMenu.hidden = !willOpen;
     colorTrigger.setAttribute("aria-expanded", String(willOpen));
     if (willOpen) clampColorMenu();
@@ -1497,8 +1503,13 @@
     }
   }
 
+  bcRegisterPopup(() => {
+    filenamePopup.hidden = true;
+    filenameTrigger.setAttribute("aria-expanded", "false");
+  });
   filenameTrigger.addEventListener("click", () => {
     const willOpen = filenamePopup.hidden;
+    if (willOpen) bcCloseAllPopups();
     filenamePopup.hidden = !willOpen;
     filenameTrigger.setAttribute("aria-expanded", String(willOpen));
     if (willOpen){

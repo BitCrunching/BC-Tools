@@ -280,6 +280,7 @@ console.log(a.next.value);`
     closeBgPanel();
     closeMacNavPanel();
   }
+  bcRegisterPopup(closeCfCustomPanels);
   function closeCfCombos(){
     themeCombo.close();
     languageCombo.close();
@@ -454,6 +455,7 @@ console.log(a.next.value);`
   }
   function openMacNavPanel(){
     if (!macNavPanel || !macNavTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     macNavPanel.hidden = false;
@@ -562,6 +564,7 @@ console.log(a.next.value);`
   }
   function openShadowPanel(){
     if (!shadowPanel || !shadowTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     shadowPanel.hidden = false;
@@ -1460,36 +1463,22 @@ ${titlebarSvg}
        content once the bleed padding is carved out of it, the same
        result padding-only gives on a content-box element. */
     const bleed = 100;
-    const origPadding = cfWindowWrap.style.padding;
-    const origWidth = cfWindowWrap.style.width;
-    const origMaxWidth = cfWindowWrap.style.maxWidth;
-    /* Pinned explicitly, not left to updateWindowFontSize's own
-       ResizeObserver — widening #cfWindowWrap by 200px below (bleed*2)
-       to make room for the shadow is exactly the kind of width change
-       that observer exists to react to, and if it fires while
-       genuinely widened (async, so timing isn't guaranteed either way)
-       the code text would render at whatever size THAT width maps to
-       for the one frame html-to-image happens to capture — a real,
-       if narrow, way for the export to not match what's actually on
-       screen. Locking it to the pre-bleed value for the whole
-       widen/capture/restore sequence removes the race entirely rather
-       than relying on timing. */
-    const origFontSize = cfWindow.style.getPropertyValue("--cf-code-font-size");
-    /* max-width:640px (from the stylesheet, not overridden by the
-       inline width below on its own) still clamps an explicit inline
-       width to 640 regardless — max-width always wins over width,
-       that's its entire job — so the widened `width` above alone
-       silently did nothing and this exact bug reproduced again with
-       the fix in place. Has to be raised too. */
-    cfWindowWrap.style.maxWidth = "none";
-    cfWindowWrap.style.width = (winRect.width + bleed * 2) + "px";
-    cfWindowWrap.style.padding = bleed + "px";
-    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
-    const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
-    cfWindowWrap.style.padding = origPadding;
-    cfWindowWrap.style.width = origWidth;
-    cfWindowWrap.style.maxWidth = origMaxWidth;
-    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
+    /* Captured from an off-screen clone so the live preview never
+       visibly widens/jumps during Copy/Download. The clone is padded
+       out by `bleed` so the box-shadow has room to render in full. */
+    const holder = document.createElement("div");
+    holder.style.cssText = "position:absolute;left:-20000px;top:0;pointer-events:none;";
+    const clone = cfWindowWrap.cloneNode(true);
+    clone.style.cssText += ";position:relative;inset:auto;margin:0;transform:none;max-width:none;" +
+      "width:" + (winRect.width + bleed * 2) + "px;padding:" + bleed + "px;";
+    holder.appendChild(clone);
+    cfWindowWrap.parentNode.appendChild(holder);
+    let winDataUrl;
+    try {
+      winDataUrl = await htmlToImage.toPng(clone, { pixelRatio });
+    } finally {
+      holder.remove();
+    }
     const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
@@ -1550,13 +1539,15 @@ ${titlebarSvg}
     }
   }
 
+  let exportBusy = false;
   function setExportBtnsDisabled(disabled){
     downloadBtn.disabled = disabled;
     if (copyBtn) copyBtn.disabled = disabled;
   }
 
   downloadBtn.addEventListener("click", async () => {
-    setExportBtnsDisabled(true);
+    if (exportBusy) return;
+    exportBusy = true;
     statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
     startPrivacyCheck();
     try {
@@ -1570,6 +1561,7 @@ ${titlebarSvg}
         ? bcT("Export isn't ready yet — try again in a moment.")
         : bcT("Something went wrong generating the {0}.", [bcT(exportFormat === "svg" ? "SVG" : "image")]);
     } finally {
+      exportBusy = false;
       setExportBtnsDisabled(codeInput.value.length === 0);
       finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
     }
@@ -1585,7 +1577,8 @@ ${titlebarSvg}
      which is the actually-useful thing to do with an SVG anyway. */
   if (copyBtn){
     copyBtn.addEventListener("click", async () => {
-      setExportBtnsDisabled(true);
+      if (exportBusy) return;
+      exportBusy = true;
       statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
       try {
         const { blob, svgString, ext } = await renderCodifyExport();
@@ -1602,6 +1595,7 @@ ${titlebarSvg}
           ? bcT("Export isn't ready yet — try again in a moment.")
           : bcT("Couldn't copy — your browser may not allow clipboard access here.");
       } finally {
+        exportBusy = false;
         setExportBtnsDisabled(codeInput.value.length === 0);
       }
     });
@@ -1637,6 +1631,7 @@ ${titlebarSvg}
   }
   function openBgPanel(){
     if (!bgPanel || !bgTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     bgPanel.hidden = false;
