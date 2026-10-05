@@ -409,7 +409,7 @@ console.log(a.next.value);`
      down reads those same elements' computed colors for SVG export
      rather than a second hardcoded color list, so export always
      matches whatever's on screen. */
-  const trafficLightsToggle = document.getElementById("cfTrafficLightsToggle");
+  const trafficLightsToggle = bcOnOffButton(document.getElementById("cfTrafficLightsToggle"));
   const macNavControl = document.getElementById("cfMacNavControl");
   const macNavTrigger = document.getElementById("cfMacNavTrigger");
   const macNavPanel = document.getElementById("cfMacNavPanel");
@@ -492,7 +492,7 @@ console.log(a.next.value);`
   const shadowControl = document.getElementById("cfShadowControl");
   const shadowTrigger = document.getElementById("cfShadowTrigger");
   const shadowPanel = document.getElementById("cfShadowPanel");
-  const shadowToggle = document.getElementById("cfShadowToggle");
+  const shadowToggle = bcOnOffButton(document.getElementById("cfShadowToggle"));
   const shadowOpacityInput = document.getElementById("cfShadowOpacity");
   const shadowDistanceInput = document.getElementById("cfShadowDistance");
   const shadowDirectionInput = document.getElementById("cfShadowDirection");
