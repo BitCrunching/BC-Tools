@@ -55,9 +55,8 @@
    sessionStorage is per-origin/per-tab, not per-page, so every
    standalone page sharing this one file was actually sharing the same
    key too: leaving the homepage scrolled deep down and clicking
-   through to, say, Colorfy restored that same deep offset there,
-   landing on Colorfy's own "New to picking colors from images?"
-   article instead of its top. Namespacing by path keeps this purely a
+   through to, say, a tool restored that same deep offset there,
+   landing on its article instead of its top. Namespacing by path keeps this purely a
    same-page reload restore, which is all it was ever meant to be. */
 var bcScrollKey = "bc-scrollY:" + location.pathname;
 function bcRestoreScroll(){
@@ -273,7 +272,7 @@ document.addEventListener("click", (e) => {
 
 /* ===== Step-through help banner ===== every tool's dismissible,
    step-numbered terminal-styled intro ("<TOOL>_GUIDE: STEP 1/N") —
-   this was hand-copied identically into all 9 tools' own -tool.js
+   this was hand-copied identically into all 8 tools' own -tool.js
    files (only the element-ID prefix, tool name, and step content ever
    differed); now they all call this instead.
 
@@ -281,7 +280,7 @@ document.addEventListener("click", (e) => {
    ("bc-help-<toolName>-dismissed") and the uppercase "<TOOLNAME>_GUIDE"
    display text.
    idPrefix: the short prefix each tool's own element IDs use (e.g.
-   "cy" for Colorfy's #cyHelpBanner, "gif" for Congify's #gifHelpBanner)
+   "gif" for Congify's #gifHelpBanner, "ct" for Context's #ctHelpBanner)
    — genuinely differs per tool, unrelated to toolName.
    steps: array of [heading, body] pairs.
 
@@ -655,12 +654,12 @@ function bcRegisterOptionChangeBtn(btn, options, onSelect, initialIndex, renderO
 
 /* ===== .bc-canvas-remove-btn — shared title for the "remove the loaded
    file" button on a tool's own single-file canvas (Congify's
-   #gifRemoveBtn, Context's #ctRemoveBtn, Colorfy's #cyRemoveBtn,
-   Coudio's #cdRemoveBtn) — all four already share .bc-remove-btn for
+   #gifRemoveBtn, Context's #ctRemoveBtn,
+   Coudio's #cdRemoveBtn) — all three already share .bc-remove-btn for
    their visual, this centralizes their title/tooltip text too so it
    only needs to change in one place. Not applied to every
-   .bc-remove-btn (Colorfy's picker/palette color-remove buttons use
-   that same visual class for a different job, so they keep their own
+   .bc-remove-btn (any picker/palette color-remove button using
+   that same visual class for a different job keeps its own
    aria-label instead). Only fills in a title when the button doesn't
    already carry a more specific one. */
 document.querySelectorAll(".bc-canvas-remove-btn").forEach(btn => {
@@ -728,8 +727,8 @@ function startPrivacyCheck(){
    the result, a later, separate click actually downloads it), so the
    badge reports whichever step just finished instead of always saying
    "download" for a step that didn't download anything yet. "save" is
-   for a tool with no file output at all (Colorfy: saving a color to
-   the palette is the one thing it actually persists, so that's the
+   for a tool with no file output at all (saving something to local
+   storage is the one thing it persists, so that's the
    action worth confirming stayed local, not a download that never
    happens here). Unrecognized/missing values fall back to "download",
    same as before this list existed. */
@@ -1140,7 +1139,7 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
    estimated — whatever) calls this rather than hand-rolling its own KB/MB
    math. Before this, six tools had independently written four subtly
    different versions of the same formula (Cleanly/Combine: byte-identical
-   copies of each other; Compress, Coudio, and Codoc each their own,
+   copies of each other; Compress and Coudio each their own,
    different KB/MB threshold and rounding) — the exact kind of duplication
    this file's own header says to promote to shared the moment it shows up
    twice. Threshold is a true 1024KB (1MiB), one decimal on the MB side,
@@ -1333,8 +1332,7 @@ function bcCreateQuickCycleGesture({ thresholdMs = 200, getState, cycle, revert,
 /* ===== Shift+click on any "beta remove btn" (.bc-file-remove-btn) clears
    every OTHER row in the tool, keeping just the one clicked — a single
    delegated listener here, so every current and future adopter (Cleanly/
-   Combine's file rows, Convert/Compress/Coudio's per-file remove,
-   Colorfy's saved-color chips, ...) gets this for free with zero
+   Combine's file rows, Convert/Compress/Coudio's per-file remove, ...) gets this for free with zero
    per-tool wiring, the same "add the shared class, done" deal the rest
    of .bc-file-remove-btn already is.
 

@@ -1887,7 +1887,7 @@ ${titlebarSvg}
   }
 
   /* ===== drag-to-resize #cfWindow (display size only) — same
-     incremental-delta pattern as Colorfy's/Congify's own handle: track
+     incremental-delta pattern as Congify's own handle: track
      a virtual width across the whole drag rather than re-deriving it
      from the window's current rendered width each move, so repeated
      small movements don't drift from rounding. Handle itself sits on
@@ -1933,7 +1933,7 @@ ${titlebarSvg}
     handle.addEventListener("pointercancel", endResize);
 
     /* Keyboard equivalent — role="slider", left/right resize by 20px a
-       step (same convention as Colorfy's own handle). */
+       step (same convention as Congify's own handle). */
     handle.addEventListener("keydown", (e) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       e.preventDefault();
