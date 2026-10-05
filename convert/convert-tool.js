@@ -225,12 +225,10 @@
     const slug = entry && FORMAT_TO_SLUG[src] && FORMAT_TO_SLUG[dst]
       ? FORMAT_TO_SLUG[src] + "-to-" + FORMAT_TO_SLUG[dst]
       : null;
-    const translated = !!window.BC_LANG;
-    const path = slug && !translated ? "/convert/" + slug + "/" : bcLangPath("/convert/");
+    const path = slug ? "/convert/" + slug + "/" : "/convert/";
     if (location.pathname !== path){
       history.replaceState(null, "", path);
     }
-    if (translated) return;
     document.title = entry ? "Convert " + FORMAT_TO_SLUG[src].toUpperCase() + " to " + FORMAT_TO_SLUG[dst].toUpperCase() + " – Free Online Converter – BC Tools" : baseTitle;
   }
 
