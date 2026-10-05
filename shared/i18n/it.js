@@ -334,6 +334,7 @@ window.BC_I18N = {
  "Codify – Free Code Screenshot Generator – BC Tools": "Codify – Generatore gratuito di screenshot di codice – BC Tools",
  "Codoc": "Codoc",
  "Codoc icon": "Icona di Codoc",
+ "Color": "Colore",
  "Color contrast basics": "Nozioni di base sul contrasto dei colori",
  "Color-coding keywords, strings, comments, and function names isn't cosmetic — it's a real reading aid. Experienced developers scan highlighted code by shape and color before reading it word by word, which is exactly why plain, uncolored code in a screenshot or a low-contrast messaging app reads noticeably slower, even for someone fluent in the language.": "Colorare parole chiave, stringhe, commenti e nomi di funzione non è estetica: è un vero aiuto alla lettura. Gli sviluppatori esperti scorrono il codice evidenziato per forma e colore prima di leggerlo parola per parola, ed è esattamente per questo che il codice semplice e senza colori in uno screenshot o in un'app di messaggistica a basso contrasto si legge molto più lentamente, anche per chi conosce bene il linguaggio.",
  "Colorfy": "Colorfy",

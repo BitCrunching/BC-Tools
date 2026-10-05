@@ -1238,6 +1238,45 @@ async function bcDbClear(dbName, storeName){
    text input/textarea/contenteditable (typing a caption/text-box's actual
    content shouldn't fire "b"/"i"/"u"/"t" as shortcuts) and while a
    modifier key is held (so it doesn't fight browser/OS shortcuts). */
+/* "Continue where you left off" — D clicks it while it's showing, ahead of
+   (and instead of) the tool's own D/Download shortcut, which has nothing to
+   do until a file is loaded. Congify's post-conversion "Continue working"
+   (id contains "Done") is a different button and keeps D for Download. */
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.key.toLowerCase() !== "d") return;
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+  const btn = document.querySelector('.tool-continue-btn[id$="ContinueBtn"]:not([id*="Done"])');
+  if (!btn || btn.hidden || btn.disabled || !btn.offsetParent) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  btn.click();
+});
+
+/* ON/OFF button (an .option-change-btn with aria-pressed + a label) that
+   behaves like a checkbox for code written against `.checked` / "change":
+   `checked` reads/writes the pressed state and label, `addEventListener
+   ("change")` / `dispatchEvent` reach whoever listens, and a click flips
+   it and fires "change". Originated as Codify's Background ON/OFF button;
+   now also drives Mac nav and Shadow. */
+function bcOnOffButton(btn){
+  if (!btn) return null;
+  const label = btn.querySelector(".option-change-btn-label");
+  const listeners = [];
+  const api = {
+    get checked(){ return btn.getAttribute("aria-pressed") === "true"; },
+    set checked(v){
+      btn.setAttribute("aria-pressed", String(!!v));
+      if (label) label.textContent = v ? "ON" : "OFF";
+    },
+    addEventListener(type, fn){ if (type === "change") listeners.push(fn); },
+    dispatchEvent(){ listeners.forEach(fn => fn({ target: api })); return true; },
+    el: btn
+  };
+  btn.addEventListener("click", () => { api.checked = !api.checked; api.dispatchEvent(); });
+  return api;
+}
+
 function bcRegisterKeyShortcut(key, btn){
   if (!btn) return;
   document.addEventListener("keydown", (e) => {

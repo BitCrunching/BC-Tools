@@ -334,6 +334,7 @@ window.BC_I18N = {
  "Codify – Free Code Screenshot Generator – BC Tools": "Codify – 무료 코드 스크린샷 생성기 – BC Tools",
  "Codoc": "Codoc",
  "Codoc icon": "Codoc 아이콘",
+ "Color": "색상",
  "Color contrast basics": "색 대비의 기초",
  "Color-coding keywords, strings, comments, and function names isn't cosmetic — it's a real reading aid. Experienced developers scan highlighted code by shape and color before reading it word by word, which is exactly why plain, uncolored code in a screenshot or a low-contrast messaging app reads noticeably slower, even for someone fluent in the language.": "키워드, 문자열, 주석, 함수 이름에 색을 입히는 것은 장식이 아니라 실제 읽기 보조 도구입니다. 숙련된 개발자는 강조된 코드를 한 단어씩 읽기 전에 모양과 색으로 훑어봅니다. 그래서 스크린샷이나 대비가 낮은 메시징 앱의 색 없는 일반 코드는 해당 언어에 능숙한 사람에게도 눈에 띄게 읽는 속도가 느려집니다.",
  "Colorfy": "Colorfy",
