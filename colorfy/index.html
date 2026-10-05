@@ -27,18 +27,18 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cleanly – Strip Photo Metadata for Free – BC Tools</title>
-<meta name="description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
-<link rel="canonical" href="https://bitcrunching.com/cleanly/">
+<title>Colorfy – Pick a Color from Any Image – BC Tools</title>
+<meta name="description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
+<link rel="canonical" href="https://bitcrunching.com/colorfy/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="Cleanly – Strip Photo Metadata for Free – BC Tools">
-<meta property="og:description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
-<meta property="og:url" content="https://bitcrunching.com/cleanly/">
+<meta property="og:title" content="Colorfy – Pick a Color from Any Image – BC Tools">
+<meta property="og:description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
+<meta property="og:url" content="https://bitcrunching.com/colorfy/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Cleanly – Strip Photo Metadata for Free – BC Tools">
-<meta name="twitter:description" content="Strip EXIF metadata (location, camera info, timestamps) from your photos for free, right in your browser, before sharing them anywhere.">
+<meta name="twitter:title" content="Colorfy – Pick a Color from Any Image – BC Tools">
+<meta name="twitter:description" content="Find the exact color of any pixel in an image for free, right in your browser. Drop an image, drag the picker, get the HEX and RGB code instantly.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
 <link rel="apple-touch-icon" href="/favicon.svg?v=4">
@@ -58,34 +58,26 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<script src="/vendor/exif.js"></script>
 <link rel="stylesheet" href="/shared/site.css?v=213">
 <style>
-.tool-app::before{ background:#7ED321; }
-.cs-shape{ background:#4ade80; }
+#page-colorfy::before{
+  background:#FF8A4C;
+}
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
-   moment #exAfterDrop is revealed, so it never fights the file list/
-   Strip button once there's real content to interact with. Same "jump"
-   plays while a file is being dragged over the banner (.active class,
+   moment #cyAfterDrop is revealed, so it never fights the picker
+   itself once there's real content to interact with. Same "jump" plays
+   while a file is being dragged over the banner (.active class,
    toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
    confused with the :active pseudo-class just below, which is the
    separate mouse-press-down effect. */
-.tool-app:has(#exAfterDrop[hidden]):hover{
+.tool-app:has(#cyAfterDrop[hidden]):hover,
+.tool-app:has(#cyAfterDrop[hidden]).active{
   filter:brightness(1.08);
   transform:scale(1.012);
 }
-/* Drag-over needs a bolder, unmistakable reaction than plain hover —
-   1.012/1.08 read fine when you're stationary hovering the banner, but
-   during an actual drag your attention is on the OS drag cursor, not
-   the banner, so the subtle version went unnoticed ("doesn't react to
-   drag"). Kept as its own rule, not folded back into the :hover one. */
-.tool-app:has(#exAfterDrop[hidden]).active{
-  filter:brightness(1.15);
-  transform:scale(1.03);
-}
-.tool-app:has(#exAfterDrop[hidden]):active{
+.tool-app:has(#cyAfterDrop[hidden]):active{
   transform:scale(.99);
   transition-duration:.1s;
 }
@@ -106,11 +98,11 @@
   50%{ transform:rotate(8deg) scale(.95); }
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
-.tool-app.wobble .tool-logo .icon-cleanly{ animation:icon-wobble .5s ease; }
+.tool-app.wobble .tool-logo .gfx-placeholder{ animation:icon-wobble .5s ease; }
 
 /* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
    .engine-status-row from shared/site.css — same "classified terminal"
-   look as Convert/Compress/Combine's help banners. */
+   look as every other tool's help banner. */
 .help-banner{
   margin:48px auto 0;
   width:calc(100% - 36px);
@@ -155,18 +147,10 @@
   margin-left:auto;
 }
 
-/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
-   for one plain CLOSE button in the nav row, between Back and Next —
-   dismisses for good, same as the red dot on desktop. Minimize isn't
-   offered on mobile; one clear action beats three cramped small ones
-   on a touch target this size. */
 .help-banner-close-mobile{ display:none; }
 @media (max-width:768px){
   .help-banner-dot{ display:none; }
   .help-banner-close-mobile{ display:block; }
-  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
-     phone-width header — keep the real text (still readable to screen
-     readers) but render it visually as just "GUIDE". */
   .help-banner-header .engine-status-title{ font-size:0; }
   .help-banner-header .engine-status-title::before{
     content:"GUIDE";
@@ -176,16 +160,72 @@
 
 .tool-after-drop[hidden]{ display:none; }
 
+/* Same as Convert's #cvDrop / Coudio's #cdDrop — before an image is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it. Scoped to :not(.tool-drop-revealed) so it doesn't
+   cancel the shared .tool-drop-addpill's own dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#cyDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#cyDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cyDrop.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cyDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cyDrop.tool-drop-revealed.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+.tool-app.active{
+  background:rgba(255,140,66,.08);
+}
+
+/* No separate dark workspace panel — the uploaded image is the
+   workspace, so .colorfy-frame (holding the canvas, pickers, and the
+   resize/remove/add controls) sits directly in the banner instead of
+   inside an extra padded wrapper. Every picker ring is still clamped
+   to this frame's own bounds in JS, so dragging one never lands
+   somewhere that isn't actually part of the image. */
+.colorfy-frame{
+  position:relative;
+  width:650px;
+  max-width:100%;
+  margin:16px auto 0;
+  border-radius:12px;
+  background:repeating-conic-gradient(#3a4258 0% 25%, #2b3247 0% 50%) 0 0 / 20px 20px;
+  border:1px solid var(--border-strong);
+  line-height:0;
+}
+/* Rounds the canvas's own corners to match the frame instead of
+   relying on overflow:hidden on the frame — overflow:hidden would
+   also clip the resize handle and picker ring, both of which are
+   meant to hang slightly outside the frame's edge. */
+.colorfy-frame canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:12px;
+  cursor:crosshair;
+}
+
+/* Same "×" remove button as Congify's .gif-remove-btn — clears the
+   loaded image and brings back the drop zone, rather than requiring a
+   second file pick to replace what's loaded. */
 /* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here, same split as Compress's .cp-remove-btn.
-   Unlike Convert/Compress (where the drop zone is hidden once a file
-   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
-   small negative offset reaches the card corner), Cleanly keeps its
-   drop zone visible in the revealed state — so #exAfterDrop starts far
-   down the card. The button is anchored to .tool-app itself instead and
-   shown only while files are loaded, via the same :has(#exAfterDrop…)
-   toggle the hover rules above already use. */
-.ex-remove-btn{
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in .colorfy-frame), shown via the same :has() toggle
+   those two use instead of relying on a hidden ancestor. */
+.colorfy-remove-btn{
   position:absolute;
   top:16px;
   right:16px;
@@ -193,111 +233,317 @@
   font-size:18px;
   display:none;
 }
-.tool-app:has(#exAfterDrop:not([hidden])) .ex-remove-btn{ display:flex; }
+.tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
    (shared/site.css) — only size/position/reveal-timing stay here, same
-   split as .ex-remove-btn/.bc-remove-btn above. Sits just to the left
-   of Remove, same corner, shown together with it. Both display rules
-   guarded to the same mobile breakpoint as .bc-canvas-back-btn's own
-   display:flex — see Combine's identical comment for why the :has()
-   rule specifically needs that guard. */
-.ex-back-btn{
+   split as .colorfy-remove-btn/.bc-remove-btn above. Sits just to the
+   left of Remove, same corner, shown together with it. */
+.colorfy-back-btn{
   position:absolute;
   top:16px;
   right:52px;
   z-index:6;
 }
 @media (max-width:768px){
-  .ex-back-btn{ display:none; }
-  .tool-app:has(#exAfterDrop:not([hidden])) .ex-back-btn{ display:flex; }
+  .colorfy-back-btn{ display:none; }
+  .tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-back-btn{ display:flex; }
 }
 
-/* Before a file is loaded the whole banner is the drop target, so the
-   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
-   doesn't cancel the shared .tool-drop-addpill's dashed border once it
-   collapses to the "＋ Add more files" pill. */
-#exDrop:not(.tool-drop-revealed){
-  border-color:transparent;
-  background:transparent;
+/* "+" adds another picker ring (up to 4 total) — sits in its own row
+   just below the preview rather than floating over the image corner,
+   so it reads as a control for the picker(s), not part of the image
+   itself. Disabled (not hidden) once 4 pickers are already placed, so
+   it's clear why it stopped working rather than the control just
+   vanishing. */
+.colorfy-add-row{
+  display:flex;
+  justify-content:center;
+  margin-top:12px;
 }
-#exDrop:not(.tool-drop-revealed):not(.active):hover{
-  border-color:transparent;
-  transform:none;
+/* Collapses the row's own margin along with the button once all 4
+   pickers are placed, instead of leaving an empty gap behind. */
+.colorfy-add-row:has(#cyAddBtn[hidden]){
+  display:none;
 }
-#exDrop.active{
-  border-color:#4ade80;
-  background:rgba(74,222,128,.1);
+.colorfy-add-btn{
+  width:28px;
+  height:28px;
+  padding:0;
+  border-radius:50%;
+  font-weight:900;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-/* Revealed-state "＋ Add more files" pill is the shared
-   .tool-drop-addpill (shared/site.css) — opted in via the class on
-   #exDrop's markup. Only the brand-coloured drag-over state stays
-   local. */
-#exDrop.tool-drop-revealed.active{
-  border-color:#4ade80;
-  background:rgba(74,222,128,.1);
+.colorfy-add-btn:disabled{
+  opacity:.4;
+  cursor:not-allowed;
 }
-.tool-app.active{
-  background:rgba(74,222,128,.08);
+
+/* Same filled-circle-with-white-border look as Congify/Codify's drag
+   handles, just with a see-through center (not a solid fill) so the
+   ring itself doesn't obscure the exact pixel it's marking. */
+.colorfy-picker{
+  position:absolute;
+  width:26px;
+  height:26px;
+  margin:-13px 0 0 -13px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-sizing:border-box;
+  cursor:grab;
+  touch-action:none;
+  z-index:4;
 }
-/* Per-row Clean/Download button(s) — same compact-CTA exception
-   Coudio's own .cd-row-convert-btn documents in CLAUDE.md: N independent
-   per-file actions, not one global CTA, so .tool-primary-btn's 74px
-   height doesn't fit. Only height/padding/font-size are overridden —
-   color/border/flip recipe stay .tool-primary-btn's own. Shared by all
-   four buttons renderList() can put in a row's .exif-file-actions
-   (Clean first / Clean and download / Clean anyways / Download) so they
-   line up at the same size regardless of which one(s) are showing. */
-.ex-row-strip-btn,
-.ex-row-clean-download-btn,
-.ex-row-clean-anyways-btn,
-.ex-row-download-btn{
-  flex-shrink:0;
+.colorfy-picker::before{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,.5);
+}
+.colorfy-picker:active{
+  cursor:grabbing;
+}
+/* Numbers each ring so it's obvious which result row below belongs to
+   which picker once there's more than one on the image. */
+.colorfy-picker-num{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+  text-shadow:0 0 3px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.9);
+  pointer-events:none;
+}
+
+/* Drag-to-resize handle on the preview's corner — circle geometry is
+   the shared .bc-resize-handle (shared/site.css). Lets the preview
+   grow up to 800px for a closer look at fine detail. Purely a
+   display-size change: the canvas keeps sampling at the image's real
+   resolution regardless of how large or small it's rendered. */
+.colorfy-resize-handle{
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+}
+/* content is needed here even though the actual icon (background) now
+   comes from the shared .bc-resize-handle::before rule — a ::before
+   with no content declared of its own doesn't generate at all, shared
+   rule or not. Only width/height stay local, since this one's icon is
+   deliberately smaller than Congify's/Codify's 18px default. */
+.colorfy-resize-handle::before{
+  content:"";
+  width:13px;
+  height:13px;
+}
+
+/* The format dropdown applies to every picker's code at once (one
+   consistent notation across the whole list, not a per-row choice),
+   so it sits on its own above the list rather than repeated per row. */
+.colorfy-format-row{
+  display:flex;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.colorfy-picker-list{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+}
+.colorfy-picker-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.colorfy-swatch{
+  position:relative;
+  width:40px;
   height:40px;
-  padding:0 18px;
-  font-size:14px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  flex-shrink:0;
 }
-.ex-row-strip-btn:disabled,
-.ex-row-clean-download-btn:disabled,
-.ex-row-clean-anyways-btn:disabled{
+/* Mirrors .colorfy-picker-num's ring on the image (same numbering, same
+   look) so it's obvious at a glance which row below belongs to which
+   marker on the preview. */
+.colorfy-swatch-num{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#1d2436;
+  border:2px solid #fff;
+  box-sizing:border-box;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:10px;
+  font-weight:700;
+  color:#fff;
+}
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.colorfy-code-btn{
+  height:36px;
+  min-width:170px;
+  padding:0 16px;
+  border-radius:10px;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+}
+/* No .copied color change on this button — removed on request (the
+   green border/text accent read as unwanted). The shared .bc-terminal-
+   chip confirmation above the saved-colors panel is the only "copied"
+   feedback now. */
+/* Only shown on pickers beyond the first — there's always at least
+   one active picker, so it can't be removed down to zero. */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only size stays here (28x28 already matches its
+   own default, kept explicit for clarity). */
+.colorfy-picker-remove-btn{
+  width:28px;
+  height:28px;
+  flex-shrink:0;
+  font-size:16px;
+}
+/* Saves this one row's color into the palette below — unlike the
+   picker rows themselves, a saved color survives loading a new image
+   or reloading the page (localStorage), since it's an explicit "keep
+   this one" action rather than part of the current session. */
+.colorfy-save-btn{
+  height:36px;
+  padding:0 14px;
+  flex-shrink:0;
+  border-radius:10px;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.colorfy-save-btn:disabled{
   opacity:.5;
   cursor:default;
 }
-/* Mobile drops the per-row buttons entirely (two/three of them plus
-   remove-× never fit next to a filename/tags column at phone widths, in
-   any labeling) and falls back to one global "Download" button below the
-   list instead — same shape as main's old single #exStripBtn, just
-   renamed/rewired for today's clean-then-download model. Clicking it
-   cleans (if needed) and downloads every loaded file in sequence — see
-   mobileDownloadAll() in cleanly-tool.js. */
-.ex-mobile-download-btn{
-  display:none;
-  width:100%;
-  margin-top:16px;
+
+/* ===== Saved palette — sits outside .tool-after-drop (a sibling, not
+   a child) so it stays visible even after removing the current image
+   or before one's ever been loaded, since saved colors are meant to
+   outlive any one file. Hidden only when genuinely empty. */
+.colorfy-palette[hidden]{ display:none; }
+.colorfy-palette{
+  margin-top:24px;
 }
-@media (max-width:768px){
-  .exif-file-actions{ display:none; }
-  .ex-mobile-download-btn{ display:block; }
+/* Row-gap widened to 34px (column-gap stays 10px) — the remove btn now
+   floats above each chip (see .colorfy-palette-remove-btn) instead of
+   overlapping its corner, so a wrapped row needs real clearance from
+   the row above it or the buttons would sit on top of those chips.
+   The extra top margin gives the first row clearance from the panel's
+   own top edge.
+   Left-aligned (not centered) on purpose — removing a chip from a
+   centered row re-centers everything else too, so a chip a visitor was
+   about to click next silently moves out from under their cursor.
+   Left-anchored, every chip after the removed one just slides back by
+   one slot in reading order, so removing several in a row (click,
+   click, click on the same spot) behaves the way visitors expect. */
+.colorfy-palette-list{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  gap:34px 10px;
+  margin-top:44px;
+}
+.colorfy-palette-chip{
+  position:relative;
+  width:40px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+/* A "strip" rather than the old square chip — taller so a saved color
+   reads more like a real paint sample than a tiny dot, still narrow
+   enough that a full row of 4 pickers' worth of saves stays compact. */
+.colorfy-palette-swatch{
+  width:100%;
+  height:80px;
+  flex-shrink:0;
+  padding:0;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  cursor:pointer;
+  transition:transform .15s;
+}
+.colorfy-palette-swatch:hover{
+  transform:scale(1.05);
+}
+/* The optional short name/tag a visitor can give a saved color
+   (double-click to rename, max 25 chars) — kept in the swatch's own
+   title tooltip only, not shown as a visible label under the chip
+   (requested directly). This input is the only visible UI for it,
+   appearing in place for the moment of renaming. */
+.colorfy-palette-name-input{
+  width:100%;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  text-align:center;
+  color:var(--text);
+  background:rgba(255,255,255,.35);
+  border:1px solid rgba(0,0,0,.4);
+  border-radius:4px;
+  padding:2px 4px;
+}
+html[data-theme="dark"] .colorfy-palette-name-input{
+  background:rgba(0,0,0,.25);
+  border-color:rgba(0,0,0,.4);
+}
+/* No .copied outline on a saved swatch — removed on request (the green
+   accent read as unwanted). */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css,
+   the "beta remove btn" — translucent white/black flip, not
+   .bc-remove-btn's bold red) — only size/position stay here. */
+.colorfy-palette-remove-btn{
+  position:absolute;
+  top:-32px;
+  left:50%;
+  right:auto;
+  transform:translateX(-50%);
+  width:25px;
+  height:25px;
+  font-size:15px;
 }
 
-/* Local width/margin for the shared .bc-segmented-toggle (shared/site.css,
-   CLAUDE.md) — same split every adopter of that class uses, it only owns
-   segment chrome. Rendered twice per HEIC row (cleanly-tool.js) — once
-   next to "Clean first" in .exif-file-actions (desktop), once in the info
-   column above where the desktop copy used to sit (mobile) — only one is
-   ever visible at a time. The desktop copy disappears on its own below
-   768px since its parent .exif-file-actions is hidden outright there; the
-   mobile copy needs its own explicit hide above that width since it isn't
-   inside anything already hidden. */
-.ex-heic-format-toggle{
+/* Format picker — lets the code button below show HEX, RGB, HSB, or
+   HSL instead of always showing one fixed format. Uses the shared
+   .bc-dropdown component (shared/site.css). .colorfy-format-row
+   centers it with no other width constraint, so it needs an explicit
+   width here rather than relying on the shared trigger's width:100%
+   against an otherwise auto-sized flex item (that circular case is
+   the same trap documented in CLAUDE.md's resizable-frame notes —
+   always give it a real anchor). */
+.colorfy-format-row .bc-dropdown{
   width:140px;
-  flex-shrink:0;
 }
-.ex-heic-format-toggle-mobile{
-  margin-top:8px;
-}
-@media (min-width:769px){
-  .ex-heic-format-toggle-mobile{ display:none; }
-}
+
 </style>
 </head>
 <body>
@@ -365,7 +611,7 @@
             <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
         </svg>
         </button>
-                <div class="nav-share-wrap">    
+                <div class="nav-share-wrap">
       <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
         <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 3L9.5 14.5"></path>
@@ -396,63 +642,91 @@
   </div>
 </div>
 <main>
-<div class="help-banner engine-status-card" id="exHelpBanner" hidden>
+<div class="help-banner engine-status-card" id="cyHelpBanner" hidden>
   <div class="help-banner-header">
-    <button type="button" class="help-banner-dot help-banner-dot-red" id="exHelpClose" aria-label="Close and don't show again"></button>
-    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="exHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cyHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cyHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
     <span class="help-banner-dot" aria-hidden="true"></span>
-    <span class="engine-status-title" id="exHelpStep"></span>
+    <span class="engine-status-title" id="cyHelpStep"></span>
     <div class="help-banner-nav">
-      <button type="button" class="bc-hover-fill help-banner-term-btn" id="exHelpBack">&lt; BACK</button>
-      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="exHelpCloseMobile">CLOSE</button>
-      <button type="button" class="bc-hover-fill help-banner-term-btn" id="exHelpNext">NEXT &gt;</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cyHelpBack">&lt; BACK</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cyHelpCloseMobile">CLOSE</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cyHelpNext">NEXT &gt;</button>
     </div>
   </div>
-  <div class="engine-status-body" id="exHelpBody">
-    <div class="engine-status-row">&gt; <span id="exHelpText"></span></div>
+  <div class="engine-status-body" id="cyHelpBody">
+    <div class="engine-status-row">&gt; <span id="cyHelpText"></span></div>
   </div>
 </div>
 <div class="tool-wrap">
-  <div class="tool-app">
+  <div class="tool-app" id="page-colorfy">
     <div class="tool-header">
       <div class="tool-logo">
-        <span class="gfx-md icon-cleanly" role="img" aria-label="Cleanly icon"></span>
-        Cleanly
+        <span class="gfx-placeholder gfx-md" role="img" aria-label="Colorfy icon">(icon-colorfy.txt)</span>
+        Colorfy
       </div>
-      <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
+      <span class="privacy-check-badge" id="cyPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <button type="button" class="ex-back-btn bc-canvas-back-btn" id="exBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+    <button type="button" class="colorfy-back-btn bc-canvas-back-btn" id="cyBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19 12H5"></path>
         <path d="M11 18l-6-6 6-6"></path>
       </svg>
     </button>
-    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Remove all files" title="Closed project">×</button>
+    <button type="button" class="colorfy-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cyRemoveBtn" aria-label="Remove image">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">JPEG, PNG, HEIC, or SVG images</span></div>
-    <input type="file" id="exInput" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif,.svg,image/svg+xml" multiple hidden>
-    <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Continue where you left off</button>
+    <div class="tool-drop tool-drop-addpill" id="cyDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">an image</span></div>
+    <input type="file" id="cyInput" accept="image/*,.heic,.heif" hidden>
 
-    <div class="tool-after-drop" id="exAfterDrop" hidden>
-      <div class="exif-file-list" id="exFileList"></div>
-      <button type="button" class="tool-primary-btn ex-mobile-download-btn" id="exMobileDownloadBtn" disabled title="Clean and download every loaded file" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="mobile_download_all">Clean &amp; download</button>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cyContinueBtn" hidden>Continue where you left off</button>
+
+    <div class="tool-after-drop" id="cyAfterDrop" hidden>
+      <div class="colorfy-frame" id="cyFrame">
+        <canvas id="cyCanvas"></canvas>
+        <span class="colorfy-resize-handle bc-resize-handle" id="cyResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></span>
+      </div>
+
+      <div class="colorfy-format-row">
+        <div class="bc-dropdown" id="cyFormatDropdown">
+          <button type="button" class="bc-dropdown-trigger" id="cyFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="bc-dropdown-trigger-label" id="cyFormatTriggerLabel">HEX</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="bc-dropdown-menu" id="cyFormatMenu" role="listbox" hidden>
+            <button type="button" class="bc-dropdown-option active" data-format="hex" data-label="HEX" role="option" aria-selected="true">HEX</button>
+            <button type="button" class="bc-dropdown-option" data-format="rgb" data-label="RGB" role="option" aria-selected="false">RGB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsb" data-label="HSB" role="option" aria-selected="false">HSB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsl" data-label="HSL" role="option" aria-selected="false">HSL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="colorfy-picker-list" id="cyPickerList"></div>
+
+      <div class="colorfy-add-row">
+        <button type="button" class="colorfy-add-btn" id="cyAddBtn" aria-label="Add another picker">+</button>
+      </div>
     </div>
 
-    <div class="tool-status" id="exStatus"></div>
+    <div class="tool-status" id="cyStatus"></div>
+
+    <div class="colorfy-palette" id="cyPalette" hidden>
+      <div class="colorfy-palette-list" id="cyPaletteList"></div>
+      <div class="tool-status" id="cyPaletteStatus"></div>
+    </div>
   </div>
 </div>
 
-<div class="content-section-convert" data-tool="exif">
+<div class="content-section-convert" data-tool="colorfy">
   <div class="content-section-article-wrap">
     <div class="content-section-bg" aria-hidden="true">
       <span class="cs-shape cs-shape-1"></span>
       <span class="cs-shape cs-shape-2"></span>
       <span class="cs-shape cs-shape-3"></span>
     </div>
-    <h3>New to cleaning images?</h3>
-    <p>Every photo your phone or camera takes carries far more than the picture itself — tucked inside is a block of metadata that quietly records a surprising amount of detail about when, where, and how it was taken. Here's what that metadata actually reveals, and why stripping it matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="exif" href="/golden-rules/?tool=exif">just one click away.</a></p>
+    <h3>New to picking colors from images?</h3>
+    <p>Drop in any image and Colorfy starts you off with two pickers already sampling two different spots — drag either ring anywhere over the image (or just click a spot) to sample somewhere else, and the code below updates live. Hit the + to add up to 4 pickers at once, each with its own row below. Switch between HEX, RGB, HSB, and HSL from the dropdown, and click any code to copy it straight to your clipboard.</p>
   </div>
 
   <div class="ad-slot">
@@ -502,6 +776,6 @@
 </div>
 
 <script src="/shared/site.js?v=90" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=52" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=39" defer></script>
 </body>
 </html>

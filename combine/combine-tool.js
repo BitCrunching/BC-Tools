@@ -133,7 +133,7 @@
         <div class="combine-file-thumb"></div>
         <span class="combine-file-name">${file.name}</span>
         <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
-        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
+        <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
@@ -142,7 +142,7 @@
           thumbSlot.innerHTML = `<img src="${dataUrl}" alt="">`;
         } else {
           thumbSlot.classList.add("combine-file-thumb-fallback");
-          thumbSlot.textContent = "PDF";
+          thumbSlot.textContent = bcT("PDF");
         }
       });
 
@@ -194,7 +194,7 @@
     if (pdfs.length === 0 && incoming.length > 0){
       /* Same fix shape as Convert's applyPickedFiles() — a selection
          that's wholly non-PDF (e.g. a .txt/.exe) used to be silent. */
-      status.textContent = "Combine only works with PDF files — none of the selected file(s) qualify.";
+      status.textContent = bcT("Combine only works with PDF files — none of the selected file(s) qualify.");
       return;
     }
     files = files.concat(pdfs);
@@ -207,8 +207,8 @@
     if (pdfs.length < incoming.length && pdfs.length > 0){
       const skipped = incoming.length - pdfs.length;
       const msg = skipped === 1
-        ? "1 file wasn't a PDF and was skipped."
-        : `${skipped} files weren't PDFs and were skipped.`;
+        ? bcT("1 file wasn't a PDF and was skipped.")
+        : bcT("{0} files weren't PDFs and were skipped.", [skipped]);
       status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
   }
@@ -221,7 +221,7 @@
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
     combineBtn.disabled = true;
-    status.textContent = "Combining PDFs…";
+    status.textContent = bcT("Combining PDFs…");
 
     startPrivacyCheck();
     try {
@@ -246,9 +246,9 @@
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      status.textContent = `Done. Combined ${files.length} files into one PDF.`;
+      status.textContent = bcT("Done. Combined {0} files into one PDF.", [files.length]);
     } catch (err) {
-      status.textContent = "Something went wrong combining the PDFs. Please check the files and try again.";
+      status.textContent = bcT("Something went wrong combining the PDFs. Please check the files and try again.");
     } finally {
       combineBtn.disabled = files.length === 0;
       finishPrivacyCheck(document.getElementById("cbPrivacyBadge"));

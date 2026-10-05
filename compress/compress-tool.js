@@ -94,7 +94,7 @@
      in-progress feedback regardless of width. */
   const mobileQuery = window.matchMedia("(max-width:768px)");
   function compressBtnIdleLabel(){
-    return mobileQuery.matches ? "Download" : "Compress and download";
+    return bcT(mobileQuery.matches ? "Download" : "Compress and download");
   }
   compressBtn.textContent = compressBtnIdleLabel();
   mobileQuery.addEventListener("change", () => {
@@ -120,7 +120,7 @@
   function applyLevelSelection(opt){
     selectedQuality = Number(opt.quality);
     levelButtonsArr.forEach(b => b.classList.toggle("active", b.dataset.levelKey === opt.levelKey));
-    selectedCompression.textContent = `Compression level: ${opt.label}`;
+    selectedCompression.textContent = bcT("Compression level: {0}", [opt.label]);
     updateAllEstimates();
     schedulePersist();
   }
@@ -221,7 +221,7 @@
       selectedQuality = Number(btn.dataset.quality);
       levelButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      selectedCompression.textContent = `Compression level: ${btn.dataset.label}`;
+      selectedCompression.textContent = bcT("Compression level: {0}", [btn.dataset.label]);
       updateAllEstimates();
       schedulePersist();
       /* Keeps the mobile option-change button showing the same level a
@@ -276,11 +276,11 @@
     if (files.length > 0){
       const count = files.length;
       const word = count === 1 ? "image" : "images";
-      const readyText = `Ready to compress: ${count} ${word}`;
+      const readyText = bcT("Ready to compress: {0} {1}", [count, word]);
 
       const hasPng = files.some(f => f.type === "image/png");
       if (hasPng){
-        status.innerHTML = `${readyText}. <span style="color:var(--text)">PNG will be converted to JPG for better compression.</span>`;
+        status.innerHTML = `${readyText}. <span style="color:var(--text)">${bcT("PNG will be converted to JPG for better compression.")}</span>`;
       } else {
         status.textContent = readyText;
       }
@@ -397,10 +397,10 @@
           const previewBtn = document.createElement("button");
           previewBtn.type = "button";
           previewBtn.className = "result-heic-preview-btn";
-          previewBtn.textContent = "Preview";
+          previewBtn.textContent = bcT("Preview");
           previewBtn.addEventListener("click", async () => {
             previewBtn.disabled = true;
-            previewBtn.textContent = "Loading...";
+            previewBtn.textContent = bcT("Loading...");
             try {
               /* A HEIC preview only ever shows up on screen at thumbnail
                  size, and the file gets compressed on download regardless
@@ -420,7 +420,7 @@
               schedulePersist();
             } catch (err){
               previewBtn.disabled = false;
-              previewBtn.textContent = "Preview failed — retry";
+              previewBtn.textContent = bcT("Preview failed — retry");
             }
           });
           card.appendChild(previewBtn);
@@ -430,8 +430,8 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "cp-file-remove-btn bc-file-remove-btn";
-      btn.setAttribute("aria-label", "Remove");
-      btn.title = "Remove file";
+      btn.setAttribute("aria-label", bcT("Remove"));
+      btn.title = bcT("Remove file");
       btn.textContent = "×";
       btn.addEventListener("click", () => {
         files = files.filter(f => f !== file);
@@ -465,8 +465,8 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cp-file-remove-btn bc-file-remove-btn";
-    btn.setAttribute("aria-label", "Remove");
-    btn.title = "Remove file";
+    btn.setAttribute("aria-label", bcT("Remove"));
+    btn.title = bcT("Remove file");
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       const img = card.querySelector("img");
@@ -528,7 +528,7 @@
       return;
     }
 
-    entry.infoEl.innerHTML = `${originalText}<br>Estimate: calculating...`;
+    entry.infoEl.innerHTML = `${originalText}<br>${bcT("Estimate: calculating...")}`;
 
     try {
       const outputMimeType = getOutputMimeType(entry.file);
@@ -568,7 +568,7 @@
   function queueEstimates(entries){
     if (selectedQuality !== null){
       entries.forEach(entry => {
-        entry.infoEl.innerHTML = `${bcFormatFileSize(entry.file.size)}<br>Waiting...`;
+        entry.infoEl.innerHTML = `${bcFormatFileSize(entry.file.size)}<br>${bcT("Waiting...")}`;
       });
     }
     runWithConcurrencyLimit(entries, ESTIMATE_CONCURRENCY, updateEstimateForEntry);
@@ -599,13 +599,13 @@
     const picked = incoming.filter(f => (f.type.startsWith("image/") && !isGifFile(f)) || isHeicFile(f));
     if (picked.length === 0){
       if (gifRejected){
-        status.textContent = "GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.";
+        status.textContent = bcT("GIFs aren't supported here — Compress only handles static images. Use Congify to shrink an animated GIF instead.");
       } else if (incoming.length > 0){
         /* Same fix shape as Convert's applyPickedFiles() — a selection
            that's wholly non-image (e.g. a .txt/.exe) used to be silent;
            the GIF case above already had its own message, this covers
            everything else that isn't a GIF either. */
-        status.textContent = "Compress only works with images — none of the selected file(s) qualify.";
+        status.textContent = bcT("Compress only works with images — none of the selected file(s) qualify.");
       }
       return;
     }
@@ -613,7 +613,7 @@
     revealAfterDropUI();
     renderStatus();
     if (gifRejected){
-      status.innerHTML += ` <span style="color:var(--text)">GIFs were skipped — animated images aren't supported here, try Congify instead.</span>`;
+      status.innerHTML += ` <span style="color:var(--text)">${bcT("GIFs were skipped — animated images aren't supported here, try Congify instead.")}</span>`;
     }
     /* Same partial-rejection gap Convert's applyPickedFiles() closed —
        GIFs already get their own message above; this covers anything
@@ -624,8 +624,8 @@
     const otherSkipped = incoming.length - picked.length - gifCount;
     if (otherSkipped > 0){
       const msg = otherSkipped === 1
-        ? "1 file wasn't a supported image format and was skipped."
-        : `${otherSkipped} files weren't a supported image format and were skipped.`;
+        ? bcT("1 file wasn't a supported image format and was skipped.")
+        : bcT("{0} files weren't a supported image format and were skipped.", [otherSkipped]);
       status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
     showSelectedPreviews();
@@ -682,17 +682,17 @@
 
   compressBtn.addEventListener("click", async () => {
     if (files.length === 0){
-      status.textContent = "Please select at least one image first.";
+      status.textContent = bcT("Please select at least one image first.");
       return;
     }
     if (selectedQuality === null){
-      status.textContent = "Please select a compression level first.";
+      status.textContent = bcT("Please select a compression level first.");
       return;
     }
 
     compressBtn.disabled = true;
-    compressBtn.textContent = "Compressing...";
-    status.textContent = `Compressing... 0 of ${files.length}`;
+    compressBtn.textContent = bcT("Compressing...");
+    status.textContent = bcT("Compressing... 0 of {0}", [files.length]);
 
     const useZip = effectiveUseZip(files.length);
     let resultsCleared = false;
@@ -730,24 +730,24 @@
         }
 
         done++;
-        status.textContent = `Compressing... ${done} of ${files.length}`;
+        status.textContent = bcT("Compressing... {0} of {1}", [done, files.length]);
       }
 
       if (useZip){
-        status.textContent = "Building ZIP file...";
+        status.textContent = bcT("Building ZIP file...");
         const zipBlob = await zip.generateAsync({ type: "blob" });
         downloadBlob(zipBlob, "bccompress-images.zip");
-        status.textContent = `Done. ZIP contains ${files.length} compressed images.`;
+        status.textContent = bcT("Done. ZIP contains {0} compressed images.", [files.length]);
       } else {
         const word = files.length === 1 ? "image" : "images";
-        status.textContent = `Done. Downloaded ${files.length} compressed ${word}.`;
+        status.textContent = bcT("Done. Downloaded {0} compressed {1}.", [files.length, word]);
       }
 
       files = [];
       bcDbClear(CP_DB_NAME, CP_DB_STORE);
     } catch (err){
       console.error(err);
-      status.textContent = "Something went wrong during compression.";
+      status.textContent = bcT("Something went wrong during compression.");
     } finally {
       compressBtn.disabled = files.length === 0;
       compressBtn.textContent = compressBtnIdleLabel();

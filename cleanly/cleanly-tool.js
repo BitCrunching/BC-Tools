@@ -238,7 +238,7 @@
       const el = document.createElement("div");
       el.className = "exif-file-item result";
 
-      const noMetadataText = "No dangerous metadata found";
+      const noMetadataText = bcT("No dangerous metadata found");
       /* The "-" separator lives inside the same span as the icon (not as
          a bare text node after it) specifically so mobile's
          .exif-status-icon{display:none} rule (shared/site.css) hides
@@ -246,12 +246,12 @@
          a dangling "- Camera metadata found!" behind. */
       const tagsHtml = item.tags.length
         ? item.tags.map((label, idx) => idx === 0
-            ? `<span class="exif-tag"><span class="exif-status-icon exif-status-icon-warn" aria-hidden="true">⚠ -</span> ${label}</span>`
-            : `<span class="exif-tag">${label}</span>`).join("")
+            ? `<span class="exif-tag"><span class="exif-status-icon exif-status-icon-warn" aria-hidden="true">⚠ -</span> ${bcT(label)}</span>`
+            : `<span class="exif-tag">${bcT(label)}</span>`).join("")
         : `<span class="exif-tag exif-tag-clean"><span class="exif-status-icon exif-status-icon-clean" aria-hidden="true">✓ -</span> ${noMetadataText}</span>`;
 
       const svgScanNote = isSvgFile(item.file)
-        ? `<div class="exif-scan-note">Cleanly checks for known patterns — it does not guarantee your file will be completely clean.</div>`
+        ? `<div class="exif-scan-note">${bcT("Cleanly checks for known patterns — it does not guarantee your file will be completely clean.")}</div>`
         : "";
 
       /* PNG/JPG output choice — HEIC only. There's no in-browser HEIC
@@ -298,7 +298,7 @@
          Compress's own HEIC result cards, just scaled down to this
          row's small thumb instead of a full preview card. */
       const thumbHtml = isHeicFile(item.file)
-        ? `<button type="button" class="exif-file-heic-preview" aria-label="Preview">HEIC</button>`
+        ? `<button type="button" class="exif-file-heic-preview" aria-label="${bcT("Preview")}">HEIC</button>`
         : `<img src="${item.src}" alt="">`;
 
       /* Three states per row:
@@ -332,11 +332,11 @@
          btn already uses) so GA can tell which of the two a click was,
          not just that "the cleanly primary action" fired. */
       const actionButtonsHtml = heicFormatToggle("desktop") + (item.wasAlreadyClean
-        ? `<button type="button" class="tool-primary-btn ex-row-clean-anyways-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_anyways">Clean anyways</button>`
+        ? `<button type="button" class="tool-primary-btn ex-row-clean-anyways-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_anyways">${bcT("Clean anyways")}</button>`
         : item.stripped
-        ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">Download</button>`
-        : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">Clean first</button>
-           <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">Clean and download</button>`);
+        ? `<button type="button" class="tool-primary-btn ex-row-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="download">${bcT("Download")}</button>`
+        : `<button type="button" class="tool-primary-btn ex-row-strip-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_first">${bcT("Clean first")}</button>
+           <button type="button" class="tool-primary-btn ex-row-clean-download-btn" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="clean_and_download">${bcT("Clean and download")}</button>`);
 
       el.innerHTML = `
         <div class="exif-file-thumb">${thumbHtml}</div>
@@ -348,7 +348,7 @@
           ${heicFormatToggle("mobile")}
         </div>
         <div class="exif-file-actions">${actionButtonsHtml}</div>
-        <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="Remove" title="Remove file">×</button>
+        <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
 
       el.querySelectorAll(".ex-heic-format-toggle").forEach(heicFormatToggleEl => {
@@ -365,13 +365,13 @@
             if (item.stripped){
               item.cleaning = true;
               renderList();
-              status.textContent = `Removing metadata from ${item.file.name}…`;
+              status.textContent = bcT("Removing metadata from {0}…", [item.file.name]);
               try {
                 await cleanFile(item);
-                status.textContent = `Done — ${item.file.name} cleaned.`;
+                status.textContent = bcT("Done — {0} cleaned.", [item.file.name]);
               } catch (err){
                 console.error(err);
-                status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+                status.textContent = bcT("Couldn't clean {0}. Please try again.", [item.file.name]);
               }
               item.cleaning = false;
             }
@@ -442,7 +442,7 @@
          "something was picked but none of it qualifies" (e.g. a .txt/
          .exe), which used to be silent. */
       if (incoming.length > 0){
-        status.textContent = "Cleanly only works with JPEG, PNG, HEIC, or SVG images — none of the selected file(s) qualify.";
+        status.textContent = bcT("Cleanly only works with JPEG, PNG, HEIC, or SVG images — none of the selected file(s) qualify.");
       }
       return;
     }
@@ -476,8 +476,8 @@
     if (picked.length < incoming.length){
       const skipped = incoming.length - picked.length;
       const msg = skipped === 1
-        ? "1 file wasn't a supported image format and was skipped."
-        : `${skipped} files weren't a supported image format and were skipped.`;
+        ? bcT("1 file wasn't a supported image format and was skipped.")
+        : bcT("{0} files weren't a supported image format and were skipped.", [skipped]);
       status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
   }
@@ -623,7 +623,7 @@
     const buttons = [...row.querySelectorAll(".ex-row-strip-btn, .ex-row-clean-download-btn, .ex-row-clean-anyways-btn, .ex-heic-format-toggle button")];
     buttons.forEach(btn => { btn.disabled = true; });
     item.cleaning = true;
-    status.textContent = `Removing metadata from ${item.file.name}…`;
+    status.textContent = bcT("Removing metadata from {0}…", [item.file.name]);
 
     try {
       await cleanFile(item);
@@ -632,13 +632,13 @@
       if (thenDownload){
         downloadEntry(item);
       } else {
-        status.textContent = `Done — ${item.file.name} cleaned. Click Download to save it.`;
+        status.textContent = bcT("Done — {0} cleaned. Click Download to save it.", [item.file.name]);
         renderList();
       }
     } catch (err){
       console.error(err);
       item.cleaning = false;
-      status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+      status.textContent = bcT("Couldn't clean {0}. Please try again.", [item.file.name]);
       buttons.forEach(btn => { btn.disabled = false; });
     }
   }
@@ -681,7 +681,7 @@
         } catch (err){
           console.error(err);
           item.cleaning = false;
-          status.textContent = `Couldn't clean ${item.file.name}. Please try again.`;
+          status.textContent = bcT("Couldn't clean {0}. Please try again.", [item.file.name]);
         }
       }
     } finally {
@@ -703,7 +703,7 @@
   function downloadEntry(item){
     startPrivacyCheck();
     downloadBlob(item.strippedBlob, item.strippedName);
-    status.textContent = `Downloaded ${item.strippedName}.`;
+    status.textContent = bcT("Downloaded {0}.", [item.strippedName]);
     finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     renderList();
   }

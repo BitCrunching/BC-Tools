@@ -280,6 +280,7 @@ console.log(a.next.value);`
     closeBgPanel();
     closeMacNavPanel();
   }
+  bcRegisterPopup(closeCfCustomPanels);
   function closeCfCombos(){
     themeCombo.close();
     languageCombo.close();
@@ -408,7 +409,7 @@ console.log(a.next.value);`
      down reads those same elements' computed colors for SVG export
      rather than a second hardcoded color list, so export always
      matches whatever's on screen. */
-  const trafficLightsToggle = document.getElementById("cfTrafficLightsToggle");
+  const trafficLightsToggle = bcOnOffButton(document.getElementById("cfTrafficLightsToggle"));
   const macNavControl = document.getElementById("cfMacNavControl");
   const macNavTrigger = document.getElementById("cfMacNavTrigger");
   const macNavPanel = document.getElementById("cfMacNavPanel");
@@ -454,6 +455,7 @@ console.log(a.next.value);`
   }
   function openMacNavPanel(){
     if (!macNavPanel || !macNavTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     macNavPanel.hidden = false;
@@ -490,7 +492,7 @@ console.log(a.next.value);`
   const shadowControl = document.getElementById("cfShadowControl");
   const shadowTrigger = document.getElementById("cfShadowTrigger");
   const shadowPanel = document.getElementById("cfShadowPanel");
-  const shadowToggle = document.getElementById("cfShadowToggle");
+  const shadowToggle = bcOnOffButton(document.getElementById("cfShadowToggle"));
   const shadowOpacityInput = document.getElementById("cfShadowOpacity");
   const shadowDistanceInput = document.getElementById("cfShadowDistance");
   const shadowDirectionInput = document.getElementById("cfShadowDirection");
@@ -562,6 +564,7 @@ console.log(a.next.value);`
   }
   function openShadowPanel(){
     if (!shadowPanel || !shadowTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     shadowPanel.hidden = false;
@@ -793,9 +796,9 @@ console.log(a.next.value);`
        download status that started in the meantime doesn't get wiped. */
     if (hodStatusTimer){ clearTimeout(hodStatusTimer); hodStatusTimer = null; }
     if (statusEl && held){
-      statusEl.textContent = "toggle on";
+      statusEl.textContent = bcT("toggle on");
       hodStatusTimer = setTimeout(() => {
-        if (statusEl.textContent === "toggle on") statusEl.textContent = "";
+        if (statusEl.textContent === bcT("toggle on")) statusEl.textContent = "";
         hodStatusTimer = null;
       }, 2000);
     }
@@ -1131,8 +1134,8 @@ console.log(a.next.value);`
     exportFormat = fmt;
     formatPngBtn.setAttribute("aria-pressed", String(fmt === "png"));
     formatSvgBtn.setAttribute("aria-pressed", String(fmt === "svg"));
-    downloadBtn.textContent = fmt === "png" ? "Download PNG" : "Download SVG";
-    if (copyBtn) copyBtn.title = fmt === "png" ? "Copy PNG to clipboard" : "Copy SVG to clipboard";
+    downloadBtn.textContent = bcT(fmt === "png" ? "Download PNG" : "Download SVG");
+    if (copyBtn) copyBtn.title = bcT(fmt === "png" ? "Copy PNG to clipboard" : "Copy SVG to clipboard");
   }
   if (formatPngBtn && formatSvgBtn){
     formatPngBtn.addEventListener("click", () => setExportFormat("png"));
@@ -1460,36 +1463,22 @@ ${titlebarSvg}
        content once the bleed padding is carved out of it, the same
        result padding-only gives on a content-box element. */
     const bleed = 100;
-    const origPadding = cfWindowWrap.style.padding;
-    const origWidth = cfWindowWrap.style.width;
-    const origMaxWidth = cfWindowWrap.style.maxWidth;
-    /* Pinned explicitly, not left to updateWindowFontSize's own
-       ResizeObserver — widening #cfWindowWrap by 200px below (bleed*2)
-       to make room for the shadow is exactly the kind of width change
-       that observer exists to react to, and if it fires while
-       genuinely widened (async, so timing isn't guaranteed either way)
-       the code text would render at whatever size THAT width maps to
-       for the one frame html-to-image happens to capture — a real,
-       if narrow, way for the export to not match what's actually on
-       screen. Locking it to the pre-bleed value for the whole
-       widen/capture/restore sequence removes the race entirely rather
-       than relying on timing. */
-    const origFontSize = cfWindow.style.getPropertyValue("--cf-code-font-size");
-    /* max-width:640px (from the stylesheet, not overridden by the
-       inline width below on its own) still clamps an explicit inline
-       width to 640 regardless — max-width always wins over width,
-       that's its entire job — so the widened `width` above alone
-       silently did nothing and this exact bug reproduced again with
-       the fix in place. Has to be raised too. */
-    cfWindowWrap.style.maxWidth = "none";
-    cfWindowWrap.style.width = (winRect.width + bleed * 2) + "px";
-    cfWindowWrap.style.padding = bleed + "px";
-    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
-    const winDataUrl = await htmlToImage.toPng(cfWindowWrap, { pixelRatio });
-    cfWindowWrap.style.padding = origPadding;
-    cfWindowWrap.style.width = origWidth;
-    cfWindowWrap.style.maxWidth = origMaxWidth;
-    cfWindow.style.setProperty("--cf-code-font-size", origFontSize);
+    /* Captured from an off-screen clone so the live preview never
+       visibly widens/jumps during Copy/Download. The clone is padded
+       out by `bleed` so the box-shadow has room to render in full. */
+    const holder = document.createElement("div");
+    holder.style.cssText = "position:absolute;left:-20000px;top:0;pointer-events:none;";
+    const clone = cfWindowWrap.cloneNode(true);
+    clone.style.cssText += ";position:relative;inset:auto;margin:0;transform:none;max-width:none;" +
+      "width:" + (winRect.width + bleed * 2) + "px;padding:" + bleed + "px;";
+    holder.appendChild(clone);
+    cfWindowWrap.parentNode.appendChild(holder);
+    let winDataUrl;
+    try {
+      winDataUrl = await htmlToImage.toPng(clone, { pixelRatio });
+    } finally {
+      holder.remove();
+    }
     const winImg = await loadImage(winDataUrl);
 
     const canvas = document.createElement("canvas");
@@ -1550,26 +1539,29 @@ ${titlebarSvg}
     }
   }
 
+  let exportBusy = false;
   function setExportBtnsDisabled(disabled){
     downloadBtn.disabled = disabled;
     if (copyBtn) copyBtn.disabled = disabled;
   }
 
   downloadBtn.addEventListener("click", async () => {
-    setExportBtnsDisabled(true);
-    statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+    if (exportBusy) return;
+    exportBusy = true;
+    statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
     startPrivacyCheck();
     try {
       const { blob, ext } = await renderCodifyExport();
       const outName = (fileNameInput.value.trim() || "codify-snippet") + "." + ext;
       downloadBlob(blob, outName);
-      statusEl.textContent = "Done.";
+      statusEl.textContent = bcT("Done.");
     } catch (err){
       console.error(err);
       statusEl.textContent = err && err.message === "not-ready"
-        ? "Export isn't ready yet — try again in a moment."
-        : "Something went wrong generating the " + (exportFormat === "svg" ? "SVG" : "image") + ".";
+        ? bcT("Export isn't ready yet — try again in a moment.")
+        : bcT("Something went wrong generating the {0}.", [bcT(exportFormat === "svg" ? "SVG" : "image")]);
     } finally {
+      exportBusy = false;
       setExportBtnsDisabled(codeInput.value.length === 0);
       finishPrivacyCheck(document.getElementById("cfPrivacyBadge"));
     }
@@ -1585,23 +1577,25 @@ ${titlebarSvg}
      which is the actually-useful thing to do with an SVG anyway. */
   if (copyBtn){
     copyBtn.addEventListener("click", async () => {
-      setExportBtnsDisabled(true);
-      statusEl.textContent = exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...";
+      if (exportBusy) return;
+      exportBusy = true;
+      statusEl.textContent = bcT(exportFormat === "svg" ? "Rendering SVG..." : "Rendering PNG...");
       try {
         const { blob, svgString, ext } = await renderCodifyExport();
         if (ext === "svg"){
           await navigator.clipboard.writeText(svgString);
-          statusEl.textContent = "SVG markup copied to clipboard.";
+          statusEl.textContent = bcT("SVG markup copied to clipboard.");
         } else {
           await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          statusEl.textContent = "PNG copied to clipboard.";
+          statusEl.textContent = bcT("PNG copied to clipboard.");
         }
       } catch (err){
         console.error(err);
         statusEl.textContent = err && err.message === "not-ready"
-          ? "Export isn't ready yet — try again in a moment."
-          : "Couldn't copy — your browser may not allow clipboard access here.";
+          ? bcT("Export isn't ready yet — try again in a moment.")
+          : bcT("Couldn't copy — your browser may not allow clipboard access here.");
       } finally {
+        exportBusy = false;
         setExportBtnsDisabled(codeInput.value.length === 0);
       }
     });
@@ -1637,6 +1631,7 @@ ${titlebarSvg}
   }
   function openBgPanel(){
     if (!bgPanel || !bgTrigger) return;
+    bcCloseAllPopups();
     closeCfCustomPanels();
     closeCfCombos();
     bgPanel.hidden = false;

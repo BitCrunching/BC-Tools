@@ -26,8 +26,8 @@
   const formatMenu = document.getElementById("cvFormatMenu");
   const formatTriggerLabel = document.getElementById("cvFormatTriggerLabel");
   const DROPDOWN_SYNC = new Map([
-    [inputSelect, { menu: inputMenu, label: inputTriggerLabel, placeholder: "Choose format" }],
-    [formatSelect, { menu: formatMenu, label: formatTriggerLabel, placeholder: "Choose a format" }]
+    [inputSelect, { menu: inputMenu, label: inputTriggerLabel, placeholder: bcT("Choose format") }],
+    [formatSelect, { menu: formatMenu, label: formatTriggerLabel, placeholder: bcT("Choose a format") }]
   ]);
   function syncDropdownTrigger(select){
     const cfg = DROPDOWN_SYNC.get(select);
@@ -75,8 +75,13 @@
      something rebuilt on every render. Plain results.innerHTML=""
      would delete it outright (it's a real DOM node, not recreated),
      the same bug this exact pattern hit in Coudio first. */
+  let lastOutputs = [];
+  let lastZipName = "";
+  let lastDoneText = "";
+
   function clearResultCards(){
     results.querySelectorAll(".result").forEach(el => el.remove());
+    lastOutputs = [];
   }
 
   /* "Convert and download" is the idle label everywhere except mobile,
@@ -86,7 +91,7 @@
      below) stays as real in-progress feedback regardless of width. */
   const mobileQuery = window.matchMedia("(max-width:768px)");
   function convertBtnIdleLabel(){
-    return mobileQuery.matches ? "Download" : "Convert and download";
+    return bcT(mobileQuery.matches ? "Download" : "Convert and download");
   }
   convertBtn.textContent = convertBtnIdleLabel();
   mobileQuery.addEventListener("change", () => {
@@ -449,9 +454,9 @@
       const count = files.length;
       const word = count === 1 ? "file" : "files";
       if (!selectedFormat){
-        status.textContent = `${count} ${word} loaded — choose an output format`;
+        status.textContent = bcT("{count} {word} loaded — choose an output format", { count, word });
       } else {
-        status.textContent = `Ready to convert: ${count} ${word}`;
+        status.textContent = bcT("Ready to convert: {count} {word}", { count, word });
       }
     } else {
       status.textContent = "";
@@ -615,8 +620,8 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cv-file-remove-btn bc-file-remove-btn";
-    btn.setAttribute("aria-label", "Remove");
-    btn.title = "Remove file";
+    btn.setAttribute("aria-label", bcT("Remove"));
+    btn.title = bcT("Remove file");
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       files = files.filter(f => f !== file);
@@ -640,17 +645,19 @@
     card.appendChild(btn);
   }
 
-  function addResultRemoveButton(card){
+  function addResultRemoveButton(card, output){
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cv-file-remove-btn bc-file-remove-btn";
-    btn.setAttribute("aria-label", "Remove");
-    btn.title = "Remove file";
+    btn.setAttribute("aria-label", bcT("Remove"));
+    btn.title = bcT("Remove file");
     btn.textContent = "×";
     btn.addEventListener("click", () => {
       const img = card.querySelector("img");
       if (img && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
       card.remove();
+      lastOutputs = lastOutputs.filter(o => o !== output);
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
     });
     card.appendChild(btn);
   }
@@ -706,10 +713,10 @@
         const previewBtn = document.createElement("button");
         previewBtn.type = "button";
         previewBtn.className = "result-heic-preview-btn";
-        previewBtn.textContent = "Preview";
+        previewBtn.textContent = bcT("Preview");
         previewBtn.addEventListener("click", async () => {
           previewBtn.disabled = true;
-          previewBtn.textContent = "Loading...";
+          previewBtn.textContent = bcT("Loading...");
           try {
             const decoded = await decodeHeicFile(file);
             const img = document.createElement("img");
@@ -720,7 +727,7 @@
             previewBtn.remove();
           } catch (err){
             previewBtn.disabled = false;
-            previewBtn.textContent = "Preview failed — retry";
+            previewBtn.textContent = bcT("Preview failed — retry");
           }
         });
         card.appendChild(previewBtn);
@@ -755,13 +762,13 @@
          applyPickedFiles was ever called, so this case was silent —
          confirmed directly (notes.txt/app.exe produced zero feedback). */
       if (incoming.length > 0){
-        status.textContent = "Convert only works with images or a PDF — none of the selected file(s) qualify.";
+        status.textContent = bcT("Convert only works with images or a PDF — none of the selected file(s) qualify.");
       }
       return;
     }
     const combined = files.concat(picked);
     if (!(combined.every(isPdfFile) || combined.every(isImageFile))){
-      status.textContent = "Please select either only images or only PDF files, not both at once.";
+      status.textContent = bcT("Please select either only images or only PDF files, not both at once.");
       return;
     }
     files = combined;
@@ -777,8 +784,8 @@
     if (picked.length < incoming.length){
       const skipped = incoming.length - picked.length;
       const msg = skipped === 1
-        ? "1 file wasn't a supported image or PDF format and was skipped."
-        : `${skipped} files weren't a supported image or PDF format and were skipped.`;
+        ? bcT("1 file wasn't a supported image or PDF format and was skipped.")
+        : bcT("{n} files weren't a supported image or PDF format and were skipped.", { n: skipped });
       status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
     if (files.length && !inputSelect.value){
@@ -808,7 +815,7 @@
          a tool that can't actually take this file. Nothing on this site
          re-encodes an animated image while keeping it animated. */
       const word = animatedNames.length === 1 ? "is" : "are";
-      status.innerHTML += ` <span style="color:var(--text)">${animatedNames.join(", ")} ${word} animated — Convert only outputs a single still frame, the animation won't carry over.</span>`;
+      status.innerHTML += ` <span style="color:var(--text)">${bcT("{names} {word} animated — Convert only outputs a single still frame, the animation won't carry over.", { names: animatedNames.join(", "), word })}</span>`;
     }
   }
 
@@ -959,13 +966,45 @@
     return outputs;
   }
 
+  async function redownloadOutputs(){
+    convertBtn.disabled = true;
+    startPrivacyCheck();
+    try {
+      const outputs = lastOutputs.slice();
+      const useZip = outputs.length > 1 && lastZipName && effectiveUseZip(outputs.length);
+      if (useZip){
+        const zip = new JSZip();
+        outputs.forEach(({ blob, outputName }) => zip.file(outputName, blob));
+        status.textContent = bcT("Building ZIP file...");
+        downloadBlob(await zip.generateAsync({ type: "blob" }), lastZipName);
+        status.textContent = bcT("Done. ZIP contains {n} images.", { n: outputs.length });
+      } else {
+        for (const { blob, outputName } of outputs){
+          downloadBlob(blob, outputName);
+          if (outputs.length > 1) await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        status.textContent = lastDoneText || bcT("Done. Downloaded {n} {word}.", { n: outputs.length, word: outputs.length === 1 ? "image" : "images" });
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = bcT("Something went wrong during conversion.");
+    } finally {
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
+      finishPrivacyCheck(document.getElementById("cvPrivacyBadge"));
+    }
+  }
+
   convertBtn.addEventListener("click", async () => {
+    if (files.length === 0 && lastOutputs.length > 0){
+      await redownloadOutputs();
+      return;
+    }
     if (files.length === 0){
-      status.textContent = "Please select at least one file first.";
+      status.textContent = bcT("Please select at least one file first.");
       return;
     }
     if (!selectedFormat){
-      status.textContent = "Please select an output format first.";
+      status.textContent = bcT("Please select an output format first.");
       return;
     }
 
@@ -973,7 +1012,7 @@
     const outputIsPdf = selectedFormat === "application/pdf";
 
     convertBtn.disabled = true;
-    convertBtn.textContent = "Converting...";
+    convertBtn.textContent = bcT("Converting...");
     let resultsCleared = false;
     function clearResultsOnce(){
       if (resultsCleared) return;
@@ -985,11 +1024,13 @@
     try {
       if (outputIsPdf && !inputIsPdf){
         // Images -> single combined PDF (many-to-one)
-        status.textContent = "Building PDF...";
+        status.textContent = bcT("Building PDF...");
         const pdfBlob = await imagesToSinglePdf(files);
         clearResultsOnce();
+        lastOutputs = [{ blob: pdfBlob, outputName: "bcconvert-images.pdf" }];
+        lastZipName = "";
         downloadBlob(pdfBlob, "bcconvert-images.pdf");
-        status.textContent = `Done. Created a PDF with ${files.length} pages.`;
+        status.textContent = bcT("Done. Created a PDF with {n} pages.", { n: files.length });
 
       } else if (inputIsPdf){
         // PDF(s) -> images, one per page (one-to-many)
@@ -1020,32 +1061,35 @@
           }
 
           done++;
-          status.textContent = `Converting... ${done} of ${allOutputs.length}`;
+          status.textContent = bcT("Converting... {done} of {total}", { done, total: allOutputs.length });
         }
 
         clearResultsOnce();
-        allOutputs.forEach(({ blob, outputName }) => {
+        lastOutputs = allOutputs.slice();
+        lastZipName = "bcconvert-pages.zip";
+        allOutputs.forEach((output) => {
+          const { blob, outputName } = output;
           const resultCard = appendPreviewCard({
             src: URL.createObjectURL(blob),
             name: outputName,
             info: `${bcFormatFileSize(blob.size)} • .${extension.toUpperCase()}`
           });
-          addResultRemoveButton(resultCard);
+          addResultRemoveButton(resultCard, output);
         });
 
         if (useZip){
-          status.textContent = "Building ZIP file...";
+          status.textContent = bcT("Building ZIP file...");
           const zipBlob = await zip.generateAsync({ type: "blob" });
           downloadBlob(zipBlob, "bcconvert-pages.zip");
-          status.textContent = `Done. ZIP contains ${allOutputs.length} images.`;
+          status.textContent = bcT("Done. ZIP contains {n} images.", { n: allOutputs.length });
         } else {
           const word = allOutputs.length === 1 ? "image" : "images";
-          status.textContent = `Done. Downloaded ${allOutputs.length} ${word}.`;
+          status.textContent = bcT("Done. Downloaded {n} {word}.", { n: allOutputs.length, word });
         }
 
       } else {
         // Images -> images
-        status.textContent = `Converting... 0 of ${files.length}`;
+        status.textContent = bcT("Converting... 0 of {total}", { total: files.length });
         const useZip = effectiveUseZip(files.length);
         const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
         const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
@@ -1076,27 +1120,30 @@
           }
 
           done++;
-          status.textContent = `Converting... ${done} of ${files.length}`;
+          status.textContent = bcT("Converting... {done} of {total}", { done, total: files.length });
         }
 
         clearResultsOnce();
-        finishedResults.forEach(({ blob, outputName, info }) => {
+        lastOutputs = finishedResults.slice();
+        lastZipName = "bcconvert-images.zip";
+        finishedResults.forEach((output) => {
+          const { blob, outputName, info } = output;
           const resultCard = appendPreviewCard({
             src: URL.createObjectURL(blob),
             name: outputName,
             info
           });
-          addResultRemoveButton(resultCard);
+          addResultRemoveButton(resultCard, output);
         });
 
         if (useZip){
-          status.textContent = "Building ZIP file...";
+          status.textContent = bcT("Building ZIP file...");
           const zipBlob = await zip.generateAsync({ type: "blob" });
           downloadBlob(zipBlob, "bcconvert-images.zip");
-          status.textContent = `Done. ZIP contains ${files.length} images.`;
+          status.textContent = bcT("Done. ZIP contains {n} images.", { n: files.length });
         } else {
           const word = files.length === 1 ? "image" : "images";
-          status.textContent = `Done. Downloaded ${files.length} ${word}.`;
+          status.textContent = bcT("Done. Downloaded {n} {word}.", { n: files.length, word });
         }
       }
 
@@ -1104,13 +1151,14 @@
       // "files" array can't be reconverted by clicking the button again
       // after removing a result card (result cards only remove themselves
       // from view, they never represented the source files anymore).
+      lastDoneText = status.textContent;
       files = [];
       bcDbClear(CV_DB_NAME, CV_DB_STORE);
     } catch (err){
       console.error(err);
-      status.textContent = "Something went wrong during conversion.";
+      status.textContent = bcT("Something went wrong during conversion.");
     } finally {
-      convertBtn.disabled = files.length === 0;
+      convertBtn.disabled = files.length === 0 && lastOutputs.length === 0;
       convertBtn.textContent = convertBtnIdleLabel();
       finishPrivacyCheck(document.getElementById("cvPrivacyBadge"));
     }
