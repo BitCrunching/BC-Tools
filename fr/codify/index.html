@@ -72,7 +72,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=195">
+<link rel="stylesheet" href="/shared/site.css?v=213">
 <script>window.Prism = { manual: true };</script>
 <script src="/vendor/prism.min.js?v=3"></script>
 <link rel="stylesheet" href="/vendor/prism-dracula.css" id="cfThemeLink">
@@ -195,10 +195,6 @@
   align-items:center;
   gap:8px;
   padding:12px 16px;
-  border-bottom:1px dashed rgba(255,255,255,.14);
-}
-html[data-theme="light"] .help-banner-header{
-  border-bottom-color:rgba(29,36,54,.25);
 }
 .help-banner-dot{
   border-radius:50%;
@@ -536,10 +532,6 @@ html[data-theme="light"] .help-banner-header{
 .cf-bg-swatch:hover{
   transform:scale(1.1);
 }
-.cf-bg-swatch.active{
-  border-color:#2563eb;
-  box-shadow:0 0 0 2px rgba(37,99,235,.35);
-}
 /* Free-form picker — the 6 swatches are quick presets, this is what
    actually lets a visitor land on any color, not just those six (the
    swatches-only panel this replaces had no way to do that short of the
@@ -627,7 +619,6 @@ html[data-theme="light"] .help-banner-header{
 }
 .cf-bg-hex-input:focus{
   outline:none;
-  border-color:#2563eb;
 }
 
 /* Import sits next to the ON/OFF background toggle, not stacked above
@@ -646,16 +637,7 @@ html[data-theme="light"] .help-banner-header{
   flex:1;
   min-width:0;
 }
-#cfBgEnableBtn{
-  flex:0 0 auto;
-  width:60px;
-}
-/* OFF reads as visually "off" the same way a disabled control does
-   elsewhere on this site — dimmer, not just a different label — rather
-   than looking identical to the ON state but for three letters of text. */
-.cf-bg-enable-btn[aria-pressed="false"]{
-  opacity:.55;
-}
+
 
 /* Purely a live-preview affordance — a checkerboard behind the window
    so "background off" reads as "transparent," not "did this break,"
@@ -936,12 +918,7 @@ html[data-theme="light"] .help-banner-header{
   gap:12px;
 }
 .cf-shadow-panel-toggle{
-  width:auto;
   align-self:flex-start;
-  height:32px;
-  padding:0 10px 0 4px;
-  border:none;
-  background:none;
 }
 .cf-shadow-slider-row{
   display:grid;
@@ -1002,43 +979,36 @@ html[data-theme="light"] .help-banner-header{
   border-radius:50%;
 }
 .cf-macnav-panel{
-  width:200px;
+  width:max-content;
   padding:14px;
   display:flex;
   flex-direction:column;
   gap:12px;
 }
 .cf-macnav-panel-toggle{
-  width:auto;
   align-self:flex-start;
-  height:32px;
-  padding:0 10px 0 4px;
-  border:none;
-  background:none;
 }
 .cf-macnav-style-row{
   display:flex;
   gap:8px;
 }
 .cf-macnav-style-swatch{
-  flex:1;
+  flex:0 0 54px;
+  width:54px;
+  min-width:54px;
+  max-width:54px;
   height:40px;
+  min-height:40px;
+  max-height:40px;
   display:flex;
   align-items:center;
   justify-content:center;
   gap:3px;
   border-radius:10px;
-  border:2px solid rgba(127,127,127,.35);
   background:none;
   padding:0;
   cursor:pointer;
   transition:.15s;
-}
-.cf-macnav-style-swatch:hover{
-  border-color:rgba(127,127,127,.6);
-}
-.cf-macnav-style-swatch.active{
-  border-color:#2563eb;
 }
 .cf-macnav-swatch-dot{
   width:9px;
@@ -1207,6 +1177,7 @@ html[data-theme="light"] .help-banner-header{
   opacity:1;
 }
 .cf-hod-zone-bg{
+  position:relative;
   flex:1 1 0;
   min-width:8px;
   align-self:stretch;
@@ -1672,7 +1643,7 @@ html[data-theme="light"] .help-banner-header{
               <button type="button" class="cf-bg-image-trigger option-change-btn" id="cfBgImageTrigger" title="Importer une image d'arrière-plan personnalisée">
                 <span class="option-change-btn-label">Importer</span>
               </button>
-              <button type="button" class="cf-bg-enable-btn option-change-btn" id="cfBgEnableBtn" title="Désactiver l'arrière-plan (export transparent)" aria-pressed="true">
+              <button type="button" class="cf-bg-enable-btn option-change-btn bc-onoff-btn" id="cfBgEnableBtn" title="Désactiver l'arrière-plan (export transparent)" aria-pressed="true">
                 <span class="option-change-btn-label" id="cfBgEnableBtnLabel">ON</span>
               </button>
             </div>
@@ -1691,11 +1662,9 @@ html[data-theme="light"] .help-banner-header{
             <span class="bc-dropdown-chevron" aria-hidden="true"></span>
           </button>
           <div class="cf-macnav-panel bc-dropdown-menu" id="cfMacNavPanel" hidden>
-            <label class="cf-toggle-switch cf-macnav-panel-toggle">
-              <input type="checkbox" id="cfTrafficLightsToggle" checked>
-              <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-              <span class="cf-toggle-label">On</span>
-            </label>
+            <button type="button" class="option-change-btn bc-onoff-btn cf-macnav-panel-toggle" id="cfTrafficLightsToggle" title="Show or hide the traffic lights" aria-pressed="true">
+              <span class="option-change-btn-label">ON</span>
+            </button>
             <div class="cf-macnav-style-row" id="cfMacNavStyleRow" role="listbox" aria-label="Style feu tricolore">
               <button type="button" class="cf-macnav-style-swatch active" data-style="classic" aria-label="Classique" role="option" aria-selected="true">
                 <span class="cf-macnav-swatch-dot" style="background:#ff5f56;"></span><span class="cf-macnav-swatch-dot" style="background:#ffbd2e;"></span><span class="cf-macnav-swatch-dot" style="background:#27c93f;"></span>
@@ -1718,11 +1687,9 @@ html[data-theme="light"] .help-banner-header{
             <span class="bc-dropdown-chevron" aria-hidden="true"></span>
           </button>
           <div class="cf-shadow-panel bc-dropdown-menu" id="cfShadowPanel" hidden>
-            <label class="cf-toggle-switch cf-shadow-panel-toggle">
-              <input type="checkbox" id="cfShadowToggle" checked>
-              <span class="cf-toggle-track" aria-hidden="true"><span class="cf-toggle-knob"></span></span>
-              <span class="cf-toggle-label">On</span>
-            </label>
+            <button type="button" class="option-change-btn bc-onoff-btn cf-shadow-panel-toggle" id="cfShadowToggle" title="Turn the shadow on or off" aria-pressed="true">
+              <span class="option-change-btn-label">ON</span>
+            </button>
             <label class="cf-shadow-slider-row">
               <span class="cf-shadow-slider-label">Opacité</span>
               <input type="range" class="cf-shadow-slider" id="cfShadowOpacity" min="0" max="100" value="35" aria-label="Opacité de l'ombre">
@@ -1866,9 +1833,9 @@ html[data-theme="light"] .help-banner-header{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=88" defer></script>
+<script src="/shared/site.js?v=90" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
 <script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=125" defer></script>
+<script src="/codify/codify-tool.js?v=126" defer></script>
 </body>
 </html>
