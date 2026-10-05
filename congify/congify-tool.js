@@ -1066,9 +1066,9 @@
      Same trigger+menu pattern as Context's color dropdown: one open at
      a time, closes on an outside click or after picking an option. */
   /* Now shared/site.js's bcRegisterDropdown (this file was the original
-     source of that pattern — Coudio and Colorfy used to hand-roll
-     visually identical copies of it under their own class prefixes;
-     all three now point at the one shared implementation). Kept as a
+     source of that pattern — Coudio used to hand-roll
+     a visually identical copy of it under its own class prefix;
+     both now point at the one shared implementation). Kept as a
      thin wrapper since every call site here also needs the live
      preview + autosave side effects the shared version doesn't know
      about. */
