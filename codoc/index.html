@@ -2,43 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Applies the saved light/dark theme before anything paints — the
-     real applyTheme logic lives in shared/site.js (loaded with defer,
-     so it only runs after the page is parsed); this tiny early inline
-     copy exists only to prevent a flash of the *other* theme on load.
-     Without it, the browser paints once using :root's default (light)
-     tokens before that deferred script ever runs — confirmed directly
-     (a dark-mode reload visibly flashed light for 2 frames before
-     flipping dark). Keep this in sync with shared/site.js's own
-     light/dark default logic if that ever changes. -->
 <script>
 (function(){
   try {
     var t = localStorage.getItem("bc-theme");
     document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
   } catch(e){}
-  /* Moved up from shared/site.js (deferred, so it only ran after full
-     HTML parsing) — set here instead so the browser's own native scroll
-     restoration is disabled from the very first possible moment, not
-     after it may have already had a chance to act. shared/site.js still
-     owns the actual restore-to-the-right-position logic; this one line
-     is just the earliest possible "opt out of the native one" flag. */
   try { history.scrollRestoration = "manual"; } catch(e){}
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy Policy – BC Tools</title>
-<meta name="description" content="Privacy Policy for BC Tools: free, browser-based, server-free image tools. Learn what data is (and isn't) collected when you use the service.">
-<link rel="canonical" href="https://bitcrunching.com/privacy/">
+<title>Codoc – Free Word to PDF Converter – BC Tools</title>
+<meta name="description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
+<link rel="canonical" href="https://bitcrunching.com/codoc/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="Privacy Policy – BC Tools">
-<meta property="og:description" content="Privacy Policy for BC Tools: free, browser-based, server-free image tools. Learn what data is (and isn't) collected when you use the service.">
-<meta property="og:url" content="https://bitcrunching.com/privacy/">
+<meta property="og:title" content="Codoc – Free Word to PDF Converter – BC Tools">
+<meta property="og:description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
+<meta property="og:url" content="https://bitcrunching.com/codoc/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Privacy Policy – BC Tools">
-<meta name="twitter:description" content="Privacy Policy for BC Tools: free, browser-based, server-free image tools. Learn what data is (and isn't) collected when you use the service.">
+<meta name="twitter:title" content="Codoc – Free Word to PDF Converter – BC Tools">
+<meta name="twitter:description" content="Convert a Word document (.docx) to PDF for free, right in your browser. No uploads, no server, nothing leaves your device.">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
 <link rel="apple-touch-icon" href="/favicon.svg?v=4">
@@ -58,7 +43,188 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
+<script src="/vendor/mammoth.browser.min.js"></script>
+<script src="/vendor/html2canvas.min.js"></script>
+<script src="/vendor/jspdf.umd.min.js"></script>
+
 <link rel="stylesheet" href="/shared/site.css?v=213">
+<style>
+.tool-app::before{ background:linear-gradient(155deg,#5B6EF5); }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+.tool-app:has(#cdcAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+.tool-app:has(#cdcAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cdcAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+.tool-app:has(#cdcAfterDrop[hidden]) #cdcResults{
+  display:none;
+}
+
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+#cdcDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cdcDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cdcDrop.active{
+  border-color:#5B6EF5;
+  background:rgba(91,110,245,.1);
+}
+.tool-app.active{
+  background:rgba(91,110,245,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+.cdc-remove-btn{
+  position:absolute;
+  top:-85px;
+  right:-25px;
+  z-index:6;
+  font-size:18px;
+}
+.cdc-back-btn{
+  position:absolute;
+  top:-85px;
+  right:11px;
+  z-index:6;
+}
+
+
+/* Only one control (Convert), same single-column override Convert
+   itself uses — shared/site.css's .tool-controls default is a 2-column
+   grid meant for a format-picker + button pair. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+
+/* Codoc-specific size request (not the shared .tool-primary-btn 74px
+   default) — a fixed 1028x70px CTA rather than the grid-stretched
+   default, so it's capped with max-width instead of forced full-width. */
+#cdcConvertBtn{
+  width:1028px;
+  max-width:100%;
+  height:70px;
+}
+
+.cdc-doc-icon{
+  width:44px;
+  height:44px;
+  border-radius:10px;
+  background:rgba(255,255,255,.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.02em;
+  color:var(--text);
+  flex:none;
+}
+.cdc-result-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.cdc-result-meta{ min-width:0; flex:1 1 auto; }
+.cdc-result-meta .result-name{
+  color:var(--text);
+  font-weight:700;
+  font-size:14px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cdc-result-size{
+  color:var(--text);
+  opacity:.6;
+  font-size:12px;
+}
+
+.cdc-offscreen{
+  position:absolute;
+  left:-99999px;
+  top:0;
+  width:794px;
+  background:#ffffff;
+  color:#111111;
+  padding:56px 64px;
+  font-family:"Calibri","Segoe UI",Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+.cdc-offscreen img{ max-width:100%; height:auto; }
+.cdc-offscreen table{ border-collapse:collapse; width:100%; }
+.cdc-offscreen table td, .cdc-offscreen table th{ border:1px solid #ccc; padding:4px 8px; }
+</style>
 </head>
 <body>
 <div id="cookieBanner" class="cookie-banner" hidden>
@@ -125,7 +291,7 @@
             <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
         </svg>
         </button>
-                <div class="nav-share-wrap">    
+                <div class="nav-share-wrap">
       <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
         <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 3L9.5 14.5"></path>
@@ -145,6 +311,7 @@
       </div>
     </div>
     <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -155,29 +322,71 @@
   </div>
 </div>
 <main>
-  <div class="hero">
-    <h1>Alien Privacy Protocol</h1>
-    <p class="lead page-alias">Also known on Earth as the Privacy Policy page.</p>
+<div class="help-banner engine-status-card" id="cdcHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cdcHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cdcHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cdcHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cdcHelpBack">&lt; BACK</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cdcHelpCloseMobile">CLOSE</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cdcHelpNext">NEXT &gt;</button>
+    </div>
   </div>
-  <article class="terms-article">
-    <p class="terms-updated">Last Updated: August 2026</p>
-    <p>At BitCrunching, we value your privacy. This Privacy Policy outlines how data is handled across our web environment, domain infrastructure, and advertising networks.</p>
-
-    <h2>1. Client-Side Processing</h2>
-    <p>BC Tools operates entirely within your web browser. Your uploaded images and files are processed locally on your device. We never upload, view, sell, or store your files on any remote server.</p>
-    <p>Our Cleanly tool detects and removes common hidden metadata — EXIF tags like GPS location and camera model in photos, and embedded metadata, editor-authoring attributes, and comments in SVG files. This detection is a best-effort scan for well-known patterns, not an exhaustive guarantee that a file contains zero hidden data of any kind. For anything highly sensitive, we recommend an additional manual check of the file before sharing it.</p>
-    <div class="engine-status-card">
-      <div class="engine-status-body">
-        <div class="engine-status-row">&gt; Our intergalactic business partners have expressed interest in your data but they were let down by the fact, that we have none.</div>
+  <div class="engine-status-body" id="cdcHelpBody">
+    <div class="engine-status-row">&gt; <span id="cdcHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" data-category="special">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-placeholder gfx-md" role="img" aria-label="Codoc icon">(icon)</span>
+        Codoc
       </div>
+      <span class="privacy-check-badge" id="cdcPrivacyBadge" aria-live="polite"></span>
     </div>
 
-    <h2>2. Hosting Infrastructure</h2>
-    <p>Our website and domain utilize standard third-party infrastructure. These platforms process basic, non-identifiable network data (like IP addresses) solely to keep the site online and secure.</p>
+    <div class="tool-drop" id="cdcDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">a Word document (.docx)</span></div>
+    <input type="file" id="cdcInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cdcContinueBtn" hidden>Continue where you left off</button>
 
-    <h2>4. Contact &amp; Impressum</h2>
-    <p>For any legal inquiries, support, or data privacy questions, you can contact the site operator directly via email at <a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a> or find our full contact details in the footer below.</p>
-  </article>
+    <div class="tool-after-drop" id="cdcAfterDrop" hidden>
+      <button type="button" class="cdc-back-btn bc-canvas-back-btn" id="cdcBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <button type="button" class="cdc-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cdcRemoveBtn" aria-label="Remove file">×</button>
+    </div>
+
+    <div class="tool-results" id="cdcResults"></div>
+
+    <div class="tool-controls" id="cdcControls" hidden>
+      <button class="tool-primary-btn" id="cdcConvertBtn" disabled title="Convert and download" data-ga-event="tool_primary_action" data-ga-tool="codoc">Convert and download</button>
+    </div>
+
+    <div class="tool-status" id="cdcStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="codoc">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>New to Codoc?</h3>
+    <p>Codoc turns a Word document into a PDF entirely inside your browser — the file is parsed and rendered on your own device, nothing is uploaded anywhere. It reads modern Word files (.docx, Word 2007 and later); the older binary .doc format isn't supported.</p>
+    <p>Complex layouts — multi-column text, headers/footers, and precise pagination — may render slightly differently than in Word, since Codoc rebuilds the page flow from the document's content rather than Word's own print engine. For straightforward documents (headings, paragraphs, lists, tables, images) the result matches closely.</p>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
+  </div>
+</div>
 </main>
 <div class="footer-dashboard" id="siteFooterDashboard">
   <div class="footer-dashboard-inner">
@@ -221,5 +430,6 @@
 </div>
 
 <script src="/shared/site.js?v=90" defer></script>
+<script src="/codoc/codoc-tool.js?v=6" defer></script>
 </body>
 </html>

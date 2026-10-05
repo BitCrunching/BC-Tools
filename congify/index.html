@@ -58,7 +58,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=135">
+<link rel="stylesheet" href="/shared/site.css?v=213">
 <style>
 #page-gif::before{
   background:#22D3D0;
@@ -94,14 +94,8 @@
   align-items:center;
   gap:8px;
   padding:12px 16px;
-  border-bottom:1px dashed rgba(255,255,255,.14);
-}
-html[data-theme="light"] .help-banner-header{
-  border-bottom-color:rgba(29,36,54,.25);
 }
 .help-banner-dot{
-  width:8px;
-  height:8px;
   border-radius:50%;
   background:#6b7280;
   opacity:.6;
@@ -129,41 +123,6 @@ html[data-theme="light"] .help-banner-header{
   align-items:center;
   gap:8px;
   margin-left:auto;
-}
-.help-banner-term-btn{
-  padding:6px 12px;
-  border-radius:6px;
-  border:1px solid rgba(255,255,255,.14);
-  background:none;
-  color:#e5e7eb;
-  opacity:.8;
-  font-family:var(--bc-mono);
-  font-size:13px;
-  font-weight:700;
-  letter-spacing:.02em;
-  cursor:pointer;
-  transition:.2s;
-}
-html[data-theme="light"] .help-banner-term-btn{
-  border-color:rgba(29,36,54,.3);
-  color:#1d2436;
-}
-.help-banner-term-btn:hover{
-  opacity:1;
-  border-color:var(--border-strong);
-  color:var(--text);
-}
-.help-banner-term-btn:disabled{
-  opacity:.3;
-  cursor:default;
-}
-.help-banner-term-btn:disabled:hover{
-  border-color:rgba(255,255,255,.14);
-  color:#e5e7eb;
-}
-html[data-theme="light"] .help-banner-term-btn:disabled:hover{
-  border-color:rgba(29,36,54,.3);
-  color:#1d2436;
 }
 
 /* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
@@ -533,9 +492,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   height:26px;
   flex-shrink:0;
   border-radius:50%;
-  border:1px solid rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
   font-size:15px;
   line-height:1;
   cursor:pointer;
@@ -543,17 +499,6 @@ html[data-theme="light"] .help-banner-term-btn:disabled:hover{
   display:flex;
   align-items:center;
   justify-content:center;
-  transition:.2s;
-}
-.gif-results-toggle:hover{
-  background:rgba(255,255,255,.45);
-}
-html[data-theme="dark"] .gif-results-toggle{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
-}
-html[data-theme="dark"] .gif-results-toggle:hover{
-  background:rgba(0,0,0,.35);
 }
 .gif-results-header-btns{
   display:flex;
@@ -843,9 +788,22 @@ html[data-theme="dark"] .gif-results-toggle:hover{
   min-width:135px;
   max-width:135px;
 }
-#gifCaptionStrokeColorDropdown{
-  min-width:100px;
-  max-width:150px;
+@media (min-width:769px){
+  #gifCaptionColorDropdown,
+  #gifCaptionStrokeColorDropdown{
+    width:107px;
+    min-width:107px;
+    max-width:107px;
+  }
+  #gifCaptionColorTrigger,
+  #gifCaptionStrokeColorTrigger{
+    width:107px;
+    min-width:107px;
+    max-width:107px;
+    height:40px;
+    min-height:40px;
+    max-height:40px;
+  }
 }
 /* Chrome now lives in shared/site.css as .bc-color-dot (added as a
    second class on the markup, class="gif-dropdown-dot bc-color-dot") —
@@ -880,6 +838,12 @@ html[data-theme="dark"] .gif-results-toggle:hover{
   display:flex;
   flex-direction:column;
   gap:16px;
+  box-sizing:border-box;
+  width:max(100%, 313px);
+  margin-left:min(0px, calc((100% - 313px) / 2));
+}
+@media (max-width:768px){
+  .gif-controls-panel{ padding:14px; }
 }
 /* gap on the panel above already spaces every visible child — the
    toggle/sliders' own margin-top (used when they sat directly on the
@@ -928,7 +892,8 @@ html[data-theme="dark"] .gif-results-toggle:hover{
 @media (max-width:768px){
   .gif-mode-toggle{
     display:flex;
-    width:280.5px;
+    width:100%;
+    max-width:280.5px;
     margin:14px auto 0;
   }
 }
@@ -942,14 +907,10 @@ html[data-theme="dark"] .gif-results-toggle:hover{
   height:34px;
   padding:0 14px;
   border-radius:0;
-  border:1px solid var(--border-strong);
-  background:transparent;
-  color:var(--text);
   font-family:inherit;
   font-size:14px;
   font-weight:700;
   cursor:pointer;
-  transition:.2s;
 }
 .gif-mode-toggle button:first-child{
   border-top-left-radius:17px;
@@ -959,15 +920,6 @@ html[data-theme="dark"] .gif-results-toggle:hover{
   border-top-right-radius:17px;
   border-bottom-right-radius:17px;
   border-left:none;
-}
-.gif-mode-toggle button[aria-pressed="true"]{
-  border-color:rgba(255,255,255,.5);
-  background:rgba(255,255,255,.35);
-  color:var(--text);
-}
-html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
-  border-color:rgba(0,0,0,.4);
-  background:rgba(0,0,0,.25);
 }
 /* border-color above (not the border shorthand) is what keeps this
    from re-adding a left border on the second segment when it's
@@ -1407,9 +1359,9 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
     <span class="help-banner-dot" aria-hidden="true"></span>
     <span class="engine-status-title" id="gifHelpStep"></span>
     <div class="help-banner-nav">
-      <button type="button" class="help-banner-term-btn" id="gifHelpBack">&lt; BACK</button>
-      <button type="button" class="help-banner-term-btn help-banner-close-mobile" id="gifHelpCloseMobile">CLOSE</button>
-      <button type="button" class="help-banner-term-btn" id="gifHelpNext">NEXT &gt;</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="gifHelpBack">&lt; BACK</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="gifHelpCloseMobile">CLOSE</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="gifHelpNext">NEXT &gt;</button>
     </div>
   </div>
   <div class="engine-status-body" id="gifHelpBody">
@@ -1508,7 +1460,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
           <div class="bc-dropdown" id="gifCaptionColorDropdown">
             <button type="button" class="bc-dropdown-trigger" id="gifCaptionColorTrigger" title="Text color" aria-haspopup="listbox" aria-expanded="false">
               <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionColorTriggerDot" style="background:transparent;" hidden></span>
-              <span class="bc-dropdown-trigger-label" id="gifCaptionColorTriggerLabel">Text color</span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionColorTriggerLabel">Color</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionColorMenu" role="listbox" hidden>
@@ -1535,7 +1487,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
           <div class="bc-dropdown" id="gifCaptionStrokeColorDropdown">
             <button type="button" class="bc-dropdown-trigger" id="gifCaptionStrokeColorTrigger" title="Stroke color" aria-haspopup="listbox" aria-expanded="false">
               <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionStrokeColorTriggerDot" style="background:transparent;" hidden></span>
-              <span class="bc-dropdown-trigger-label" id="gifCaptionStrokeColorTriggerLabel">Stroke color</span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionStrokeColorTriggerLabel">Color</span>
               <span class="bc-dropdown-chevron" aria-hidden="true"></span>
             </button>
             <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionStrokeColorMenu" role="listbox" hidden>
@@ -1678,6 +1630,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
         </div>
       </div>
     </div>
@@ -1694,7 +1647,7 @@ html[data-theme="dark"] .gif-mode-toggle button[aria-pressed="true"]{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=53" defer></script>
-<script src="/congify/congify-tool.js?v=129" defer></script>
+<script src="/shared/site.js?v=90" defer></script>
+<script src="/congify/congify-tool.js?v=131" defer></script>
 </body>
 </html>

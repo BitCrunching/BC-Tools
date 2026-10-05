@@ -88,6 +88,16 @@ window.addEventListener("pagehide", () => {
   try { sessionStorage.setItem(bcScrollKey, String(window.scrollY)); } catch(e){ /* unavailable */ }
 });
 
+/* ===== Message text helper =====
+   bcT(message, {n}) returns the message with {name} placeholders filled
+   in. User-facing strings go through it so they can be translated later
+   (see the dev-translations branch). */
+function bcT(s, vars){
+  let out = s;
+  if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  return out;
+}
+
 /* ===== data-goto -> real navigation (no SPA gotoPage() here) ===== */
 const SITE_PATH_MAP = {
   mainpage: "/",
@@ -125,7 +135,7 @@ document.addEventListener("click", (e) => {
        clicked. Forward it as a query param so golden-rules/index.html
        can open the right tab on load. */
     const tool = golden.dataset.tool;
-    location.href = tool ? `/golden-rules/?tool=${encodeURIComponent(tool)}` : "/golden-rules/";
+    location.href = "/golden-rules/" + (tool ? `?tool=${encodeURIComponent(tool)}` : "");
   }
 });
 
@@ -292,8 +302,8 @@ function bcSetupHelpBanner(toolName, idPrefix, steps){
 
   function render(){
     const [heading, text] = steps[index];
-    stepEl.textContent = toolName.toUpperCase() + "_GUIDE: STEP " + (index + 1) + "/" + steps.length;
-    textEl.textContent = heading + " — " + text;
+    stepEl.textContent = toolName.toUpperCase() + "_" + bcT("GUIDE") + ": " + bcT("STEP") + " " + (index + 1) + "/" + steps.length;
+    textEl.textContent = bcT(heading) + " — " + bcT(text);
     back.disabled = index === 0;
     next.disabled = index === steps.length - 1;
   }
@@ -381,7 +391,7 @@ function bcRegisterCombo(trigger, input, menu, emptyEl, onSelect){
     return menu.querySelector(".bc-combo-option.active");
   }
   function open(){
-    bcCombos.forEach(c => { if (c !== combo) bcCloseCombo(c); });
+    bcCloseAllPopups(combo);
     menu.hidden = false;
     trigger.setAttribute("aria-expanded", "true");
     input.removeAttribute("readonly");
@@ -448,6 +458,13 @@ function bcCloseCombo(combo){
   const active = combo._activeOptionGetter();
   combo.input.value = active ? active.dataset.label : "";
 }
+const bcPopupClosers = [];
+function bcRegisterPopup(closeFn){ bcPopupClosers.push(closeFn); }
+function bcCloseAllPopups(exceptCombo){
+  bcCombos.forEach(c => { if (c !== exceptCombo && !c.menu.hidden) bcCloseCombo(c); });
+  bcCloseAllDropdowns();
+  bcPopupClosers.forEach(fn => fn());
+}
 document.addEventListener("click", (e) => {
   bcCombos.forEach(c => {
     if (!c.menu.hidden && !c.trigger.contains(e.target) && !c.menu.contains(e.target)) bcCloseCombo(c);
@@ -509,7 +526,7 @@ function bcRegisterDropdown(trigger, menu, onSelect){
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
     const wasOpen = !menu.hidden;
-    bcCloseAllDropdowns();
+    bcCloseAllPopups();
     if (!wasOpen){
       menu.hidden = false;
       trigger.setAttribute("aria-expanded", "true");
@@ -718,6 +735,7 @@ function startPrivacyCheck(){
    same as before this list existed. */
 function finishPrivacyCheck(badgeEl, action){
   privacyCheckActive = false;
+  bcRecordUse();
   if (!badgeEl) return;
   const actionWord = action === "convert" ? "convert" : action === "save" ? "save" : "download";
   if (privacyCheckExternalCount === 0){
@@ -746,7 +764,7 @@ function showNavTerminal(text){
   const el = document.getElementById("navTerminal");
   const textEl = document.getElementById("navTerminalText");
   if (!el || !textEl) return;
-  textEl.textContent = text;
+  textEl.textContent = bcT(text);
   el.classList.add("show");
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => el.classList.remove("show"), 2200);
@@ -814,7 +832,7 @@ function showNavTerminal(text){
   });
 
   if (shareBtn && shareMenu){
-    shareBtn.addEventListener("click", async () => {
+    shareBtn.addEventListener("click", async (e) => {
       const shareData = {
         title: document.title,
         text: "Try BC Tools for working with images.",
@@ -825,8 +843,28 @@ function showNavTerminal(text){
         catch (e){ /* cancelled, or share unsupported */ }
         return;
       }
-      shareMenu.classList.toggle("open");
+      if (e.detail === 0) shareMenu.classList.toggle("open");
+      else shareMenu.classList.add("open");
     });
+
+    const shareWrap = shareBtn.closest(".nav-share-wrap");
+    if (shareWrap && window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      const closeShare = () => {
+        shareMenu.classList.remove("open");
+        const list = document.getElementById("navShareMoreList");
+        const toggle = document.getElementById("navShareMoreToggle");
+        if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
+      };
+      shareWrap.addEventListener("mouseenter", () => {
+        clearTimeout(closeTimer);
+        if (window.innerWidth > 768) shareMenu.classList.add("open");
+      });
+      shareWrap.addEventListener("mouseleave", () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(closeShare, 150);
+      });
+    }
 
     const shareMoreToggle = document.getElementById("navShareMoreToggle");
     const shareMoreList = document.getElementById("navShareMoreList");
@@ -836,6 +874,12 @@ function showNavTerminal(text){
         shareMoreList.hidden = !willOpen;
         shareMoreToggle.setAttribute("aria-expanded", String(willOpen));
       });
+      if (window.matchMedia("(hover: hover)").matches){
+        shareMoreToggle.addEventListener("mouseenter", () => {
+          shareMoreList.hidden = false;
+          shareMoreToggle.setAttribute("aria-expanded", "true");
+        });
+      }
     }
 
     shareMenu.addEventListener("click", async (e) => {
@@ -1016,12 +1060,12 @@ function showNavTerminal(text){
   const advertisingStatus = document.getElementById("cookieStatusAdvertising");
 
   function statusText(allowed){
-    return allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous";
+    return bcT(allowed ? "...enabled & tracking safely" : "...disabled & fully anonymous");
   }
 
   function renderActionButton(){
     const allOn = analyticsToggle.checked && advertisingToggle.checked;
-    acceptAllBtn.textContent = allOn ? "Disable all" : "Accept All";
+    acceptAllBtn.textContent = bcT(allOn ? "Disable all" : "Accept All");
     acceptAllBtn.classList.toggle("is-disable-all", allOn);
   }
 
@@ -1182,6 +1226,45 @@ async function bcDbClear(dbName, storeName){
    text input/textarea/contenteditable (typing a caption/text-box's actual
    content shouldn't fire "b"/"i"/"u"/"t" as shortcuts) and while a
    modifier key is held (so it doesn't fight browser/OS shortcuts). */
+/* "Continue where you left off" — D clicks it while it's showing, ahead of
+   (and instead of) the tool's own D/Download shortcut, which has nothing to
+   do until a file is loaded. Congify's post-conversion "Continue working"
+   (id contains "Done") is a different button and keeps D for Download. */
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.key.toLowerCase() !== "d") return;
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+  const btn = document.querySelector('.tool-continue-btn[id$="ContinueBtn"]:not([id*="Done"])');
+  if (!btn || btn.hidden || btn.disabled || !btn.offsetParent) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  btn.click();
+});
+
+/* ON/OFF button (an .option-change-btn with aria-pressed + a label) that
+   behaves like a checkbox for code written against `.checked` / "change":
+   `checked` reads/writes the pressed state and label, `addEventListener
+   ("change")` / `dispatchEvent` reach whoever listens, and a click flips
+   it and fires "change". Originated as Codify's Background ON/OFF button;
+   now also drives Mac nav and Shadow. */
+function bcOnOffButton(btn){
+  if (!btn) return null;
+  const label = btn.querySelector(".option-change-btn-label");
+  const listeners = [];
+  const api = {
+    get checked(){ return btn.getAttribute("aria-pressed") === "true"; },
+    set checked(v){
+      btn.setAttribute("aria-pressed", String(!!v));
+      if (label) label.textContent = v ? "ON" : "OFF";
+    },
+    addEventListener(type, fn){ if (type === "change") listeners.push(fn); },
+    dispatchEvent(){ listeners.forEach(fn => fn({ target: api })); return true; },
+    el: btn
+  };
+  btn.addEventListener("click", () => { api.checked = !api.checked; api.dispatchEvent(); });
+  return api;
+}
+
 function bcRegisterKeyShortcut(key, btn){
   if (!btn) return;
   document.addEventListener("keydown", (e) => {
@@ -1400,3 +1483,92 @@ bcRegisterEscapable(
   },
   60
 );
+
+/* ===== Share nudge — one-time floating banner =====
+   Counts which tools a visitor has finished using (hooked into
+   finishPrivacyCheck, which every tool already calls when a download /
+   conversion / save completes) and, the first time three different ones
+   are done, offers a friendly "tell a friend" banner. Everything stays in
+   this browser's localStorage — nothing is sent anywhere. Independent of
+   the nav share menu. bcShowShareNudge() can be called from the console
+   to preview it. */
+const BC_NUDGE_USES_KEY = "bc-uses";
+const BC_NUDGE_SHOWN_KEY = "bc-share-nudge";
+const BC_NUDGE_TOOLS_NEEDED = 3;
+
+function bcCurrentTool(){
+  const seg = location.pathname.split("/").filter(Boolean);
+  return seg[0] || "";
+}
+
+function bcRecordUse(){
+  const tool = bcCurrentTool();
+  if (!tool) return;
+  let uses = {};
+  try {
+    if (localStorage.getItem(BC_NUDGE_SHOWN_KEY)) return;
+    uses = JSON.parse(localStorage.getItem(BC_NUDGE_USES_KEY) || "{}");
+    uses[tool] = (uses[tool] || 0) + 1;
+    localStorage.setItem(BC_NUDGE_USES_KEY, JSON.stringify(uses));
+  } catch (e) { return; }
+  if (Object.keys(uses).length >= BC_NUDGE_TOOLS_NEEDED) setTimeout(bcShowShareNudge, 1800);
+}
+
+function bcShowShareNudge(){
+  if (document.getElementById("bcShareNudge")) return;
+  const cookieBanner = document.getElementById("cookieBanner");
+  if (cookieBanner && !cookieBanner.hidden && getComputedStyle(cookieBanner).display !== "none") return;
+  try { localStorage.setItem(BC_NUDGE_SHOWN_KEY, "1"); } catch (e) { /* storage unavailable */ }
+
+  const box = document.createElement("div");
+  box.id = "bcShareNudge";
+  box.className = "bc-nudge";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", bcT("Share BC Tools"));
+  box.innerHTML = `
+    <p class="bc-nudge-title"></p>
+    <p class="bc-nudge-text"></p>
+    <div class="bc-nudge-actions">
+      <button type="button" class="bc-nudge-primary bc-hover-fill bc-hover-fill--primary"></button>
+      <button type="button" class="bc-nudge-copy bc-hover-fill"></button>
+      <button type="button" class="bc-nudge-later bc-hover-fill"></button>
+    </div>`;
+  box.querySelector(".bc-nudge-title").textContent = bcT("Enjoying so far?");
+  box.querySelector(".bc-nudge-text").textContent = bcT("Be sure to show your friends and colleagues.");
+  const copyBtn = box.querySelector(".bc-nudge-copy");
+  const shareBtn = box.querySelector(".bc-nudge-primary");
+  const laterBtn = box.querySelector(".bc-nudge-later");
+  copyBtn.textContent = bcT("Copy link");
+  shareBtn.textContent = bcT("Share with a friend");
+  laterBtn.textContent = bcT("Maybe later");
+
+  const track = (name) => { if (typeof gtag === "function") gtag("event", name); };
+  const close = () => { box.classList.remove("visible"); setTimeout(() => box.remove(), 250); };
+
+  shareBtn.addEventListener("click", async () => {
+    const url = location.origin + "/";
+    track("share_nudge_click");
+    if (navigator.share){
+      try { await navigator.share({ title: "BC Tools", text: bcT("Free, private tools that run in your browser. Your files never leave your device."), url }); close(); }
+      catch (e) { /* cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showNavTerminal("URL copied to clipboard");
+      setTimeout(close, 1400);
+    } catch (e) { /* clipboard unavailable */ }
+  });
+  copyBtn.addEventListener("click", async () => {
+    track("share_nudge_copy");
+    try {
+      await navigator.clipboard.writeText(location.origin + "/");
+      showNavTerminal("URL copied to clipboard");
+    } catch (e) { /* clipboard unavailable */ }
+  });
+  laterBtn.addEventListener("click", () => { track("share_nudge_dismiss"); close(); });
+
+  document.body.appendChild(box);
+  setTimeout(() => box.classList.add("visible"), 30);
+  track("share_nudge_shown");
+}

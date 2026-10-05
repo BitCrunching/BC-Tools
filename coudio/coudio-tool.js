@@ -94,7 +94,7 @@
     if (loaded.length > 0){
       const count = loaded.length;
       const word = count === 1 ? "file" : "files";
-      statusEl.textContent = `${count} ${word} loaded`;
+      statusEl.textContent = bcT("{0} {1} loaded", [count, word]);
     } else {
       statusEl.textContent = "";
     }
@@ -235,7 +235,7 @@
       /* Same fix shape as Convert's applyPickedFiles() — a selection
          that's wholly unsupported (e.g. a .txt/.exe) used to be silent. */
       if (incoming.length > 0){
-        statusEl.textContent = "Coudio only works with audio or video files — none of the selected file(s) qualify.";
+        statusEl.textContent = bcT("Coudio only works with audio or video files — none of the selected file(s) qualify.");
       }
       return;
     }
@@ -266,8 +266,8 @@
     if (accepted.length < incoming.length){
       const skipped = incoming.length - accepted.length;
       const msg = skipped === 1
-        ? "1 file wasn't a supported audio or video format and was skipped."
-        : `${skipped} files weren't a supported audio or video format and were skipped.`;
+        ? bcT("1 file wasn't a supported audio or video format and was skipped.")
+        : bcT("{0} files weren't a supported audio or video format and were skipped.", [skipped]);
       statusEl.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
     continueBtn.hidden = true;
@@ -761,18 +761,18 @@
     const btn = entry.row.querySelector(".cd-row-convert-btn");
     const idleLabel = btn.textContent;
     btn.disabled = true;
-    btn.textContent = "Converting…";
+    btn.textContent = bcT("Converting…");
     entry.row.classList.remove("cd-file-row-error");
     entry.row.removeAttribute("title");
-    statusEl.textContent = `Converting ${entry.file.name}...`;
+    statusEl.textContent = bcT("Converting {0}...", [entry.file.name]);
     startPrivacyCheck();
 
     try {
       const { blob, ext } = await convertOneFile(entry.file, entry.outputFormat, entry.bitrate);
       const outName = (entry.outputName.trim() || "converted") + "." + ext;
       downloadBlob(blob, outName);
-      btn.textContent = "Done";
-      statusEl.textContent = `Done — ${outName} converted successfully.`;
+      btn.textContent = bcT("Done");
+      statusEl.textContent = bcT("Done — {0} converted successfully.", [outName]);
     } catch (err){
       console.error(err);
       /* Flags this row so it's obvious at a glance which file actually
@@ -782,9 +782,9 @@
          whatever load-count text it last had (e.g. "1 file loaded")
          forever, never actually reacting to a failed conversion. */
       entry.row.classList.add("cd-file-row-error");
-      entry.row.title = `Couldn't convert "${entry.file.name}" — it may not be a valid or supported audio/video file.\n(${err.message || err})`;
-      btn.textContent = "Failed";
-      statusEl.textContent = `Couldn't convert ${entry.file.name}. Make sure it's a valid audio or video file.`;
+      entry.row.title = bcT("Couldn't convert \"{0}\" — it may not be a valid or supported audio/video file.", [entry.file.name]) + `\n(${err.message || err})`;
+      btn.textContent = bcT("Failed");
+      statusEl.textContent = bcT("Couldn't convert {0}. Make sure it's a valid audio or video file.", [entry.file.name]);
     } finally {
       finishPrivacyCheck(document.getElementById("cdPrivacyBadge"));
       setTimeout(() => {
