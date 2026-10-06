@@ -1,0 +1,158 @@
+/* Bug report button (header, next to the theme toggle) — sends a short
+   description and an optional screenshot to the support channel on Discord. */
+(function(){
+  /* Where reports are posted. Left empty until a relay/webhook is configured. */
+  const ENDPOINT = "";
+  const MAX_CHARS = 100;
+  const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+  const COOLDOWN_MS = 60000;
+  const LAST_KEY = "bc-report-last";
+
+  const themeBtn = document.getElementById("navThemeBtn");
+  if (!themeBtn || document.getElementById("navReportBtn")) return;
+
+  const css = document.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "/shared/report.css?v=1";
+  document.head.appendChild(css);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.id = "navReportBtn";
+  btn.className = "nav-theme-btn nav-report-btn";
+  btn.setAttribute("aria-label", "Report a bug");
+  btn.title = "Report a bug";
+  btn.setAttribute("aria-haspopup", "dialog");
+  btn.setAttribute("aria-expanded", "false");
+  btn.textContent = "🐛";
+  themeBtn.insertAdjacentElement("afterend", btn);
+
+  const box = document.createElement("div");
+  box.className = "bc-report";
+  box.hidden = true;
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", "Report a bug");
+  box.innerHTML =
+    '<div class="bc-report-title">Report a bug</div>' +
+    '<textarea class="bc-report-text" maxlength="' + MAX_CHARS + '" placeholder="What went wrong? (max ' + MAX_CHARS + ' characters)" aria-label="Describe the bug"></textarea>' +
+    '<div class="bc-report-count">0/' + MAX_CHARS + '</div>' +
+    '<div class="bc-report-shot">' +
+      '<button type="button" class="bc-report-attach">Add screenshot</button>' +
+      '<input type="file" accept="image/*" hidden>' +
+      '<div class="bc-report-preview"><img alt="Screenshot preview"><button type="button" class="bc-report-remove" aria-label="Remove screenshot" title="Remove screenshot">×</button></div>' +
+    '</div>' +
+    '<p class="bc-report-note"><b>Your report will be sent to a Discord server</b></p>' +
+    '<div class="bc-report-actions"><button type="button" class="bc-report-send" disabled>Send</button></div>' +
+    '<div class="tool-status bc-report-status" role="status"></div>';
+  document.body.appendChild(box);
+
+  const text = box.querySelector(".bc-report-text");
+  const count = box.querySelector(".bc-report-count");
+  const attach = box.querySelector(".bc-report-attach");
+  const fileInput = box.querySelector("input[type=file]");
+  const preview = box.querySelector(".bc-report-preview");
+  const previewImg = preview.querySelector("img");
+  const removeShot = box.querySelector(".bc-report-remove");
+  const send = box.querySelector(".bc-report-send");
+  const status = box.querySelector(".bc-report-status");
+  let shot = null;
+  let busy = false;
+
+  function isOpen(){ return !box.hidden; }
+  function open(){
+    box.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+    text.focus();
+  }
+  function close(){
+    box.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  }
+  function refresh(){
+    count.textContent = text.value.length + "/" + MAX_CHARS;
+    send.disabled = busy || !text.value.trim();
+  }
+  function setShot(file){
+    if (!file) return;
+    if (!/^image\//.test(file.type)){ status.textContent = "Please choose an image."; return; }
+    if (file.size > MAX_IMAGE_BYTES){ status.textContent = "That image is over 8 MB."; return; }
+    if (shot) URL.revokeObjectURL(previewImg.src);
+    shot = file;
+    previewImg.src = URL.createObjectURL(file);
+    preview.classList.add("has-image");
+    attach.textContent = "Change";
+    status.textContent = "";
+  }
+  function clearShot(){
+    if (shot) URL.revokeObjectURL(previewImg.src);
+    shot = null;
+    fileInput.value = "";
+    previewImg.removeAttribute("src");
+    preview.classList.remove("has-image");
+    attach.textContent = "Add screenshot";
+  }
+
+  btn.addEventListener("click", () => { isOpen() ? close() : open(); });
+  text.addEventListener("input", refresh);
+  attach.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => setShot(fileInput.files[0]));
+  removeShot.addEventListener("click", clearShot);
+  box.addEventListener("paste", (e) => {
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.type.indexOf("image/") === 0);
+    if (item){ e.preventDefault(); setShot(item.getAsFile()); }
+  });
+  document.addEventListener("mousedown", (e) => {
+    if (isOpen() && !box.contains(e.target) && !btn.contains(e.target)) close();
+  });
+  if (typeof bcRegisterEscapable === "function") bcRegisterEscapable(isOpen, close, 60);
+  else document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) close(); });
+
+  send.addEventListener("click", async () => {
+    const message = text.value.trim();
+    if (!message || busy) return;
+    if (!ENDPOINT){ status.textContent = "Reporting isn't set up yet."; return; }
+    let last = 0;
+    try { last = +localStorage.getItem(LAST_KEY) || 0; } catch (err) { /* storage unavailable */ }
+    const wait = COOLDOWN_MS - (Date.now() - last);
+    if (wait > 0){ status.textContent = "Please wait " + Math.ceil(wait / 1000) + "s before sending another report."; return; }
+
+    busy = true;
+    refresh();
+    status.textContent = "Sending...";
+    const theme = document.documentElement.getAttribute("data-theme") || "light";
+    const embed = {
+      title: "Bug report",
+      description: message,
+      color: 0xB91C3C,
+      fields: [
+        { name: "Page", value: location.pathname || "/", inline: true },
+        { name: "Screen", value: innerWidth + "x" + innerHeight + " · " + theme, inline: true },
+        { name: "Browser", value: navigator.userAgent.slice(0, 200) }
+      ]
+    };
+    const form = new FormData();
+    if (shot){
+      const name = "screenshot." + ((shot.type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png");
+      embed.image = { url: "attachment://" + name };
+      form.append("files[0]", shot, name);
+    }
+    form.append("payload_json", JSON.stringify({ username: "BC Tools report", allowed_mentions: { parse: [] }, embeds: [embed] }));
+    try {
+      /* A report is the visitor's own action, not a tool processing a file,
+         so it goes around the tool privacy badge's request counter. */
+      const doFetch = typeof _privacyCheckOrigFetch === "function" ? _privacyCheckOrigFetch : window.fetch;
+      const res = await doFetch.call(window, ENDPOINT, { method: "POST", body: form });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (err) { /* storage unavailable */ }
+      text.value = "";
+      clearShot();
+      status.textContent = "Thanks, your report was sent.";
+    } catch (err){
+      console.error(err);
+      status.textContent = "Couldn't send the report. Please try again.";
+    } finally {
+      busy = false;
+      refresh();
+    }
+  });
+})();
