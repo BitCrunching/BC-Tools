@@ -14,7 +14,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=2";
+  css.href = "/shared/report.css?v=3";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -42,7 +42,7 @@
       '<input type="file" accept="image/*" hidden>' +
       '<div class="bc-report-preview"><img alt="Screenshot preview"><button type="button" class="bc-report-remove" aria-label="Remove screenshot" title="Remove screenshot">×</button></div>' +
     '</div>' +
-    '<p class="bc-report-note">Your report will be sent to a Discord server for further processing.<br><b>Thank you for your help!</b></p>' +
+    '<p class="bc-report-note"><span class="bc-report-prompt" aria-hidden="true">&gt;</span> Your report will be sent to a Discord server for further processing. <b>Thank you for your help!</b></p>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" disabled>Send</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
