@@ -1579,6 +1579,29 @@
     return newDoc;
   }
 
+  /* Where the typed text actually starts on screen (left edge after the
+     move handle and padding, baseline of the first line), in page points.
+     Measured from the live element so it stays exact at any zoom instead
+     of assuming a fixed pixel offset. */
+  function measureTextOrigin(box){
+    const el = document.querySelector('.context-text-box[data-box-id="' + box.id + '"]');
+    const inner = el && el.querySelector(".context-text-inner");
+    if (!inner || !scale) return null;
+    const boxRect = el.getBoundingClientRect();
+    const innerRect = inner.getBoundingClientRect();
+    if (!boxRect.width) return null;
+    const probe = document.createElement("span");
+    probe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline;";
+    inner.insertBefore(probe, inner.firstChild);
+    const baseline = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    const padLeft = parseFloat(getComputedStyle(inner).paddingLeft) || 0;
+    return {
+      u: box.xPt + (innerRect.left - boxRect.left + padLeft) / scale,
+      v: box.topPt + (baseline - boxRect.top) / scale
+    };
+  }
+
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
     downloadBtn.disabled = true;
@@ -1636,8 +1659,8 @@
           : box.bold ? fontBold
           : box.italic ? fontItalic
           : fontRegular;
-        const u = box.xPt + 18;
-        const v = box.topPt + box.sizePt;
+        const origin = measureTextOrigin(box) || { u: box.xPt + 31 / scale, v: box.topPt + 2 / scale + box.sizePt * 0.95 };
+        const { u, v } = origin;
         const { x, y } = toPdf(u, v);
 
         page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
