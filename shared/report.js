@@ -122,12 +122,15 @@
   const footerContact = document.getElementById("footerContactSection");
   let footerBtn = null;
   if (footerContact){
-    footerBtn = document.createElement("button");
-    footerBtn.type = "button";
-    footerBtn.className = "footer-dash-link";
+    const footerWrap = document.createElement("span");
+    footerWrap.className = "footer-dash-text";
+    footerBtn = document.createElement("a");
+    footerBtn.href = "#";
+    footerBtn.setAttribute("role", "button");
     footerBtn.innerHTML = '<span class="footer-link-fun">Squash a Bug</span><span class="footer-link-plain">Report a bug</span>';
-    footerBtn.addEventListener("click", open);
-    footerContact.appendChild(footerBtn);
+    footerBtn.addEventListener("click", (e) => { e.preventDefault(); open(); });
+    footerWrap.appendChild(footerBtn);
+    footerContact.appendChild(footerWrap);
   }
   text.addEventListener("input", refresh);
   consent.addEventListener("change", refresh);
