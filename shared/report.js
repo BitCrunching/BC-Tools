@@ -43,7 +43,7 @@
       '<input type="file" accept="image/*" multiple hidden>' +
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
-    '<label class="bc-report-consent"><input type="checkbox"><span>I understand that by sending this report the <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a> rules apply (beware: browser and device details are shared). <b>Thank you for your help!</b></span></label>' +
+    '<label class="bc-report-consent"><input type="checkbox"><span>I understand that sending this report is not covered by the "on-device guarantee" and that the <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a> rules apply (beware: browser and device details are shared). <b>Thank you for your help!</b></span></label>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="Send (Enter)" disabled>Send</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
