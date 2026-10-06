@@ -1543,7 +1543,7 @@ function bcShowShareNudge(){
       <button type="button" class="bc-nudge-later bc-hover-fill"></button>
     </div>`;
   box.querySelector(".bc-nudge-title").textContent = bcT("Enjoying so far?");
-  box.querySelector(".bc-nudge-text").textContent = bcT("Be sure to show your friends and colleagues.");
+  box.querySelector(".bc-nudge-text").textContent = bcT("Be sure to show your friends and colleagues that might welcome it.");
   const copyBtn = box.querySelector(".bc-nudge-copy");
   const shareBtn = box.querySelector(".bc-nudge-primary");
   const laterBtn = box.querySelector(".bc-nudge-later");
