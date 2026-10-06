@@ -9,9 +9,10 @@
 //      ENDPOINT in shared/report.js.
 //   4. Optional: Security > WAF > Rate limiting rules to cap requests per IP.
 
-const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8006"]; // localhost: testing only, remove before release
+const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
 const MAX_CHARS = 100;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const COOLDOWN_SECONDS = 60;
 
 function cors(origin){
   return {
@@ -64,7 +65,13 @@ export default {
     }
     out.append("payload_json", JSON.stringify({ username: "BC Tools report", allowed_mentions: { parse: [] }, embeds: [embed] }));
 
+    // One report per IP per minute (per Cloudflare location, via the edge cache).
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    const limitKey = new Request("https://report-limit.invalid/" + encodeURIComponent(ip));
+    if (await caches.default.match(limitKey)) return reply(429, { error: "Too many reports, try again in a minute" }, origin);
+
     const res = await fetch(env.DISCORD_WEBHOOK, { method: "POST", body: out });
+    if (res.ok) await caches.default.put(limitKey, new Response("1", { headers: { "Cache-Control": "max-age=" + COOLDOWN_SECONDS } }));
     if (!res.ok) return reply(502, { error: "Discord rejected the report" }, origin);
     return reply(200, { ok: true }, origin);
   }
