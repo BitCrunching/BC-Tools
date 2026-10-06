@@ -15,7 +15,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=8";
+  css.href = "/shared/report.css?v=9";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
