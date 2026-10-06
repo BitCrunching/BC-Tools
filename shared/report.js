@@ -118,6 +118,17 @@
   }
 
   btn.addEventListener("click", () => { isOpen() ? close() : open(); });
+
+  const footerContact = document.getElementById("footerContactSection");
+  let footerBtn = null;
+  if (footerContact){
+    footerBtn = document.createElement("button");
+    footerBtn.type = "button";
+    footerBtn.className = "footer-dash-link";
+    footerBtn.innerHTML = '<span class="footer-link-fun">Squash a Bug</span><span class="footer-link-plain">Report a bug</span>';
+    footerBtn.addEventListener("click", open);
+    footerContact.appendChild(footerBtn);
+  }
   text.addEventListener("input", refresh);
   consent.addEventListener("change", refresh);
   text.addEventListener("keydown", (e) => {
@@ -132,7 +143,7 @@
     if (pasted.length){ e.preventDefault(); addShots(pasted); }
   });
   document.addEventListener("mousedown", (e) => {
-    if (isOpen() && !box.contains(e.target) && !btn.contains(e.target)) close();
+    if (isOpen() && !box.contains(e.target) && !btn.contains(e.target) && !(footerBtn && footerBtn.contains(e.target))) close();
   });
   if (typeof bcRegisterEscapable === "function") bcRegisterEscapable(isOpen, close, 60);
   else document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) close(); });
