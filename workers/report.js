@@ -9,7 +9,7 @@
 //      ENDPOINT in shared/report.js.
 //   4. Optional: Security > WAF > Rate limiting rules to cap requests per IP.
 
-const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
+const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8006"]; // localhost: testing only, remove before release
 const MAX_CHARS = 100;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
