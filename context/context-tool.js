@@ -200,6 +200,7 @@
 
   let persistTimer = null;
   function schedulePersist(){
+    scheduleSizeUpdate();
     if (!currentFileBytes) return;
     clearTimeout(persistTimer);
     persistTimer = setTimeout(persistNow, 400);
@@ -927,6 +928,98 @@
     return bytes;
   }
 
+  /* One shared way to turn a signature into the PNG bytes that get embedded:
+     ~4 px per point (about 290 dpi) of the largest placement, never upscaled.
+     Cached so the size line and the export don't encode it twice. */
+  const sigBytesCache = new Map();
+  async function signaturePngBytes(dataUrl, targetW){
+    const key = dataUrl.length + "|" + dataUrl.slice(-64) + "|" + targetW;
+    if (sigBytesCache.has(key)) return sigBytesCache.get(key);
+    let bytes = dataUrlToBytes(dataUrl);
+    try {
+      const img = new Image();
+      img.src = dataUrl;
+      await img.decode();
+      if (img.naturalWidth > targetW){
+        const c = document.createElement("canvas");
+        c.width = targetW;
+        c.height = Math.max(1, Math.round(img.naturalHeight * targetW / img.naturalWidth));
+        const cx = c.getContext("2d");
+        cx.imageSmoothingQuality = "high";
+        cx.drawImage(img, 0, 0, c.width, c.height);
+        const blob = await new Promise(r => c.toBlob(r, "image/png"));
+        if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+      }
+    } catch (err){ /* keep the original bytes */ }
+    if (sigBytesCache.size > 20) sigBytesCache.delete(sigBytesCache.keys().next().value);
+    sigBytesCache.set(key, bytes);
+    return bytes;
+  }
+
+  /* What the signature really adds to the PDF: pdf-lib re-compresses the PNG
+     when embedding it, so the PNG's own byte count over-states it. Embedding
+     into an empty throwaway document measures it exactly. */
+  const sigEmbeddedSizeCache = new Map();
+  async function signatureEmbeddedSize(dataUrl, targetW){
+    const key = dataUrl.length + "|" + dataUrl.slice(-64) + "|" + targetW;
+    if (sigEmbeddedSizeCache.has(key)) return sigEmbeddedSizeCache.get(key);
+    let size;
+    try {
+      const probe = await PDFLib.PDFDocument.create();
+      const empty = (await probe.save()).length;
+      await probe.embedPng(await signaturePngBytes(dataUrl, targetW));
+      size = (await probe.save()).length - empty;
+    } catch (err){ size = (await signaturePngBytes(dataUrl, targetW)).length; }
+    sigEmbeddedSizeCache.set(key, size);
+    return size;
+  }
+
+  function signatureTargetWidths(){
+    const widths = new Map();
+    signatureBoxes.forEach(box => {
+      widths.set(box.dataUrl, Math.max(widths.get(box.dataUrl) || 0, Math.ceil(box.widthPt * 4)));
+    });
+    return widths;
+  }
+
+  /* Terminal line under the editor: the PDF's own size plus what each kind
+     of add-on will add to the downloaded file. Text/shapes are estimates
+     (a few bytes of drawing commands each); signatures are the real
+     image bytes. */
+  const sizeStatus = document.getElementById("ctSizeStatus");
+  let sizeTimer = null;
+  let sizeToken = 0;
+  function scheduleSizeUpdate(){
+    clearTimeout(sizeTimer);
+    sizeTimer = setTimeout(updateSizeStatus, 500);
+  }
+  async function updateSizeStatus(){
+    const token = ++sizeToken;
+    if (!currentFile){ sizeStatus.textContent = ""; return; }
+    const parts = ["File " + bcFormatFileSize(currentFile.size)];
+    let total = currentFile.size;
+    const texts = textBoxes.filter(b => b.text);
+    if (texts.length){
+      const bytes = texts.reduce((n, b) => n + 90 + b.text.length, 0);
+      parts.push(texts.length + " text " + bcFormatFileSize(bytes));
+      total += bytes;
+    }
+    if (shapeBoxes.length){
+      const bytes = shapeBoxes.length * 130;
+      parts.push(shapeBoxes.length + " shape" + (shapeBoxes.length > 1 ? "s" : "") + " " + bcFormatFileSize(bytes));
+      total += bytes;
+    }
+    if (signatureBoxes.length){
+      let bytes = 0;
+      for (const [dataUrl, w] of signatureTargetWidths()) bytes += await signatureEmbeddedSize(dataUrl, w);
+      if (token !== sizeToken) return;
+      parts.push(signatureBoxes.length + " signature" + (signatureBoxes.length > 1 ? "s" : "") + " " + bcFormatFileSize(bytes));
+      total += bytes;
+    }
+    if (token !== sizeToken) return;
+    sizeStatus.textContent = parts.length > 1 ? parts.join(" + ") + " = ~" + bcFormatFileSize(total) : parts[0];
+  }
+
   function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
     /* Land it at a sensible fixed width (144pt ≈ 2in on a US Letter
        page) instead of the image's raw pixel size, which could be
@@ -1047,6 +1140,7 @@
     shapeBoxes = [];
     selectedBoxId = null;
     selectedShapeId = null;
+    updateSizeStatus();
     drop.hidden = false;
     editor.hidden = true;
     downloadBtn.disabled = true;
@@ -1701,35 +1795,12 @@
         }
       });
 
-      /* A signature placed several times shares one embedded image, and is
-         downscaled to what its largest placement needs (~4 px per point,
-         about 290 dpi) — the cleaned photo is often far larger than the
-         ~2 inch box it ends up in. */
+      /* A signature placed several times shares one embedded image. */
       const sigImages = new Map();
-      const sigTargetWidth = new Map();
-      signatureBoxes.forEach(box => {
-        sigTargetWidth.set(box.dataUrl, Math.max(sigTargetWidth.get(box.dataUrl) || 0, Math.ceil(box.widthPt * 4)));
-      });
+      const sigTargetWidth = signatureTargetWidths();
       async function embedSignature(dataUrl){
         if (sigImages.has(dataUrl)) return sigImages.get(dataUrl);
-        let bytes = dataUrlToBytes(dataUrl);
-        try {
-          const img = new Image();
-          img.src = dataUrl;
-          await img.decode();
-          const targetW = sigTargetWidth.get(dataUrl);
-          if (img.naturalWidth > targetW){
-            const c = document.createElement("canvas");
-            c.width = targetW;
-            c.height = Math.max(1, Math.round(img.naturalHeight * targetW / img.naturalWidth));
-            const cx = c.getContext("2d");
-            cx.imageSmoothingQuality = "high";
-            cx.drawImage(img, 0, 0, c.width, c.height);
-            const blob = await new Promise(r => c.toBlob(r, "image/png"));
-            if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
-          }
-        } catch (err){ /* keep the original bytes */ }
-        const embedded = await pdfDoc.embedPng(bytes);
+        const embedded = await pdfDoc.embedPng(await signaturePngBytes(dataUrl, sigTargetWidth.get(dataUrl)));
         sigImages.set(dataUrl, embedded);
         return embedded;
       }
