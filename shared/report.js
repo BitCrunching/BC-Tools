@@ -1,11 +1,12 @@
 /* Bug report button (header, next to the theme toggle) — sends a short
-   description and an optional screenshot to the support channel on Discord. */
+   description and up to three optional screenshots to the support channel on Discord. */
 (function(){
   /* The Cloudflare Worker that forwards reports to Discord (workers/report.js).
      */
   const ENDPOINT = "https://bc-report.lukasbrzlinekbusiness.workers.dev";
   const MAX_CHARS = 100;
-  const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+  const MAX_SHOTS = 3;
+  const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
   const COOLDOWN_MS = 60000;
   const LAST_KEY = "bc-report-last";
 
@@ -14,7 +15,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=3";
+  css.href = "/shared/report.css?v=4";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -39,8 +40,8 @@
     '<div class="bc-report-count">0/' + MAX_CHARS + '</div>' +
     '<div class="bc-report-shot">' +
       '<button type="button" class="bc-report-attach">Add screenshot</button>' +
-      '<input type="file" accept="image/*" hidden>' +
-      '<div class="bc-report-preview"><img alt="Screenshot preview"><button type="button" class="bc-report-remove" aria-label="Remove screenshot" title="Remove screenshot">×</button></div>' +
+      '<input type="file" accept="image/*" multiple hidden>' +
+      '<div class="bc-report-thumbs"></div>' +
     '</div>' +
     '<p class="bc-report-note"><span class="bc-report-prompt" aria-hidden="true">&gt;</span> Your report will be sent to a Discord server for further processing. <b>Thank you for your help!</b></p>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" disabled>Send</button></div>' +
@@ -51,12 +52,10 @@
   const count = box.querySelector(".bc-report-count");
   const attach = box.querySelector(".bc-report-attach");
   const fileInput = box.querySelector("input[type=file]");
-  const preview = box.querySelector(".bc-report-preview");
-  const previewImg = preview.querySelector("img");
-  const removeShot = box.querySelector(".bc-report-remove");
+  const thumbs = box.querySelector(".bc-report-thumbs");
   const send = box.querySelector(".bc-report-send");
   const status = box.querySelector(".bc-report-status");
-  let shot = null;
+  let shots = [];
   let busy = false;
 
   function isOpen(){ return !box.hidden; }
@@ -73,34 +72,57 @@
     count.textContent = text.value.length + "/" + MAX_CHARS;
     send.disabled = busy || !text.value.trim();
   }
-  function setShot(file){
-    if (!file) return;
-    if (!/^image\//.test(file.type)){ status.textContent = "Please choose an image."; return; }
-    if (file.size > MAX_IMAGE_BYTES){ status.textContent = "That image is over 8 MB."; return; }
-    if (shot) URL.revokeObjectURL(previewImg.src);
-    shot = file;
-    previewImg.src = URL.createObjectURL(file);
-    preview.classList.add("has-image");
-    attach.textContent = "Change";
-    status.textContent = "";
+  function renderShots(){
+    thumbs.innerHTML = "";
+    shots.forEach((item, i) => {
+      const wrap = document.createElement("div");
+      wrap.className = "bc-report-preview";
+      const img = document.createElement("img");
+      img.alt = "Screenshot " + (i + 1);
+      img.src = item.url;
+      const rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "bc-report-remove";
+      rm.setAttribute("aria-label", "Remove screenshot " + (i + 1));
+      rm.title = "Remove screenshot";
+      rm.textContent = "\u00D7";
+      rm.addEventListener("click", () => {
+        URL.revokeObjectURL(item.url);
+        shots.splice(i, 1);
+        renderShots();
+      });
+      wrap.append(img, rm);
+      thumbs.appendChild(wrap);
+    });
+    attach.disabled = shots.length >= MAX_SHOTS;
+    attach.textContent = shots.length ? "Add more (" + shots.length + "/" + MAX_SHOTS + ")" : "Add screenshot";
   }
-  function clearShot(){
-    if (shot) URL.revokeObjectURL(previewImg.src);
-    shot = null;
+  function addShots(files){
+    let skipped = "";
+    for (const file of files){
+      if (!/^image\//.test(file.type)){ skipped = "Only images can be attached."; continue; }
+      if (shots.length >= MAX_SHOTS){ skipped = "You can attach up to " + MAX_SHOTS + " screenshots."; break; }
+      const total = shots.reduce((n, s) => n + s.file.size, 0) + file.size;
+      if (total > MAX_TOTAL_BYTES){ skipped = "Screenshots can be 8 MB in total."; continue; }
+      shots.push({ file, url: URL.createObjectURL(file) });
+    }
+    status.textContent = skipped;
+    renderShots();
+  }
+  function clearShots(){
+    shots.forEach(item => URL.revokeObjectURL(item.url));
+    shots = [];
     fileInput.value = "";
-    previewImg.removeAttribute("src");
-    preview.classList.remove("has-image");
-    attach.textContent = "Add screenshot";
+    renderShots();
   }
 
   btn.addEventListener("click", () => { isOpen() ? close() : open(); });
   text.addEventListener("input", refresh);
   attach.addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", () => setShot(fileInput.files[0]));
-  removeShot.addEventListener("click", clearShot);
+  fileInput.addEventListener("change", () => { addShots([...fileInput.files]); fileInput.value = ""; });
   box.addEventListener("paste", (e) => {
-    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.type.indexOf("image/") === 0);
-    if (item){ e.preventDefault(); setShot(item.getAsFile()); }
+    const pasted = [...(e.clipboardData ? e.clipboardData.items : [])].filter(i => i.type.indexOf("image/") === 0).map(i => i.getAsFile()).filter(Boolean);
+    if (pasted.length){ e.preventDefault(); addShots(pasted); }
   });
   document.addEventListener("mousedown", (e) => {
     if (isOpen() && !box.contains(e.target) && !btn.contains(e.target)) close();
@@ -126,7 +148,7 @@
     form.append("page", location.pathname || "/");
     form.append("screen", innerWidth + "x" + innerHeight + " · " + theme);
     form.append("browser", navigator.userAgent.slice(0, 200));
-    if (shot) form.append("screenshot", shot, shot.name || "screenshot.png");
+    shots.forEach((item, i) => form.append("screenshot", item.file, item.file.name || "screenshot-" + (i + 1) + ".png"));
     try {
       /* A report is the visitor's own action, not a tool processing a file,
          so it goes around the tool privacy badge's request counter. */
@@ -135,7 +157,7 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (err) { /* storage unavailable */ }
       text.value = "";
-      clearShot();
+      clearShots();
       status.textContent = "Thanks, your report was sent.";
     } catch (err){
       console.error(err);
