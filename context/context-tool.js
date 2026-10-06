@@ -1701,18 +1701,44 @@
         }
       });
 
+      /* A signature placed several times shares one embedded image, and is
+         downscaled to what its largest placement needs (~4 px per point,
+         about 290 dpi) — the cleaned photo is often far larger than the
+         ~2 inch box it ends up in. */
+      const sigImages = new Map();
+      const sigTargetWidth = new Map();
+      signatureBoxes.forEach(box => {
+        sigTargetWidth.set(box.dataUrl, Math.max(sigTargetWidth.get(box.dataUrl) || 0, Math.ceil(box.widthPt * 4)));
+      });
+      async function embedSignature(dataUrl){
+        if (sigImages.has(dataUrl)) return sigImages.get(dataUrl);
+        let bytes = dataUrlToBytes(dataUrl);
+        try {
+          const img = new Image();
+          img.src = dataUrl;
+          await img.decode();
+          const targetW = sigTargetWidth.get(dataUrl);
+          if (img.naturalWidth > targetW){
+            const c = document.createElement("canvas");
+            c.width = targetW;
+            c.height = Math.max(1, Math.round(img.naturalHeight * targetW / img.naturalWidth));
+            const cx = c.getContext("2d");
+            cx.imageSmoothingQuality = "high";
+            cx.drawImage(img, 0, 0, c.width, c.height);
+            const blob = await new Promise(r => c.toBlob(r, "image/png"));
+            if (blob) bytes = new Uint8Array(await blob.arrayBuffer());
+          }
+        } catch (err){ /* keep the original bytes */ }
+        const embedded = await pdfDoc.embedPng(bytes);
+        sigImages.set(dataUrl, embedded);
+        return embedded;
+      }
+
       for (const box of signatureBoxes){
         const page = pages[box.page - 1];
         if (!page) continue;
         const { rot, toPdf } = pageFrame(page);
-        /* Decoding the data URL directly (base64 -> bytes) instead of
-           routing it through fetch()'s Response/stream machinery saves
-           real time here — on iOS Safari, navigator.share() below only
-           works within a short window after the tap that triggered
-           this handler, and every bit of avoidable delay in this loop
-           eats into that budget. */
-        const pngBytes = dataUrlToBytes(box.dataUrl);
-        const pngImage = await pdfDoc.embedPng(pngBytes);
+        const pngImage = await embedSignature(box.dataUrl);
         const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
         page.drawImage(pngImage, { x, y, width: box.widthPt, height: box.heightPt, rotate: degrees(rot) });
       }
