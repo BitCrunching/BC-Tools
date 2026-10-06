@@ -33,9 +33,9 @@
   box.className = "bc-report";
   box.hidden = true;
   box.setAttribute("role", "dialog");
-  box.setAttribute("aria-label", "Report a bug");
+  box.setAttribute("aria-label", "Anonymous bug report");
   box.innerHTML =
-    '<div class="bc-report-title">Report a bug</div>' +
+    '<div class="bc-report-title">Anonymous bug report</div>' +
     '<textarea class="bc-report-text" maxlength="' + MAX_CHARS + '" placeholder="What went wrong? (max ' + MAX_CHARS + ' characters)" aria-label="Describe the bug"></textarea>' +
     '<div class="bc-report-count">0/' + MAX_CHARS + '</div>' +
     '<div class="bc-report-shot">' +
