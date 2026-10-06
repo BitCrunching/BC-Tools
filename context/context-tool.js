@@ -1586,7 +1586,7 @@
     startPrivacyCheck();
 
     try {
-      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+      const { PDFDocument, StandardFonts, rgb, degrees } = PDFLib;
       const bytes = await currentFile.arrayBuffer();
       let pdfDoc;
       try {
@@ -1610,10 +1610,24 @@
       const fontBoldItalic = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
       const pages = pdfDoc.getPages();
 
+      /* Box coordinates are measured on the page as displayed (pdf.js applies
+         the page's /Rotate), but pdf-lib draws in the unrotated page space —
+         so a rotated page needs the point mapped and the drawing rotated. */
+      const pageFrame = (page) => {
+        const rot = ((page.getRotation().angle % 360) + 360) % 360;
+        const W = page.getWidth();
+        const H = page.getHeight();
+        const toPdf = (u, v) => rot === 90 ? { x: v, y: u }
+          : rot === 180 ? { x: W - u, y: v }
+          : rot === 270 ? { x: W - v, y: H - u }
+          : { x: u, y: H - v };
+        return { rot, toPdf };
+      };
+
       textBoxes.forEach(box => {
         const page = pages[box.page - 1];
         if (!page || !box.text) return;
-        const pageHeight = page.getHeight();
+        const { rot, toPdf } = pageFrame(page);
         const r = parseInt(box.color.slice(1, 3), 16) / 255;
         const g = parseInt(box.color.slice(3, 5), 16) / 255;
         const b = parseInt(box.color.slice(5, 7), 16) / 255;
@@ -1622,16 +1636,17 @@
           : box.bold ? fontBold
           : box.italic ? fontItalic
           : fontRegular;
-        const x = box.xPt + 18;
-        const y = pageHeight - box.topPt - box.sizePt;
+        const u = box.xPt + 18;
+        const v = box.topPt + box.sizePt;
+        const { x, y } = toPdf(u, v);
 
-        page.drawText(box.text, { x, y, size: box.sizePt, font, color });
+        page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
 
         if (box.underline){
           const textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
           page.drawLine({
-            start: { x, y: y - box.sizePt * 0.1 },
-            end: { x: x + textWidth, y: y - box.sizePt * 0.1 },
+            start: toPdf(u, v + box.sizePt * 0.1),
+            end: toPdf(u + textWidth, v + box.sizePt * 0.1),
             thickness: Math.max(1, box.sizePt * 0.05),
             color
           });
@@ -1641,7 +1656,7 @@
       for (const box of signatureBoxes){
         const page = pages[box.page - 1];
         if (!page) continue;
-        const pageHeight = page.getHeight();
+        const { rot, toPdf } = pageFrame(page);
         /* Decoding the data URL directly (base64 -> bytes) instead of
            routing it through fetch()'s Response/stream machinery saves
            real time here — on iOS Safari, navigator.share() below only
@@ -1650,15 +1665,15 @@
            eats into that budget. */
         const pngBytes = dataUrlToBytes(box.dataUrl);
         const pngImage = await pdfDoc.embedPng(pngBytes);
-        const x = box.xPt;
-        const y = pageHeight - box.topPt - box.heightPt;
-        page.drawImage(pngImage, { x, y, width: box.widthPt, height: box.heightPt });
+        const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
+        page.drawImage(pngImage, { x, y, width: box.widthPt, height: box.heightPt, rotate: degrees(rot) });
       }
 
       shapeBoxes.forEach(box => {
         const page = pages[box.page - 1];
         if (!page) return;
-        const pageHeight = page.getHeight();
+        const { rot, toPdf } = pageFrame(page);
+        const rotate = degrees(rot);
         const r = parseInt(box.color.slice(1, 3), 16) / 255;
         const g = parseInt(box.color.slice(3, 5), 16) / 255;
         const b = parseInt(box.color.slice(5, 7), 16) / 255;
@@ -1666,10 +1681,9 @@
         /* Bottom-left anchor, same convention as the signature image
            above — pageHeight - topPt - heightPt converts this box's
            top-down on-screen position into pdf-lib's bottom-up one. */
-        const x = box.xPt;
-        const y = pageHeight - box.topPt - box.heightPt;
+        const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
         if (box.kind === "square"){
-          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color });
+          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate });
         } else if (box.kind === "triangle"){
           /* Same "M50 4 L96 96 L4 96 Z" path as the on-screen <svg> (0-100
              viewBox), anchored at its bottom-left corner — drawSvgPath
@@ -1684,7 +1698,8 @@
           page.drawSvgPath(scaleSvgPath("M50 4 L96 96 L4 96 Z", box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
-            color
+            color,
+            rotate
           });
         } else if (box.kind === "cross"){
           /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
@@ -1693,15 +1708,18 @@
           page.drawSvgPath(scaleSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
-            color
+            color,
+            rotate
           });
         } else {
+          const center = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
           page.drawEllipse({
-            x: x + box.widthPt / 2,
-            y: y + box.heightPt / 2,
+            x: center.x,
+            y: center.y,
             xScale: box.widthPt / 2,
             yScale: box.heightPt / 2,
-            color
+            color,
+            rotate
           });
         }
       });
