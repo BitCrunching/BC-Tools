@@ -7,7 +7,8 @@
 //      with the Discord webhook URL.
 //   3. Copy the Worker's URL (https://<name>.<account>.workers.dev) into
 //      ENDPOINT in shared/report.js.
-//   4. Optional: Security > WAF > Rate limiting rules to cap requests per IP.
+//   4. Rate limit: Storage & Databases > KV > create a namespace, then on the Worker
+//      Settings > Bindings > Add > KV namespace, variable name RATE.
 
 const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
 const MAX_CHARS = 100;
@@ -65,14 +66,13 @@ export default {
     }
     out.append("payload_json", JSON.stringify({ username: "BC Tools report", allowed_mentions: { parse: [] }, embeds: [embed] }));
 
-    // One report per IP per minute (per Cloudflare location, via the edge cache).
+    // One report per IP per minute, when a KV namespace is bound as RATE.
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-    const limitKey = new Request("https://report-limit.invalid/" + encodeURIComponent(ip));
-    if (await caches.default.match(limitKey)) return reply(429, { error: "Too many reports, try again in a minute" }, origin);
+    if (env.RATE && await env.RATE.get("ip:" + ip)) return reply(429, { error: "Too many reports, try again in a minute" }, origin);
 
     const res = await fetch(env.DISCORD_WEBHOOK, { method: "POST", body: out });
-    if (res.ok) await caches.default.put(limitKey, new Response("1", { headers: { "Cache-Control": "max-age=" + COOLDOWN_SECONDS } }));
     if (!res.ok) return reply(502, { error: "Discord rejected the report" }, origin);
+    if (env.RATE) await env.RATE.put("ip:" + ip, "1", { expirationTtl: COOLDOWN_SECONDS });
     return reply(200, { ok: true }, origin);
   }
 };
