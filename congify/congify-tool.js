@@ -1584,7 +1584,7 @@
       });
 
       gif.on("finished", async (blob) => {
-        statusEl.textContent = bcT("Done.");
+        statusEl.textContent = bcT("Done. GIF size: {0}", [bcFormatFileSize(blob.size)]);
 
         recentWidth = outputWidth;
         try { localStorage.setItem(RECENT_WIDTH_KEY, String(outputWidth)); } catch (err) { /* skip */ }
