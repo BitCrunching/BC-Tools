@@ -982,8 +982,8 @@
     return widths;
   }
 
-  /* Terminal line under the editor: the PDF's own size plus what each kind
-     of add-on will add to the downloaded file. Text/shapes are estimates
+  /* Terminal line under the editor: the estimated size of the downloaded PDF
+     (original plus add-ons). Text/shapes are estimates
      (a few bytes of drawing commands each); signatures are the real
      image bytes. */
   const sizeStatus = document.getElementById("ctSizeStatus");
@@ -996,28 +996,16 @@
   async function updateSizeStatus(){
     const token = ++sizeToken;
     if (!currentFile){ sizeStatus.textContent = ""; return; }
-    const parts = ["File " + bcFormatFileSize(currentFile.size)];
     let total = currentFile.size;
     const texts = textBoxes.filter(b => b.text);
-    if (texts.length){
-      const bytes = texts.reduce((n, b) => n + 90 + b.text.length, 0);
-      parts.push(texts.length + " text " + bcFormatFileSize(bytes));
-      total += bytes;
-    }
-    if (shapeBoxes.length){
-      const bytes = shapeBoxes.length * 130;
-      parts.push(shapeBoxes.length + " shape" + (shapeBoxes.length > 1 ? "s" : "") + " " + bcFormatFileSize(bytes));
-      total += bytes;
-    }
+    total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
+    total += shapeBoxes.length * 130;
     if (signatureBoxes.length){
-      let bytes = 0;
-      for (const [dataUrl, w] of signatureTargetWidths()) bytes += await signatureEmbeddedSize(dataUrl, w);
+      for (const [dataUrl, w] of signatureTargetWidths()) total += await signatureEmbeddedSize(dataUrl, w);
       if (token !== sizeToken) return;
-      parts.push(signatureBoxes.length + " signature" + (signatureBoxes.length > 1 ? "s" : "") + " " + bcFormatFileSize(bytes));
-      total += bytes;
     }
     if (token !== sizeToken) return;
-    sizeStatus.textContent = parts.length > 1 ? parts.join(" + ") + " = ~" + bcFormatFileSize(total) : parts[0];
+    sizeStatus.textContent = "File size: ~" + bcFormatFileSize(total);
   }
 
   function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
