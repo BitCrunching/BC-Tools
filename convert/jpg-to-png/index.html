@@ -65,14 +65,27 @@
 <link rel="stylesheet" href="/shared/site.css?v=231">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
-.tool-app{ min-height:250px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Lively hover only while nothing's picked yet — :has() drops it the
    moment #cvAfterDrop is revealed, so it never fights the dropdowns
-   or Convert button once there's real content to interact with. */
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
 .tool-app:has(#cvAfterDrop[hidden]):hover{
   filter:brightness(1.08);
   transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cvAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
 }
 .tool-app:has(#cvAfterDrop[hidden]):active{
   transform:scale(.99);
@@ -113,20 +126,119 @@
    .result default) since shared/site.css's own
    html[data-theme="light"] .result rule has higher specificity than a
    plain .result{} here would — a bare selector silently lost to it. */
-/* Background/border-width/transition now come from the shared
-   .result default (shared/site.css) — this only adds Convert's own
-   brand-tinted border on top. Same color at both themes, so no
-   light/dark split needed here. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Convert's own brand-tinted
+   border on top, the one genuinely tool-specific piece. Same
+   color at both themes, so no light/dark split needed here. */
 
-.tool-intro{
-  max-width:640px;
-  margin:48px auto 0;
-  padding:0 18px;
-  text-align:center;
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cv-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
   color:var(--text);
-  opacity:.8;
-  font-size:clamp(15px, 1.6vw, 17px);
-  line-height:1.6;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#7626f5;
+  color:#7626f5;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+/* Red and yellow are both functional here (close / collapse), unlike
+   the mainpage easter egg where only yellow does anything — so both
+   get their real traffic-light color instead of the muted grey used
+   for a purely decorative dot. */
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
 }
 
 .tool-after-drop[hidden]{ display:none; }
@@ -147,37 +259,39 @@
   background:rgba(118,38,245,.08);
 }
 
-/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
-   size/position stay here, same split as Coudio's .cd-remove-btn. Sits
-   inside #cvAfterDrop (position:relative below) rather than directly on
-   .tool-app, so it only shows once a file's loaded and #cvAfterDrop is
-   revealed — same visibility-via-hidden-ancestor trick as Coudio's own
-   button inside #cdEditor, no separate hidden toggle needed here. The
-   negative top/right (rather than a plain 10px/10px inset) is
-   deliberate: it pulls the button up out of #cvAfterDrop's own box
-   (which starts below the header) so it lands at the true top-right
-   corner of the whole card next to the "Convert" logo — exactly the
-   same fix Coudio's .cd-remove-btn needed for the same reason (its
-   positioned ancestor, #cdEditor, also starts below the header). */
 .tool-after-drop{
   position:relative;
 }
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cvAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. Was previously
+   nested inside #cvAfterDrop with a large negative top pulling it up
+   out of that box — worked, but was a one-off recipe instead of the
+   same positioning every other tool uses. */
 .cv-remove-btn{
   position:absolute;
-  top:-85px;
-  right:-25px;
+  top:16px;
+  right:16px;
   z-index:6;
   font-size:18px;
+  display:none;
 }
+.tool-app:has(#cvAfterDrop:not([hidden])) .cv-remove-btn{ display:flex; }
 /* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
-   (shared/site.css) — only size/position stay here, same split as
-   .cv-remove-btn/.bc-remove-btn above. Sits just to the left of
-   Remove, same corner. */
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cv-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
 .cv-back-btn{
   position:absolute;
-  top:-85px;
-  right:11px;
+  top:16px;
+  right:52px;
   z-index:6;
+}
+@media (max-width:768px){
+  .cv-back-btn{ display:none; }
+  .tool-app:has(#cvAfterDrop:not([hidden])) .cv-back-btn{ display:flex; }
 }
 
 .tool-io-row{
@@ -194,20 +308,43 @@
 .tool-controls{
   grid-template-columns:1fr;
 }
-.tool-io-group{ flex:1 1 0; min-width:0; }
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+.tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
 .tool-io-label{
-  display:block;
+  display:flex;
+  align-items:center;
+  gap:6px;
   margin-bottom:10px;
 }
 .io-label-short{ display:none; }
+
+/* Shape/color is the shared .bc-info-btn/.bc-info-tooltip
+   (shared/site.css) now — only the .tool-io-label flex layout above
+   stays local. Used to be this tool's own local .tool-io-info-btn/
+   -tooltip copy (the component's origin); Coudio's own use of the "i"
+   icon pointed at the shared version from the start, so Convert now
+   points at the same one instead of carrying a separate copy. */
 @media (max-width:640px){
   .io-label-full{ display:none; }
   .io-label-short{ display:inline; }
 }
 
-/* Input/Output pickers are always dropdowns on this page, not just
-   on mobile — overrides the desktop-pills/mobile-select split that
-   .tool-format-select normally follows. */
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
 .tool-io-group .tool-format-select{ display:block; }
 @media (max-width:768px){
   .tool-io-group .tool-format-select{ display:none !important; }
@@ -229,22 +366,9 @@
   }
 }
 
-/* Same treatment as the nav's "go back" button (.nav-close-btn) —
-   just centered against the 74px-tall selects on either side. */
-.tool-io-swap{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  height:36px;
-  margin-bottom:19px;
-  color:var(--text);
-}
-.tool-io-swap-arrow{
-  display:inline-block;
-  font-size:18px;
-}
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
 
 .format-pick-intro{
   max-width:680px;
@@ -284,6 +408,13 @@
   font-size:14px;
   font-weight:700;
 }
+/* Marks which format this card's Input/Output was last set to — stays
+   selected after the click so the card visibly reflects the tool's
+   current state, rather than looking like a one-shot action button.
+   Input and Output are tracked independently (see convert-tool.js), so
+   picking "I have this" here doesn't disturb any other card's "I need
+   this" selection and vice versa — a user can set both from one card,
+   or just the one they still need after already uploading a file. */
 .format-pick-action-btn.selected{
   background:var(--btn-fill);
   border-color:var(--btn-fill);
@@ -376,6 +507,7 @@
       </div>
     </div>
     <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Click to reset tool's guide" title="Click to reset tool's guide">?</button>
       <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -386,7 +518,22 @@
   </div>
 </div>
 <main>
-<p class="tool-intro">Convert images and PDFs between JPG, PNG, WEBP, and PDF — right in your browser. Nothing is uploaded to a server, there's nothing to install, and it's free.</p>
+<div class="help-banner engine-status-card" id="cvHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cvHelpClose" aria-label="Close and don't show again"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cvHelpToggle" aria-label="Minimize" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cvHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpBack">&lt; BACK</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cvHelpCloseMobile">CLOSE</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpNext">NEXT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cvHelpBody">
+    <div class="engine-status-row">&gt; <span id="cvHelpText"></span></div>
+  </div>
+</div>
 <div class="tool-wrap">
   <div class="tool-app">
     <div class="tool-header">
@@ -397,21 +544,26 @@
       <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
     </div>
 
+    <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
+
     <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">images or a PDF</span></div>
     <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cvAfterDrop" hidden>
-      <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Back to Creative Hub" title="Back to Creative Hub">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5"></path>
-          <path d="M11 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-      <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Remove all files">×</button>
       <div class="tool-io-row">
         <div class="tool-io-group">
-          <span class="tool-io-label bc-label"><span class="io-label-full">Input</span><span class="io-label-short">IN</span></span>
+          <span class="tool-io-label bc-label">
+            <span class="io-label-full">Expected Input</span><span class="io-label-short">IN</span>
+            <button type="button" class="bc-info-btn" id="cvInputInfoBtn" aria-label="What does Expected Input mean?" aria-expanded="false">i</button>
+          </span>
+          <div class="bc-info-tooltip" id="cvInputInfoTooltip" hidden>Every uploaded file's format is recognized separately, making mixing different formats not an issue. Every file is converted to chosen format.</div>
           <!-- The real <select> below is the state/event backend every
                existing bit of format logic (mutual-exclusion, URL
                routing, auto-detect) already reads/writes — kept exactly
@@ -478,6 +630,10 @@
     </div>
 
     <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">Single files</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
       <button class="tool-primary-btn" id="cvConvertBtn" disabled title="Convert and download (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">Convert and download</button>
     </div>
 
@@ -505,7 +661,7 @@
       <span class="cs-shape cs-shape-2"></span>
     </div>
     <h3>Not sure which format to use?</h3>
-    <p class="format-pick-intro">Here's what each format is actually for. Use "I have this" to set it as your Input, or "I need this" to set it as your Output.</p>
+    <p class="format-pick-intro">Here's what each format is actually for. Pick format you already have and which format you need.</p>
     <div class="format-pick-groups">
       <div class="format-pick-group">
         <p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p>
@@ -571,7 +727,7 @@
     </div>
     <h3>New to converting images?</h3>
     <p>Every image format was designed to solve a different problem, and picking the right one has a bigger effect on your file size and quality than almost any other decision you'll make when preparing images. Here's what's actually happening under the hood with each one, and when it genuinely matters.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" href="/golden-rules/">just one click away.</a></p>
+    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convert" href="/golden-rules/?tool=convert">just one click away.</a></p>
   </div>
 
   <div class="ad-slot">
