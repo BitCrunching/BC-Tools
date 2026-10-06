@@ -1221,6 +1221,16 @@ function loadHeic2any(){
 
 ## Branching: `main` vs `development` vs `dev-<project>`
 
+**Development-only files — never on `main`:** `CLAUDE.md`, `.release-drafts/`
+and `ads.txt` live on `development` only (set 2026-10-06). `main` has them
+removed. Because of that, **never fast-forward `development` onto `main`**
+(`git push origin development:main` would bring them back) and **never merge
+`main` into `development`** (it would delete them here). Promote with a real
+merge in a `main` checkout instead: `git merge development`, then check
+`git ls-tree -r --name-only HEAD | grep -E "^(CLAUDE.md|ads.txt|.release-drafts)"`
+prints nothing — if a modify/delete conflict re-adds one, `git rm` it before
+committing — and push `main` only. Check before every push to `main`.
+
 `development` is the default day-to-day branch — nearly everything happens
 there. `main` is what actually deploys (GitHub Pages), and by 2026-09-17 had
 drifted ~150 commits behind `development`, missing entire tools (Codify,
