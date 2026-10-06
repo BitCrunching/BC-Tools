@@ -15,7 +15,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=6";
+  css.href = "/shared/report.css?v=7";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -44,6 +44,7 @@
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
     '<p class="bc-report-note"><span class="bc-report-prompt" aria-hidden="true">&gt;</span> Your report (browser &amp; device details incl.) will be sent to our Discord server for further processing. <b>Thank you for your help!</b></p>' +
+    '<label class="bc-report-consent"><input type="checkbox"><span>I understand that the data I share will be sent to a server.</span></label>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="Send (Enter)" disabled>Send</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
@@ -53,6 +54,7 @@
   const attach = box.querySelector(".bc-report-attach");
   const fileInput = box.querySelector("input[type=file]");
   const thumbs = box.querySelector(".bc-report-thumbs");
+  const consent = box.querySelector(".bc-report-consent input");
   const send = box.querySelector(".bc-report-send");
   const status = box.querySelector(".bc-report-status");
   let shots = [];
@@ -70,7 +72,7 @@
   }
   function refresh(){
     count.textContent = text.value.length + "/" + MAX_CHARS;
-    send.disabled = busy || !text.value.trim();
+    send.disabled = busy || !text.value.trim() || !consent.checked;
   }
   function renderShots(){
     thumbs.innerHTML = "";
@@ -118,6 +120,7 @@
 
   btn.addEventListener("click", () => { isOpen() ? close() : open(); });
   text.addEventListener("input", refresh);
+  consent.addEventListener("change", refresh);
   text.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
     e.preventDefault();
@@ -137,7 +140,7 @@
 
   send.addEventListener("click", async () => {
     const message = text.value.trim();
-    if (!message || busy) return;
+    if (!message || busy || !consent.checked) return;
     if (!ENDPOINT){ status.textContent = "Reporting isn't set up yet."; return; }
     let last = 0;
     try { last = +localStorage.getItem(LAST_KEY) || 0; } catch (err) { /* storage unavailable */ }
@@ -163,6 +166,7 @@
       try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (err) { /* storage unavailable */ }
       text.value = "";
       clearShots();
+      consent.checked = false;
       status.textContent = "Thanks, your report was sent.";
     } catch (err){
       console.error(err);
