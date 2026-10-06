@@ -1240,6 +1240,17 @@ document.addEventListener("keydown", (e) => {
   btn.click();
 });
 
+/* A — opens the file picker through whichever add control is showing: the "+" tile, the add-more pill, or the intro drop zone. */
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.key.toLowerCase() !== "a") return;
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+  const target = [...document.querySelectorAll(".bc-add-tile, .tool-drop")].find(el => !el.hidden && !el.disabled && el.offsetParent);
+  if (!target) return;
+  e.preventDefault();
+  target.click();
+});
+
 /* ON/OFF button (an .option-change-btn with aria-pressed + a label) that
    behaves like a checkbox for code written against `.checked` / "change":
    `checked` reads/writes the pressed state and label, `addEventListener
