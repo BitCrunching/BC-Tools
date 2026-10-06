@@ -10,7 +10,7 @@
 //   4. Rate limit: Storage & Databases > KV > create a namespace, then on the Worker
 //      Settings > Bindings > Add > KV namespace, variable name RATE.
 
-const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
+const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8006"]; // localhost: testing only, remove before release
 const MAX_CHARS = 100;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const COOLDOWN_SECONDS = 60;
