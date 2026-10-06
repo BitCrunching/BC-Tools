@@ -1581,25 +1581,48 @@
 
   /* Where the typed text actually starts on screen (left edge after the
      move handle and padding, baseline of the first line), in page points.
-     Measured from the live element so it stays exact at any zoom instead
-     of assuming a fixed pixel offset. */
-  function measureTextOrigin(box){
-    const el = document.querySelector('.context-text-box[data-box-id="' + box.id + '"]');
-    const inner = el && el.querySelector(".context-text-inner");
-    if (!inner || !scale) return null;
-    const boxRect = el.getBoundingClientRect();
+     Measured from real elements so it stays exact at any zoom instead of
+     assuming a fixed pixel offset: the live box when it's on the page being
+     shown, otherwise a hidden copy built at that page's own scale. */
+  const textOriginCache = new Map();
+  function textOriginOffsets(el, boxRect){
+    const inner = el.querySelector(".context-text-inner");
     const innerRect = inner.getBoundingClientRect();
-    if (!boxRect.width) return null;
     const probe = document.createElement("span");
     probe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline;";
     inner.insertBefore(probe, inner.firstChild);
     const baseline = probe.getBoundingClientRect().bottom;
     probe.remove();
     const padLeft = parseFloat(getComputedStyle(inner).paddingLeft) || 0;
-    return {
-      u: box.xPt + (innerRect.left - boxRect.left + padLeft) / scale,
-      v: box.topPt + (baseline - boxRect.top) / scale
-    };
+    return { du: innerRect.left - boxRect.left + padLeft, dv: baseline - boxRect.top };
+  }
+
+  function measureTextOrigin(box, pageScale){
+    const live = box.page === currentPage
+      ? document.querySelector('.context-text-box[data-box-id="' + box.id + '"]') : null;
+    if (live){
+      const rect = live.getBoundingClientRect();
+      if (rect.width){
+        const o = textOriginOffsets(live, rect);
+        return { u: box.xPt + o.du / scale, v: box.topPt + o.dv / scale };
+      }
+    }
+    const key = box.sizePt + "|" + pageScale;
+    let o = textOriginCache.get(key);
+    if (!o){
+      const savedScale = scale;
+      scale = pageScale;
+      const el = buildBoxEl({ ...box, xPt: 0, topPt: 0, text: "x", bold: false, italic: false, underline: false });
+      scale = savedScale;
+      el.style.visibility = "hidden";
+      overlay.appendChild(el);
+      const rect = el.getBoundingClientRect();
+      o = rect.width ? textOriginOffsets(el, rect) : null;
+      el.remove();
+      if (!o) return null;
+      textOriginCache.set(key, o);
+    }
+    return { u: box.xPt + o.du / pageScale, v: box.topPt + o.dv / pageScale };
   }
 
   downloadBtn.addEventListener("click", async () => {
@@ -1659,7 +1682,9 @@
           : box.bold ? fontBold
           : box.italic ? fontItalic
           : fontRegular;
-        const origin = measureTextOrigin(box) || { u: box.xPt + 31 / scale, v: box.topPt + 2 / scale + box.sizePt * 0.95 };
+        const dispW = (pg) => (pg.getRotation().angle % 180 ? pg.getHeight() : pg.getWidth());
+        const pageScale = Math.min(scale * dispW(pages[currentPage - 1] || page) / dispW(page), 1.4);
+        const origin = measureTextOrigin(box, pageScale) || { u: box.xPt + 31 / pageScale, v: box.topPt + 2 / pageScale + box.sizePt * 0.95 };
         const { u, v } = origin;
         const { x, y } = toPdf(u, v);
 
