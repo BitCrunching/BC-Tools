@@ -11,7 +11,7 @@
 //      the Worker Settings > Bindings > Add > KV namespace, variable name RATE.
 //      Without it the Worker refuses every report (503) instead of running unlimited.
 
-const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8006"]; // localhost: testing only, remove before release
+const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
 const MAX_CHARS = 100;
 const MAX_SHOTS = 3;
 const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
