@@ -2,8 +2,8 @@
    description and an optional screenshot to the support channel on Discord. */
 (function(){
   /* The Cloudflare Worker that forwards reports to Discord (workers/report.js).
-     Left empty until the Worker is deployed and its address pasted here. */
-  const ENDPOINT = "";
+     */
+  const ENDPOINT = "https://bc-report.lukasbrzlinekbusiness.workers.dev";
   const MAX_CHARS = 100;
   const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
   const COOLDOWN_MS = 60000;
