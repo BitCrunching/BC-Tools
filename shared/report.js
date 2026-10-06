@@ -44,7 +44,7 @@
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
     '<p class="bc-report-note"><span class="bc-report-prompt" aria-hidden="true">&gt;</span> Your report will be sent to a Discord server for further processing. <b>Thank you for your help!</b></p>' +
-    '<div class="bc-report-actions"><button type="button" class="bc-report-send" disabled>Send</button></div>' +
+    '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="Send (Enter)" disabled>Send</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
 
@@ -118,6 +118,11 @@
 
   btn.addEventListener("click", () => { isOpen() ? close() : open(); });
   text.addEventListener("input", refresh);
+  text.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    if (!send.disabled) send.click();
+  });
   attach.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => { addShots([...fileInput.files]); fileInput.value = ""; });
   box.addEventListener("paste", (e) => {
