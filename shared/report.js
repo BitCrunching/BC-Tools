@@ -1,7 +1,8 @@
 /* Bug report button (header, next to the theme toggle) — sends a short
    description and an optional screenshot to the support channel on Discord. */
 (function(){
-  /* Where reports are posted. Left empty until a relay/webhook is configured. */
+  /* The Cloudflare Worker that forwards reports to Discord (workers/report.js).
+     Left empty until the Worker is deployed and its address pasted here. */
   const ENDPOINT = "";
   const MAX_CHARS = 100;
   const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -120,23 +121,12 @@
     refresh();
     status.textContent = "Sending...";
     const theme = document.documentElement.getAttribute("data-theme") || "light";
-    const embed = {
-      title: "Bug report",
-      description: message,
-      color: 0xB91C3C,
-      fields: [
-        { name: "Page", value: location.pathname || "/", inline: true },
-        { name: "Screen", value: innerWidth + "x" + innerHeight + " · " + theme, inline: true },
-        { name: "Browser", value: navigator.userAgent.slice(0, 200) }
-      ]
-    };
     const form = new FormData();
-    if (shot){
-      const name = "screenshot." + ((shot.type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png");
-      embed.image = { url: "attachment://" + name };
-      form.append("files[0]", shot, name);
-    }
-    form.append("payload_json", JSON.stringify({ username: "BC Tools report", allowed_mentions: { parse: [] }, embeds: [embed] }));
+    form.append("message", message);
+    form.append("page", location.pathname || "/");
+    form.append("screen", innerWidth + "x" + innerHeight + " · " + theme);
+    form.append("browser", navigator.userAgent.slice(0, 200));
+    if (shot) form.append("screenshot", shot, shot.name || "screenshot.png");
     try {
       /* A report is the visitor's own action, not a tool processing a file,
          so it goes around the tool privacy badge's request counter. */
