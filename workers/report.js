@@ -12,7 +12,8 @@
 
 const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8006"]; // localhost: testing only, remove before release
 const MAX_CHARS = 100;
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_SHOTS = 3;
+const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
 const COOLDOWN_SECONDS = 60;
 
 function cors(origin){
@@ -57,13 +58,16 @@ export default {
     };
 
     const out = new FormData();
-    const shot = form.get("screenshot");
-    if (shot && typeof shot !== "string"){
-      if (!/^image\//.test(shot.type) || shot.size > MAX_IMAGE_BYTES) return reply(400, { error: "Bad screenshot" }, origin);
+    const shots = form.getAll("screenshot").filter(f => f && typeof f !== "string").slice(0, MAX_SHOTS);
+    let total = 0;
+    shots.forEach((shot, i) => {
+      total += shot.size;
       const ext = (shot.type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png";
-      embed.image = { url: "attachment://screenshot." + ext };
-      out.append("files[0]", shot, "screenshot." + ext);
-    }
+      shot.__name = "screenshot-" + (i + 1) + "." + ext;
+    });
+    if (shots.some(s => !/^image\//.test(s.type)) || total > MAX_TOTAL_BYTES) return reply(400, { error: "Bad screenshot" }, origin);
+    shots.forEach((shot, i) => out.append("files[" + i + "]", shot, shot.__name));
+    if (shots.length) embed.image = { url: "attachment://" + shots[0].__name };
     out.append("payload_json", JSON.stringify({ username: "BC Tools report", allowed_mentions: { parse: [] }, embeds: [embed] }));
 
     // One report per IP per minute, when a KV namespace is bound as RATE.
