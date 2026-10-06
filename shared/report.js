@@ -127,6 +127,7 @@
     footerBtn = document.createElement("a");
     footerBtn.href = "#";
     footerBtn.setAttribute("role", "button");
+    footerBtn.title = btn.title;
     footerBtn.innerHTML = '<span class="footer-link-fun">Squash a Bug</span><span class="footer-link-plain">Report a bug</span>';
     footerBtn.addEventListener("click", (e) => { e.preventDefault(); open(); });
     footerWrap.appendChild(footerBtn);
