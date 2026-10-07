@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>À propos – BC Tools</title>
+<meta name="description" content="À propos de BC Tools : des outils d'image gratuits, dans le navigateur, conçus pour fonctionner vite sans téléverser vos fichiers nulle part.">
+<link rel="canonical" href="https://bitcrunching.com/fr/about/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/about/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/about/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/about/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/about/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/about/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/about/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/about/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/about/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/about/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/about/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/about/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/about/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/about/">
+<script src="/shared/i18n/fr.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="À propos – BC Tools">
+<meta property="og:description" content="À propos de BC Tools : des outils d'image gratuits, dans le navigateur, conçus pour fonctionner vite sans téléverser vos fichiers nulle part.">
+<meta property="og:url" content="https://bitcrunching.com/fr/about/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="À propos – BC Tools">
+<meta name="twitter:description" content="À propos de BC Tools : des outils d'image gratuits, dans le navigateur, conçus pour fonctionner vite sans téléverser vos fichiers nulle part.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.about-article{
+  max-width:700px;
+  margin:0 auto;
+  padding:0 24px 80px;
+  text-align:left;
+}
+
+.mp-colors-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.mp-colors-article{
+  position:relative;
+  z-index:1;
+  margin-top:0;
+}
+
+/* Small hover payoff on the "Bonbonia" running gag — wobbles like it's
+   excited to be mentioned. Purely decorative, no click action. */
+.bonbonia-candy{
+  display:inline-block;
+  cursor:default;
+}
+
+.bonbonia-candy:hover{
+  animation:bonbonia-wobble .5s ease;
+}
+
+@keyframes bonbonia-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-18deg) scale(1.25); }
+  50%{ transform:rotate(18deg) scale(1.25); }
+  75%{ transform:rotate(-10deg) scale(1.1); }
+}
+.mp-colors-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.mp-colors-bg-shape{
+  position:absolute;
+  display:block;
+  border-radius:28px;
+  background:var(--shape-color);
+  opacity:.45;
+  filter:blur(1px);
+  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+}
+
+@keyframes mp-colors-drift{
+  0%{ transform:translate(0, 0) rotate(0deg); }
+  25%{ transform:translate(20px, -24px) rotate(4deg); }
+  50%{ transform:translate(36px, -44px) rotate(8deg); }
+  75%{ transform:translate(16px, -20px) rotate(3deg); }
+  100%{ transform:translate(0, 0) rotate(0deg); }
+}
+.shape-blue{
+  --shape-color:#4da6ff;
+  width:230px;
+  height:268px;
+  top:80px;
+  right:22%;
+  animation-name:mp-colors-drift-x;
+  animation-duration:28s;
+  animation-delay:-3s;
+}
+
+.shape-teal{
+  /* Was a distinct teal (#2dd4bf) — close enough to green that it read
+     as "the green one" rather than its own hue, so matched to the same
+     #4ade80 used for the mainpage colors article's actual green shape
+     and everywhere else on the site (Cleanly's accent, etc). */
+  --shape-color:#4ade80;
+  width:210px;
+  height:246px;
+  top:260px;
+  left:4%;
+  animation-delay:-8s;
+}
+
+.shape-amber{
+  --shape-color:#fbbf24;
+  width:190px;
+  height:220px;
+  bottom:320px;
+  right:28%;
+  animation-delay:-13s;
+}
+
+/* Mobile: 15% smaller, shifted down to clear the text */
+@media (max-width:768px){
+  .shape-purple{
+    width:208px;
+    height:243px;
+    top:10px;
+  }
+  .shape-green{
+    width:208px;
+    height:243px;
+    top:320px;
+    right:calc(5% - 15px);
+  }
+  .shape-salmon{
+    width:170px;
+    height:196px;
+    bottom:0;
+  }
+  .shape-blue{
+    width:196px;
+    height:228px;
+    top:10px;
+  }
+  .shape-teal{
+    width:178px;
+    height:209px;
+    top:320px;
+    left:calc(4% - 15px);
+  }
+  .shape-amber{
+    width:162px;
+    height:187px;
+    bottom:330px;
+  }
+}
+
+.about-article p{
+  color:var(--text);
+  margin:0 0 16px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+.about-section-heading{
+  font-size:clamp(28px, 3.6vw, 40px);
+  margin:0 0 20px;
+  color:var(--text);
+  text-align:left;
+}
+
+.about-story-heading{
+  margin-top:-36px;
+}
+
+/* .engine-status-card's own margin is top-only (32px) and the
+   following .about-section-heading has no top margin either, so the
+   banner and "Our Beliefs" right after it were sitting almost
+   flush together. Scoped bottom margin here rather than touching
+   either shared rule, which are both reused elsewhere. */
+.backlog-coms-banner{
+  margin-bottom:32px;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Nous utilisons des cookies. Choisissez ci-dessous les catégories à autoriser. Consultez notre <a data-goto="cookies">Politique de cookies</a> pour les détails.</p>
+  <p class="cookie-banner-text-mobile">Choisissez les catégories à autoriser</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Afficher/masquer le contenu des paramètres de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIES_OUTILS_DEV :</span>
+    </span>
+    <span>Choisissez les catégories à autoriser</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="En savoir plus sur les cookies nécessaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nécessaires (toujours actifs)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Ils maintiennent l'essentiel en état de marche : mémoriser votre choix de cookies, votre langue et votre thème clair/sombre. Ils ne peuvent pas être désactivés et, comme tout le reste sur ce site, ils ne quittent jamais votre appareil.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="En savoir plus sur les cookies statistiques">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Statistiques - Pour une confidentialité totale, gardez ceci désactivé.</span><span class="cookie-label-docked">Statistiques (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Cela nous permet d'améliorer l'expérience utilisateur en recevant des données précieuses via (Google Analytics) sur la façon dont les utilisateurs naviguent sur notre site. Si vous souhaitez rester totalement anonyme, nous recommandons de désactiver cette option.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="En savoir plus sur les cookies publicitaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicité (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Utilisé par Google AdSense pour afficher des publicités. Actuellement désactivé sur tout le site dans l'attente de l'approbation d'AdSense, donc ce réglage n'a pas encore d'effet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Tout accepter</button>
+    <button type="button" id="cookieBannerSave">Confirmer les choix</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo de BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Basculer entre mode clair et mode sombre" title="Basculer entre mode clair et mode sombre">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partager" title="Partager">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copier le lien</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Plus d'options de partage"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Retour au Creative Hub" title="Retour au Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Notre univers</h1>
+    <p class="lead page-alias">Aussi connue sur Terre sous le nom de page À propos.</p>
+  </div>
+  <div class="mp-colors-wrap">
+    <div class="mp-colors-bg" aria-hidden="true">
+      <span class="mp-colors-bg-shape shape-blue"></span>
+      <span class="mp-colors-bg-shape shape-teal"></span>
+      <span class="mp-colors-bg-shape shape-amber"></span>
+    </div>
+    <article class="about-article mp-colors-article">
+      <h2 class="about-section-heading about-story-heading">Notre histoire</h2>
+      <p>Pendant ce qui a semblé être de nombreuses années-lumière, utiliser des outils web gratuits a ressemblé à naviguer dans un trou noir : des publicités sans fin, des interfaces gonflées et des temps de chargement douloureusement lents.</p>
+      <p>Début 2026, nous avons décidé que c'en était assez et nous avons commencé à construire une meilleure façon de faire : des outils rapides, épurés et dans le navigateur que les créateurs aiment vraiment utiliser.</p>
+      <p>BC Tools est actuellement développé par un seul extraterrestre, grâce à une technologie d'IA qu'il a volée lors de son dernier passage par le Secteur 7G. Sa mission est simple : créer des outils qui permettent aux gens de se concentrer sur la création.</p>
+      <p>Il a aussi apporté le logo de BC Tools, mais il n'a pas voulu nous dire ce qu'il signifie. Il nous a dit : « La civilisation humaine n'y est pas encore préparée. » Il ne voulait pas révéler son identité ici, alors nous dirons seulement qu'il aime la couleur bleu ciel.</p>
+      <p>Au bureau, on raconte que sa planète natale est Bonbonia<span class="bonbonia-candy" aria-hidden="true">🍬</span>, est célèbre dans toute la galaxie pour une seule chose : les bonbons. Nous ne lui avons pas posé la question directement, mais il y a une quantité suspecte d'emballages près de son bureau.</p>
+
+      <div class="engine-status-card backlog-coms-banner">
+        <div class="engine-status-body">
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">envoyé à 12:13, vendredi</span>&gt; <span class="backlog-coms-sender">émetteur_Neptune :</span> Ne devrions-nous pas lui donner un contrat de travail ou des papiers de travail ?</div>
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">envoyé à 12:15, vendredi</span>&gt; <span class="backlog-coms-sender">récepteur_Pluton :</span> Je sais, mais il ne comprend pas comment nous faisons les choses sur Terre. C'est un extraterrestre après tout.</div>
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">envoyé à 12:19, vendredi</span>&gt; <span class="backlog-coms-sender">émetteur_Neptune :</span> Bon, c'est maintenant le problème du service RH...</div>
+        </div>
+      </div>
+
+      <h2 class="about-section-heading">Nos convictions</h2>
+      <p>Le standard des outils web doit changer.</p>
+      <p>De bons outils devraient avoir des interfaces épurées, se charger vite et respecter le temps du créateur. Toujours prêts à s'exécuter, et toujours là pour aider vos projets à prendre vie.</p>
+      <p>Tout doit être à portée de main : pas de trous de ver, pas de pièges d'abonnement, juste des outils rapides et fiables qui fonctionnent.</p>
+      <h2 class="about-section-heading">Nos objectifs</h2>
+      <p>Notre objectif est de construire le Creative Hub ultime dans le navigateur.</p>
+      <p>Que vous travailliez avec des images, des vidéos, de l'audio ou du code, si un outil peut fonctionner directement dans votre navigateur, nous voulons le réunir en un seul endroit accessible de partout.</p>
+
+      <div class="ad-slot ad-slot-banner">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000019"></ins>
+      </div>
+    </article>
+  </div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Entreprise</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="À propos"><span class="footer-link-fun">Notre univers</span><span class="footer-link-plain">À propos</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Déjà répondu</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Conditions d'utilisation"><span class="footer-link-fun">Manuel galactique</span><span class="footer-link-plain">Conditions d'utilisation</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politique de confidentialité"><span class="footer-link-fun">Protocole extraterrestre de confidentialité</span><span class="footer-link-plain">Politique de confidentialité</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politique de cookies"><span class="footer-link-fun">Registre des cookies</span><span class="footer-link-plain">Politique de cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Premiers pas avec</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactez-nous</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Rejoignez notre Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

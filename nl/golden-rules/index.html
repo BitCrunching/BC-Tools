@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gouden regels – BC Tools</title>
+<meta name="description" content="Gouden regels voor het kiezen van afbeeldingsformaten, compressie en instellingen met BC Tools.">
+<link rel="canonical" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/golden-rules/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/golden-rules/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/golden-rules/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/golden-rules/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/golden-rules/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/golden-rules/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/golden-rules/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/golden-rules/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
+<script src="/shared/i18n/nl.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Gouden regels – BC Tools">
+<meta property="og:description" content="Gouden regels voor het kiezen van afbeeldingsformaten, compressie en instellingen met BC Tools.">
+<meta property="og:url" content="https://bitcrunching.com/nl/golden-rules/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gouden regels – BC Tools">
+<meta name="twitter:description" content="Gouden regels voor het kiezen van afbeeldingsformaten, compressie en instellingen met BC Tools.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+/* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
+.golden-rules-switcher{
+  display:flex;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
+.golden-rules-tool-btn{
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  font-family:inherit;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+
+.golden-rules-tool-btn:hover{
+  border-color:var(--border-strong);
+}
+
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
+.golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
+.golden-rules-articles{
+  display:none;
+  position:relative;
+  max-width:820px;
+  margin:0 auto 80px;
+  padding:0 24px;
+}
+
+.golden-rules-articles.active{
+  display:block;
+}
+
+.golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
+
+.golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+
+.golden-rules-article summary::-webkit-details-marker{
+  display:none;
+}
+
+.golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  color:var(--text);
+  transition:.2s;
+}
+
+.golden-rules-article[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+}
+
+.golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  margin:24px 0 10px;
+}
+
+.golden-rules-body h3:first-child{
+  margin-top:0;
+}
+
+.golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">We gebruiken cookies. Kies hieronder welke categorieën je toestaat. Zie onze <a data-goto="cookies">Cookiebeleid</a> voor details.</p>
+  <p class="cookie-banner-text-mobile">Kies welke categorieën je toestaat</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Inhoud van cookie-instellingen in-/uitschakelen" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Kies welke categorieën je toestaat</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Meer over noodzakelijke cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Noodzakelijk (altijd aan)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Hiermee blijven de essentiële dingen werken: je cookiekeuze, je taal en je licht/donker-thema onthouden. Ze kunnen niet worden uitgeschakeld en verlaten, zoals al het andere op deze site, nooit je apparaat.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Meer over analytische cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse - Houd dit uitgeschakeld voor volledige privacy.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Hiermee kunnen we de gebruikerservaring verbeteren door via (Google Analytics) waardevolle gegevens te ontvangen over hoe gebruikers door onze website navigeren. Wil je volledig anoniem blijven, dan raden we aan deze optie uit te schakelen.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Meer over advertentiecookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Advertenties (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Gebruikt door Google AdSense om advertenties te tonen. Momenteel site-breed uitgeschakeld in afwachting van goedkeuring door AdSense, dus deze schakelaar heeft nog geen effect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alles accepteren</button>
+    <button type="button" id="cookieBannerSave">Keuzes bevestigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools-logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Licht en donker thema wisselen" title="Licht en donker thema wisselen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Delen" title="Delen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopiëren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Meer deelopties"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Terug naar de Creative Hub" title="Terug naar de Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+    <div class="hero">
+      <h1>Gouden regels</h1>
+      <p class="lead">Praktische, diepgaande gidsen om het meeste uit elke tool te halen: het hoe, het waarom en de fouten die het vermijden waard zijn.</p>
+    </div>
+
+    <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+      <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+    </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
+
+    <div class="golden-rules-articles active" data-tool="convert">
+
+      <details class="golden-rules-article">
+        <summary>1. De complete gids voor afbeeldingsformaten: JPG vs PNG vs WEBP</summary>
+        <div class="golden-rules-body">
+          <p>Elk afbeeldingsformaat is ontworpen om een ander probleem op te lossen, en het juiste formaat kiezen heeft meer effect op je bestandsgrootte en kwaliteit dan bijna elke andere beslissing bij het voorbereiden van afbeeldingen. Dit gebeurt er echt onder de motorkap bij elk formaat, en wanneer het er echt toe doet.</p>
+
+          <h3>JPG (JPEG): het fotoformaat</h3>
+          <p>JPG gebruikt compressie met verlies, wat betekent dat hij bij elke keer opslaan wat beeldgegevens weggooit om de bestandsgrootte te verkleinen. Voor foto's, met hun geleidelijke kleurovergangen, natuurlijke ruis en gebrek aan harde randen, werkt dit opmerkelijk goed, omdat het menselijk oog de specifieke informatie die JPG weggooit niet snel opmerkt. Daarom blijft JPG het standaardformaat voor fotografie op het web, in camera's en op telefoons: uitstekende compressie, kleine bestanden, universele ondersteuning.</p>
+          <p>Wat JPG niet kan, is transparantie. Het formaat heeft helemaal geen alfakanaal, dus als je een doorzichtige achtergrond nodig hebt, valt JPG volledig af. Het gaat ook elke keer dat het opnieuw wordt opgeslagen een beetje achteruit (meer daarover in het artikel over fouten hieronder) en het worstelt met afbeeldingen met scherpe randen zoals tekst of logo's, waar de compressieartefacten zichtbaar worden als wazigheid rond harde lijnen.</p>
+
+          <h3>PNG: het verliesvrije, transparantievriendelijke formaat</h3>
+          <p>PNG gebruikt verliesvrije compressie: elke pixel blijft exact behouden, zonder kwaliteitsverlies, hoe vaak je ook opnieuw opslaat. Dat maakt het de juiste keuze voor alles met scherpe randen, effen kleuren of tekst: logo's, screenshots, pictogrammen, diagrammen. Het ondersteunt ook volledig transparantie, inclusief gedeeltelijke transparantie (zachte, vage randen), wat JPG gewoon niet kan.</p>
+          <p>De prijs is de grootte. Verliesvrije compressie kan een bestand lang niet zo sterk verkleinen als de aanpak met verlies van JPG, vooral bij foto's met veel subtiele kleurvariatie. Een foto opgeslagen als PNG kan gemakkelijk 5-10x groter zijn dan dezelfde foto als JPG, voor een kwaliteitsverschil dat de meeste mensen niet kunnen zien.</p>
+
+          <h3>WEBP: de moderne allrounder</h3>
+          <p>WEBP is het nieuwere formaat van Google en in de meeste gevallen echt het beste van twee werelden: het ondersteunt zowel compressie met verlies als verliesvrije compressie (dus het kan zich gedragen als JPG of als PNG, afhankelijk van wat je nodig hebt), het ondersteunt transparantie en het levert doorgaans kleinere bestanden dan JPG of PNG bij gelijke kwaliteit: vaak 25-35% kleiner dan JPG voor foto's en aanzienlijk kleiner dan PNG voor afbeeldingen.</p>
+          <p>De enige echte beperking is compatibiliteit met oudere software: sommige oudere afbeeldingseditors, sommige e-mailprogramma's en sommige oudere apparaten gaan niet goed met WEBP om. Voor een moderne website is dit zelden nog een praktische zorg, maar als je een bestand stuurt naar iemand van wie je de software niet beheert, is het het overwegen waard.</p>
+
+          <h3>HEIC: het iPhone-formaat waar je van af wilt</h3>
+          <p>HEIC (en zijn naaste verwant HEIF) is sinds iOS 11 het standaard fotoformaat van Apple: het comprimeert beter dan JPG bij dezelfde kwaliteit, en daarom gebruiken iPhones het automatisch. De keerzijde is compatibiliteit: de meeste niet-Apple-software, oudere bewerkingstools en tal van websites en uploadformulieren kunnen een HEIC-bestand nog steeds niet direct openen.</p>
+          <p>Convert accepteert HEIC/HEIF als invoer en decodeert het volledig in je browser, dus je kunt een foto rechtstreeks van een iPhone erin zetten en krijgt een JPG, PNG of WEBP terug die overal opent. Er is geen HEIC-uitvoeroptie, omdat het hele doel van converteren is om die compatibiliteitskloof achter je te laten.</p>
+
+          <h3>De snelle beslisregel</h3>
+          <p>Foto's zonder transparantiebehoefte → JPG of WEBP. Alles wat transparantie of scherpe randen nodig heeft (logo's, screenshots, afbeeldingen) → PNG of WEBP. Het kleinst mogelijke bestand nodig met ondersteuning in moderne browsers → WEBP.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Foto's in een pdf veranderen (en waarom je dat zou willen)</summary>
+        <div class="golden-rules-body">
+          <p>Afbeeldingen in één pdf omzetten is een van de nuttigste dingen die Convert kan en die mensen niet meteen ontdekken: het is het antwoord op “hoe stuur ik deze 12 foto's als één bestand in plaats van 12 losse bijlagen”.</p>
+
+          <h3>Waarom afbeeldingen in een pdf combineren in plaats van ze te zippen</h3>
+          <p>Een ZIP-bestand moet door de ontvanger worden gedownload, uitgepakt en elke afbeelding apart geopend, extra stappen waar de meeste mensen geen zin in hebben. Een pdf opent direct in de browser of de ingebouwde pdf-viewer die bijna elk apparaat al heeft, en de pagina's staan in precies de volgorde die jij hebt ingesteld. Dat is enorm belangrijk bij bijvoorbeeld sollicitaties (motivatiebrief, dan cv, dan portfoliovoorbeelden) of gescande papieren die in volgorde moeten blijven.</p>
+          <p>Het is ook het verwachte formaat voor een enorm aantal officiële en halfofficiële indieningen: sollicitaties, verzekeringsclaims, belastingdocumenten, schoolopdrachten en huuraanvragen vragen vaak om “graag indienen als één pdf” precies omdat dat ondubbelzinnig is en niet per ongeluk kan worden herordend of uit elkaar gehaald zoals een map met losse afbeeldingen.</p>
+
+          <h3>Stap voor stap</h3>
+          <p>Zet je afbeeldingen in Convert, je kunt er meerdere tegelijk selecteren. Klik op de formaatknop “PDF”; anders dan bij de andere formaten converteert deze niet elke afbeelding apart, maar combineert ze allemaal in één pdf waarin elke afbeelding een eigen pagina wordt. Klik op “Converteren en downloaden” en je krijgt één pdf-bestand met elke geselecteerde afbeelding, één per pagina, in de volgorde waarin je ze hebt geüpload.</p>
+          <p>De volgorde doet er hier toe, dus controleer de volgorde waarin je bestanden zijn geselecteerd voordat je converteert. Convert volgt momenteel de volgorde waarin je de bestanden hebt gekozen of neergezet, dus als de volgorde belangrijk is (zoals bij een gescand document van meerdere pagina's), selecteer of zet ze dan neer in de volgorde waarin ze moeten verschijnen.</p>
+
+          <h3>Een opmerking over beeldkwaliteit in de pdf</h3>
+          <p>Omdat je afbeeldingen ongewijzigd worden ingebed, ziet een afbeelding met lage resolutie er in de pdf nog steeds laagresolutie uit: converteren naar pdf voegt geen detail toe dat er niet was. Als je iets als een gedrukt portfolio voorbereidt, loont het om je afbeeldingen vooraf te comprimeren of te verkleinen tot een verstandige resolutie in plaats van onnodig enorme camera-originelen erin te gooien, wat een opgeblazen pdf oplevert die traag opent en lastig te mailen is.</p>
+
+          <h3>Wanneer dit de verkeerde tool is</h3>
+          <p>Als je pdf's combineert die je al hebt (in plaats van ruwe afbeeldingen), heb je in plaats daarvan de tool Combine nodig. De pdf-uitvoer van Convert is specifiek bedoeld om afbeeldingen in een nieuwe pdf om te zetten, niet om bestaande pdf-documenten samen te voegen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Afbeeldingen uit een pdf halen: een praktische gids</summary>
+        <div class="golden-rules-body">
+          <p>De omgekeerde richting, afbeeldingen uit een bestaande pdf halen, lost een ander, even veelvoorkomend probleem op: je hebt een pdf en je hebt maar één pagina nodig, of alle pagina's, als losse afbeeldingsbestanden.</p>
+
+          <h3>Veelvoorkomende redenen waarom mensen dit nodig hebben</h3>
+          <p>Eén dia uit een pdf-presentatie halen om in een e-mail of chatbericht te plaatsen. De pagina's van een gescand document uitpakken om ze afzonderlijk in een afbeeldingseditor te bewerken of van aantekeningen te voorzien. Een diagram of grafiek uit een pdf-rapport pakken om elders te hergebruiken. Elke pagina van een oud gescand document archiveren als een apart, universeler bekijkbaar afbeeldingsbestand.</p>
+
+          <h3>Hoe het echt werkt</h3>
+          <p>Zet je een pdf in Convert in plaats van een afbeelding, dan herkent de tool dat automatisch: de formaatopties veranderen zodat alleen JPG, PNG en WEBP worden getoond, omdat een pdf naar een andere pdf of naar SVG converteren geen zin heeft. Kies het afbeeldingsformaat dat bij je past (JPG voor kleinere bestanden, PNG als de pdf-pagina's transparantie of scherpe tekst bevatten, WEBP voor de beste balans van beide) en converteer.</p>
+          <p>Elke pagina van de pdf wordt een eigen afbeeldingsbestand. Een pdf van 10 pagina's, geconverteerd naar JPG, geeft je 10 aparte JPG-bestanden, automatisch genummerd per pagina. Pak je meer dan 5 pagina's uit, dan worden ze automatisch gebundeld in één ZIP-download in plaats van tien aparte downloads te starten.</p>
+
+          <h3>Overwegingen over resolutie en kwaliteit</h3>
+          <p>Pdf-pagina's worden op een vaste schaal naar afbeeldingen gerenderd, ontworpen om scherpe, leesbare resultaten te geven voor gangbare documenten en presentaties. Als je een zeer gedetailleerd diagram uitpakt of een bijzonder hoge resolutie voor druk nodig hebt, controleer dan de uitvoerkwaliteit voordat je erop vertrouwt voor iets wat voor druk kritiek is. Uitpakken op schermresolutie is voor digitaal gebruik meestal meer dan voldoende, maar zeer fijn drukwerk heeft mogelijk een andere tool nodig die specifiek voor uitpakken met hoge dpi is gebouwd.</p>
+
+          <h3>Pdf's van meerdere pagina's en bestandsnamen</h3>
+          <p>Elke uitgepakte afbeelding krijgt automatisch het paginanummer als label, zodat je in één oogopslag ziet welke uitvoer bij welke pagina van het oorspronkelijke document hoort. Handig als je een lange pdf doorwerkt en maar een handvol specifieke pagina's nodig hebt in plaats van alles.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer je je afbeeldingen moet converteren: praktijkvoorbeelden</summary>
+        <div class="golden-rules-body">
+          <p>De technische verschillen tussen formaten kennen is één ding; weten welk formaat echt van toepassing is op de situatie voor je neus is iets anders. Hier is een scenariogebaseerde manier om erover na te denken.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situatie</th><th>Beste formaat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situatie">Een platform noemt een specifiek vereist formaat</td><td data-label="Beste formaat">Wat het platform ook vereist: controleer eerst</td></tr>
+              <tr><td data-label="Situatie">Je eigen website versnellen</td><td data-label="Beste formaat">WEBP</td></tr>
+              <tr><td data-label="Situatie">Een transparante achtergrond nodig hebben</td><td data-label="Beste formaat">PNG of WEBP</td></tr>
+              <tr><td data-label="Situatie">Voorbereiden op druk of professioneel gebruik</td><td data-label="Beste formaat">PNG</td></tr>
+              <tr><td data-label="Situatie">Voor de lange termijn archiveren</td><td data-label="Beste formaat">PNG (of WEBP in verliesvrije modus)</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Uploaden naar een platform dat alleen bepaalde formaten accepteert</h3>
+          <p>Dit is de meest voorkomende reden waarom mensen überhaupt een converter nodig hebben: een website, app of indieningsformulier schrijft “alleen JPG of PNG” voor, maar je afbeelding is WEBP of SVG. Convert regelt dit in seconden: kies het formaat dat het platform eist en je bent klaar. Controleer altijd eerst de vermelde eisen van het platform, want verkeerd gokken kost een extra rondje.</p>
+
+          <h3>Een website versnellen die je beheert</h3>
+          <p>Als je afbeeldingen uploadt naar je eigen website, is het converteren van oude JPG- en PNG-afbeeldingen naar WEBP een van de verbeteringen met de hoogste opbrengst en de laagste inspanning die je kunt doen: kleinere bestanden betekenen snellere paginalaadtijden, wat zowel de gebruikerservaring als de ranking in zoekmachines beïnvloedt. Dit telt zwaarder voor pagina's vol afbeeldingen (galerijen, productoverzichten, blogs met veel foto's) dan voor een pagina met slechts een of twee kleine pictogrammen.</p>
+
+          <h3>Een transparante achtergrond nodig hebben</h3>
+          <p>Als je een JPG hebt (die geen transparantie kan hebben) en je moet die over een gekleurde achtergrond, een ontwerpsjabloon of een andere afbeelding plaatsen, moet je hem converteren, al is het goed om te weten dat Convert wel een transparant formaat als verpakking kan toevoegen, maar niet op magische wijze een bestaande effen achtergrond uit de foto zelf kan halen. Moet de achtergrond echt worden verwijderd (en niet alleen transparantie-compatibel gemaakt), dan heb je een tool voor achtergrondverwijdering nodig, geen formaatconverter.</p>
+
+          <h3>Voorbereiden op druk of professioneel gebruik</h3>
+          <p>Drukkerijen en professionele ontwerpworkflows hebben soms specifieke formaateisen. PNG voor logo's en afbeeldingen met scherpe randen is een veelvoorkomende, omdat het de zachte compressieartefacten vermijdt die JPG rond tekst en harde lijnen kan introduceren. Als je niet zeker weet wat een specifieke drukkerij wil, is PNG meestal een veilige, verliesvrije standaard voor alles wat geen gewone foto is.</p>
+
+          <h3>Archivering of langetermijnopslag</h3>
+          <p>Voor alles wat je jarenlang in de best mogelijke kwaliteit wilt bewaren, zijn verliesvrije formaten (PNG) op de lange termijn de veiligere keuze boven herhaaldelijk gecomprimeerde JPG's, omdat JPG elke keer dat hij opnieuw wordt opgeslagen een beetje kwaliteit verliest. Is opslagruimte een echte beperking, weeg dat dan af tegen de verliesvrije modus van WEBP, die ruimtezuiniger is dan PNG en toch het generatieverlies van JPG vermijdt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij conversie (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste conversieproblemen komen door een handvol herhaalbare fouten. Hier let je op.</p>
+
+          <h3>JPG herhaaldelijk als JPG opnieuw opslaan</h3>
+          <p>Elke keer dat een JPG wordt geopend, zelfs maar een beetje bewerkt en opnieuw opgeslagen, verliest hij weer wat kwaliteit. Dit heet generatieverlies en het stapelt zich op. Als je een afbeelding meerdere keren gaat bewerken, werk dan tijdens het bewerken in een verliesvrij formaat (PNG) en converteer pas als laatste exportstap, één keer, aan het eind naar JPG.</p>
+
+          <h3>JPG gebruiken terwijl je transparantie nodig hebt</h3>
+          <p>Dit is de meest voorkomende ondersteuningsvraag die converters krijgen: “waarom heeft mijn logo een wit vak eromheen in plaats van een transparante achtergrond?” Het antwoord is bijna altijd dat de bron of het uitvoerformaat JPG was, dat transparantie helemaal niet kan weergeven; geen enkele instelling of truc lost dit op, omdat het formaat zelf geen begrip heeft van een alfakanaal. Heb je transparantie nodig, dan moeten zowel de bronafbeelding als het uitvoerformaat dat ondersteunen (PNG of WEBP).</p>
+
+          <h3>Omhoog converteren, niet alleen opzij</h3>
+          <p>Een kleine afbeelding met lage resolutie naar een ander formaat converteren voegt geen detail toe en verhoogt de werkelijke resolutie niet: een JPG van 400×300 pixels, geconverteerd naar PNG, is nog steeds een afbeelding van 400×300 pixels, alleen in een andere verpakking. Heb je een grotere afbeelding nodig, dan heb je het origineel in hogere resolutie nodig; formaatconversie alleen kan geen detail creëren dat nooit is vastgelegd.</p>
+
+          <h3>Standaard PNG kiezen voor grote foto's</h3>
+          <p>De verliesvrije compressie van PNG is fantastisch voor afbeeldingen met scherpe randen, maar een slechte keuze voor foto's, waar het bestanden oplevert die veel groter zijn dan nodig voor een kwaliteitsverschil dat de meeste kijkers niet zullen merken. Als je een batch vakantiefoto's “voor de zekerheid” converteert, dienen JPG of WEBP je veel beter. Bewaar PNG specifiek voor afbeeldingen met transparantie, tekst of scherpe grafische randen.</p>
+
+          <h3>De uitvoer niet controleren voordat je het ergens belangrijks heen stuurt</h3>
+          <p>Voor alles wat naar een klant, een werkgever of een officiële indiening gaat, is het de moeite waard om het geconverteerde bestand één keer te openen voordat je het verstuurt: de paginavolgorde in een pdf van meerdere pagina's bevestigen, controleren of transparantie goed is overgekomen of nagaan of het bestand niet onverwacht enorm is. Het kost een paar seconden en voorkomt het veel tijdrovendere probleem van een afgewezen indiening of een gênante herzending.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="golden-rules-articles" data-tool="compress">
+      <details class="golden-rules-article">
+        <summary>1. Hoe beeldcompressie echt werkt</summary>
+        <div class="golden-rules-body">
+          <p>Compressie lijkt één schuifregelaar of één klik, maar eronder doen twee echt verschillende methoden het verkleinen, en begrijpen welke aan het werk is verklaart bijna elk resultaat dat je van zo'n tool ziet.</p>
+
+          <h3>Compressie met verlies: weggooien wat je niet opmerkt</h3>
+          <p>Compressie met verlies, de soort die JPG en WEBP gebruiken, werkt door informatie in een afbeelding te identificeren die het menselijk oog slecht waarneemt en die weg te gooien. Subtiele kleurovergangen worden vereenvoudigd, fijn hoogfrequent detail wordt gladgestreken, en het resultaat is een bestand dat een fractie van de oorspronkelijke grootte kan zijn en er voor een toevallige kijker toch correct uitziet. De keerzijde is dat dit weggooien permanent is: eenmaal weg komt dat detail niet meer terug, hoe vaak je ook heropent of opnieuw opslaat, en een al gecomprimeerd bestand met verlies herhaaldelijk comprimeren stapelt het verlies elke keer op.</p>
+          <p>De “kwaliteitsverhouding” of het compressieniveau dat je kiest bepaalt hoe agressief dit gebeurt. Een hoge kwaliteitsinstelling gooit heel weinig weg en verkleint het bestand bescheiden; een lage kwaliteitsinstelling gooit veel meer weg en verkleint het drastisch, ten koste van zichtbare artefacten: blokkerigheid rond randen, uitgesmeerd detail, kleurbanding in luchten en verlopen.</p>
+
+          <h3>Verliesvrije compressie: herverpakken zonder iets te verliezen</h3>
+          <p>Verliesvrije compressie, de aanpak van PNG, werkt totaal anders: het vindt slimmere, efficiëntere manieren om exact dezelfde pixelgegevens op te slaan, zoals een ZIP-bestand een tekstdocument verkleint zonder één teken erin te veranderen. Er wordt niets weggegooid, dus je kunt zo vaak comprimeren en decomprimeren als je wilt zonder kwaliteitsverandering. De keerzijde is dat de verkleining veel kleiner is, omdat er een harde wiskundige grens is aan hoeveel je gegevens kunt verkleinen zonder iets weg te gooien, vooral bij fotografische afbeeldingen, die vol zitten met het soort fijn, onregelmatig detail dat zich verzet tegen verliesvrij herverpakken.</p>
+
+          <h3>Waarom onze tool Compress PNG naar JPG converteert</h3>
+          <p>Daarom zet Compress PNG-foto's tijdens het comprimeren automatisch om naar JPG: een PNG-foto die alleen verliesvrij wordt gecomprimeerd, krimpt nauwelijks, maar dezelfde foto met compressie met verlies kan drastisch krimpen. Voor een echte foto is deze afweging bijna altijd de moeite waard: het kwaliteitsverschil is onzichtbaar op normale kijkgroottes en het verschil in bestandsgrootte is enorm. Bij PNG's die geen foto zijn (screenshots, logo's, afbeeldingen met transparantie of scherpe tekst) is het een ander verhaal, en daarom is deze conversie specifiek afgestemd op fotoachtige inhoud en niet blind op elke PNG toegepast.</p>
+
+          <h3>Wat er echt gebeurt als je de kwaliteitsschuif verplaatst</h3>
+          <p>Intern vergroot een lagere kwaliteitsinstelling hoe grof de kleur- en detailinformatie van de afbeelding wordt gegroepeerd en vereenvoudigd voordat hij wordt opgeslagen. Zie het als afronden van getallen: “kwaliteit 95” afronden verandert nauwelijks iets, terwijl “kwaliteit 40” afronden veel meer verandert, maar ook veel minder ruimte kost om te beschrijven. Er is geen universeel “juist” getal: de juiste instelling hangt volledig af van waarvoor de afbeelding wordt gebruikt, en daar gaat het volgende artikel op in.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Het juiste compressieniveau kiezen voor jouw toepassing</summary>
+        <div class="golden-rules-body">
+          <p>Er is geen enkele “beste” compressie-instelling: het juiste niveau hangt volledig af van waar de afbeelding naartoe gaat en wat hij moet doorstaan. Zo denk je erover per scenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Bestemming</th><th>Aanbevolen niveau</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Bestemming">Sociale media / berichtenapps</td><td data-label="Aanbevolen niveau">Gemiddeld</td></tr>
+              <tr><td data-label="Bestemming">Je eigen website of webwinkel</td><td data-label="Aanbevolen niveau">Gemiddeld tot hoog</td></tr>
+              <tr><td data-label="Bestemming">Druk of professionele oplevering aan klanten</td><td data-label="Aanbevolen niveau">Laag, of sla compressie over</td></tr>
+              <tr><td data-label="Bestemming">Langetermijnarchivering</td><td data-label="Aanbevolen niveau">Laag</td></tr>
+              <tr><td data-label="Bestemming">Limieten voor de grootte van e-mailbijlagen</td><td data-label="Aanbevolen niveau">Hoog</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Sociale media en berichten</h3>
+          <p>Platforms zoals Instagram, WhatsApp en de meeste socialemediafeeds comprimeren elke afbeelding die je uploadt al opnieuw, vaak agressief, ongeacht wat je ze stuurt. Een enorm, nauwelijks gecomprimeerd bestand uploaden levert hier niets op: het platform comprimeert het aan zijn kant toch opnieuw. Een matig tot hoog compressieniveau houdt je upload snel en de grootte van je originele bestand redelijk, zonder kwaliteit op te geven die je na de eigen verwerking van het platform echt zou zien.</p>
+
+          <h3>Websites en webwinkels</h3>
+          <p>Voor alles wat je zelf host, zoals een portfoliosite, een blog of een productpagina, bepaalt de bestandsgrootte direct hoe snel je pagina laadt, wat zowel de ervaring van bezoekers beïnvloedt als, voor commerciële sites, de conversie en de positie in zoekmachines. Hier loont het om naar agressievere compressie te neigen, omdat bekijken op het web zelden detail op drukniveau nodig heeft, en een pagina vol enorme niet-geoptimaliseerde afbeeldingen een van de meest voorkomende redenen is waarom sites traag aanvoelen.</p>
+
+          <h3>Drukwerk en professioneel gebruik</h3>
+          <p>Dit is de enige plek waar je behoudend wilt zijn. Druk toont detail en artefacten die een scherm simpelweg niet laat zien, omdat het op hogere effectieve resolutie en vaak op groter fysiek formaat wordt bekeken. Gebruik voor alles wat naar een drukkerij, een galerie-inzending of professionele oplevering aan een klant gaat een licht compressieniveau of sla compressie over voor die specifieke kopie, en bewaar een ongecomprimeerd of licht gecomprimeerd masterbestand als je bron van waarheid.</p>
+
+          <h3>Archivering en langetermijnopslag</h3>
+          <p>Als het doel is een foto jarenlang te bewaren, zoals familiefoto's, een archief of alles wat je later op volledige kwaliteit wilt terugzien, vermijd dan zware compressie met verlies op je enige exemplaar. Eenmaal weggegooid detail komt niet meer terug, ook niet als een latere toepassing het nodig blijkt te hebben. Een redelijke aanpak is een archiefkopie van hogere kwaliteit bewaren en op aanvraag apart gecomprimeerde versies maken voor wat een specifieke toepassing echt nodig heeft.</p>
+
+          <h3>E-mailbijlagen en bestandsgroottelimieten</h3>
+          <p>Veel e-mailproviders beperken de grootte van bijlagen, meestal tot ongeveer 25 MB in totaal. Als je meerdere foto's verstuurt, komt een sterker compressieniveau betrouwbaar onder die grens. Dit is een van de weinige gevallen waarin de praktische beperking (past het überhaupt in de e-mail) zwaarder weegt dan het visuele verschil tussen compressieniveaus, dus wees niet bang om harder te comprimeren dan je voor ander gebruik zou doen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Compressie voor het web: snelheid zonder kwaliteitsverlies</summary>
+        <div class="golden-rules-body">
+          <p>Het gewicht van afbeeldingen is een van de grootste en best oplosbare oorzaken van een trage website, en ook een van de makkelijkste om in beide richtingen verkeerd te doen: te weinig compressie en pagina's kruipen, te veel en foto's zien er merkbaar slechter uit. Zo kom je in het nuttige midden uit.</p>
+
+          <h3>Waarom afbeeldingsgrootte zo veel uitmaakt voor snelheid</h3>
+          <p>Op de meeste inhoudrijke pagina's vormen afbeeldingen veruit het grootste deel van het totale paginagewicht, veel meer dan de HTML, CSS of JavaScript samen. De laadtijd van een pagina voor een bezoeker, en de beoordeling ervan door zoekmachines, wordt onevenredig beïnvloed door hoe zwaar je afbeeldingen zijn, wat betekent dat ze goed comprimeren vaak de enige prestatieverbetering met de grootste hefboom is, vóór de meeste optimalisaties op codeniveau.</p>
+
+          <h3>Compressie afstemmen op hoe de afbeelding echt wordt weergegeven</h3>
+          <p>Een afbeelding die op een pagina 400 pixels breed wordt getoond, hoeft niet als een camera-origineel van 4000 pixels met lichte compressie te worden geleverd; er is veel minder detail nodig om er op de werkelijke weergavegrootte scherp uit te zien. Voordat je je druk maakt over het compressieniveau, moet je ervoor zorgen dat de afmetingen van de afbeelding ongeveer overeenkomen met hoe groot hij echt verschijnt. Een te grote afbeelding comprimeren is symptoombestrijding terwijl de grotere oorzaak (onnodige resolutie) blijft bestaan.</p>
+
+          <h3>Een formaat kiezen voor het web</h3>
+          <p>Voor fotografische inhoud is JPG of WEBP met een matige tot sterke compressie vrijwel altijd de juiste keuze: bezoekers van een pagina hebben geen detail op drukniveau nodig, en het snelheidsvoordeel van een kleiner bestand is heel reëel en goed merkbaar, vooral op mobiele verbindingen. Voor afbeeldingen met effen kleuren, screenshots of alles met tekst en scherpe randen ziet verliesvrije PNG (niet aangetast door compressie met verlies) er meestal beter uit en kan hij zelfs kleiner uitvallen dan een zwaar met artefacten bezaaide versie met verlies van dezelfde afbeelding.</p>
+
+          <h3>Het punt van afnemende meeropbrengst</h3>
+          <p>Compressie schaalt niet lineair met het verlies aan zichtbare kwaliteit: het eerste stuk compressie van een ongecomprimeerd origineel haalt enorm veel bestandsgrootte weg zonder zichtbare verandering, terwijl steeds agressievere compressie steeds minder grootte weghaalt voor steeds meer zichtbare schade. In de praktijk bereiken de meeste foto's een optimum ruim voor “maximale compressie”, en het loont om een gecomprimeerde afbeelding op de werkelijke weergavegrootte te controleren in plaats van aan te nemen dat meer compressie altijd beter is voor de snelheid.</p>
+
+          <h3>Alle afbeeldingen van een hele site in bulk verwerken</h3>
+          <p>Als je veel afbeeldingen tegelijk optimaliseert, zoals een productcatalogus, een galerij of de oude afbeeldingen van een blog, pas dan een consistent compressieniveau toe op vergelijkbare inhoudstypen in plaats van elke afbeelding op het oog te beoordelen. Dat houdt de visuele kwaliteit over je site consistent en maakt het veel sneller om het proces later opnieuw te doen als je je bedenkt over de instelling, omdat je niet geval voor geval opnieuw beslist.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer je moet comprimeren en wanneer je een afbeelding met rust laat</summary>
+        <div class="golden-rules-body">
+          <p>Compressie is een echt nuttig hulpmiddel, maar niet automatisch de juiste zet voor elke afbeelding in elke situatie. Weten wanneer je het moet overslaan is net zo belangrijk als weten hoe je het gebruikt.</p>
+
+          <h3>Tekenen dat een afbeelding een goede kandidaat is voor compressie</h3>
+          <p>Grote camera-originelen die voor het web, e-mail of berichten bedoeld zijn, hebben er bijna altijd baat bij: ze hebben doorgaans veel meer resolutie en bestandsgewicht dan de bestemming nodig heeft. Elk bestand dat tegen een harde groottelimiet aanloopt (een limiet voor e-mailbijlagen, een uploadbeperking, een maximale bestandsgrootte van een formulier) is ook een duidelijke kandidaat, omdat compressie vaak de snelste manier is om onder de limiet te komen zonder inhoud uit de afbeelding bij te snijden of te verkleinen.</p>
+
+          <h3>Tekenen dat je een afbeelding met rust moet laten (of heel licht moet comprimeren)</h3>
+          <p>Afbeeldingen met tekst, scherpe lijnen of effen kleuren, zoals screenshots, diagrammen, logo's en gescande documenten, comprimeren doorgaans slecht met methoden met verlies, omdat de compressieartefacten zich als wazigheid en kleurranden tonen precies waar het oog het meest oplet: rond randen en tekst. Die zijn meestal beter af met de verliesvrije aanpak van PNG, of door compressie over te slaan in plaats van tegen de artefacten te vechten.</p>
+          <p>Alles wat al eens is gecomprimeerd, moet je niet zomaar “voor de zekerheid” nog eens comprimeren. Een JPG die al met verlies is gecomprimeerd opnieuw comprimeren maakt hem in de meeste gevallen niet merkbaar kleiner en kan een tweede ronde kwaliteitsverlies bovenop de eerste veroorzaken, waardoor artefacten zich opstapelen in plaats van verdwijnen.</p>
+
+          <h3>De mastercopy-gewoonte</h3>
+          <p>Een eenvoudige regel die de meeste spijt voorkomt: bewaar één kopie van hoge kwaliteit (of ongecomprimeerd) van alles wat je later misschien opnieuw gebruikt, en maak gecomprimeerde versies van die master voor elk specifiek gebruik, in plaats van je enige exemplaar te overschrijven met een gecomprimeerd exemplaar. Opslag is goedkoop; een verloren origineel opnieuw maken kan niet meer als het weg is.</p>
+
+          <h3>Beoordelen op de bestemming, niet op gewoonte</h3>
+          <p>De juiste vraag is niet in het algemeen “moet ik deze afbeelding comprimeren”, maar “wat heeft de plek waar deze afbeelding naartoe gaat echt nodig”. Een foto voor een sms heeft bijna niets van het oorspronkelijke detail nodig; een foto voor een grote gedrukte banner heeft bijna alles nodig. Laat de bestemming de lat leggen, in plaats van uit gewoonte hetzelfde compressieniveau toe te passen op alles wat door je workflow gaat.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij compressie (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste klachten over compressie zijn terug te voeren op een kleine set herhaalbare fouten. Hier let je op.</p>
+
+          <h3>Hetzelfde bestand steeds opnieuw comprimeren</h3>
+          <p>Elke compressieronde met verlies gooit nog wat meer detail weg, en dat verlies stapelt zich op met elke extra ronde: een bestand dat meerdere keren is gecomprimeerd, heropend, bewerkt en opnieuw gecomprimeerd, ziet er merkbaar slechter uit dan een bestand dat één keer vanaf een schoon origineel is gecomprimeerd. Comprimeer altijd vanaf het origineel of een ongecomprimeerde master, niet vanaf een eerder gecomprimeerde kopie.</p>
+
+          <h3>Je enige exemplaar overschrijven</h3>
+          <p>Ter plekke comprimeren en het origineel verwijderen is de meest voorkomende manier waarop mensen de volledige kwaliteit definitief kwijtraken. Zodra een compressieronde met verlies detail heeft weggegooid, krijg je het niet meer terug. Bewaar het origineel ergens veilig tot je zeker weet dat je het niet later in hogere kwaliteit nodig hebt.</p>
+
+          <h3>Afbeeldingen met scherpe randen comprimeren alsof het foto's zijn</h3>
+          <p>Screenshots, logo's en grafieken met veel tekst reageren niet goed op dezelfde compressie met verlies die op foto's uitstekend werkt: de scherpe randen en effen kleuren die deze afbeeldingen maken wat ze zijn, veranderen onder compressie met verlies in zichtbare vegen en kleurranden. Die pak je meestal beter aan met verliesvrije formaten, of met een veel lichtere compressie dan je op een foto zou gebruiken.</p>
+
+          <h3>Een compressieniveau kiezen zonder het resultaat te controleren</h3>
+          <p>Het is verleidelijk om “maximale compressie” te kiezen voor het kleinst mogelijke bestand en door te gaan, maar die instelling geeft vaak artefacten die duidelijk zichtbaar zijn zodra je de uitvoer op werkelijke grootte bekijkt. Een snelle controle van het gecomprimeerde resultaat, op de grootte waarop het echt wordt bekeken, kost seconden en voorkomt dat je iets verstuurt of publiceert dat merkbaar slechter oogt dan bedoeld.</p>
+
+          <h3>De eigen compressie van de bestemming negeren</h3>
+          <p>Een nauwelijks gecomprimeerd, enorm bestand uploaden naar een platform dat het toch gaat comprimeren (de meeste sociale media en berichtenapps) verspilt uploadtijd en bandbreedte zonder visueel voordeel, omdat de eigen verwerking van het platform een groot deel van de uiteindelijke kwaliteit bepaalt, ongeacht wat je stuurde. Stem je compressie-inspanning af op wat de bestemming echt behoudt, niet op de aanname dat “meer originele kwaliteit erin gelijk is aan meer uiteindelijke kwaliteit eruit”.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="combine">
+      <details class="golden-rules-article">
+        <summary>1. Pdf's elke keer in de juiste volgorde samenvoegen</summary>
+        <div class="golden-rules-body">
+          <p>De hele taak van Combine is bedrieglijk eenvoudig, meerdere bestanden samenvoegen tot één pdf, maar waar mensen het vaakst over struikelen is niet het samenvoegen zelf, maar ervoor zorgen dat de pagina's in de bedoelde volgorde terechtkomen.</p>
+
+          <h3>Hoe Combine de paginavolgorde bepaalt</h3>
+          <p>Combine voegt je bestanden samen in de volgorde waarin ze in je selectie staan: de volgorde waarin je ze in de bestandskiezer hebt gekozen, of de volgorde waarin ze zijn neergezet, van boven naar beneden. Het probeert niet een “juiste” volgorde te raden op basis van bestandsnamen, datums of inhoud, want er is geen universele regel voor welke volgorde je wilt; het respecteert simpelweg de volgorde die je opgeeft. Dat betekent dat de verantwoordelijkheid voor de juiste volgorde volledig ligt bij hoe je bestanden selecteert of rangschikt voordat je op combineren klikt.</p>
+
+          <h3>Waarom bestandsnamen misleidend kunnen zijn</h3>
+          <p>Een veelvoorkomende aanname is dat bestanden automatisch op alfabetische of numerieke volgorde worden samengevoegd. Als de bestandskiezer van je besturingssysteem de bestanden zo toont en je ze selecteert door over de hele lijst te slepen, krijg je vaak ook die volgorde, maar dat is een bijeffect van hoe de bestandskiezer de lijst toont, geen garantie. Zodra je bestanden los met de muis selecteert, in een andere volgorde of één voor één sleept, volgt de samenvoegvolgorde je klikken, niet de bestandsnamen.</p>
+
+          <h3>Een betrouwbare controle vooraf bij het combineren</h3>
+          <p>Kijk voordat je op combineren klikt naar de voorvertoningslijst die Combine toont: die weerspiegelt de werkelijke volgorde van de samenvoeging. Staat er iets op de verkeerde plek, verwijder het dan en voeg het opnieuw toe op de juiste positie, of orden je selectie voordat je uploadt. Deze controle van dertig seconden gaat veel sneller dan een samengevoegde pdf downloaden, ontdekken dat pagina 4 eigenlijk pagina 2 moet zijn en helemaal opnieuw beginnen.</p>
+
+          <h3>Bestanden zo benoemen dat de volgorde niet fout kan gaan</h3>
+          <p>Als je regelmatig sets van meerdere bestanden samenvoegt, zoals gescande pagina's, rapporten in meerdere delen of opeenvolgende hoofdstukken, is een eenvoudige gewoonte die het giswerk over volgorde volledig wegneemt het voorzien van bestandsnamen met cijfers vóór het combineren: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Als je ze allemaal tegelijk in een bestandskiezer selecteert, volgt dat vanzelf die numerieke volgorde, en je krijgt de juiste volgorde zonder iets handmatig te hoeven rangschikken in Combine zelf.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Combineren voor sollicitaties: motivatiebrief, cv, portfolio</summary>
+        <div class="golden-rules-body">
+          <p>Sollicitaties voor banen en stages zijn een van de meest voorkomende redenen waarom mensen naar een tool voor het samenvoegen van pdf's grijpen, en de structuur goed krijgen kan echt invloed hebben op hoe je sollicitatie wordt ontvangen.</p>
+
+          <h3>Waarom werkgevers één pdf verkiezen boven meerdere bijlagen</h3>
+          <p>Een recruiter of HR-medewerker beoordeelt vaak tientallen of honderden sollicitaties, regelmatig op een telefoon of snel tussen vergaderingen door. Een sollicitatie die als drie of vier losse bijlagen binnenkomt (motivatiebrief, cv, portfolio, referenties) dwingt ze meerdere bestanden te openen en te combineren om het hele plaatje te zien, en het is makkelijk dat één bijlage wordt gemist, verkeerd opgeborgen of gewoon niet geopend. Eén nette pdf in de juiste volgorde haalt die drempel volledig weg: één klik opent alles, in de volgorde waarin jij het gelezen wilt hebben.</p>
+
+          <h3>De volgorde die voor de meeste sollicitaties werkt</h3>
+          <p>Een verstandige standaardvolgorde is: eerst de motivatiebrief (die is het kortst en geeft context), dan het cv (de kern van wat de meeste beoordelaars willen), en ten slotte aanvullend materiaal: portfoliovoorbeelden, certificaten, referenties. Dat komt overeen met hoe de meeste mensen een sollicitatie van nature willen lezen: eerst context, dan inhoud, dan onderbouwing, in plaats van met een portfolio te beginnen voordat je weet voor welke functie iemand solliciteert.</p>
+
+          <h3>Bestanden combineren die in verschillende formaten begonnen</h3>
+          <p>Het komt vaak voor dat een motivatiebrief als via Word geëxporteerde pdf bestaat, een cv als aparte pdf en portfoliovoorbeelden als afbeeldingsbestanden (foto's van fysiek werk, screenshots van digitale projecten, gescande certificaten). Als je portfoliostukken afbeeldingen zijn in plaats van pdf's, converteer ze dan eerst naar pdf met de pdf-uitvoer van de tool Convert, die een batch afbeeldingen omzet in één pdf waarin elke afbeelding een eigen pagina is. Combineer die pdf vervolgens met je motivatiebrief en cv in de volgorde waarin je ze wilt laten verschijnen.</p>
+
+          <h3>De bestandsgrootte redelijk houden</h3>
+          <p>Portfolioafbeeldingen, vooral camerafoto's van fysiek werk of screenshots met hoge resolutie, kunnen onnodig groot zijn. Als je gecombineerde sollicitatie-pdf enorm uitvalt, loont het om de bronafbeeldingen te comprimeren vóór het omzetten naar pdf en samenvoegen, in plaats van erna: een grote, trage bijlage is een kleine maar echte frictie voor wie hem onder tijdsdruk beoordeelt.</p>
+
+          <h3>Nog even controleren voordat je het indient</h3>
+          <p>Open na het samenvoegen de uiteindelijke pdf en scrol er één keer van begin tot eind doorheen. Zo vang je pagina's in de verkeerde volgorde, een per ongeluk meegenomen conceptversie of een portfolioafbeelding die niet zo is omgezet als verwacht: het soort kleine fout dat onzichtbaar is tot je echt kijkt en aanzienlijk gênanter om te ontdekken nadat een werkgever hem al heeft geopend.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Gescande documenten samenvoegen zonder de paginavolgorde kwijt te raken</summary>
+        <div class="golden-rules-body">
+          <p>Gescande papieren, zoals contracten, formulieren, identiteitsdocumenten en brieven van meerdere pagina's, brengen hun eigen volgordeproblemen mee, vooral door hoe scannen zelf meestal gaat.</p>
+
+          <h3>Waarom gescande pagina's vaker in de verkeerde volgorde belanden dan andere bestanden</h3>
+          <p>Veel scanners en scan-apps slaan elke pagina op als apart bestand met een generieke, automatisch gegenereerde naam (scan001.pdf, IMG_2024.jpg enzovoort), soms genummerd in de volgorde waarin pagina's fysiek in de scanner gingen en soms niet. Als je een stapel pagina's in een andere fysieke volgorde hebt gescand, of een multifunctionele printer ze onverwacht heeft genummerd, geven de bestandsnamen niet betrouwbaar de ware leesvolgorde van het document weer. Bestanden “op naamvolgorde” selecteren kan dan ongemerkt een samengevoegd document met pagina's in de verkeerde volgorde opleveren.</p>
+
+          <h3>De veiligste aanpak: controleer de inhoud, niet alleen de bestandsnamen</h3>
+          <p>Bekijk voor het samenvoegen de werkelijke inhoud van elke gescande pagina (de voorvertoningen van Combine maken dat snel) in plaats van op de bestandsnaam alleen te vertrouwen. Het kost een paar seconden om te bevestigen dat pagina één echt de bovenkant van het document is en pagina twee er logisch op volgt, maar het is de meest betrouwbare manier om te voorkomen dat je een door elkaar gehaald document indient bij een bank, overheidsinstantie of verhuurder, plekken waar een document in de verkeerde volgorde echt vertraging kan veroorzaken.</p>
+
+          <h3>Gemengde scans: sommige pagina's gefotografeerd, sommige gescand</h3>
+          <p>Het komt vaak voor dat de meeste pagina's goed zijn gescand en één of twee met een telefoonfoto zijn gemaakt (een pagina die niet op de scanner paste of achteraf is gescand). Combine verwerkt afbeeldingen en pdf's door elkaar, dus technisch is dat geen probleem, maar visueel ziet een gefotografeerde pagina er qua belichting en uitsnede vaak anders uit dan een echte scan. Als consistentie in het uiterlijk van het document telt, loont het om de afwijkende pagina goed opnieuw te scannen in plaats van formaten te mengen, al is dat een cosmetische kwestie en geen functionele.</p>
+
+          <h3>Contracten van meerdere pagina's en handtekeningpagina's</h3>
+          <p>Bij contracten of formulieren met een handtekeningpagina moet die pagina in precies de juiste positie ten opzichte van de rest van het document terechtkomen, want een handtekeningpagina die op de verkeerde plek is samengevoegd, kan een juridisch document ongeldig of onvolledig laten lijken. Beschouw dit als een harde casus voor de controle vóór het combineren hierboven: juist hier bespaart vijf seconden kijken naar de geordende voorvertoningslijst je een document dat opnieuw moet worden ondertekend en verstuurd.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer je moet combineren en wanneer je bestanden gescheiden houdt</summary>
+        <div class="golden-rules-body">
+          <p>Alles in één pdf samenvoegen is niet altijd de betere keuze: soms dienen aparte bestanden de ontvanger echt beter, en het loont om te weten in welke situatie je zit.</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situatie</th><th>Combineren of gescheiden houden</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situatie">Sollicitatie of rapport van meerdere pagina's dat in volgorde gelezen moet worden</td><td data-label="Combineren of gescheiden houden">Combine</td></tr>
+              <tr><td data-label="Situatie">Een platform vraagt uitdrukkelijk om één pdf</td><td data-label="Combineren of gescheiden houden">Combine</td></tr>
+              <tr><td data-label="Situatie">Ontvanger moet elk bestand zelfstandig gebruiken</td><td data-label="Combineren of gescheiden houden">Gescheiden houden</td></tr>
+              <tr><td data-label="Situatie">Grote batch niet-verwante naslagbestanden</td><td data-label="Combineren of gescheiden houden">Gescheiden houden, of ZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Wanneer combineren duidelijk de juiste keuze is</h3>
+          <p>Alles wat in een bepaalde volgorde gelezen moet worden, zoals een sollicitatie van meerdere pagina's, een gescand contract of een rapport met een inleiding gevolgd door onderbouwende gegevens, heeft enorm veel baat bij één bestand, omdat het garandeert dat de lezer alles in de bedoelde volgorde tegenkomt en niet per ongeluk pagina's in een andere volgorde opent of iets overslaat. Overal waar een formulier of platform uitdrukkelijk om “één pdf” vraagt, is het ook een makkelijke keuze: combineer en verstuur precies wat wordt gevraagd.</p>
+
+          <h3>Wanneer aparte bestanden de ontvanger beter dienen</h3>
+          <p>Als een ontvanger zelfstandig met documenten aan de slag moet, bijvoorbeeld alleen de factuur doorsturen naar de boekhouding en de pakbon voor eigen administratie houden, maakt het samenvoegen tot één bestand zijn werk moeilijker in plaats van makkelijker, omdat hij alleen het stuk dat hij nodig heeft moet uitpakken of opnieuw moet afdrukken. Evenzo: stuur je meerdere echt niet-verwante documenten naar iemand die ze op verschillende plekken zal archiveren, dan laten losse bestanden hem elk document op zijn eigen voorwaarden behandelen in plaats van te worstelen met een gebundelde pdf.</p>
+
+          <h3>Grote verzamelingen naslagmateriaal</h3>
+          <p>Als je een grote hoeveelheid losjes verwante afbeeldingen of documenten verstuurt die niet in volgorde gelezen hoeven te worden, bijvoorbeeld een grote batch referentiefoto's, kan een ZIP-archief met losse bestanden eigenlijk nuttiger zijn dan één gigantische pdf, omdat de ontvanger afzonderlijke items kan bekijken en openen in plaats van door één enorm document te scrollen om één foto te vinden.</p>
+
+          <h3>Een snelle manier om te beslissen</h3>
+          <p>Vraag je af of de bestanden samen één samenhangend geheel vormen dat van begin tot eind gelezen moet worden (combineer ze), of meerdere onafhankelijke dingen die toevallig samen worden verstuurd (houd ze gescheiden of zip ze). De meeste sollicitaties, contracten en gescande documenten van meerdere pagina's vallen duidelijk in de eerste categorie; het meeste naslagmateriaal, bulkleveringen en documenten die los te gebruiken zijn, in de tweede.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij het combineren (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>Combine is een eenvoudige tool, maar een handvol vermijdbare fouten veroorzaakt het merendeel van de frustratie die mensen ermee ervaren.</p>
+
+          <h3>Bestandsnamen vertrouwen voor de volgorde in plaats van de voorvertoning te controleren</h3>
+          <p>Zoals in de artikelen over volgorde hierboven staat, geven bestandsnamen niet altijd de volgorde weer die je echt wilt, vooral bij scans en downloads met automatisch gegenereerde namen. Bekijk altijd de voorvertoningslijst voordat je combineert, in plaats van aan te nemen dat de selectievolgorde met je bedoeling overeenkwam.</p>
+
+          <h3>Niet-verwante documenten “voor het gemak” in één bestand mengen</h3>
+          <p>Meerdere niet-verwante documenten combineren om minder bestanden te beheren, werkt vaak averechts: de ontvanger moet nu een groot samengevoegd bestand openen en scrollen om het ene deel te vinden dat hij nodig heeft, in plaats van het specifieke bestand direct te openen. Bewaar combineren voor documenten die echt bij elkaar horen als één samenhangend geheel.</p>
+
+          <h3>Het eindbestand niet controleren voordat je het verstuurt</h3>
+          <p>Een samengevoegde pdf moet je één keer openen en doorlopen voordat hij ergens belangrijk heen gaat. Zo vang je een pagina in de verkeerde volgorde, een per ongeluk gedupliceerd document of een pagina die niet werd weergegeven zoals verwacht: problemen die voor het versturen triviaal op te lossen zijn en achteraf een stuk lastiger uit te leggen.</p>
+
+          <h3>Vergeten afbeeldingen te converteren voordat je ze met pdf's samenvoegt</h3>
+          <p>Als je losse afbeeldingen hebt die je in hetzelfde samengevoegde document wilt opnemen als bestaande pdf's, bedenk dan dat Combine bestanden samenvoegt zoals ze worden aangeleverd. Zorg voor het soepelste resultaat dat de afbeeldingen al in het gewenste formaat en de gewenste volgorde staan, want de oriëntatie of inhoud van een afbeelding aanpassen nadat die al deel is van een samengevoegde pdf is veel meer gedoe dan het vooraf doen.</p>
+
+          <h3>Een onnodig enorm samengevoegd bestand versturen</h3>
+          <p>Meerdere al grote pdf's of scans met hoge resolutie samenvoegen levert een gecombineerd bestand op dat al hun gewicht erft. Als het resultaat onverwacht enorm is, loont het om de bronafbeeldingen vóór het samenvoegen te comprimeren in plaats van erna, want een trage, te grote pdf is een veelvoorkomende bron van klachten van ontvangers met tragere verbindingen of oudere apparaten.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="exif">
+      <details class="golden-rules-article">
+        <summary>1. Wat EXIF-metadata echt over jou verraden</summary>
+        <div class="golden-rules-body">
+          <p>Elke foto die je telefoon of camera maakt, bevat veel meer dan alleen het beeld. In het bestand zit een blok metadata, EXIF-gegevens, dat stilletjes verrassend veel details vastlegt over wanneer, waar en hoe de foto is gemaakt.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Type metadata</th><th>Wat het onthult</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Type metadata">GPS-locatie</td><td data-label="Wat het onthult">De exacte plek waar de foto is genomen, vaak tot op enkele meters</td></tr>
+              <tr><td data-label="Type metadata">Merk en model van het apparaat</td><td data-label="Wat het onthult">De specifieke camera of telefoon die is gebruikt</td></tr>
+              <tr><td data-label="Type metadata">Tijdstempel</td><td data-label="Wat het onthult">De exacte datum en tijd, tot op de seconde</td></tr>
+              <tr><td data-label="Type metadata">Camera-instellingen</td><td data-label="Wat het onthult">Diafragma, sluitertijd, ISO, brandpuntsafstand</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Locatie: de grootste</h3>
+          <p>Als locatievoorzieningen waren ingeschakeld toen de foto werd gemaakt, leggen de meeste telefoons de exacte gps-coördinaten vast van waar de opname is gemaakt, vaak nauwkeurig tot op enkele meters. Iedereen die het originele bestand in de juiste viewer opent of door een metadatalezer haalt, kan die locatie op een kaart uitzetten. Een foto gemaakt thuis, op een werkplek of op de school van een kind kan dus precies onthullen waar die plek is, zonder dat je ooit het adres ergens opschrijft.</p>
+
+          <h3>Apparaatgegevens</h3>
+          <p>EXIF bevat doorgaans het exacte merk en model van de camera of telefoon waarmee de foto is gemaakt, soms zelfs tot de specifieke softwareversie. Op zichzelf lijkt dat onschuldig, maar in combinatie met andere metadata is het een extra identificerend detail van een foto, en in sommige contexten (marktplaatsadvertenties, anonieme accounts) kan het nog een draad zijn die een foto terugleidt naar de bekende apparaten van een specifiek persoon.</p>
+
+          <h3>Tijdstempels</h3>
+          <p>De exacte datum en tijd waarop de foto is gemaakt, wordt tot op de seconde vastgelegd, nauwkeuriger dan de meeste mensen beseffen. Een “terloops” geplaatste foto kan precies onthullen wanneer iemand op een bepaalde plek was, wat relevant wordt voor wie zijn routine of verblijfplaats uit een patroon van in de tijd geplaatste foto's zou kunnen laten reconstrueren.</p>
+
+          <h3>Camera-instellingen en soms meer</h3>
+          <p>Technische details zoals diafragma, sluitertijd en ISO worden ook opgeslagen. Die zijn belangrijk voor fotografen die hun eigen opnamen bekijken, maar op zichzelf niet privacygevoelig. Sommige apparaten en bewerkings-apps bedden afhankelijk van de instellingen ook een voorbeeldminiatuur, software-/bewerkingsgeschiedenis of zelfs een veld voor copyright of auteursnaam in. De exacte velden verschillen per apparaat en app, maar locatie- en tijdstempelgegevens wegen het zwaarst voor de privacy.</p>
+
+          <h3>Waarom dit zelfs bij “onbelangrijke” foto's telt</h3>
+          <p>De meeste losse foto's voelen op zichzelf onschuldig, maar metadata stapelt op: een vreemde met toegang tot de locatiegegevens van meerdere foto's van jou kan een patroon uitzetten van plekken die je vaak bezoekt, zoals thuis, werk, sportschool of de school van een kind, dat geen enkele foto op zichzelf zou onthullen. Dit is precies het gat dat Cleanly dicht: deze metadata verwijderen voordat een foto je apparaat verlaat, haalt die hele laag verborgen informatie weg, terwijl het zichtbare beeld zelf volledig ongewijzigd blijft.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Metadata verwijderen voordat je foto's verkoopt of plaatst</summary>
+        <div class="golden-rules-body">
+          <p>Twee van de meest voorkomende situaties waarin EXIF-gegevens stilletjes echte problemen veroorzaken, zijn items online verkopen en foto's openbaar plaatsen. In beide gevallen gaan foto's naar vreemden, precies wanneer verborgen metadata het meest uitmaakt.</p>
+
+          <h3>Verkopen op marktplaatsen</h3>
+          <p>Foto's van spullen die te koop staan, zoals meubels, elektronica, een auto of een huurwoning, worden bijna altijd bij de verkoper thuis of op het werk genomen. Ongewijzigd kunnen deze foto's een koper je exacte adres geven voordat je hem ooit hebt ontmoet of iets hebt afgesproken, simpelweg door de metadata van de afbeelding te openen. Dit is een echte, gedocumenteerde manier waarop mensen hun thuislocatie hebben zien blootgesteld aan vreemden die geen eerder legitiem reden hadden die te kennen. Advertentiefoto's door Cleanly halen voordat je uploadt, neemt dit risico volledig weg, zonder zichtbaar verschil voor de koper.</p>
+
+          <h3>Plaatsen op sociale media en forums</h3>
+          <p>De meeste grote socialemediaplatforms verwijderen metadata bij het uploaden automatisch, wat goed nieuws is, maar niet elk platform doet dat, en doorgestuurde of gedownloade kopieën van je foto (screenshots, opgeslagen versies, reposts) gaan niet betrouwbaar door hetzelfde verwijderproces. Als een foto ooit wordt gedownload van waar je hem plaatste en elders opnieuw wordt gedeeld, reist elke metadata die de oorspronkelijke upload heeft overleefd mee. Metadata verwijderen voordat je plaatst is de enige manier om te garanderen dat die nergens in de keten aanwezig is.</p>
+
+          <h3>Een simpele gewoonte voor het plaatsen</h3>
+          <p>Voordat je foto's uploadt naar een plek waar mensen ze kunnen zien die je niet persoonlijk kent, zoals een marktplaatsadvertentie, een openbaar socialmediabericht, een forum of een datingprofiel, haal je ze eerst door Cleanly. Het kost seconden, werkt op een hele reeks foto's tegelijk en levert visueel identieke kopieën zonder de verborgen gegevens. Maak hier een standaardstap van, en niet iets wat je alleen bij “gevoelige” foto's onthoudt, dan word je nooit verrast door een foto waar je niet bij stilstond.</p>
+
+          <h3>Wat het verwijderen niet verandert</h3>
+          <p>Het is goed om duidelijk te zijn over wat Cleanly wel en niet doet: het verwijdert verborgen metadata uit het bestand, maar kan geen informatie verwijderen die in de afbeelding zelf zichtbaar is, zoals een straatnaambord op de achtergrond, een zichtbaar huisnummer of een weerspiegeling die je locatie verraadt. Het verwijderen van metadata regelt de onzichtbare laag; alles wat in de foto zelf zichtbaar is, is een aparte afweging die je voor het plaatsen nog met je eigen ogen moet controleren.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Cleanly voor fotografen: privacy zonder kwaliteitsverlies</summary>
+        <div class="golden-rules-body">
+          <p>Fotografen hebben een iets andere relatie met metadata dan gewone telefoongebruikers: een deel ervan is echt nuttig om voor eigen administratie te bewaren, waardoor “alles altijd verwijderen” niet helemaal het juiste instinct is.</p>
+
+          <h3>Waarom fotografen sommige metadata lokaal willen bewaren</h3>
+          <p>Camera-instellingen (diafragma, sluitertijd, ISO, brandpuntsafstand) zijn waardevol als je je eigen opnamen later bekijkt: begrijpen met welke instellingen een foto is gemaakt die je mooi vond, helpt je die te herhalen. Voor je eigen werkkopieën, privé bewaard, is er geen reden om deze informatie te verwijderen, omdat het echt nuttige naslaggegevens zijn zonder privacyrisico zolang de bestanden bij jou blijven.</p>
+
+          <h3>Waarom opgeleverde of gepubliceerde kopieën een ander verhaal zijn</h3>
+          <p>Zodra een foto aan een klant wordt geleverd, op een portfoliosite wordt gepubliceerd of openbaar wordt geplaatst, verandert de afweging: locatiegegevens horen vooral niet in een bestand voor klanten of het publiek, omdat ze opnamelocaties kunnen onthullen die privé moesten blijven (het huis van een klant bij een gezinsshoot, een privélocatie, het exacte adres van een studio als dat niet openbaar hoort te zijn). Cleanly is precies voor deze stap bedoeld: haal definitieve, naar buiten gerichte exports erdoor vóór oplevering of publicatie, en houd je eigen werkbestanden met volledige metadata intact voor eigen naslag.</p>
+
+          <h3>Nooit kwaliteitsverlies</h3>
+          <p>Een veelvoorkomende (en begrijpelijke) zorg is dat het verwijderen van metadata de beeldkwaliteit zou aantasten. Dat is niet zo. Metadata is een apart blok tekstachtige informatie dat naast de pixelgegevens is opgeslagen en er niet mee is vermengd, dus verwijderen heeft nul effect op resolutie, kleur of scherpte. De uitvoer van Cleanly is pixel voor pixel dezelfde foto, alleen zonder de verborgen gegevens die erbij horen.</p>
+
+          <h3>Het in een leveringsworkflow inbouwen</h3>
+          <p>Voor fotografen die regelmatig galerijen opleveren of batches exporteren, is de eenvoudigste aanpak om het verwijderen van metadata als laatste stap vóór het exporteren te behandelen, toegepast op de hele batch tegelijk in plaats van foto voor foto. Zo wordt het een vast onderdeel van het afronden van een opdracht, vergelijkbaar met een laatste kwaliteitscontrole, in plaats van iets wat je voor elke klant of elk platform waar een galerij wordt gedeeld apart moet onthouden.</p>
+
+          <h3>Klanten beschermen en jezelf</h3>
+          <p>Bedenk dat de locatie- en apparaatgegevens die gevaar lopen in de foto's van een klant vaak over het leven van de klant gaan, niet over het jouwe: een gezinsportretsessie bij hen thuis, verlovingsfoto's van een stel op een betekenisvolle privélocatie. Metadata verwijderen vóór oplevering beschermt de privacy van je klanten net zo goed als je eigen professionele reputatie voor zorgvuldig omgaan met hun afbeeldingen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer het verwijderen van metadata het belangrijkst is</summary>
+        <div class="golden-rules-body">
+          <p>Niet elke foto heeft dezelfde privacy-inzet. Weten welke situaties echt om het verwijderen van metadata vragen, helpt je de gewoonte te richten waar het er het meest toe doet.</p>
+
+          <h3>Foto's gemaakt thuis of op een werkplek</h3>
+          <p>Elke foto die binnen of vlak rond je huis of werkplek is genomen, inclusief foto's voor advertenties op marktplaatsen, “thuiswerk”-foto's of snelle plaatjes in je woonkamer, bevat locatiemetadata die rechtstreeks verwijst naar een plek waar je regelmatig en voorspelbaar bent. Dit is steevast de categorie met de hoogste inzet, omdat het de locatie is die voor anderen het waardevolst is om te kennen en die de meeste mensen niet bedenken te beschermen.</p>
+
+          <h3>Foto's met kinderen</h3>
+          <p>Foto's van kinderen, op school, bij een vaste activiteit, in een buurt, brengen een extra risicolaag met zich mee als locatiemetadata blijft bestaan, omdat die kan onthullen waar een kind op vaste tijden voorspelbaar is. Veel ouders denken al zorgvuldig na over wat zichtbaar is in een foto voordat ze plaatsen; dezelfde zorg is het waard voor wat onzichtbaar is in de metadata.</p>
+
+          <h3>Alles wat naar een vreemde gaat voordat er vertrouwen is</h3>
+          <p>Kopers op marktplaatsen, dates uit datingapps en andere contexten waarin je foto's deelt met iemand die je niet persoonlijk hebt gescreend, zijn precies de situaties waarin je niet meer informatie wilt weggeven dan bedoeld. Een advertentiefoto of profielfoto is het duidelijkste voorbeeld: de ontvanger heeft nog geen band met je, en verwijderde metadata betekent dat de foto alleen onthult wat erin zichtbaar is, niets meer.</p>
+
+          <h3>Wanneer het minder uitmaakt</h3>
+          <p>Het verwijderen van metadata is veel minder kritiek voor foto's die je privé deelt met mensen die je al kent en vertrouwt: een foto rechtstreeks naar een familielid of goede vriend sturen via een privékanaal brengt niet hetzelfde blootstellingsrisico met zich mee als openbaar plaatsen of naar een vreemde sturen. Het is niet zo dat metadata ooit actief nuttig is om te laten staan voor de privacy, alleen dat de praktische urgentie meegroeit met hoe openbaar of onvertrouwd de ontvanger is.</p>
+
+          <h3>Een redelijke standaard</h3>
+          <p>Gezien hoe snel en verliesvrij het proces is, is er weinig nadeel aan om het verwijderen van metadata een vaste gewoonte te maken voor alles wat je directe, vertrouwde kring verlaat: het kost je niets aan kwaliteit of moeite, en je hoeft er niet op te vertrouwen dat je het selectief doet voor precies die ene foto die er later toe blijkt te doen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte privacyfouten met foto's</summary>
+        <div class="golden-rules-body">
+          <p>De meeste problemen met privacy van foto's komen door een handvol gewoonten die op het moment zelf onschuldig voelen. Hier let je op.</p>
+
+          <h3>Aannemen dat het platform het al afhandelt</h3>
+          <p>Het klopt dat veel grote socialemediaplatforms metadata bij het uploaden automatisch verwijderen, maar niet alle platforms doen dat, en doorgestuurde kopieën, downloads en reshares gaan niet betrouwbaar opnieuw door diezelfde verwijdering. Erop vertrouwen dat “het platform het wel afhandelt” is een gok; zelf metadata verwijderen voordat je plaatst, haalt de onzekerheid volledig weg.</p>
+
+          <h3>Alleen nadenken over wat in de foto zichtbaar is</h3>
+          <p>Mensen controleren een foto vaak zorgvuldig op zichtbare details, geen gevoelige documenten op de achtergrond, geen leesbare straatnaamborden, terwijl ze vergeten dat de onzichtbare metadata precies dezelfde soort informatie (met name locatie) kan lekken, ook als de afbeelding zelf volkomen veilig lijkt. De zichtbare inhoud controleren en de metadata verwijderen zijn twee aparte, beide noodzakelijke stappen.</p>
+
+          <h3>Spullen verkopen met onaangeraakte advertentiefoto's</h3>
+          <p>Advertenties op marktplaatsen zijn een van de meest voorkomende praktijkbronnen van onbedoeld vrijgegeven locatie, omdat verkopers items fotograferen waar ze wonen en de foto's ongewijzigd uploaden. Dit is een van de duidelijkste en waardevolste gevallen om metadata vóór het plaatsen te verwijderen, omdat het risico (je thuisadres aan vreemden onthullen) concreet is en de oplossing seconden kost.</p>
+
+          <h3>Oude, al geplaatste foto's vergeten</h3>
+          <p>Het verwijderen van metadata beschermt alleen foto's die je vóór het delen opschoont. Het herstelt niet met terugwerkende kracht foto's die al ergens met metadata zijn geplaatst. Als je je zorgen maakt over eerdere berichten, is de oplossing teruggaan naar die specifieke foto's en ze verwijderen en vervangen door opgeschoonde versies als het platform dat toestaat, in plaats van aan te nemen dat de gewoonte voortaan alles dekt wat er al is.</p>
+
+          <h3>Het behandelen als een alles-of-niets-klus die af en toe voorkomt</h3>
+          <p>Wachten met het verwijderen van metadata tot een foto “gevoelig voelt” betekent elke keer op je eigen inschatting vertrouwen, precies het soort gewoonte die er uiteindelijk een mist. Het verwijderen van metadata in je standaardroutine opnemen voor alles wat een vertrouwde kring verlaat, haalt de inschatting volledig weg: het wordt consequent toegepast in plaats van selectief.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly voor SVG's: editormetadata verwijderen, geen EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Alles hierboven gaat over EXIF-gegevens die in foto's zijn ingebed: gps, cameramodel, tijdstempels. SVG-bestanden hebben helemaal geen EXIF, want het zijn geen foto's maar XML-tekst die vormen beschrijft. Maar ontwerptools bouwen hun eigen soort verborgen metadata in een SVG in, en Cleanly detecteert en verwijdert die ook als je er een neerzet.</p>
+
+          <h3>Wat ontwerptools in een SVG inbedden</h3>
+          <p>Illustrator, Inkscape, Sketch en Figma schrijven allemaal meer in het bestand dan de vormen die je hebt getekend: een ingebed <code>&lt;metadata&gt;</code>/RDF-blok (soms met informatie over auteurschap en licentie via Dublin Core-tags), editorspecifieke attributen met naamruimte (het vaakst de tags <code>sodipodi:</code> van Inkscape) en gewone XML-opmerkingen die het exportproces achterlaat. Niets daarvan is zichtbaar wanneer de SVG wordt weergegeven, maar het reist allemaal mee met het bestand naar iedereen aan wie je het stuurt.</p>
+
+          <h3>Waarom dit telt voor delen</h3>
+          <p>Dezelfde redenering als bij de gps-tag van een foto geldt hier: metadata die je niet bewust hebt toegevoegd, is nog steeds metadata die met het bestand de deur uitgaat. Een pictogram of logo dat is geëxporteerd voor een klant, een marktplaatsadvertentie of een openbare repo kan softwareversie-informatie of auteursvermelding bevatten die je nooit wilde publiceren. Het vóór het delen verwijderen is dezelfde gewoonte als bij EXIF in een foto: het kost niets en voorkomt een verrassing.</p>
+
+          <h3>Wat Cleanly je toont voordat het iets verwijdert</h3>
+          <p>Net zoals het de gps-, camera- en datumtags in een foto weergeeft, scant Cleanly een neergezette SVG en toont precies wat het heeft gevonden: ingebedde metadata, auteursgegevens van de editor of opmerkingen, zodat je kunt zien wat er echt in het bestand zit voordat je het verwijdert, in plaats van blind te verwijderen.</p>
+
+          <h3>Verliesvrij, niet met verlies</h3>
+          <p>Anders dan bij fotocompressie is dit geen kwaliteitsafweging. De opschoning verwijdert alleen rommel die de browser nooit heeft weergegeven. De vormen, kleuren en structuur die je ontwerptool heeft gemaakt, blijven volledig onaangeroerd, dus het opgeschoonde bestand ziet er pixel voor pixel identiek uit en kan daarna nog steeds in een vectoreditor worden geopend en bewerkt.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="context">
+      <details class="golden-rules-article">
+        <summary>1. Hoe tekst aan een pdf toevoegen echt werkt</summary>
+        <div class="golden-rules-body">
+          <p>Een pdf-pagina is geen tekstdocument waarin je zomaar kunt klikken en typen. Het lijkt meer op een afgedrukt vel, een vast beeld van tekst en afbeeldingen op exacte posities. Als je dat verschil begrijpt, snap je zowel wat Context doet als waarom het zo werkt.</p>
+
+          <h3>De pagina is een plaatje, geen document</h3>
+          <p>De meeste pdf's (alles wat niet specifiek als invulbaar formulier is gebouwd) kennen geen “lege ruimte waarin je kunt typen”. Wat jij ziet als lijn, vak of leeg veld is in werkelijkheid inkt op vaste coördinaten; er wacht geen onderliggend tekstveld op jouw invoer, zoals in een Word-document of webformulier. Als Context je tekst aan een pdf laat “toevoegen”, vindt het geen verborgen veld om in te vullen; het plaatst een gloednieuwe, onafhankelijke tekstlaag bovenop de bestaande pagina, op de plek waar je die naartoe sleept.</p>
+
+          <h3>Overlappen versus bewerken</h3>
+          <p>Deze overlay-aanpak is dezelfde die vrijwel elke pdf-annotatietool gebruikt, niet alleen deze: de oorspronkelijke tekst van een pdf echt bewerken (een zin wijzigen die al op de pagina staat) vereist gespecialiseerde software en is vaak helemaal niet mogelijk als het oorspronkelijke bestand geen bewerkbare tekstlagen heeft bewaard. Wat Context in plaats daarvan doet, is eenvoudiger en veel breder bruikbaar: het voegt een nieuw, apart stuk tekst toe dat visueel bovenop de pagina zit, precies wat je wilt voor bijschriften, notities, initialen of het invullen van een lege regel op een formulier.</p>
+
+          <h3>Punten, geen pixels</h3>
+          <p>Pdf-pagina's meten posities in punten (1/72 inch), niet in de pixels op het scherm waarmee je met je vinger of cursor sleept. Context regelt die omrekening voor je: wat je op het scherm ziet, op welk zoomniveau je de pagina ook bekijkt, wordt altijd teruggerekend naar de juiste vaste positie in de echte pdf, dus een tekstvak dat je bovenaan een pagina zet, blijft bovenaan de pagina, op welk apparaat of zoomniveau iemand anders hem later ook opent.</p>
+
+          <h3>Wat er gebeurt als je downloadt</h3>
+          <p>Als je op Downloaden klikt, wordt elk tekstvak en elke vorm die je hebt geplaatst permanent op de pagina's van de pdf getekend, inclusief kleuren, vet/cursief/onderstreept en exacte positie en grootte, wat één gewoon pdf-bestand oplevert. Er is geen speciaal “Context-formaat” en niets afzonderlijks om bij te houden: het bestand dat eruit komt, opent en print identiek aan elke andere pdf, in elke pdf-lezer, op elk apparaat.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. De juiste lettergrootte en plaatsing kiezen voor verschillende documenten</summary>
+        <div class="golden-rules-body">
+          <p>De juiste tekstgrootte en positie hangen volledig af van wat voor document je bewerkt en wie het daarna gaat lezen. Zo denk je erover per scenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Documenttype</th><th>Aanbevolen aanpak</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Documenttype">De lege regels van een formulier invullen</td><td data-label="Aanbevolen aanpak">Pas de grootte van het gedrukte label aan, zet het net boven de lijn</td></tr>
+              <tr><td data-label="Documenttype">Een notitie of opmerking toevoegen</td><td data-label="Aanbevolen aanpak">Gebruik een contrasterende kleur, houd het duidelijk gescheiden van de oorspronkelijke tekst</td></tr>
+              <tr><td data-label="Documenttype">Ondertekenen of paraferen</td><td data-label="Aanbevolen aanpak">Iets groter dan de omringende tekst, gecentreerd op de lijn</td></tr>
+              <tr><td data-label="Documenttype">Een pdf vol afbeeldingen van bijschriften voorzien</td><td data-label="Aanbevolen aanpak">Een consistente grootte voor elk bijschrift op elke pagina</td></tr>
+              <tr><td data-label="Documenttype">Formele of juridische documenten</td><td data-label="Aanbevolen aanpak">Pas de lettergrootte nauw aan op die van het document, gebruik zwart</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Aansluiten op de bestaande tekst van het document</h3>
+          <p>Het belangrijkste dat een toegevoegde regel er bedoeld uit laat zien in plaats van erop geplakt, is de grootte afstemmen op wat er al in de buurt is afgedrukt. Als de labels van het formulier op ongeveer 11–12 pt zijn gedrukt, laat je antwoord op 24 pt eruitzien alsof het er niet bij hoort, ook als de positie perfect is. Zoom eerst in op de omringende gedrukte tekst, krijg een ruwe indruk van de schaal en kies een grootte in de buurt. Context onthoudt de laatst gebruikte grootte, dus zodra je die één keer hebt afgestemd, begint elk volgend vak automatisch op dezelfde grootte.</p>
+
+          <h3>Binnen de lijntjes blijven, letterlijk</h3>
+          <p>Lege regels en vakken op formulieren zijn meestal afgestemd op een bepaalde hoeveelheid tekst in een bepaalde grootte. Bedenk voordat je een lang antwoord in een korte regel typt of de tekst iets kleiner moet worden om te passen, want tekst die voorbij het einde van een gedrukte regel loopt, lijkt een fout voor wie het ingevulde document daarna leest, ook al is er technisch niets stuk.</p>
+
+          <h3>Een kleur kiezen die als “toegevoegd” leest, niet als “verborgen”</h3>
+          <p>Zwarte tekst is meestal de veiligste standaard, omdat die overeenkomt met hoe de meeste formulieren en documenten al zijn afgedrukt en niet opvalt als toevoeging. Gekleurde tekst is echt nuttig voor notities, correcties of alles wat je specifiek wilt laten opvallen ten opzichte van de oorspronkelijke inhoud. Zorg er alleen voor dat de gekozen kleur echt contrasteert met de pagina erachter; lichte kleuren zoals geel verdwijnen makkelijk op een witte pagina.</p>
+
+          <h3>Marge laten voor het onverwachte</h3>
+          <p>Tekst helemaal aan de rand van een pagina plaatsen riskeert dat die wordt afgeknipt als het document later op een iets ander papierformaat of met een andere margeinstelling dan verwacht wordt afgedrukt. Een kleine buffer laten tussen je tekst en de paginarand, en tussen je tekst en nabijgelegen gedrukte inhoud, houdt het resultaat netjes, hoe het uiteindelijk ook wordt afgedrukt of bekeken.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Formulieren invullen en documenten ondertekenen zonder printer</summary>
+        <div class="golden-rules-body">
+          <p>Printen, ondertekenen, scannen en terugmailen is nog steeds hoe veel papierwerk wordt afgehandeld, en het is bijna altijd onnodig. Zo sla je het over met alleen een browser.</p>
+
+          <h3>De lus van printen, ondertekenen en scannen vervangen</h3>
+          <p>Als een formulier alleen een naam, een datum, een paar korte antwoorden en een plek voor een handtekening nodig heeft, is er zelden een echte reden om een printer of scanner erbij te halen. Open de pdf direct in Context, zet een tekstvak op elke lege regel, typ je antwoord en download: de hele heen-en-weer die vroeger papier vereiste, speelt zich nu volledig op het scherm af, en het resultaat is sowieso een schonere, beter leesbare pdf dan een gescande papieren kopie meestal is. Zet voor een selectievakje of meerkeuzeoptie een vorm neer (een kruis om te markeren, een cirkel om te selecteren) in plaats van te proberen een vinkje-teken te typen dat misschien niet eens in het lettertype zit.</p>
+
+          <h3>Getypte handtekeningen en paraaf</h3>
+          <p>Je naam typen in een schrijfletter- of handschriftachtige stijl op een handtekeninglijn is gangbaar voor een groot deel van het dagelijkse papierwerk: interne bedrijfsformulieren, informele afspraken, ontvangstbevestigingen en vergelijkbare documenten met weinig inzet. Wees wel nuchter over één ding: een getypte naam is niet hetzelfde als een wettelijk erkende elektronische handtekening onder wetten zoals eIDAS of de Amerikaanse ESIGN Act, die doorgaans specifieke toestemmings- en verificatiestappen vereisen die een eenvoudige getypte overlay niet biedt. Gebruik voor contracten, juridische stukken of alles waarbij de geldigheid van de handtekening echt telt een speciale e-handtekeningdienst; Context is de juiste tool voor informeel papierwerk, geen vervanging daarvan.</p>
+
+          <h3>Antwoorden uitlijnen met gedrukte labels</h3>
+          <p>De meeste formulieren drukken een label af (“Naam:”, “Datum:”) gevolgd door een lege regel of vak voor het antwoord. Sleep je tekstvak zodat het net boven de lijn staat in plaats van erop: tekst direct op een gedrukte lijn wordt slecht leesbaar zodra beide overlappen, terwijl tekst die net erboven zweeft duidelijk leesbaar blijft en voor iedereen die de afgewerkte pagina bekijkt toch leest als “het antwoord bij dat label”.</p>
+
+          <h3>Nog even controleren voordat je het verstuurt</h3>
+          <p>Zodra elk veld is ingevuld, loont het om elke pagina op werkelijke grootte door te lopen (niet alleen de miniatuur waarin je typte) om te bevestigen dat niets overlapt, niets voorbij de rand van een lijn loopt en elk verplicht veld echt is ingevuld. Een tekstvak dat er prima uitziet terwijl je het actief bewerkt, kan er soms net iets anders bij zitten als je de afgewerkte pagina als geheel bekijkt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Werken met pdf's van meerdere pagina's: consistentie en bewerking per pagina</summary>
+        <div class="golden-rules-body">
+          <p>Contracten, rapporten en formulieren van meerdere pagina's vragen om een iets andere aanpak dan een snelle bewerking van één pagina, vooral om dingen consistent te houden terwijl je door het document gaat.</p>
+
+          <h3>Tussen pagina's navigeren zonder je plek kwijt te raken</h3>
+          <p>De paginanavigatie van Context houdt elk tekstvak gekoppeld aan de specifieke pagina waarop het is geplaatst, dus tussen pagina's schakelen om verschillende delen van een lang document in te vullen brengt niets door elkaar: een vak dat op pagina 3 is toegevoegd, blijft op pagina 3, hoeveel andere pagina's je ook bekijkt voor het downloaden.</p>
+
+          <h3>Grootte en kleur consistent houden over pagina's heen</h3>
+          <p>Bij alles met een herhaalde structuur over pagina's heen, bijvoorbeeld hetzelfde label op elke pagina van een formulier van meerdere pagina's, zorgt het bewust hergebruiken van dezelfde lettergrootte en kleur ervoor dat het afgewerkte document eruitziet als één samenhangende ronde in plaats van meerdere inconsistente bewerkingen aan elkaar geplakt. Omdat de laatst gebruikte grootte en kleur automatisch worden meegenomen naar het volgende tekstvak dat je toevoegt, betekent consistent blijven in een lang document meestal gewoon dat je ze niet wijzigt tenzij je dat echt bedoelt.</p>
+
+          <h3>Een ronde plannen voordat je begint te typen</h3>
+          <p>Bij langere documenten loont het om eerst snel alle pagina's door te lopen, alleen kijken, nog niet typen, om te zien wat er allemaal moet worden ingevuld voordat je op pagina één een grootte en positie vastlegt. Een grootte die op een schaarse eerste pagina goed oogt, kan te groot blijken voor een drukkere pagina verderop, en dat vroeg merken scheelt het terugkeren om vakken die je al hebt geplaatst opnieuw aan te passen.</p>
+
+          <h3>Het hele document nakijken voordat je downloadt</h3>
+          <p>Omdat elke pagina afzonderlijk wordt weergegeven en bewerkt, is het makkelijk om je op de pagina te richten waaraan je werkt en het document als geheel uit het oog te verliezen. Blader voor het downloaden van begin tot eind terug door de pagina's. Alleen zo vang je een pagina die helemaal is overgeslagen, of een vak dat er anders uitziet dan de andere zonder dat het je tijdens het werken opviel.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij het toevoegen van tekst aan pdf's (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste problemen met een bewerkte pdf zijn terug te voeren op een kleine set makkelijk te missen fouten. Hier let je op.</p>
+
+          <h3>Tekst die te klein is zodra je weer uitzoomt</h3>
+          <p>Het is makkelijk om te typen op een grootte die prima leesbaar lijkt terwijl je ingezoomd bent en op één vak gericht, om dan te merken dat het merkbaar klein is zodra de pagina op normale, volledige grootte wordt bekeken. Zoom weer uit (of controleer de afgewerkte pdf in een aparte viewer) voordat je downloadt, om te bevestigen dat elk vak op de werkelijke grootte leesbaar is, niet alleen op bewerkingsgrootte.</p>
+
+          <h3>Tekst over bestaande inhoud plaatsen in plaats van ernaast</h3>
+          <p>Een tekstvak direct op gedrukte tekst of een lijn zetten maakt beide slecht leesbaar zodra ze overlappen; de onderliggende inhoud schuift niet opzij. Schuif nieuwe tekst liever naar echt lege ruimte in de buurt in plaats van hem direct op iets te stapelen dat daar al is afgedrukt.</p>
+
+          <h3>De verkeerde pagina bewerken</h3>
+          <p>Op een langer document raak je makkelijk de actieve pagina uit het oog, vooral na zoomen of scrollen, en voeg je tekst helemaal aan de verkeerde pagina toe. Controleer de pagina-indicator voordat je een vak toevoegt bij alles groter dan een document van één pagina, vooral direct na het navigeren naar een nieuwe pagina.</p>
+
+          <h3>Een kleur met slecht contrast gebruiken</h3>
+          <p>Lichte kleuren, vooral lichtgeel, kunnen op bewerkingsgrootte op een helder scherm prima lijken en dan echt moeilijk leesbaar worden zodra ze worden afgedrukt of op een ander scherm bekeken. Houd je voor alles wat echt gelezen moet worden en niet alleen opgemerkt, aan kleuren met sterk contrast tegen wit, zoals zwart of een verzadigde kleur.</p>
+
+          <h3>Vergeten het bestand een andere naam te geven voordat je het deelt</h3>
+          <p>Rechtstreeks downloaden vanaf een generieke bestandsnaam van de upload kan je (of de ontvanger) laten zitten met een bestand dat gewoon “document” heet of iets dergelijks, niet te onderscheiden van een dozijn andere bestanden met dezelfde standaardnaam. Even de tijd nemen om het vóór het downloaden een duidelijke, specifieke bestandsnaam te geven, wat het is en vaak de datum, bespaart later echte verwarring, vooral zodra zich meerdere versies van hetzelfde formulier in een downloadmap opstapelen.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="gif">
+      <details class="golden-rules-article">
+        <summary>1. De complete gids voor GIF's: framerate, grootte en waarom ze overal nog zijn</summary>
+        <div class="golden-rules-body">
+          <p>Het GIF-formaat is tientallen jaren oud en technisch primitief vergeleken met moderne video, en toch is het nooit verdwenen: het is het ene bewegende-beeldformaat dat overal automatisch afspeelt, zonder spelerbediening, zonder geluid en zonder drempel van “klik om af te spelen”. Begrijpen wat het echt is, verklaart zowel de beperkingen als waarom de instellingen van Congify zijn zoals ze zijn.</p>
+
+          <h3>Wat een GIF echt is</h3>
+          <p>Een GIF is geen gecomprimeerde video: het is een reeks losse beelden, elk beperkt tot een palet van maximaal 256 kleuren, die achter elkaar in een lus worden afgespeeld. Er is helemaal geen geluidsspoor en je kunt er ook geen toevoegen; een GIF is per definitie stil, en juist daarom speelt hij automatisch af op plekken waar een video dat niet zou doen (chatapps, socialmediafeeds, forumberichten), zonder dempknop of tik om te starten.</p>
+          <p>De limiet van 256 kleuren is de grootste technische beperking van het formaat. Het is niet hetzelfde als de compressie met verlies van JPG, die detail vervaagt om ruimte te besparen: een GIF kan simpelweg niet meer dan 256 verschillende kleuren in één frame tonen, dus vloeiende verlopen en fotografische kleurdiepte worden teruggebracht tot een kleiner palet. Bij de meeste alledaagse clips (schermopnames, reactieclips, korte stukjes beeld met een handvol dominante kleuren) is dit onzichtbaar of bijna; bij een zonsondergang met een breed, subtiel kleurverloop zie je soms zichtbare banding.</p>
+
+          <h3>Framerate: de fps-afweging</h3>
+          <p>Congify biedt 5, 10, 15 of 20 frames per seconde. Elk extra frame is een volledig extra beeld in het bestand, dus de framerate is de grootste hefboom op de bestandsgrootte: van 10 naar 20 fps verdubbelt ongeveer het aantal frames (en ongeveer de bestandsgrootte) voor dezelfde cliplengte, voor een vloeiendheidswinst die bij GIF-resoluties en gangbare kijkformaten vaak nauwelijks opvalt.</p>
+          <p>10 fps is een redelijke standaard voor de meeste clips: beweging oogt vloeiend zonder dat het bestand enorm groot wordt. Ga naar 5 fps voor alles wat lang of grotendeels statisch is (een dia met tekst, een trage pan), waar minder frames niet opvallen. Kies alleen 15-20 fps als de beweging zelf snel is en haperingen echt storend zouden zijn: snelle gameplay, vlotte handgebaren, alles met veel verandering van frame tot frame.</p>
+
+          <h3>Grootte en uitsnede: Volledig, Vierkant, Staand</h3>
+          <p>Volledig laat de oorspronkelijke beeldverhouding van de bronvideo ongemoeid, de veiligste standaard als je niet zeker weet waar de GIF terechtkomt. Vierkant (1:1) snijdt bij tot een gecentreerd vierkant, wat de meeste socialemediaplatforms netjes in een feed tonen zonder zwarte balken of onvoorspelbaar bijsnijden aan hun kant. Staand past bij stories en verticale videoplaatsingen, waar een liggende clip anders klein met balken aan weerszijden zou verschijnen.</p>
+          <p>Bijsnijden gebeurt voordat de GIF wordt gemaakt, niet erna, dus alles wat door Vierkant of Staand wordt weggesneden is echt weg uit de uitvoer. Het loont om de uitsnede te bekijken tegen je eigenlijke onderwerp (staat het belangrijke deel van het beeld in het midden?) in plaats van aan te nemen dat het altijd goed uitkomt.</p>
+
+          <h3>De snelle beslisregel</h3>
+          <p>Korte, alledaagse clip met mensen of beweging → 10 fps, Volledig. Plaatsen in een feed die toch tot vierkant bijsnijdt → Vierkant, zodat jij de uitsnede bepaalt in plaats van het platform. Lange of grotendeels stilstaande beelden → zet eerst de fps naar 5 voordat je naar een andere groottevermindering grijpt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Trimmen: de juiste cliplengte kiezen</summary>
+        <div class="golden-rules-body">
+          <p>Het belangrijkste wat je zelf bepaalt over de bestandsgrootte van een GIF en hoe goed hij leest is niet de fps of de uitsnede, maar hoeveel beeld je erin stopt. Goed trimmen telt zwaarder dan elke instelling daarna.</p>
+
+          <h3>Waarom korter bijna altijd beter is</h3>
+          <p>Een GIF herhaalt zich, dus de kijker ziet hem meestal meer dan één keer. Een goede GIF verdient een tweede en derde ronde in plaats van er al één nodig te hebben om te snappen wat er gebeurde. Inkorten tot alleen het moment dat telt (een gebaar, een reactie, een clou, een specifieke actie op het scherm) in plaats van de seconden eromheen, levert bijna altijd iets effectievers op, niet alleen iets kleiners. Een GIF die 10 seconden nodig heeft om begrijpelijk te zijn, is meestal helemaal geen goede kandidaat voor een GIF.</p>
+          <p>De bestandsgrootte schaalt direct met de cliplengte: een trim van 6 seconden is ruwweg twee keer zo groot als een trim van 3 seconden bij dezelfde fps- en groottes-instellingen, al het andere gelijk. Omdat GIF's zo vaak worden gedeeld via chatapps en tragere verbindingen, levert strak trimmen meestal meer op dan de fps verlagen of kleiner bijsnijden.</p>
+
+          <h3>De schuifbalk precies gebruiken</h3>
+          <p>Sleep de twee grepen op de filmstrip om precies in te stellen waar de clip begint en eindigt. De voorvertoning wordt live bijgewerkt, zodat je precies ziet wat je bewaart voordat je een framerate of grootte kiest. Scrub vooral langzaam rond het begin- en eindpunt: een halve seconde lege ruimte aan het begin of een achterblijvend extra frame aan het eind is een veelvoorkomende reden dat een getrimde GIF minder pakkend aanvoelt dan het moment dat je in gedachten had.</p>
+
+          <h3>Afspeelrichting: Normaal, Omgekeerd, Boemerang</h3>
+          <p>Normaal speelt de getrimde clip één keer af en springt aan het eind direct terug naar het begin. Prima voor de meeste beelden, maar die harde sprong terug naar het begin kan abrupt overkomen als het eerste en laatste frame niet vanzelf op elkaar aansluiten. Omgekeerd speelt dezelfde clip achterstevoren af, wat vooral nuttig is als bewust effect en niet als algemene instelling. Boemerang speelt vooruit en direct daarna achteruit voordat het herhaalt, zodat de GIF heen en weer gaat in plaats van terug te springen naar het begin. Het is de instelling voor als het herhaalpunt zelf anders schokkerig zou ogen, en het is een bekende, herkenbare stijl op zich geworden voor korte herhalende clips.</p>
+
+          <h3>Snelheid: de lus vertragen of versnellen</h3>
+          <p>Snelheid verandert de afspeelsnelheid los van de fps waarmee je de clip hebt uitgepakt: 0,5x speelt af op halve snelheid voor nadruk of een slowmotion-gevoel, terwijl 2x of 4x een langere handeling samenperst tot een strakkere, pakkendere lus. Dit is een andere regeling dan de framerate: fps bepaalt hoeveel frames er bestaan, snelheid bepaalt hoe snel de GIF door de frames loopt die hij al heeft, dus een vertraagde GIF met lage fps kan nog steeds haperen. Combineer een lagere snelheid met een hogere fps als je zowel vloeiendheid als een slowmotion-gevoel wilt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Bijschriften toevoegen die echt werken</summary>
+        <div class="golden-rules-body">
+          <p>Bijschriften maken van een GIF iets wat ook zonder geluid te lezen is, wat bij GIF's, die helemaal geen geluid hebben, altijd het geval is. Ze leesbaar houden tegen een bewegende, onvoorspelbare achtergrond vraagt iets meer zorg dan tekst op een stilstaande afbeelding zetten.</p>
+
+          <h3>Lettertypekeuze en leesbaarheid</h3>
+          <p>Impact (het klassieke dikke, smalle meme-lettertype) leest duidelijk op kleine formaten en houdt het beter vol tegen drukke achtergronden dan een lichter, dunner lettertype. Het is een bewuste, praktische keuze, niet alleen een stijlstandaard. Arial is de veiligere, neutralere keuze voor alles wat informatief moet overkomen en niet als meme. Times en Comic Sans zijn er voor als de toon om iets specifieks vraagt, maar geen van beide houdt het zo goed vol tegen een bewegende achtergrond bij kleine bijschriftgroottes.</p>
+
+          <h3>Omlijning: waarom omlijnde tekst op elke achtergrond beter leest</h3>
+          <p>De achtergrond van een GIF verandert van frame tot frame, dus tekst zonder rand kan in het ene frame prima leesbaar zijn en in het volgende bijna onzichtbaar als de beelden erachter van donker naar licht wisselen. Een omlijning, een rand in een contrasterende kleur (meestal zwart rond witte tekst of wit rond zwarte tekst), houdt het bijschrift leesbaar bij die wisselingen, omdat het oog zich bij een drukke of veranderende achtergrond aan de rand vasthoudt, niet alleen aan de vulling. Zet hem aan voor bijna alles met echte beweging op de achtergrond; het is een van de weinige instellingen die je beter standaard aan dan uit kunt laten.</p>
+
+          <h3>Basisprincipes van kleurcontrast</h3>
+          <p>Witte of gele tekst met een zwarte omlijning is de klassieke, betrouwbare combinatie: hij houdt het vol bij bijna elk beeld. Zwarte tekst kan werken over consequent licht beeld, maar is riskanter zodra een deel van de clip donker wordt. Bekijk bij twijfel het bijschrift in de donkerste en lichtste momenten van je getrimde clip, niet alleen het frame waar je toevallig naar keek terwijl je het typte.</p>
+
+          <h3>Positionering en meerdere bijschriften</h3>
+          <p>Bijschriften kun je overal binnen het kader slepen en vergroten of verkleinen door aan hun hoekgreep te slepen, dus er wordt geen vaste “boven”- of “onder”-plaatsing opgelegd: zet elk bijschrift op een plek waar het niet het deel van het beeld bedekt dat er echt toe doet. Congify ondersteunt meerdere bijschriften in dezelfde GIF, handig voor een grap in meerdere stappen of een gelabelde reeks, maar elk bijschrift voegt visuele drukte toe, dus vraag je af of één goed geplaatste regel volstaat voordat je er meerdere stapelt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer een GIF, een MP4 of een stilstaande afbeelding</summary>
+        <div class="golden-rules-body">
+          <p>Een GIF is niet altijd het juiste antwoord alleen omdat de bron een videoclip is. Weten wanneer hij echt beter is dan de alternatieven, voorkomt een opgeblazen bestand dat een video beter had aangekund, of een afbeelding met alleen een bijschrift die helemaal geen beweging nodig had.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situatie</th><th>Beste keuze</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situatie">Chatapps en berichtendiensten</td><td data-label="Beste keuze">GIF: speelt automatisch af, geen tik nodig</td></tr>
+              <tr><td data-label="Situatie">Langere clip met belangrijke audio</td><td data-label="Beste keuze">MP4: GIF's kunnen helemaal geen geluid bevatten</td></tr>
+              <tr><td data-label="Situatie">Eén moment, geen beweging nodig</td><td data-label="Beste keuze">Een stilstaande afbeelding: kleiner en eenvoudiger</td></tr>
+              <tr><td data-label="Situatie">Stap in een tutorial of documentatie</td><td data-label="Beste keuze">GIF voor korte herhaalbare handelingen, video voor langere rondleidingen</td></tr>
+              <tr><td data-label="Situatie">Bericht in een socialmediafeed</td><td data-label="Beste keuze">Beide werkt: controleer wat het platform echt automatisch afspeelt</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Berichtenapps en reacties</h3>
+          <p>Dit is het thuisterrein van het formaat: een GIF komt direct in een chat en speelt meteen af, zonder tik, zonder laadspinner, zonder aparte videospeler. Voor een snelle reactie, een herhaalbare lus of een korte clip die direct in een gesprek moet landen, gedraagt niets anders zich zo.</p>
+
+          <h3>Berichten op sociale media</h3>
+          <p>De meeste platforms zetten een geüploade GIF intern toch automatisch om in een herhalende video, dus het praktische verschil met direct een MP4 plaatsen is vaak klein. Maar een GIF blijft de veiligere keuze als je niet zeker weet of een platform of embed een geüploade MP4 hetzelfde behandelt (automatisch afspelen, geen geluidspictogram, geen spelerbediening).</p>
+
+          <h3>Documentatie en tutorials</h3>
+          <p>Een korte, herhalende GIF is echt uitstekend om één herhaalbare handeling in een interface te tonen: klik hier, sleep dat, zie dit menu opengaan. Hij herhaalt zichzelf, zodat de lezer niet op afspelen hoeft te drukken of terug hoeft te spoelen om het opnieuw te zien. Voor alles wat langer is dan een paar seconden of wat uitleg nodig heeft, dient een echte video met afspeelbediening de lezer beter dan een lange, stille, automatisch afspelende lus.</p>
+
+          <h3>E-mail en presentaties</h3>
+          <p>De ondersteuning voor geanimeerde GIF's in e-mailprogramma's en presentatiesoftware is wisselend: sommige geven elk frame weer zoals bedoeld, andere tonen alleen het eerste frame als stilstaande afbeelding. Als de animatie essentieel is voor wat je in zo'n context wilt overbrengen, test dan eerst in de echte bestemming in plaats van aan te nemen dat het animeert zoals in een browser.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij GIF's (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste teleurstellende GIF's komen voort uit een kleine set vermijdbare keuzes vroeg in het proces, nog voordat een bijschrift of uitsnede-instelling aan bod komt.</p>
+
+          <h3>Standaard de fps helemaal omhoog zetten</h3>
+          <p>Het is verleidelijk om elke keer naar 20 fps te grijpen in de veronderstelling dat hoger simpelweg beter is, maar bij de meeste alledaagse clips is de winst in vloeiendheid ten opzichte van 10 fps nauwelijks zichtbaar terwijl de bestandsgrootte ruwweg verdubbelt. Bewaar de hogere framerates voor beeld waarvan de beweging echt snel genoeg is om ze nodig te hebben.</p>
+
+          <h3>Te ruim trimmen</h3>
+          <p>Een paar extra seconden voor en na het eigenlijke moment maken het bestand niet alleen groter, maar verwateren ook de clou van de GIF, doordat de kijker door een opbouw moet die een strakkere trim zo had overgeslagen. Twijfel je, trim dan strakker dan prettig voelt en controleer de voorvertoning; het is zelden te kort.</p>
+
+          <h3>Bijschriften zonder omlijning over drukke beelden</h3>
+          <p>Tekst die perfect leesbaar was tegen het ene frame waar je naar staarde terwijl je typte, kan een seconde later volledig verdwijnen zodra de achtergrond verandert. Omlijning standaard aanzetten bij alles met echte beweging op de achtergrond voorkomt dat je dit pas ontdekt nadat de GIF al is gedeeld.</p>
+
+          <h3>De bestandsgrootte negeren bij een mobiele verbinding</h3>
+          <p>Een lange GIF met hoge fps en volledige grootte kan meerdere keren groter worden dan dezelfde clip als goed gecodeerde video, en anders dan bij een video kun je een GIF op de meeste plekken waar hij wordt gedeeld niet “pauzeren voordat hij volledig is geladen”, dus het hele bestand moet binnen zijn voordat hij afspeelt. Als een GIF onverwacht groot uitkomt, zijn korter trimmen en de fps verlagen de twee instellingen om eerst te controleren, ruim voordat je naar een kleinere uitsnede grijpt.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="coudio">
+      <details class="golden-rules-article">
+        <summary>1. De complete gids voor audioformaten: MP3 vs WAV</summary>
+        <div class="golden-rules-body">
+          <p>Audioformaten verdelen zich langs dezelfde lijn tussen verliesgevend en verliesvrij als afbeeldingsformaten, en dezelfde onderliggende vraag bepaalt welke je echt wilt: bereid je iets voor om naar te luisteren en te delen, of iets om in de best mogelijke kwaliteit te bewaren voor verder werk?</p>
+
+          <h3>MP3: het universele formaat met verlies</h3>
+          <p>MP3 gebruikt compressie met verlies: het gooit audiodetail weg dat het menselijk gehoor moeilijker opmerkt om het bestand drastisch te verkleinen, vaak tot een tiende van het ongecomprimeerde origineel of kleiner, afhankelijk van de gebruikte bitrate. Het wordt door vrijwel alles ondersteund: elke telefoon, elke autoradio, elke muziek-app, elke website. Om te luisteren, te delen en voor dagelijks gebruik is MP3 bijna altijd de juiste standaard.</p>
+          <p>De afweging is dezelfde als bij JPG: er is na compressie echt wat detail weg, en dat komt niet terug als je de MP3 later naar iets anders converteert. Voor casual luisteren is dit bij redelijke bitrates onhoorbaar; voor kritisch luisteren, masteren of archiveren begint het ertoe te doen.</p>
+
+          <h3>WAV: het verliesvrije, ongecomprimeerde formaat</h3>
+          <p>WAV slaat audio ongecomprimeerd op: elke sample blijft exact behouden, er wordt geen data weggegooid. Dat maakt het de juiste keuze voor alles wat verder wordt bewerkt, gemixt of verwerkt, omdat artefacten van compressie met verlies zich niet opstapelen over meerdere bewerkingsrondes zoals bij een herhaaldelijk opnieuw opgeslagen MP3. Het is ook het standaardformaat voor archiefmasters, omdat het het dichtst komt bij het intact houden van de originele opname.</p>
+          <p>De prijs is grootte: WAV-bestanden zijn doorgaans 5-10x groter dan een MP3 van dezelfde audio bij een redelijke bitrate, omdat er geen compressie is die iets doet. Een paar minuten WAV-audio kan al tientallen megabytes zijn, wat uitmaakt als je het mailt of veel ervan opslaat.</p>
+
+          <h3>De snelle beslisregel</h3>
+          <p>Delen, luisteren, uploaden naar de meeste platforms → MP3. Bewerken, mixen of een mastercopy archiveren waar je op terugkomt → WAV. Niet zeker, en het is eenmalig → MP3 is de veiligere standaard; bijna alles kan het afspelen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Bitrate uitgelegd: het juiste getal kiezen voor MP3</summary>
+        <div class="golden-rules-body">
+          <p>Bitrate is de enige MP3-instelling die er echt toe doet voor zowel bestandsgrootte als kwaliteit, en het is de moeite waard om te begrijpen hoe je een verstandig getal kiest voor wat je doet, in plaats van te gokken.</p>
+
+          <h3>Wat bitrate echt bepaalt</h3>
+          <p>Bitrate is hoeveel gegevens worden gebruikt om elke seconde audio te coderen, gemeten in kilobits per seconde (kbps). Een hogere bitrate behoudt meer van het oorspronkelijke detail en klinkt dichter bij de ongecomprimeerde bron; een lagere bitrate comprimeert harder en gooit meer weg in ruil voor een kleiner bestand. Het is een directe, ruwweg lineaire afweging: een verdubbeling van de bitrate verdubbelt ongeveer de bestandsgrootte voor dezelfde lengte audio.</p>
+
+          <h3>De bitrate afstemmen op wat je echt codeert</h3>
+          <p>Gesproken woord, zoals podcasts, spraakmemo's, luisterboeken en voice-overs, heeft helemaal geen hoge bitrate nodig; spraak is veel minder complex dan muziek, en zelfs een lage bitrate klinkt helder en perfect verstaanbaar terwijl de bestanden klein blijven. Muziek, vooral alles met een groot dynamisch bereik of veel gelijktijdige instrumenten, heeft baat bij een merkbaar hogere bitrate voordat compressieartefacten (een lichte schelheid of “onderwater”-klank bij complexe passages) hoorbaar worden.</p>
+          <p>Er is een echt punt van afnemende meeropbrengst aan de hoge kant: voorbij een bepaalde bitrate kunnen de meeste luisteraars via gangbare koptelefoons of speakers het verschil met de bron niet meer betrouwbaar horen, dus het getal hoger zetten blaast het bestand alleen op zonder waarneembare kwaliteitswinst. Als je het niet zeker weet, is een gemiddelde bitrate de veilige algemene keuze: merkbaar beter dan spraakinstellingen met lage bitrate, zonder de bestandsgrootte van een maximale-kwaliteitsinstelling voor muziekmastering die je voor dagelijks delen niet nodig hebt.</p>
+
+          <h3>Wanneer bitrate helemaal niet uitmaakt</h3>
+          <p>Als je naar WAV converteert in plaats van naar MP3, is bitrate niet relevant: WAV is ongecomprimeerd, dus er is geen bitrate-instelling om uit te kiezen. Bitrate komt pas in beeld zodra je bewust wat kwaliteit inruilt voor een kleiner bestand, wat het hele uitgangspunt is van MP3 kiezen boven WAV.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Audio uit een videobestand halen</summary>
+        <div class="golden-rules-body">
+          <p>Coudio converteert niet alleen bestaande audiobestanden, het kan ook het geluidsspoor uit een video halen en je alleen het geluid geven, waarbij het beeld volledig wordt weggelaten.</p>
+
+          <h3>Veelvoorkomende redenen waarom mensen dit nodig hebben</h3>
+          <p>Een opgenomen college-, vergader- of interviewvideo omzetten in een audiobestand in podcaststijl dat veel kleiner is en onderweg makkelijker te beluisteren. Een nummer of geluidsfragment uit een video halen als alleen de audio nodig is. Alleen het audiogedeelte van oud videomateriaal archiveren om opslag te besparen. De voice-over van een schermopname omzetten in een los audiobestand om elders te bewerken of te transcriberen.</p>
+
+          <h3>Hoe het echt werkt</h3>
+          <p>Zet een MP4-, WEBM-, MOV- of OGV-bestand in Coudio op dezelfde manier als een audiobestand: de tool herkent dat het een video is en haalt het geluidsspoor automatisch eruit, waarbij het beeld wordt weggelaten. Kies MP3 of WAV als uitvoer net als bij een gewoon audiobestand en kies (bij MP3) een bitrate. De video zelf wordt nooit opnieuw gecodeerd of gewijzigd; alleen het bestaande geluidsspoor wordt eruit gehaald.</p>
+
+          <h3>Wat er gebeurt als de video geen geluidsspoor heeft</h3>
+          <p>Een video zonder geluid, zoals een gedempte schermopname of beeld dat zonder audio is opgenomen, geeft Coudio niets om uit te halen, omdat er in het bestand helemaal geen geluidsspoor aanwezig is. Dat kan de tool niet omzeilen; als de originele opname echt geen geluid heeft, valt er geen audio uit te halen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer MP3 en wanneer WAV: praktijkvoorbeelden</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situatie</th><th>Beste formaat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situatie">Een nummer, opname of spraakmemo delen</td><td data-label="Beste formaat">MP3</td></tr>
+              <tr><td data-label="Situatie">Uploaden naar een podcastplatform</td><td data-label="Beste formaat">MP3, gemiddelde bitrate</td></tr>
+              <tr><td data-label="Situatie">De audio verder bewerken of mixen</td><td data-label="Beste formaat">WAV</td></tr>
+              <tr><td data-label="Situatie">Een masteropname archiveren</td><td data-label="Beste formaat">WAV</td></tr>
+              <tr><td data-label="Situatie">Een snelle spraaknotitie mailen</td><td data-label="Beste formaat">MP3, lage bitrate is prima voor spraak</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Podcasts, spraaknotities en gesproken woord</h3>
+          <p>MP3 met een bescheiden bitrate is hier de standaard: bestandsgrootte telt zwaarder dan bij muziek, omdat afleveringen vaak lang zijn en spraak compressie uitzonderlijk goed verdraagt zonder hoorbaar kwaliteitsverlies voor de luisteraar.</p>
+
+          <h3>Muziek die je deelt of beluistert</h3>
+          <p>MP3 met een gemiddelde tot hoge bitrate dekt bijna elk alledaags geval: een nummer naar een vriend sturen, uploaden naar de meeste platforms, muziek op een telefoon bewaren waar opslagruimte zich opstapelt. Kies alleen voor WAV als je specifiek het ongecomprimeerde origineel nodig hebt: voor bewerken, samplen of een echt kritisch luisterarchief.</p>
+
+          <h3>Audio die je later bewerkt of mixt</h3>
+          <p>WAV vermijdt dat er extra compressieverlies bovenop komt bij alles wat je bewerkt, zoals mixen, trimmen, lagen leggen of niveaus aanpassen, omdat er geen compressie met verlies in het bestand zit. Converteer pas als laatste exportstap naar MP3, als het bewerken klaar is, dezelfde regel die geldt voor het herhaaldelijk opnieuw opslaan van een JPG.</p>
+
+          <h3>Langetermijnarchivering</h3>
+          <p>Voor alles wat je onbeperkt in de best mogelijke kwaliteit wilt bewaren, zoals een originele opname, een mastertrack of een belangrijk interview, is WAV op de lange termijn de veiligere keuze, omdat het nooit extra detail verliest, hoe vaak het ook wordt gekopieerd of geback-upt.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij audioconversie (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste klachten over audiokwaliteit zijn terug te voeren op een handvol vermijdbare keuzes.</p>
+
+          <h3>MP3 steeds opnieuw naar MP3 converteren</h3>
+          <p>Net als bij het opnieuw opslaan van een JPG verliest het opnieuw coderen van een al gecomprimeerde MP3 naar MP3 elke keer wat meer detail: de tweede compressieronde heeft minder oorspronkelijke informatie om mee te werken dan de eerste. Bewaar en bewerk waar mogelijk vanuit een verliesvrije bron (WAV) en exporteer maar één keer, aan het eind, naar MP3.</p>
+
+          <h3>Een bitrate gebruiken die niet bij de inhoud past</h3>
+          <p>Een lage bitrate die voor gesproken woord prima is, klinkt merkbaar gecomprimeerd bij muziek met een vol instrumentaal geluid, terwijl een maximale bitrate op een eenvoudig spraakmemo alleen bestandsgrootte verspilt zonder hoorbaar voordeel. Stem de bitrate af op wat er echt in de opname zit, niet op één getal voor alles.</p>
+
+          <h3>Niet controleren of er een geluidsspoor is voordat je het uitpakt</h3>
+          <p>Proberen audio te halen uit een video die zonder geluid is opgenomen, of waarvan het geluid eerder in een andere stap is verwijderd, levert niets op: er valt niets uit te halen. Het loont om even te controleren (of het originele filmpje even te beluisteren) voordat je aanneemt dat het uitpakken bij Coudio mislukte in plaats van dat de bron gewoon geen geluid heeft.</p>
+
+          <h3>De bestandsgrootte negeren bij lange opnames</h3>
+          <p>Een lange college- of vergaderopname die als WAV is geëxporteerd, of met een onnodig hoge MP3-bitrate, kan zo groot worden dat mailen of uploaden lastig wordt. Zeker bij lange gesproken inhoud houdt een bescheiden MP3-bitrate het bestand hanteerbaar zonder echt verlies van verstaanbaarheid.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="codify">
+      <details class="golden-rules-article">
+        <summary>1. Waarom codescreenshots belangrijk zijn en hoe je ze goed leesbaar maakt</summary>
+        <div class="golden-rules-body">
+          <p>Een codefragment in platte tekst dat in een chat, dia of socialmediabericht wordt geplakt, verliest alles wat echte code in één oogopslag leesbaar maakt: geen syntaxiskleuren, geen consistente spaties, vaak niet eens behouden regeleinden. Een opgemaakte screenshot lost dat op, maar alleen als hij leesbaar is op de grootte waarop hij wordt bekeken.</p>
+
+          <h3>Waarom syntaxiskleuring niet alleen decoratie is</h3>
+          <p>Trefwoorden, strings, opmerkingen en functienamen met kleur markeren is niet puur cosmetisch, het is een echt leesmiddel. Ervaren ontwikkelaars scannen gemarkeerde code op vorm en kleur voordat ze hem woord voor woord lezen, en juist daarom leest gewone, ongekleurde code in een screenshot of een berichtenapp met laag contrast merkbaar trager, zelfs voor iemand die de taal vloeiend beheerst.</p>
+
+          <h3>Het fragment kort houden</h3>
+          <p>Een codescreenshot is bedoeld om in één oogopslag te lezen, niet om doorheen te scrollen. Zodra een snippet kleiner moet worden dan een prettige leesgrootte om in het kader te passen, is het fragment meestal te lang voor een screenshot en dient de lezer beter met een gelinkt bestand of een gist. Beperk je tot de regels die het punt maken; een korter, groter, beter leesbaar fragment wint bijna altijd van een volledig maar piepklein fragment.</p>
+
+          <h3>Een grootte kiezen die leesbaar is waar het wordt geplaatst</h3>
+          <p>Een screenshot die op je eigen monitor op volledige grootte haarscherp lijkt, kan in een chatminiatuur, een ingebedde tweet of een dia die je achter in de zaal bekijkt onleesbaar klein worden. Weet je waar de afbeelding naartoe gaat, bekijk hem dan vooraf op ongeveer die grootte voordat je hem afrondt: wat op volledig scherm prettig leest, is dat als miniatuur niet altijd.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Een thema kiezen: Dracula, VS Code Dark, Monokai of GitHub Light</summary>
+        <div class="golden-rules-body">
+          <p>De vier thema's zijn niet zomaar verschillende kleurenpaletten op zich: elk komt van (of volgt nauw) een echt, veelgebruikt editorthema, en een thema kiezen dat je publiek bekend voorkomt kan net zo belangrijk zijn als een thema kiezen dat er goed uitziet.</p>
+
+          <h3>Dracula: contrastrijk en onderscheidend</h3>
+          <p>De donkerpaarse achtergrond van Dracula met levendige roze, groene en cyaan accenten is een van de herkenbaarste editorthema's die er nu zijn: direct bekend bij een groot deel van de ontwikkelaars en contrastrijk genoeg om leesbaar te blijven als hij klein wordt weergegeven. Een sterke standaard als je niet zeker weet wie er kijkt of waar de afbeelding terechtkomt.</p>
+
+          <h3>VS Code Dark: de meest gangbare basis</h3>
+          <p>Omdat Visual Studio Code de meest gebruikte code-editor is, is het standaard donkere thema het thema dat het grootste aantal kijkers al associeert met “hoe code er normaal uitziet”: een veilige, onopvallende keuze, vooral voor een publiek dat waarschijnlijk specifiek VS Code-gebruikers omvat (wat statistisch gezien de meeste ontwikkelaars zijn).</p>
+
+          <h3>Monokai: warm en al lang gevestigd</h3>
+          <p>Monokai is ouder dan de meeste nieuwere thema's en heeft een eigen, warm palet, met olijfkleurige ondertonen op de achtergrond en oranje en roze accenten, dat veel ontwikkelaars die Sublime Text of oudere omgevingen hebben gebruikt direct herkennen. Het oogt iets zachter in contrast dan Dracula, wat sommige mensen prettiger vinden voor langer kijken.</p>
+
+          <h3>GitHub Light: die voor lichte omgevingen</h3>
+          <p>Alle drie bovenstaande zijn donkere thema's; GitHub Light is de enige echt lichte optie, die overeenkomt met de eigen standaard codeweergave van GitHub. Het is de juiste keuze voor een presentatie of document dat verder licht is, waar een donker codeblok zou opvallen als een storend, losstaand vlak in plaats van in het omringende ontwerp te passen.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Taalkeuze en syntaxiskleuring goed instellen</summary>
+        <div class="golden-rules-body">
+          <p>De juiste taal kiezen is niet zomaar een label: het vertelt de markeerder welke woorden trefwoorden zijn, welke strings en welke opmerkingen, dus het goed (of fout) doen heeft een direct, zichtbaar effect op het resultaat.</p>
+
+          <h3>Wat er gebeurt als je de verkeerde taal kiest</h3>
+          <p>Markeren gebeurt door patronen te vergelijken met de syntaxisregels van een specifieke taal, dus de verkeerde kiezen levert zelfverzekerd foute resultaten op in plaats van een foutmelding: trefwoorden in een andere taal worden misschien helemaal niet gekleurd, of erger, een ander woord wordt verkeerd gecategoriseerd en gekleurd alsof het een trefwoord is. Controleer altijd dubbel of de taalkeuze overeenkomt met wat er echt in het vak staat, vooral na plakken uit een sjabloon of van taal wisselen tijdens het bewerken.</p>
+
+          <h3>Fragmenten met gemengde talen</h3>
+          <p>Een fragment dat de ene taal in de andere inbedt, zoals SQL in een Python-string of HTML in een JavaScript-template literal, wordt alleen goed gemarkeerd voor de ene taal die is geselecteerd; je kunt niet beide tegelijk markeren in één fragment. Kies bij echt gemengde inhoud de taal die het grootste deel van het fragment vormt, of splits het in twee aparte screenshots als beide helften goed leesbaar moeten zijn.</p>
+
+          <h3>Wanneer markering er weinig toe doet</h3>
+          <p>Bij heel korte fragmenten, één regel, een korte configuratiewaarde, een opdracht van één regel, doet de specifieke taal veel minder ertoe, omdat er zo weinig inhoud is dat een lezer het in elk geval correct kan ontleden, ongeacht de kleuring. Het doet er het meest toe bij langere, structureel complexe fragmenten waar kleur echt werk doet om logica, strings en opmerkingen van elkaar te scheiden.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Wanneer een codescreenshot, een live snippet of een gist</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situatie</th><th>Beste keuze</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situatie">Bericht op sociale media</td><td data-label="Beste keuze">Screenshot: de meeste platforms geven codeblokken helemaal niet weer</td></tr>
+              <tr><td data-label="Situatie">Dia's of presentatie</td><td data-label="Beste keuze">Screenshot: een consistente uitstraling ongeacht de opstelling van de ruimte</td></tr>
+              <tr><td data-label="Situatie">Chatten met een teamgenoot die het gaat kopiëren en plakken</td><td data-label="Beste keuze">Platte tekst of een live snippet: een screenshot kan niet als code worden gekopieerd</td></tr>
+              <tr><td data-label="Situatie">Documentatie of een blogbericht</td><td data-label="Beste keuze">Een echt codeblok: doorzoekbaar, kopieerbaar, toegankelijk</td></tr>
+              <tr><td data-label="Situatie">Een volledig bestand of lang voorbeeld delen</td><td data-label="Beste keuze">Een gist of repo-link: een screenshot schaalt niet naar zo'n lengte</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Sociale media en chatapps zonder codeondersteuning</h3>
+          <p>De meeste socialemediaplatforms kennen helemaal geen opgemaakt codeblok: plak ruwe code in een tweet of bericht en alle inspringing, regeleinden en kleuring gaan verloren, vaak veranderend in een onleesbare tekstmuur. Een screenshot omzeilt dit volledig, omdat het gewoon een afbeelding is en overal waar afbeeldingen werken identiek wordt weergegeven.</p>
+
+          <h3>Wanneer de ontvanger de code echt moet kunnen gebruiken</h3>
+          <p>Een screenshot is een plaatje: het kan niet worden geselecteerd, gekopieerd of teruggeplakt in een editor. Als degene naar wie je het stuurt de code echt wil uitvoeren, bewerken of kopiëren (en niet alleen bekijken), dan dient platte tekst, een live snippet in een chatapp die dat ondersteunt of een gist-link hem veel beter dan een afbeelding die hij handmatig moet overtypen.</p>
+
+          <h3>Documentatie en technisch schrijven</h3>
+          <p>Een echt, op tekst gebaseerd codeblok in documentatie is doorzoekbaar, toegankelijk voor schermlezers en te kopiëren, allemaal dingen die een screenshot opgeeft. Screenshots verdienen hun plek in documentatie vooral om te tonen waar screenshots echt goed in zijn: een geannoteerde gebruikersinterface, een diff die op een bepaalde manier is gemarkeerd, of code zoals die in een specifieke editor verschijnt ter illustratie, niet om door de lezer te worden gekopieerd.</p>
+
+          <h3>Langere voorbeelden en volledige bestanden</h3>
+          <p>Een codescreenshot werkt het best voor een gericht fragment dat iemand in één of twee oogopslagen kan lezen. Voor een heel bestand, een voorbeeld met meerdere functies of alles waarvoor je door een hoge afbeelding zou moeten scrollen, is een gist of een link naar een repository praktischer en bruikbaarder.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Veelgemaakte fouten bij codescreenshots (en hoe je ze vermijdt)</summary>
+        <div class="golden-rules-body">
+          <p>De meeste codescreenshots die slecht leesbaar uitpakken, delen een van een handvol vermijdbare oorzaken.</p>
+
+          <h3>Veel meer code opnemen dan het punt vereist</h3>
+          <p>Een screenshot met 40 regels context om één relevante regel te tonen, laat de lezer zoeken naar wat ertoe doet. Beperk je tot de regels die het punt maken; imports, standaardcode en niet-gerelateerde functies kun je bijna altijd weglaten zonder de eigenlijke boodschap te verliezen.</p>
+
+          <h3>De verkeerde taal kiezen voor de syntaxismarkering</h3>
+          <p>Een achtergebleven taalkeuze van een eerder fragment, of de bijna-gelijkklinkende optie kiezen in plaats van de exacte, geeft subtiel verkeerde markering die in één oogopslag makkelijk te missen is maar er voor iedereen die de taal kent verkeerd uitziet. Controleer vóór het exporteren dubbel of de taal klopt, vooral na het plakken van een sjabloon.</p>
+
+          <h3>Een thema dat botst met de plek waar het wordt geplaatst</h3>
+          <p>Een screenshot met een donker thema in een verder lichte presentatie of een licht document valt op als een storend vlak in plaats van in het ontwerp eromheen te passen. GitHub Light bestaat precies voor dit geval, dus schakel daar naar over in plaats van uit gewoonte overal een donker thema te gebruiken.</p>
+
+          <h3>Exporteren op een formaat dat te klein is om te lezen zodra het gedeeld wordt</h3>
+          <p>Wat op je eigen scherm op volledige grootte scherp en leesbaar is, kan onleesbaar klein worden als het een miniatuur in een chatapp is of een kleine embed in een bericht op sociale media. Als je weet waar het naartoe gaat, controleer de afbeelding dan op ongeveer die weergavegrootte voordat je het af noemt: een korter fragment met grotere tekst communiceert vaak beter dan een langer fragment dat is verkleind om te passen.</p>
+        </div>
+      </details>
+    </div>
+
+
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
+  </main>
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Bedrijf</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Over ons"><span class="footer-link-fun">Ons universum</span><span class="footer-link-plain">Over ons</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Al beantwoord</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Gebruiksvoorwaarden"><span class="footer-link-fun">Galactisch handboek</span><span class="footer-link-plain">Gebruiksvoorwaarden</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Privacybeleid"><span class="footer-link-fun">Buitenaards privacyprotocol</span><span class="footer-link-plain">Privacybeleid</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookiebeleid"><span class="footer-link-fun">Cookieregister</span><span class="footer-link-plain">Cookiebeleid</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Aan de slag met</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Neem contact met ons op</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Word lid van onze Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
+</body>
+</html>

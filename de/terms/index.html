@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nutzungsbedingungen – BC Tools</title>
+<meta name="description" content="Nutzungsbedingungen für BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server. Lies, wie der Dienst funktioniert und was seine Nutzung für dich bedeutet.">
+<link rel="canonical" href="https://bitcrunching.com/de/terms/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/terms/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/terms/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/terms/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/terms/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/terms/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/terms/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/terms/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/terms/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/terms/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/terms/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/terms/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/terms/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/terms/">
+<script src="/shared/i18n/de.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Nutzungsbedingungen – BC Tools">
+<meta property="og:description" content="Nutzungsbedingungen für BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server. Lies, wie der Dienst funktioniert und was seine Nutzung für dich bedeutet.">
+<meta property="og:url" content="https://bitcrunching.com/de/terms/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nutzungsbedingungen – BC Tools">
+<meta name="twitter:description" content="Nutzungsbedingungen für BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server. Lies, wie der Dienst funktioniert und was seine Nutzung für dich bedeutet.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Wir verwenden Cookies. Wähle unten, welche Kategorien du erlauben möchtest – siehe unsere <a data-goto="cookies">Cookie-Richtlinie</a> für Details.</p>
+  <p class="cookie-banner-text-mobile">Wähle, welche Kategorien erlaubt sind</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie-Einstellungen ein- oder ausblenden" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Wähle, welche Kategorien erlaubt sind</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mehr zu notwendigen Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Notwendig (immer aktiv)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Sie halten das Wesentliche am Laufen – sie merken sich deine Cookie-Auswahl, deine Sprache und dein helles/dunkles Design. Sie lassen sich nicht abschalten und verlassen, wie alles auf dieser Seite, nie dein Gerät.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mehr zu Analyse-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse – für volle Privatsphäre deaktiviert lassen.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>So können wir die Nutzererfahrung verbessern, indem wir über (Google Analytics) wertvolle Daten darüber erhalten, wie Nutzer auf unserer Website navigieren – wenn du vollständig anonym bleiben möchtest, empfehlen wir, diese Option zu deaktivieren.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mehr zu Werbe-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Werbung (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Wird von Google AdSense zum Anzeigen von Werbung genutzt. Derzeit auf der gesamten Seite abgeschaltet, bis AdSense uns freigibt – dieser Schalter hat also noch keine Wirkung.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alle akzeptieren</button>
+    <button type="button" id="cookieBannerSave">Auswahl bestätigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC-Tools-Logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Zwischen hellem und dunklem Modus wechseln" title="Zwischen hellem und dunklem Modus wechseln">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Teilen" title="Teilen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopieren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Weitere Optionen zum Teilen"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-Mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zurück zum Creative Hub" title="Zurück zum Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Galaktisches Handbuch</h1>
+    <p class="lead page-alias">Auf der Erde auch als Seite „Nutzungsbedingungen“ bekannt.</p>
+  </div>
+  <article class="terms-article">
+    <p class="terms-updated">Last Updated: October 2026</p>
+    <p>Welcome to BC Tools, a service operated by BitCrunching ("we," "our," or "us"). By accessing or using our BC Tools and browser-based utilities Creative Hub (collectively, the "Services"), you agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use our Services.</p>
+
+    <h2>1. Privacy Guarantee &amp; On-Device Processing</h2>
+    <p>Our Services primarily Creative Hub tools operate entirely on the client side. This means all file processing—including image conversion, compression, file combining, and metadata stripping—takes place directly within your web browser, no server used.</p>
+    <ul>
+      <li>Deine Dateien werden nie auf unsere Server hochgeladen. Wir erheben, sehen, speichern oder besitzen keine Inhalte oder Dateien, die du mit unseren Tools verarbeitest.</li>
+    </ul>
+    <p>The On-Device Guarantee does not apply to the "Report a bug" button. When you decide to report a bug or any issue with the site, you share data as stated in section 2 of the Privacy Policy.</p>
+    <p>Das kannst du selbst überprüfen: Jedes Tool führt während der Verarbeitung eine Live-Netzwerkprüfung durch und zeigt das Ergebnis direkt im Tool-Header an – suche nach dem Tool-Einsatz die Zeile „&gt; BC_Tools_bot:“. Melde uns bitte umgehend, wenn du auf einen Sicherheitsverstoß stößt.</p>
+
+    <h2>2. Rechte am geistigen Eigentum</h2>
+    <p>Alle Inhalte, der Code, individuelle Gestaltungen, Layoutstrukturen und grafischen Elemente auf BC Tools sind ausschließliches Eigentum von BitCrunching und durch internationales Urheberrecht geschützt.</p>
+    <ul>
+      <li>Du darfst unsere Tools für private oder kommerzielle kreative Projekte nutzen.</li>
+      <li>Du darfst unseren zugrunde liegenden Quellcode oder unsere Kernressourcen ohne ausdrückliche schriftliche Genehmigung nicht kopieren, scrapen, spiegeln, per Reverse Engineering analysieren oder weiterverbreiten.</li>
+    </ul>
+
+    <h2>3. Sprache & Übersetzung</h2>
+    <p>Die offizielle und rechtsverbindliche Sprache von BC Tools ist Englisch.</p>
+    <ul>
+      <li><strong>Übersetzungen:</strong> Übersetzungen dieser Bedingungen, der Datenschutzerklärung oder der Cookie-Richtlinie in andere Sprachen werden ausschließlich zu deiner Bequemlichkeit bereitgestellt.</li>
+      <li><strong>Tippfehler:</strong> Grammatikfehler, geringfügige Übersetzungsabweichungen, Tippfehler oder Flüchtigkeitsfehler in einer nicht-englischen Version dürfen nicht dazu verwendet werden, diese Bedingungen für ungültig zu erklären, ihre beabsichtigte Bedeutung zu ändern oder die Grundlage rechtlicher Ansprüche gegen uns zu bilden.</li>
+      <li><strong>Maßgebliche Fassung:</strong> Im Falle eines Widerspruchs hat stets die englische Fassung als maßgeblicher Rechtstext Vorrang.</li>
+      <li><strong>Einen Übersetzungsfehler melden:</strong> Wir möchten, dass unsere Tools für alle zugänglich sind. Wenn dir in deiner Muttersprache ein Tippfehler, eine holprige Übersetzung oder ein Grammatikfehler auffällt, hilf uns bitte, besser zu werden, indem du ihn meldest.</li>
+    </ul>
+
+    <h2>4. Regeln zur zulässigen Nutzung</h2>
+    <p>Du erklärst dich einverstanden, unsere Dienste ausschließlich für rechtmäßige Zwecke zu nutzen. Es ist strengstens untersagt, automatisierte Bots, Skripte oder Scraper einzusetzen, um die visuelle Umgebung zu überlasten, oder zu versuchen, Schadcode in das Ausführungsframework der Website einzuschleusen.</p>
+
+    <h2>5. Gewährleistungsausschluss („wie besehen“)</h2>
+    <p>BC Tools stellt alle Dienstprogramme „wie besehen“ und „wie verfügbar“ bereit. Wir geben keine ausdrücklichen oder stillschweigenden Garantien, dass die Dateiverarbeitung völlig fehlerfrei, mit jedem einzelnen Dateityp und/oder Gerät kompatibel oder der Dienst vollständig unterbrechungsfrei sein wird. Wenn du Probleme findest, hilf uns bitte, besser zu werden, indem du sie meldest.</p>
+    <p>Cleanly's metadata removal is a best-effort scan for common patterns (like GPS and camera tags). It can't guarantee a file has no hidden data, so check anything highly sensitive before sharing it.</p>
+
+    <div class="engine-status-card">
+      <div class="engine-status-body">
+        <div class="engine-status-row">&gt; dev_log: Unser engagierter Entwickler veröffentlicht regelmäßig Updates & Fehlerbehebungen und berichtet über den Fortschritt im Discord unter #Announcements.</div>
+      </div>
+    </div>
+
+    <h2>6. Haftungsbeschränkung</h2>
+    <p>Im größtmöglichen gesetzlich zulässigen Umfang haften BitCrunching und sein Schöpfer nicht für Schäden – einschließlich, ohne Einschränkung, Datenverlust, Betriebsunterbrechung oder Systemabstürze –, die aus der Nutzung oder Nichtnutzbarkeit unserer Tools entstehen.</p>
+
+    <h2>7. Anwendbares Recht</h2>
+    <p>Diese Nutzungsbedingungen unterliegen dem Recht der Niederlande und werden nach diesem ausgelegt. Rechtsstreitigkeiten aus diesen Bedingungen werden ausschließlich vor den zuständigen Gerichten der Niederlande entschieden.</p>
+  </article>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Unternehmen</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Über uns"><span class="footer-link-fun">Unser Universum</span><span class="footer-link-plain">Über uns</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Schon beantwortet</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Nutzungsbedingungen"><span class="footer-link-fun">Galaktisches Handbuch</span><span class="footer-link-plain">Nutzungsbedingungen</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Datenschutzerklärung"><span class="footer-link-fun">Außerirdisches Datenschutzprotokoll</span><span class="footer-link-plain">Datenschutzerklärung</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookie-Richtlinie"><span class="footer-link-fun">Cookie-Register</span><span class="footer-link-plain">Cookie-Richtlinie</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Erste Schritte mit</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktiere uns</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Tritt unserem Discord bei</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

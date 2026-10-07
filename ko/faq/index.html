@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ – BC Tools</title>
+<meta name="description" content="BC Tools에 대한 자주 묻는 질문: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구.">
+<link rel="canonical" href="https://bitcrunching.com/ko/faq/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/faq/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/faq/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/faq/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/faq/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/faq/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/faq/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/faq/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/faq/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/faq/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/faq/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/faq/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/faq/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/faq/">
+<script src="/shared/i18n/ko.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="FAQ – BC Tools">
+<meta property="og:description" content="BC Tools에 대한 자주 묻는 질문: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구.">
+<meta property="og:url" content="https://bitcrunching.com/ko/faq/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FAQ – BC Tools">
+<meta name="twitter:description" content="BC Tools에 대한 자주 묻는 질문: 무료이며 서버가 필요 없는 브라우저 기반 이미지 도구.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.faq-group-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.hero + .faq-group-wrap{
+  margin-top:0;
+}
+
+.faq-group-wrap:last-child{
+  margin-bottom:56px;
+}
+
+.faq-group-wrap + .ad-slot-banner{
+  margin:3px auto;
+  line-height:0;
+}
+
+.ad-slot-banner + .faq-group-wrap{
+  margin-top:3px;
+}
+
+.faq-term-panel{
+  max-width:772px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+.faq-term-panel-box{
+  border-radius:16px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
+
+html[data-theme="light"] .faq-term-panel-box{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.faq-term-panel-head{
+  display:flex;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.02em;
+  font-size:14px;
+}
+
+html[data-theme="light"] .faq-term-panel-head{
+  border-bottom-color:rgba(29,36,54,.15);
+  color:#1d2436;
+}
+
+.faq-term-prompt{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.01em;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-q{
+  color:#1d2436;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q::before{
+  content:"> ";
+  opacity:.7;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-a{
+  font-family:var(--bc-mono);
+  color:#e5e7eb;
+  opacity:.85;
+  font-size:14px;
+  line-height:1.6;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-a{
+  color:#1d2436;
+  opacity:.8;
+}
+
+@media (max-width:768px){
+  .faq-term-panel-head,
+  .faq-term-panel-box .faq-item-mainpage .faq-q,
+  .faq-term-panel-box .faq-item-mainpage .faq-a{
+    font-size:12px;
+  }
+}
+
+.faq-list-mainpage{
+  max-width:772px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:grid;
+  gap:28px;
+}
+
+.faq-term-panel-box .faq-list-mainpage{
+  max-width:none;
+  margin:0;
+  padding:20px 20px 24px;
+  gap:22px;
+}
+
+.faq-item-mainpage{
+  padding:0;
+}
+
+.faq-item-mainpage .faq-q{
+  font-weight:700;
+  color:var(--text);
+  margin:0 0 8px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.5;
+}
+
+.faq-item-mainpage .faq-a{
+  color:var(--text);
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>이미 답변됨</h1>
+    <p class="lead page-alias">지구에서는 FAQ 페이지로도 알려져 있습니다.</p>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>일반_FAQ</div>
+          <div class="faq-list-mainpage">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">파일을 서버에 저장하나요?</p>
+              <p class="faq-a">아니요. 모든 도구는 전적으로 브라우저에서 실행됩니다. 파일은 기기에서 로컬로 처리되며 어디에도 업로드되지 않습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">BC Tools는 모바일에서도 작동하나요?</p>
+              <p class="faq-a">네, 모든 도구는 모바일과 데스크톱 브라우저에서 작동하며 설치할 것이 없습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Are there keyboard shortcuts?</p>
+              <p class="faq-a">Yes. (A) adds files, (D) downloads (or converts, or continues where you left off), and (Esc) closes any open menu. In Context, (T) adds text, (S) opens Signature, (H) opens shapes, (R) renames the file, and (B), (I), (U) style the text. Congify has (T), (B), (I) and (U) for captions. Shortcuts are paused while you type in a text field.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">“중단한 곳에서 이어서 하기”는 어떻게 작동하나요?</p>
+              <p class="faq-a">대부분의 도구는 현재 작업을 진행하는 동안 로컬에 저장합니다. 파일 크기의 데이터(이미지, PDF, 코드)는 IndexedDB에, 작은 설정(테마, 언어)은 localStorage에 저장합니다. 기기 밖으로 나가지 않습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">섹터 7G란 무엇인가요?</p>
+              <p class="faq-a">기밀입니다. 그 진짜 정체는 우리가 준비될 때까지 인간 등급으로는 접근이 제한된다고 그는 말했습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONVERT_FAQ</div>
+          <div class="faq-list-mainpage convert">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">변환하면 이미지 화질을 잃나요?</p>
+              <p class="faq-a">JPG나 WEBP로 변환하면 약한 손실 압축이 적용됩니다. PNG로 변환하는 것은 무손실입니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">여러 이미지를 한 번에 변환할 수 있나요?</p>
+              <p class="faq-a">네. 이미지가 5개 이하면 각각 따로 다운로드됩니다. 6개에서 20개 사이에는 개별 파일 또는 하나의 ZIP 중에서 고를 수 있습니다. 20개를 넘으면 모든 것이 하나의 ZIP으로 함께 다운로드되며, 그 규모에서는 개별 파일 옵션이 없습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">WEBP가 JPG보다 나은가요?</p>
+              <p class="faq-a">WEBP는 보통 비슷한 품질에서 더 작은 파일 크기를 달성하지만, JPG는 오래된 응용 프로그램에서 더 폭넓게 지원됩니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">iPhone의 HEIC 사진을 변환할 수 있나요?</p>
+              <p class="faq-a">네. .HEIC 또는 .HEIF 사진을 놓고 JPG, PNG, WEBP를 고르세요. Convert는 전부 브라우저에서 디코딩하므로 앱이나 업로드가 필요 없습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMPRESS_FAQ</div>
+          <div class="faq-list-mainpage compress">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">이미지는 얼마나 줄어들까요?</p>
+              <p class="faq-a">이미지와 선택한 수준에 따라 다르지만 보통 원본 파일 크기의 30–80% 감소입니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">이미지 화질이 떨어지나요?</p>
+              <p class="faq-a">선택한 수준에 따라 약간. 낮은 수준은 눈에 보이는 손실이 거의 없고, 높은 수준은 품질을 대가로 더 큰 절약을 줍니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">PNG 파일도 지원하나요?</p>
+              <p class="faq-a">네. PNG 파일은 더 나은 압축을 위해 JPG로 변환되며, 이로 인해 크기가 크게 줄어듭니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMBINE_FAQ</div>
+          <div class="faq-list-mainpage combine">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">파일 순서가 중요한가요?</p>
+              <p class="faq-a">네. 페이지는 목록에 표시된 순서 그대로 합쳐지므로, 합치기 전에 파일을 원하는 순서로 끌어 놓으세요.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">합칠 수 있는 PDF 수에 제한이 있나요?</p>
+              <p class="faq-a">엄격한 한도는 없지만, 모든 것이 브라우저에서 처리되므로 매우 큰 파일은 조금 더 오래 걸릴 수 있습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">파일을 보관하나요?</p>
+              <p class="faq-a">아니요. 모든 처리는 File API와 JavaScript 라이브러리(pdf-lib와 pdf.js)를 사용해 브라우저에서 로컬로 이루어지며, 파일이 서버에 업로드되지 않습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CLEANLY_FAQ</div>
+          <div class="faq-list-mainpage cleanly">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">이 도구는 어떤 메타데이터를 찾나요?</p>
+              <p class="faq-a">GPS 위치, 카메라 제조사 및 모델, 사진을 찍은 날짜와 시간, 파일에 기록된 편집 소프트웨어(있는 경우).</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">메타데이터를 제거하면 이미지 화질이 떨어지나요?</p>
+              <p class="faq-a">아니요. 이미지 자체는 같은 해상도와 거의 원본에 가까운 품질로 다시 인코딩되며, 숨겨진 메타데이터만 제거됩니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">사진이나 찾은 메타데이터를 보관하나요?</p>
+              <p class="faq-a">아니요. 모든 것은 File API와 JavaScript 라이브러리(exif-js)를 사용해 브라우저에서 로컬로 이루어지며, 사진과 그 메타데이터가 서버에 업로드되지 않습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONTEXT_FAQ</div>
+          <div class="faq-list-mainpage context">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">PDF에 추가한 후에도 텍스트를 편집할 수 있나요?</p>
+              <p class="faq-a">네. 텍스트를 끌어 위치를 바꾸거나, 다운로드하기 전에 언제든 도구 모음에서 색, 크기, 스타일을 바꿀 수 있습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">이 도구는 PDF를 어딘가에 저장하나요?</p>
+              <p class="faq-a">아니요. 모든 것은 File API와 JavaScript 라이브러리(pdf-lib와 pdf.js)를 사용해 브라우저에서 로컬로 이루어지며, PDF와 추가한 텍스트가 서버에 업로드되지 않습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">휴대폰에서 Context를 사용할 수 있나요?</p>
+              <p class="faq-a">네. Context에는 핀치 줌이 되는 전용 전체 화면 모바일 편집기가 있어서, 텍스트 추가가 데스크톱에서처럼 휴대폰에서도 잘 작동합니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONGIFY_FAQ</div>
+          <div class="faq-list-mainpage congify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Congify는 무엇을 변환할 수 있나요?</p>
+              <p class="faq-a">비디오 클립을 GIF로 변환하세요. 원하는 범위를 자른 다음 변환하기 전에 프레임 속도(5, 10, 15, 20 fps)와 크기를 선택합니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">프레임 속도가 파일 크기에 그렇게 중요한 이유는?</p>
+              <p class="faq-a">프레임이 하나 추가될 때마다 파일에 이미지가 통째로 하나 더 추가되므로 프레임 속도는 파일 크기에 가장 큰 영향을 주는 요소입니다. 10 fps는 대부분의 클립에 좋은 기본값입니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">비디오를 보관하나요?</p>
+              <p class="faq-a">아니요. 모든 것이 브라우저에서 로컬로 이루어지며, 비디오와 생성된 GIF는 서버에 업로드되지 않습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COUDIO_FAQ</div>
+          <div class="faq-list-mainpage coudio">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Coudio는 어떤 오디오 형식을 지원하나요?</p>
+              <p class="faq-a">MP3와 WAV 사이에서 변환합니다. MP3는 더 작고 어디서나 재생되며, WAV는 비압축이라 추가 편집에 더 적합합니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">여러 오디오 파일을 한 번에 변환할 수 있나요?</p>
+              <p class="faq-a">네. 불러온 각 파일에는 자체 변환 및 다운로드 버튼이 있는 전용 행이 생기므로, 여러 파일을 독립적으로 처리할 수 있습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">오디오 파일을 보관하나요?</p>
+              <p class="faq-a">아니요. 모든 것이 브라우저에서 로컬로 이루어지며, 오디오는 서버에 업로드되지 않습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODIFY_FAQ</div>
+          <div class="faq-list-mainpage codify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Codify는 실제로 무엇을 만들어 주나요?</p>
+              <p class="faq-a">코드 스니펫을 구문이 강조된 스타일 스크린샷으로 만들어 PNG로 내보냅니다. 내보내기 전에 언어와 테마를 선택하세요.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">스크린샷에 구문 강조가 중요한 이유는?</p>
+              <p class="faq-a">장식이 아니라 실제 읽기 보조 도구입니다. 색으로 구분된 키워드, 문자열, 주석 덕분에 한 단어씩 읽기 전에 모양과 색으로 코드를 훑어볼 수 있습니다.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">코드를 보관하나요?</p>
+              <p class="faq-a">아니요. 모든 것이 브라우저에서 로컬로 이루어지며, 입력한 코드는 서버에 업로드되지 않습니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012"></ins>
+  </div>
+
+
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="소개"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="이용 약관"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="개인정보 처리방침"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="쿠키 정책"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

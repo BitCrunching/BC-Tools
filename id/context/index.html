@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context – Tambahkan Teks ke PDF Gratis – BC Tools</title>
+<meta name="description" content="Tambahkan teks Anda sendiri langsung ke PDF — keterangan, catatan, tanda tangan — secara gratis, langsung di browser, lalu unduh.">
+<link rel="canonical" href="https://bitcrunching.com/id/context/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/context/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/context/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/context/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/context/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/context/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/context/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/context/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/context/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/context/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/context/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/context/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
+<script src="/shared/i18n/id.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Context – Tambahkan Teks ke PDF Gratis – BC Tools">
+<meta property="og:description" content="Tambahkan teks Anda sendiri langsung ke PDF — keterangan, catatan, tanda tangan — secara gratis, langsung di browser, lalu unduh.">
+<meta property="og:url" content="https://bitcrunching.com/id/context/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Context – Tambahkan Teks ke PDF Gratis – BC Tools">
+<meta name="twitter:description" content="Tambahkan teks Anda sendiri langsung ke PDF — keterangan, catatan, tanda tangan — secara gratis, langsung di browser, lalu unduh.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/pdf-lib.min.js"></script>
+<script src="/vendor/pdf.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.tool-app::before{ background:var(--context-yellow); }
+.cs-shape{ background:#ffde89; }
+
+/* Every other tool's banner floor is 1100×322.5px (border-box: 250.5px
+   of content height + the shared 72px vertical padding) — this was
+   250px unconditionally, which is that same 322.5 figure with the
+   padding subtracted twice by mistake (content-height math applied to
+   a border-box property). Matched to the real standard. */
+.tool-app{ min-height:322.5px; }
+#page-context .tool-app:has(#ctEditor[hidden]){ transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while no PDF is loaded yet — :has() drops it the
+   moment #ctEditor is revealed, so it never fights the toolbar/canvas
+   once there's real content to interact with. Same "jump" plays while
+   a file is being dragged over the banner (.active class, toggled by
+   shared/site.js's bcSetupBannerDropTarget) — not to be confused with
+   the :active pseudo-class just below, which is the separate
+   mouse-press-down effect. */
+#page-context .tool-app:has(#ctEditor[hidden]):hover{
+  filter:brightness(1.06);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.06 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+#page-context .tool-app:has(#ctEditor[hidden]).active{
+  filter:brightness(1.13);
+  transform:scale(1.03);
+}
+#page-context .tool-app:has(#ctEditor[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-context{ animation:icon-wobble .5s ease; }
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row from shared/site.css — same "classified terminal"
+   look as Convert/Compress/Combine/Cleanly's help banners. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"PANDUAN";
+    font-size:15px;
+  }
+}
+
+#ctDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#ctDrop:hover{
+  border-color:transparent;
+  transform:none;
+}
+#page-context .tool-app.active{
+  background:rgba(255,222,137,.08);
+}
+
+/* ===== CONTEXT TOOL (click-to-place text on a PDF) ===== */
+.context-editor{
+  margin-top:20px;
+}
+
+/* File name dropdown — same trigger/popup pattern as the color picker,
+   so it works the same way with touch as with a mouse (no native
+   dropdown quirks, no reliance on hover). */
+.context-filename-dropdown{
+  position:relative;
+}
+
+.context-filename-popup{
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  z-index:5;
+  width:max(260px, calc(100vw - 32px));
+  max-width:300px;
+  padding:10px;
+  border-radius:14px;
+}
+
+.context-filename-popup[hidden]{
+  display:none;
+}
+
+.context-filename-input-wrap{
+  position:relative;
+}
+
+.context-filename-input{
+  width:100%;
+  height:40px;
+  padding:0 34px 0 14px;
+  border-radius:10px;
+  font-size:14px;
+  box-sizing:border-box;
+}
+
+.context-filename-input::placeholder{
+  opacity:.55;
+}
+
+.context-filename-clear{
+  position:absolute;
+  top:50%;
+  right:6px;
+  transform:translateY(-50%);
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  font-size:15px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.context-download-btn{
+  position:relative;
+}
+
+.context-download-btn:hover{
+  background:rgba(0,0,0,.35);
+}
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here. */
+.context-remove-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:6;
+  font-size:19px;
+}
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position stay here, same split as
+   .context-remove-btn/.bc-remove-btn above. Sits just to the left of
+   Remove on the canvas. */
+.context-back-btn{
+  position:absolute;
+  top:10px;
+  right:48px;
+  z-index:6;
+}
+
+/* Fixed + full-viewport. openFullscreen moves this element (and the
+   toolbar/preview panel reparented into it) to be a direct child of
+   <body> instead of a descendant of #page-context/#app-shell — the fix
+   for saturated colors (yellow toolbar, red remove button, the white
+   PDF canvas) not surviving #app-shell's light-theme invert filter.
+   The existing mobile toolbar rules are scoped to
+   :is(#page-context, .context-fullscreen-overlay) so they keep
+   applying in both locations; light-theme colors that had their own
+   filter-cancel trick for the #app-shell-descendant case get an
+   explicit filter:none reset scoped to .context-fullscreen-overlay
+   just below, since there's nothing left to cancel once outside it.
+   Background scroll is locked by JS while open — even fully outside
+   #app-shell now, this overlay is still reparented at runtime rather
+   than living in two places, so keeping scroll pinned avoids any
+   layout it's part of shifting under it while open. */
+.context-fullscreen-overlay{
+  /* iOS Safari's address bar collapses/expands, so inset:0 (sized
+     against the taller "layout viewport") can leave real content —
+     including the close button — pushed above the actually-visible
+     screen, with no way to reveal it since background scroll is
+     locked while this is open. `dvh`/`dvw` track the real visible
+     area instead; vh/vw stay as a fallback for older browsers. */
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  width:100dvw;
+  height:100dvh;
+  z-index:2000;
+  background:#1d2436;
+  display:flex;
+  flex-direction:column;
+}
+.context-fullscreen-header{
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  height:72px;
+  box-sizing:border-box;
+  padding:0 16px 0 22px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.context-fullscreen-header .site-logo{
+  width:34px;
+  height:34px;
+}
+/* Header follows the site theme exactly like the top nav (shared/nav.css
+   values) — only the editor area below it stays always-dark. */
+html[data-theme="light"] .context-fullscreen-header{
+  background:#d4dbee;
+  border-bottom-color:rgba(18,23,39,.12);
+}
+html[data-theme="light"] .context-fullscreen-brand{
+  color:#121727;
+}
+.context-fullscreen-home{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+.context-fullscreen-actions{
+  margin-left:auto;
+}
+.context-fullscreen-brand{
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:-0.02em;
+  color:#E3E8F8;
+}
+.context-fullscreen-overlay[hidden]{
+  display:none;
+}
+
+/* A deliberately lighter shade for light theme (not the same navy as
+   dark) — this tool page is still reparented to <body> at fullscreen
+   time for other DOM/stacking reasons, but no longer needs any color
+   -filter compensation now that #app-shell has no ambient filter to
+   escape. */
+html[data-theme="light"] .context-fullscreen-overlay,
+html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
+  background:#d4dbed;
+}
+.context-fullscreen-canvas-area{
+  position:relative;
+  flex:1;
+  min-height:0;
+  /* Custom pinch/pan handles panning itself once zoomed — native
+     scroll here would fight the transform-based pan and double-handle
+     the same gesture. touch-action:none also stops the browser's own
+     pinch-to-zoom from competing with ours. */
+  overflow:hidden;
+  touch-action:none;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px 16px;
+  /* Clears the notch/Dynamic Island/status bar on iPhone — without
+     this the close button (only ~36px down otherwise) can end up
+     sitting under it. */
+  padding-top:calc(20px + env(safe-area-inset-top, 0px));
+}
+.context-fullscreen-canvas-area .context-preview-panel{
+  /* Stays position:relative (its own default) and shrinks to wrap the
+     canvas itself (not stretched to the full overlay width) — otherwise
+     the remove button inside it, anchored to *its* corner, would jump
+     to the outer overlay's corner instead of the actual visible canvas
+     edge. */
+  background:transparent;
+  padding:0;
+  width:fit-content;
+  max-width:100%;
+  margin:0 auto;
+}
+.context-fullscreen-canvas-area .context-canvas-wrap{
+  margin:0 auto;
+  transform-origin:0 0;
+}
+.context-fullscreen-bar{
+  flex-shrink:0;
+}
+.context-fullscreen-bar .context-toolbar{
+  margin-bottom:0;
+  padding:10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  /* Context's own accent color (same yellow as its card/drop-zone) so
+     the fixed toolbar reads as "this tool", not a generic dark bar —
+     the buttons keep their own dark pill background regardless, so
+     contrast against the yellow is unaffected. */
+  background:var(--context-yellow);
+  border-top:1px solid rgba(0,0,0,.15);
+}
+
+/* Saturated yellow does NOT survive #app-shell's light-mode invert
+   filter, even with the usual double-invert-cancel trick — verified by
+   hand: invert(1) hue-rotate(180deg) applied to #ffd155 sends the blue
+   channel negative partway through, the browser clamps it to 0, and
+   that clamping is real data loss — applying the same filter again
+   afterward can't recover it (confirmed by working the matrix math:
+   the result lands around #f4c699, a washed-out peach, not #ffd155).
+   The reliable fix (JS, openFullscreen/closeFullscreen) is moving the
+   whole fullscreen overlay OUTSIDE #app-shell while open, so this
+   color — and the remove button's red, same problem — never passes
+   through the filter at all, in either theme. See the matching light-
+   theme overrides for .context-fullscreen-overlay/.context-remove-btn
+   just below for the other half of that. */
+
+/* The color menu just needs to open upward instead of its normal
+   downward — fine when the toolbar sits in normal page flow, but this
+   toolbar is pinned to the very bottom of the screen, so "below" is
+   off-screen. */
+.context-fullscreen-bar .context-color-menu{
+  top:auto;
+  bottom:calc(100% + 6px);
+}
+
+/* Renaming is worse than the color menu: it also opens the keyboard,
+   which eats even more of the screen right where "open upward from
+   the bottom bar" would put it. Pin it as a bar across the TOP of the
+   screen instead — always visible regardless of keyboard height, and
+   no longer positioned relative to the trigger at all (JS skips its
+   own clamp math here; see clampFilenamePopup). Targets
+   .context-fullscreen-overlay, not .context-fullscreen-bar — JS
+   reparents the popup directly into the overlay while open (see
+   openFullscreen), specifically to escape the toolbar's own light-
+   theme filter, which would otherwise become ITS containing block
+   and trap it down at the toolbar instead of the true viewport. */
+.context-fullscreen-overlay .context-filename-popup{
+  position:fixed;
+  /* The canvas's own delete × sits at z-index:6 — without an explicit
+     z-index here (default auto/0) it was winning and poking through
+     the top of this banner instead of sitting behind it. */
+  z-index:10;
+  top:calc(16px + env(safe-area-inset-top, 0px));
+  left:16px;
+  right:16px;
+  bottom:auto;
+  width:auto;
+  max-width:none;
+}
+
+/* Was margin-left:auto, splitting the toolbar into a left-packed
+   cluster + a right-flushed one instead of one centered row — removed
+   so .context-toolbar's justify-content:center actually centers
+   everything together. */
+.context-toolbar-gap{
+  margin-left:0;
+}
+
+.context-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-bottom:16px;
+}
+
+/* The shape kind menu's trigger is now the compact 34px "S" icon button
+   itself, not a wide pill — .bc-dropdown-menu's default width:100%
+   would otherwise squeeze "Circle"/"Square"/etc. down to that same
+   34px. Widen it and anchor its right edge to the trigger instead of
+   its left, so it doesn't overflow the toolbar's edge on narrow
+   layouts. */
+.ct-shape-btn-icon{
+  width:16px;
+  height:16px;
+  display:block;
+  margin:auto;
+}
+#ctShapeKindDropdown .bc-dropdown-menu{
+  width:140px;
+  left:auto;
+  right:0;
+}
+/* On mobile the toolbar sits at the bottom of the screen, so the menu
+   opens upward — below it would be off-screen. */
+@media (max-width:768px){
+  #ctShapeKindDropdown .bc-dropdown-menu{
+    top:auto;
+    bottom:calc(100% + 6px);
+  }
+}
+
+/* Add text -> "New", Download's text -> icon: two labels/markers per
+   button, swapped by viewport rather than JS. Desktop keeps the full
+   labels; mobile below only ever shows the .ct-mobile-only side.
+   Scoped to :is(#page-context, .context-fullscreen-overlay) rather than
+   just #page-context — openFullscreen moves the toolbar (and the text
+   boxes/page-nav further below) out to be a child of <body> instead of
+   a descendant of #page-context (the fix for the yellow/red color
+   drift under the light-theme filter), so a plain #page-context prefix
+   silently stopped matching once fullscreen opened. That's what
+   suddenly showed the full desktop-sized buttons and both text labels
+   at once ("Add textNew") instead of the compact mobile toolbar. */
+:is(#page-context, .context-fullscreen-overlay) .ct-mobile-only{ display:none; }
+
+/* Mobile: the big pill buttons (Add text, Download) stay full size for
+   the rest of the site, but at 74px tall they eat too much of a narrow
+   screen and force a lot of wrapping. Shrink them down here rather than
+   pulling them out into a keyboard-attached bar — there's no web
+   equivalent of native inputAccessoryView/WindowInsets, so keeping them
+   as regular page content is the simpler, testable path. All other
+   toolbar controls also come down 15% from their normal size here, and
+   the color swatch drops its label/chevron to just the color dot —
+   "Rename file" keeps its text since only the color picker was asked
+   to go icon-only. (Remove isn't touched — it's already a small circle
+   on the preview panel, separate from this toolbar.) */
+@media (max-width:768px){
+  :is(#page-context, .context-fullscreen-overlay) .ct-desktop-only{ display:none; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-mobile-only{ display:inline-flex; align-items:center; justify-content:center; }
+
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{
+    gap:4px;
+    flex-wrap:nowrap;
+  }
+  /* The desktop layout uses margin-left:auto on this group to open a
+     visible gap between the document-actions and text-edit clusters —
+     on a single tight mobile row there's no spare width for that gap
+     to consume, so it'd just fight the nowrap packing. */
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar-gap{
+    margin-left:0;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-tool-btn,
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:44px;
+    padding:0 10px;
+    border-radius:22px;
+    font-size:14px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .bc-toggle-btn-icon{
+    width:27px;
+    height:34px;
+    border-radius:10px;
+    font-size:13px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-color-trigger{
+    height:34px;
+    padding:0 10px;
+    border-radius:10px;
+    font-size:12px;
+    gap:7px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctSignatureBtn{
+    font-size:13px;
+  }
+  /* "Rename file" -> "R" — the label always gets reset to "Rename file"
+     by JS (kept that way for accessibility/consistency), so swap the
+     visible text in CSS only instead of touching the JS string. */
+  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTriggerLabel{
+    font-size:0;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTriggerLabel::after{
+    content:"R";
+    font-size:13px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger{
+    max-width:none;
+    width:34px;
+    padding:0;
+    gap:0;
+    justify-content:center;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger .context-color-chevron{
+    display:none;
+  }
+  /* Font-size nav replaced by dragging each box's own resize handle. */
+  :is(#page-context, .context-fullscreen-overlay) .context-font-size-combo{
+    display:none;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-text-box.selected .context-text-resize-handle{
+    display:flex;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-page-btn{
+    width:27px;
+    height:27px;
+    border-radius:7px;
+    font-size:14px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-page-nav{
+    margin-top:12px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorTrigger{
+    width:34px;
+    padding:0;
+    gap:0;
+    justify-content:center;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorTrigger #ctColorTriggerLabel,
+  :is(#page-context, .context-fullscreen-overlay) #ctColorTrigger .context-color-chevron{
+    display:none;
+  }
+
+  /* The open dropdown goes the same route — no text, just the swatches,
+     laid out as one row spanning the full menu width instead of a
+     stacked list of labeled rows. */
+  :is(#page-context, .context-fullscreen-overlay) #ctColorMenu{
+    flex-direction:row;
+    justify-content:space-between;
+    padding:8px;
+    /* Explicit width, not implied by left:0;right:0 (which would tie it
+       to the now icon-only 34px trigger and make the row overflow its
+       own box) — the JS clamp then anchors/repositions this fixed-size
+       box on-screen. */
+    left:auto;
+    right:0;
+    width:220px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorMenu .context-color-option{
+    flex:1;
+    justify-content:center;
+    padding:0;
+    height:40px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorMenu .ct-option-label{
+    display:none;
+  }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorMenu .context-color-dot{
+    width:18px;
+    height:18px;
+  }
+}
+
+/* Flip light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.context-tool-btn{
+  position:relative;
+  height:74px;
+  padding:0 28px;
+  border-radius:26px;
+  font-weight:800;
+  font-size:20px;
+  cursor:pointer;
+}
+
+/* Chrome (border/background/theme-flip/font) now comes from shared
+   .bc-combo-trigger (shared/site.css) — this used to be a raw <select>
+   styled by hand (.context-font-size), replaced with a real .bc-combo
+   so 17 sizes are searchable instead of a long scroll through a native
+   popup (see CLAUDE.md's "5+ options → combo" rule). Same width:auto
+   override as .context-color-trigger below — .bc-combo-trigger
+   defaults to width:100% for its usual home in a sized wrapper, but
+   this sits directly in .context-toolbar's flex row and needs its own
+   content-based width instead. */
+.context-font-size-trigger{
+  width:auto;
+}
+.context-font-size-combo{
+  width:90px;
+  flex-shrink:0;
+}
+
+/* Custom color picker — replaces a native <select>, which rendered its
+   own selected value inconsistently with its open dropdown list (the
+   black swatch showed up white in the closed trigger on some
+   platforms, even though every option in the open list was correct).
+   Fully custom markup sidesteps that entirely and gives a consistent,
+   more modern look besides. */
+.context-color-dropdown{
+  position:relative;
+}
+
+/* Chrome (border/background/theme-flip/font) now comes from shared
+   .bc-dropdown-trigger (shared/site.css) — added as a second class
+   on the markup (class="context-color-trigger bc-dropdown-trigger").
+   .bc-dropdown-trigger defaults to width:100% for its usual home
+   inside a sized wrapper (.bc-dropdown/.bc-combo); these three
+   buttons sit directly in .context-toolbar's flex row instead and
+   need their own content-based width, so that's the one property
+   still overridden locally. */
+.context-color-trigger{
+  width:auto;
+}
+
+/* All three above (.context-tool-btn/.context-font-size-trigger/
+   .context-color-trigger) are also used inside
+   .context-fullscreen-overlay — the mobile fullscreen editor, which
+   stays a fixed dark surface regardless of site theme (see its own
+   comment). Force the dark-theme treatment there unconditionally so
+   they don't go light-on-light when the editor itself never does. */
+/* .context-page-nav itself is just the "1/2" text + layout, no
+   border/background of its own to force dark — only its text color
+   needs pinning here, same reasoning as the buttons above. */
+.context-fullscreen-overlay .context-page-nav{
+  color:#fff;
+}
+
+#ctFilenameTrigger{
+  max-width:150px;
+}
+
+#ctFilenameTriggerLabel{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Thin outline chevron (a rotated border-corner, not a filled glyph) —
+   matches the native <select> arrow's weight so every dropdown/button
+   trigger on the page reads as the same control, not a mix of glyphs. */
+.context-color-chevron{
+  width:6px;
+  height:6px;
+  margin-left:2px;
+  border-right:1.5px solid currentColor;
+  border-bottom:1.5px solid currentColor;
+  opacity:.75;
+  transform:rotate(45deg);
+  flex-shrink:0;
+}
+
+/* The Bold/Italic/Underline row is the shared
+   .bc-toggle-btn-group/.bc-toggle-btn.bc-toggle-btn-icon
+   (shared/site.css). */
+
+/* Chrome now lives in shared/site.css as .bc-color-dot (added as a
+   second class on the markup, class="context-color-dot bc-color-dot")
+   — this was a byte-for-byte duplicate of that recipe (Congify's
+   .gif-dropdown-dot had grown the exact same one independently).
+   .context-color-dot itself now only exists as a JS-addressing hook. */
+
+/* Visual (background/padding/radius/dot+label row layout) now comes
+   from the shared .bc-color-menu/.bc-color-option (shared/site.css) —
+   added as a second class on the markup. What stays local: the
+   position:absolute/top/left/right/z-index positioning, since
+   Context's own .context-color-dropdown wrapper (position:relative)
+   isn't the generic .bc-dropdown component Congify's color pickers use
+   — and the class names themselves, kept as JS-addressing hooks since
+   this control's viewport-clamped open/close logic is hand-rolled
+   rather than bcRegisterDropdown. */
+.context-color-menu{
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  right:0;
+  z-index:5;
+}
+
+.context-color-menu[hidden]{
+  display:none;
+}
+
+.context-page-nav{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:var(--text);
+  font-size:14px;
+  font-weight:700;
+}
+
+.context-page-nav[hidden]{
+  display:none;
+}
+
+/* Flip light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. Was a fixed dark tint (border:rgba(0,0,0,.4)/
+   background:rgba(0,0,0,.25)/color:#fff regardless of theme), which is
+   why it looked identical in both — dark-on-dark instead of a real
+   light/dark pair. */
+.context-page-btn{
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.context-page-btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.context-page-btn:disabled:hover{
+  background:rgba(255,255,255,.35);
+}
+html[data-theme="dark"] .context-page-btn:disabled:hover{
+  background:rgba(0,0,0,.25);
+}
+
+/* Same background as .site-nav — gives the PDF preview its own visible
+   panel now that the toolbar sits above it and the yellow .tool-app
+   background no longer extends down to it (previously the white PDF
+   page had nothing behind it and vanished in light mode). */
+.context-preview-panel{
+  position:relative;
+  background:#1d2436;
+  border-radius:20px;
+  padding:24px;
+}
+
+/* Mobile: every pixel of padding here and on the card itself is a
+   pixel not spent showing the actual PDF page — on a narrow phone the
+   36px card padding + 24px panel padding compounded (visible on both
+   sides) to make an A4 page look like a small poster in a big frame.
+   Scoped to :has(#ctEditor:not([hidden])) so this only kicks in once a
+   PDF is actually loaded and the canvas is showing — before that,
+   #ctDrop should keep the same default .tool-app padding every other
+   tool's drop zone uses, so it renders at the same size/position. */
+@media (max-width:768px){
+  #page-context .tool-app:has(#ctEditor:not([hidden])){
+    /* Left/right/bottom stay tight (that's the space the canvas eats
+       into) — only top grows, so the logo/header drop down closer to
+       where Convert/Compress sit without shrinking the canvas. */
+    padding:22px 8px 8px;
+  }
+  /* Same idea sideways — nudges the logo/title in from the edge without
+     touching .tool-app's own padding (which would shrink the canvas). */
+  #page-context .tool-app:has(#ctEditor:not([hidden])) .tool-header{
+    padding-left:28px;
+  }
+  #page-context .context-preview-panel{
+    padding:9px;
+  }
+}
+
+.context-canvas-wrap{
+  position:relative;
+  margin:0 auto;
+  max-width:100%;
+  width:max-content;
+  background:#fff;
+}
+
+.context-canvas-wrap canvas{
+  display:block;
+  max-width:100%;
+  height:auto;
+  /* Rounds the canvas's own painted corners directly (a plain CSS
+     replaced-element behavior, no overflow:hidden needed) — moved here
+     from the wrap so overflow:hidden on the wrap no longer clips the
+     box handles in .context-overlay (a sibling of this canvas), which
+     used to disappear whenever a box was dragged close enough to any
+     edge of the page for its drag/resize handle to poke past it. They
+     now stay visible against the dark preview-panel background behind
+     everything instead of getting cut off. */
+  border-radius:8px;
+}
+
+.context-overlay{
+  position:absolute;
+  inset:0;
+}
+
+.context-text-box{
+  position:absolute;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  white-space:nowrap;
+  -webkit-touch-callout:none;
+}
+
+.context-text-box.selected .context-text-inner{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
+}
+
+.context-text-drag-handle{
+  flex-shrink:0;
+}
+
+/* Circle geometry/color/border/touch-action is the shared
+   .bc-obj-resize-handle (shared/site.css) — split from the canvas-level
+   .bc-resize-handle since this one resizes an object placed ON the
+   canvas (a text/signature box), not the canvas/frame itself. What
+   stays local: the mobile-only show/hide state (hidden until the box
+   is selected — .context-text-box handles that, see the media query
+   above), position offset, and cursor direction. */
+.context-text-resize-handle{
+  display:none;
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+
+.context-text-inner{
+  display:inline-block;
+  min-width:20px;
+  padding:2px 4px;
+  outline:1px dashed rgba(0,0,0,.35);
+  cursor:text;
+  font-family:Helvetica, Arial, sans-serif;
+  line-height:1.2;
+}
+
+.context-text-inner:focus{
+  outline:1px solid rgba(37,99,235,.7);
+}
+
+#ctSizeStatus{ margin-top:0; min-height:0; }
+#ctSizeStatus:empty{ display:none; }
+
+.context-text-remove{
+  top:-10px;
+  right:-10px;
+}
+
+/* Text box: remove button sits beside the text on the right, mirroring the move handle on the left. */
+.context-text-box > .context-text-remove{
+  position:static;
+  flex-shrink:0;
+}
+
+/* A signature placed on the page — same drag/resize/remove pattern as
+   .context-text-box, just an <img> instead of editable text. */
+.context-signature-box{
+  position:absolute;
+  cursor:default;
+  -webkit-touch-callout:none;
+  outline:1px dashed rgba(0,0,0,.35);
+}
+/* Same active state as a text box's own .context-text-box.selected
+   .context-text-inner (rounded blue outline) — signature has no
+   separate "inner" element to style, so it goes straight on the box. */
+.context-signature-box.selected{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
+}
+.context-signature-box img{
+  display:block;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  user-select:none;
+}
+.context-signature-box .context-text-drag-handle{
+  position:absolute;
+  top:50%;
+  left:-22px;
+  transform:translateY(-50%);
+}
+/* Drag-handle look for both text and signature boxes is the shared
+   .bc-obj-drag-handle (shared/site.css) — same object-control family as
+   .bc-obj-resize-handle/.bc-obj-remove-btn above, just yellow + a move
+   cursor instead of blue/red. */
+.context-signature-box .context-text-resize-handle{
+  /* Unlike text (which has a desktop font-size dropdown as its resize
+     control, with the drag handle as the mobile-only stand-in), a
+     signature has no other way to resize — so its handle needs to show
+     on every viewport, not just mobile. */
+  display:flex;
+  right:-9px;
+  bottom:-9px;
+}
+
+/* A basic shape (circle/square/triangle) placed on the page — same
+   drag/remove pattern as .context-signature-box (handle always visible
+   on every viewport), just an inline <svg> instead of an <img>, and a
+   fill color instead of image content. Resize differs: the handle
+   freely reshapes width/height independently by default, Shift locks it
+   back to a uniform scale like a signature's (see context-tool.js).
+   No dashed idle outline the way signature has — the shape itself is
+   already visible, a border around it too would just look like an
+   unwanted stroke. */
+.context-shape-box{
+  position:absolute;
+  cursor:default;
+  -webkit-touch-callout:none;
+}
+.context-shape-box.selected{
+  outline:2px solid #2563eb;
+  outline-offset:1px;
+  border-radius:4px;
+}
+.context-shape-box svg{
+  display:block;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  user-select:none;
+}
+.context-shape-box .context-text-drag-handle{
+  position:absolute;
+  top:50%;
+  left:-22px;
+  transform:translateY(-50%);
+}
+.context-shape-box .context-text-resize-handle{
+  display:flex;
+  /* Mirrors the remove button's -10px/-10px at the opposite corner so the
+     two handles line up vertically on the box's right edge. */
+  right:-10px;
+  bottom:-10px;
+}
+
+/* ===== Signature capture modal ===== */
+.context-signature-overlay{
+  position:fixed;
+  inset:0;
+  /* Higher than .context-fullscreen-overlay's z-index:2000 — on
+     mobile the Signature button lives inside that fullscreen editor,
+     so this modal has to render above it, not behind it, or it opens
+     invisibly and every tap on it does nothing visible. */
+  z-index:2100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(10,12,20,.72);
+}
+.context-signature-overlay[hidden]{ display:none; }
+
+.context-signature-modal{
+  width:100%;
+  max-width:480px;
+  max-height:90vh;
+  overflow-y:auto;
+  background:#1d2436;
+  border-radius:24px;
+  padding:24px;
+  box-sizing:border-box;
+  color:var(--text);
+}
+html[data-theme="light"] .context-signature-modal{
+  background:#e4e9f5;
+}
+
+/* Phone: give the fine-tune preview as much width as possible — the
+   modal's side margins and padding are what cap it, and its height
+   follows the signature's aspect ratio. */
+@media (max-width:768px){
+  .context-signature-overlay{ padding:8px; }
+  .context-signature-modal{ padding:14px; max-height:96vh; border-radius:22px; }
+  .context-signature-header{ margin-bottom:12px; }
+}
+.context-signature-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:20px;
+  font-weight:800;
+  margin-bottom:16px;
+}
+
+.context-signature-header-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.context-signature-back{
+  width:28px;
+  height:28px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  cursor:pointer;
+}
+.context-signature-back[hidden]{ display:none; }
+.context-signature-back svg{ width:16px; height:16px; }
+
+.context-signature-hint{
+  font-size:14px;
+  opacity:.75;
+  margin:0 0 14px;
+}
+
+.context-signature-action-btn{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border-radius:16px;
+  font-weight:800;
+  font-size:15px;
+  cursor:pointer;
+}
+
+.context-signature-saved-preview{
+  display:block;
+  width:100%;
+  max-height:160px;
+  object-fit:contain;
+  background:#ffffff;
+  border-radius:14px;
+  padding:10px;
+  box-sizing:border-box;
+}
+
+.context-signature-crop-wrap.is-loading{
+  min-height:200px;
+}
+.context-signature-crop-wrap.is-loading img,
+.context-signature-crop-wrap.is-loading .context-signature-crop-box{
+  display:none;
+}
+.context-signature-crop-loading{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  color:#fff;
+}
+.context-signature-crop-loading[hidden]{ display:none; }
+.context-signature-crop-wrap{
+  position:relative;
+  /* No height cap — a portrait phone photo at width:100%/height:auto
+     can render taller than a fixed box, and capping it with
+     overflow:hidden used to just silently clip the bottom off
+     (frequently right where the signature was) instead of showing the
+     full frame. Letting it grow and rely on the modal's own
+     overflow-y:auto to scroll keeps the whole photo visible and keeps
+     the width-ratio crop math below simple (no object-fit letterbox
+     offset to account for). */
+  overflow:hidden;
+  border-radius:14px;
+  background:#000;
+}
+.context-signature-crop-wrap img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.context-signature-crop-box{
+  position:absolute;
+  border:2px dashed #ffffff;
+  /* No dimming outside the selection — the photo stays exactly as the
+     user shot it. The dashed border alone marks the crop box; the old
+     box-shadow dimming (even at low opacity) read as if the paper
+     itself had gone dark, which was confusing more than it helped. */
+  touch-action:none;
+}
+.context-signature-crop-handle{
+  position:absolute;
+  width:20px;
+  height:20px;
+  margin:-10px;
+  border-radius:50%;
+  background:#ffffff;
+  touch-action:none;
+}
+.context-signature-crop-handle[data-h="nw"]{ top:0; left:0; cursor:nwse-resize; }
+.context-signature-crop-handle[data-h="se"]{ bottom:0; right:0; margin-bottom:-10px; margin-right:-10px; top:auto; left:auto; cursor:nwse-resize; }
+
+.context-signature-draw-canvas{
+  display:block;
+  width:100%;
+  height:220px;
+  border-radius:14px;
+  background:#ffffff;
+  touch-action:none;
+}
+
+.context-signature-camera-wrap{
+  position:relative;
+  border-radius:14px;
+  overflow:hidden;
+  background:#000;
+}
+.context-signature-camera-wrap video{
+  display:block;
+  width:100%;
+  height:220px;
+  object-fit:cover;
+}
+.context-signature-camera-guides{
+  position:absolute;
+  top:10px;
+  left:10px;
+  right:10px;
+  display:flex;
+  gap:8px;
+}
+.context-signature-camera-badge{
+  padding:5px 10px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:700;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+}
+.context-signature-camera-badge.ok{ background:rgba(34,197,94,.75); }
+.context-signature-camera-badge.warn{ background:rgba(225,29,72,.75); }
+
+.context-signature-clean-preview{
+  position:relative;
+  border-radius:14px;
+  background:
+    linear-gradient(45deg, #333 25%, transparent 25%),
+    linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%),
+    linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0;
+  background-color:#555;
+  overflow:hidden;
+}
+.context-signature-clean-preview canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  touch-action:none;
+}
+
+.context-signature-history{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+.context-signature-fade{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  opacity:.85;
+}
+.context-signature-fade input[type="range"]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:80px;
+  height:15px;
+  margin:0;
+  border-radius:8px;
+  background:var(--border-strong);
+  cursor:pointer;
+}
+.context-signature-fade input[type="range"]:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.context-signature-fade input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:var(--text);
+  border:none;
+}
+.context-signature-fade input[type="range"]::-moz-range-thumb{
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:var(--text);
+  border:none;
+}
+.context-signature-history-btn{
+  width:22px;
+  height:22px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  cursor:pointer;
+}
+.context-signature-history-btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.context-signature-history-btn svg{
+  width:15px;
+  height:15px;
+}
+.context-signature-hint--below{
+  margin:12px 0 0;
+}
+.context-signature-brush-ring{
+  position:absolute;
+  display:none;
+  box-sizing:border-box;
+  border:2px solid #fff;
+  outline:1px solid rgba(0,0,0,.6);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+html[data-theme="light"] .context-signature-clean-preview{
+  background:
+    linear-gradient(45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(-45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c4cbdb 75%),
+    linear-gradient(-45deg, transparent 75%, #c4cbdb 75%);
+  background-size:16px 16px;
+  background-position:0 0, 0 8px, 8px -8px, -8px 0;
+  background-color:#eef1f8;
+}
+
+.context-signature-color-row{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+.context-signature-color-swatch{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:2px solid transparent;
+  padding:2px;
+  background:none;
+  cursor:pointer;
+}
+.context-signature-color-swatch span{
+  display:block;
+  width:100%;
+  height:100%;
+  border-radius:50%;
+}
+.context-signature-color-swatch--orig{
+  background:
+    linear-gradient(45deg, #333 25%, transparent 25%),
+    linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%),
+    linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size:8px 8px;
+  background-position:0 0, 0 4px, 4px -4px, -4px 0;
+  background-color:#555;
+  background-clip:padding-box;
+}
+html[data-theme="light"] .context-signature-color-swatch--orig{
+  background:
+    linear-gradient(45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(-45deg, #c4cbdb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c4cbdb 75%),
+    linear-gradient(-45deg, transparent 75%, #c4cbdb 75%);
+  background-size:8px 8px;
+  background-position:0 0, 0 4px, 4px -4px, -4px 0;
+  background-color:#eef1f8;
+  background-clip:padding-box;
+}
+.context-signature-color-row{
+  align-items:center;
+  position:relative;
+}
+.context-signature-color-divider{
+  width:1px;
+  height:22px;
+  margin:0 10px;
+  background:var(--border-strong);
+}
+.context-signature-color-swatch--custom span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  border:1.5px dashed var(--border-strong);
+  font-size:16px;
+  font-weight:800;
+  line-height:1;
+  color:var(--text);
+}
+.context-signature-color-swatch--custom.has-color span{
+  border-style:solid;
+  color:transparent;
+}
+.context-signature-color-popover{
+  position:absolute;
+  left:0;
+  bottom:calc(100% + 8px);
+  z-index:5;
+}
+.context-signature-color-popover[hidden]{ display:none; }
+.context-signature-color-swatch.active{
+  border-color:var(--context-yellow);
+}
+
+@keyframes copy-toast-blink{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:0; }
+}
+
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Kami menggunakan cookie. Pilih kategori yang ingin diizinkan di bawah — lihat <a data-goto="cookies">Kebijakan Cookie</a> kami untuk detailnya.</p>
+  <p class="cookie-banner-text-mobile">Pilih kategori yang diizinkan</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Tampilkan atau sembunyikan pengaturan cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Pilih kategori yang diizinkan</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Selengkapnya tentang cookie yang diperlukan">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Diperlukan (selalu aktif)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Ini menjaga fungsi dasar tetap berjalan — mengingat pilihan cookie, bahasa, dan tema terang/gelap Anda. Cookie ini tidak dapat dimatikan, dan seperti semua hal lain di situs ini, tidak pernah meninggalkan perangkat Anda.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Selengkapnya tentang cookie analitik">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analitik – untuk privasi penuh, biarkan tetap nonaktif.</span><span class="cookie-label-docked">Analitik (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Ini memungkinkan kami meningkatkan pengalaman pengguna dengan menerima data berharga melalui (Google Analytics) tentang cara pengguna menjelajahi situs kami – jika Anda ingin tetap sepenuhnya anonim, kami menyarankan untuk menonaktifkan opsi ini.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Selengkapnya tentang cookie iklan">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Iklan (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Digunakan oleh Google AdSense untuk menampilkan iklan. Saat ini dinonaktifkan di seluruh situs selagi menunggu persetujuan AdSense, jadi sakelar ini belum berpengaruh.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Terima Semua</button>
+    <button type="button" id="cookieBannerSave">Konfirmasi pilihan</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Ganti mode terang dan gelap" title="Ganti mode terang dan gelap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Bagikan" title="Bagikan">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Salin tautan</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Opsi berbagi lainnya"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">Email</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Klik untuk mengatur ulang panduan alat" title="Klik untuk mengatur ulang panduan alat">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Kembali ke Creative Hub" title="Kembali ke Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div id="page-context">
+<div class="help-banner engine-status-card" id="ctHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="ctHelpClose" aria-label="Tutup dan jangan tampilkan lagi"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="ctHelpToggle" aria-label="Perkecil" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="ctHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="ctHelpBack">&lt; KEMBALI</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="ctHelpCloseMobile">TUTUP</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="ctHelpNext">LANJUT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="ctHelpBody">
+    <div class="engine-status-row">&gt; <span id="ctHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-context" role="img" aria-label="Ikon Context"></span>
+        Context
+      </div>
+      <span class="privacy-check-badge" id="ctPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <div class="tool-drop" id="ctDrop"><span class="tool-drop-click-word">Klik</span><span class="tool-drop-or-drop"> atau letakkan </span><span class="tool-drop-rest">sebuah file PDF</span></div>
+    <input type="file" id="ctInput" accept="application/pdf,.pdf" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="ctContinueBtn" hidden>Lanjutkan dari terakhir Anda berhenti</button>
+
+    <div class="context-editor" id="ctEditor" hidden>
+      <div class="context-toolbar">
+        <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Tambah teks (T)"><span class="ct-desktop-only">Tambah teks</span><span class="ct-mobile-only">Baru</span></button>
+
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Tanda tangan (S)"><span class="ct-desktop-only">Tanda tangan</span><span class="ct-mobile-only">S</span></button>
+
+        <div class="bc-toggle-btn-group">
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Garis bawah (U)" aria-label="Garis bawah" aria-pressed="false"><u>U</u></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Miring (I)" aria-label="Miring" aria-pressed="false"><i>I</i></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Tebal (B)" aria-label="Tebal" aria-pressed="false"><b>B</b></button>
+          <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Tambah bentuk (H)" aria-label="Tambah bentuk" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
+            <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-kind="circle" data-label="Lingkaran" role="option" aria-selected="false">Lingkaran</button>
+              <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Persegi" role="option" aria-selected="false">Persegi</button>
+              <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Segitiga" role="option" aria-selected="false">Segitiga</button>
+              <button type="button" class="bc-dropdown-option" data-kind="cross" data-label="Silang" role="option" aria-selected="false">Silang</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="context-color-dropdown" id="ctColorDropdown">
+          <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctColorTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="context-color-dot bc-color-dot" id="ctColorTriggerDot" style="background:#000000"></span>
+            <span id="ctColorTriggerLabel">Hitam</span>
+            <span class="context-color-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="context-color-menu bc-color-menu" id="ctColorMenu" role="listbox" hidden>
+            <button type="button" class="context-color-option bc-color-option active" data-color="#000000" data-label="Hitam" role="option" aria-selected="true">
+              <span class="context-color-dot bc-color-dot" style="background:#000000"></span><span class="ct-option-label"> Hitam</span>
+            </button>
+            <button type="button" class="context-color-option bc-color-option" data-color="#ffffff" data-label="Putih" role="option" aria-selected="false">
+              <span class="context-color-dot bc-color-dot" style="background:#ffffff"></span><span class="ct-option-label"> Putih</span>
+            </button>
+            <button type="button" class="context-color-option bc-color-option" data-color="#e11d48" data-label="Merah" role="option" aria-selected="false">
+              <span class="context-color-dot bc-color-dot" style="background:#e11d48"></span><span class="ct-option-label"> Merah</span>
+            </button>
+            <button type="button" class="context-color-option bc-color-option" data-color="#2563eb" data-label="Biru" role="option" aria-selected="false">
+              <span class="context-color-dot bc-color-dot" style="background:#2563eb"></span><span class="ct-option-label"> Biru</span>
+            </button>
+            <button type="button" class="context-color-option bc-color-option" data-color="#eab308" data-label="Kuning" role="option" aria-selected="false">
+              <span class="context-color-dot bc-color-dot" style="background:#eab308"></span><span class="ct-option-label"> Kuning</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bc-combo context-font-size-combo" id="ctFontSizeDropdown">
+          <div class="bc-combo-trigger context-font-size-trigger" id="ctFontSizeTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <input class="bc-combo-input" id="ctFontSizeInput" value="16px" readonly aria-label="Cari ukuran font">
+            <span class="bc-combo-chevron" aria-hidden="true"></span>
+          </div>
+          <div class="bc-combo-menu" id="ctFontSizeMenu" role="listbox" hidden>
+            <button type="button" class="bc-combo-option" data-size="8" data-label="8px" role="option" aria-selected="false"><span>8px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="10" data-label="10px" role="option" aria-selected="false"><span>10px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="12" data-label="12px" role="option" aria-selected="false"><span>12px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="14" data-label="14px" role="option" aria-selected="false"><span>14px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option active" data-size="16" data-label="16px" role="option" aria-selected="true"><span>16px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="18" data-label="18px" role="option" aria-selected="false"><span>18px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="20" data-label="20px" role="option" aria-selected="false"><span>20px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="24" data-label="24px" role="option" aria-selected="false"><span>24px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="28" data-label="28px" role="option" aria-selected="false"><span>28px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="32" data-label="32px" role="option" aria-selected="false"><span>32px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="36" data-label="36px" role="option" aria-selected="false"><span>36px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="40" data-label="40px" role="option" aria-selected="false"><span>40px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="48" data-label="48px" role="option" aria-selected="false"><span>48px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="56" data-label="56px" role="option" aria-selected="false"><span>56px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="64" data-label="64px" role="option" aria-selected="false"><span>64px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="72" data-label="72px" role="option" aria-selected="false"><span>72px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <button type="button" class="bc-combo-option" data-size="96" data-label="96px" role="option" aria-selected="false"><span>96px</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+            <div class="bc-combo-empty" id="ctFontSizeEmpty" hidden>Tidak ada yang cocok</div>
+          </div>
+        </div>
+
+        <span id="ctPageNavDesktopSlot"></span>
+
+        <div class="context-filename-dropdown context-toolbar-gap" id="ctFilenameDropdown">
+          <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctFilenameTrigger" aria-haspopup="true" aria-expanded="false" title="Ganti nama file (R)">
+            <span id="ctFilenameTriggerLabel">Ganti nama file</span>
+            <span class="context-color-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="context-filename-popup bc-popup" id="ctFilenamePopup" hidden>
+            <div class="context-filename-input-wrap">
+              <input type="text" class="context-filename-input bc-popup-input" id="ctFilenameInput" placeholder="Nama file" aria-label="Nama file">
+              <button type="button" class="context-filename-clear bc-popup-clear" id="ctFilenameClear">×</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="tool-primary-btn context-download-btn" id="ctDownloadBtn" disabled title="Unduh (D)" data-ga-event="tool_primary_action" data-ga-tool="context">
+          <svg class="ct-mobile-only ct-download-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+          <span class="ct-desktop-only">Unduh</span>
+        </button>
+      </div>
+
+      <div class="context-preview-panel" id="ctPreviewPanel">
+        <button type="button" class="context-back-btn bc-canvas-back-btn" id="ctBackBtn" data-goto="mainpage" aria-label="Kembali ke Creative Hub" title="Kembali ke Creative Hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5"></path>
+            <path d="M11 18l-6-6 6-6"></path>
+          </svg>
+        </button>
+        <button type="button" class="context-remove-btn bc-remove-btn bc-canvas-remove-btn" id="ctRemoveBtn">×</button>
+        <div class="context-canvas-wrap" id="ctCanvasWrap">
+          <canvas id="ctCanvas"></canvas>
+          <div class="context-overlay" id="ctOverlay"></div>
+        </div>
+
+        <div class="context-page-nav" id="ctPageNav" hidden>
+          <button type="button" class="context-page-btn" id="ctPrevPage">‹</button>
+          <span class="context-page-label" id="ctPageLabel">1 / 1</span>
+          <button type="button" class="context-page-btn" id="ctNextPage">›</button>
+        </div>
+      </div>
+
+      <div class="context-fullscreen-overlay" id="ctFullscreenOverlay" hidden>
+        <div class="context-fullscreen-header">
+          <button type="button" class="context-fullscreen-home" data-goto="mainpage" aria-label="Beranda BC Tools" title="Kembali ke Creative Hub">
+            <img class="site-logo" id="ctFsLogo" alt="Logo BC Tools">
+            <span class="context-fullscreen-brand">BC Tools</span>
+          </button>
+          <div class="nav-right context-fullscreen-actions">
+            <button type="button" class="nav-theme-btn context-fullscreen-nav-btn" data-theme-toggle aria-label="Ganti mode terang dan gelap" title="Ganti mode terang dan gelap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+              </svg>
+            </button>
+            <button type="button" class="nav-share-btn context-fullscreen-nav-btn" data-share-toggle aria-label="Bagikan" title="Bagikan">
+              <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 3L9.5 14.5"></path>
+                <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="context-fullscreen-canvas-area" id="ctFullscreenCanvasArea"></div>
+        <div class="context-fullscreen-bar" id="ctFullscreenBar"></div>
+      </div>
+    </div>
+
+    <div class="tool-status" id="ctStatus"></div>
+    <div class="tool-status" id="ctSizeStatus"></div>
+
+    <div class="context-signature-overlay" id="ctSigOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header">
+          <span>Tanda tangan</span>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-back" id="ctSigBack" aria-label="Mundur satu langkah" title="Mundur satu langkah" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M11 18l-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctSigClose" aria-label="Tutup" title="Tutup">&times;</button>
+          </div>
+        </div>
+
+        <div class="context-signature-step" id="ctSigStepChoose">
+          <div id="ctSigSavedWrap" hidden>
+            <img class="context-signature-saved-preview" id="ctSigSavedPreview" alt="Tanda tangan tersimpan Anda">
+            <button type="button" class="context-signature-action-btn" id="ctSigPlaceSaved">Taruh di halaman</button>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigReplace">Ganti tanda tangan</button>
+          </div>
+          <div id="ctSigChoiceWrap">
+            <p class="context-signature-hint">Bagaimana Anda ingin menambahkan tanda tangan.</p>
+            <p class="context-signature-hint"><b>TIPS: Gunakan kertas putih yang bersih. Ambil foto dengan pencahayaan yang baik.</b></p>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigCameraBtn">Ambil foto</button>
+            <button type="button" class="context-signature-action-btn" id="ctSigUploadBtn">Unggah foto</button>
+            <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigDrawBtn">Gambar saja</button>
+            <p class="context-signature-hint" id="ctSigUploadError" hidden></p>
+            <input type="file" id="ctSigFileInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,.jpg,.jpeg,.png,.webp,.bmp,.avif,.heic,.heif" hidden>
+          </div>
+        </div>
+
+        <div class="context-signature-step" id="ctSigStepCamera" hidden>
+          <p class="context-signature-hint">Penuhi bingkai dengan tanda tangan Anda di atas kertas.</p>
+          <div class="context-signature-camera-wrap">
+            <video id="ctSigVideo" autoplay playsinline muted></video>
+            <div class="context-signature-camera-guides" id="ctSigCameraGuides">
+              <span class="context-signature-camera-badge" id="ctSigBadgeLight">Pencahayaan</span>
+              <span class="context-signature-camera-badge" id="ctSigBadgeBlur">Ketajaman</span>
+            </div>
+          </div>
+          <p class="context-signature-hint" id="ctSigCameraError" hidden></p>
+          <button type="button" class="context-signature-action-btn" id="ctSigCameraCapture">Ambil</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigCameraCancel">Batal</button>
+        </div>
+
+        <div class="context-signature-step" id="ctSigStepCrop" hidden>
+          <p class="context-signature-hint">Seret kedua sudut agar kotak pas menutupi tanda tangan.</p>
+          <p class="context-signature-hint"><b>TIPS: Potong sedekat mungkin untuk menghemat waktu nanti.</b></p>
+          <div class="context-signature-crop-wrap" id="ctSigCropWrap">
+            <span class="context-signature-crop-loading" id="ctSigCropLoading" hidden>Memuat foto...</span>
+            <img id="ctSigCropImg" alt="">
+            <div class="context-signature-crop-box" id="ctSigCropBox">
+              <span class="context-signature-crop-handle" data-h="nw"></span>
+              <span class="context-signature-crop-handle" data-h="se"></span>
+            </div>
+          </div>
+          <button type="button" class="context-signature-action-btn" id="ctSigCropNext">Lanjut</button>
+        </div>
+
+        <div class="context-signature-step" id="ctSigStepDraw" hidden>
+          <p class="context-signature-hint">Gambar tanda tangan Anda di bawah.</p>
+          <canvas class="context-signature-draw-canvas" id="ctSigDrawCanvas" width="600" height="220"></canvas>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctSigDrawClear">Hapus</button>
+          <button type="button" class="context-signature-action-btn" id="ctSigDrawNext">Lanjut</button>
+        </div>
+
+        <div class="context-signature-step" id="ctSigStepClean" hidden>
+          <div class="context-signature-history">
+            <button type="button" class="context-signature-history-btn" id="ctSigUndo" aria-label="Urungkan" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+            </button>
+            <button type="button" class="context-signature-history-btn" id="ctSigRedo" aria-label="Ulangi" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg>
+            </button>
+            <label class="context-signature-fade" title="Pudarkan goresan samar">
+              <span>Pudarkan</span>
+              <input type="range" id="ctSigFade" min="0" max="100" step="1" value="0" aria-label="Pudarkan goresan samar">
+            </label>
+          </div>
+          <div class="context-signature-clean-preview">
+            <canvas id="ctSigCleanCanvas"></canvas>
+            <span class="context-signature-brush-ring" id="ctSigBrushRing" aria-hidden="true"></span>
+          </div>
+          <p class="context-signature-hint context-signature-hint--below">Sesuaikan, lalu seret pada sisa goresan untuk menghapusnya.</p>
+          <div class="context-signature-color-row" id="ctSigColorRow">
+            <button type="button" class="context-signature-color-swatch context-signature-color-swatch--orig active" data-color="original" aria-label="Warna tinta asli" aria-pressed="true"></button>
+            <span class="context-signature-color-divider" aria-hidden="true"></span>
+            <button type="button" class="context-signature-color-swatch" data-color="#0d0d0f" aria-label="Hitam" aria-pressed="false"><span style="background:#0d0d0f"></span></button>
+            <button type="button" class="context-signature-color-swatch" data-color="#2E2548" data-shademix="true" aria-label="Biru" aria-pressed="false"><span style="background:#2E2548"></span></button>
+            <button type="button" class="context-signature-color-swatch" data-color="#7a1f2b" aria-label="Merah" aria-pressed="false"><span style="background:#7a1f2b"></span></button>
+            <button type="button" class="context-signature-color-swatch context-signature-color-swatch--custom" id="ctSigCustomColorBtn" data-custom="true" aria-label="Pilih warna khusus" title="Pilih warna apa pun" aria-pressed="false"><span>+</span></button>
+            <div class="context-signature-color-popover" id="ctSigColorPopover" hidden></div>
+          </div>
+          <button type="button" class="context-signature-action-btn" id="ctSigSave">Gunakan tanda tangan ini</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="context">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-2"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>Baru menambahkan teks ke PDF?</h3>
+    <p>Menambahkan teks ke PDF tampaknya seharusnya seperti editor teks biasa, tetapi halaman PDF tidak punya "ruang kosong untuk mengetik" seperti dokumen Word — lebih mirip lembar cetak. Berikut yang sebenarnya terjadi saat Anda menaruh kotak teks di halaman, dan cara membuatnya tampak disengaja, bukan tempelan.</p>
+    <p>Ingin tahu lebih banyak? Baca selengkapnya — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="context" href="/golden-rules/?tool=context">hanya satu klik.</a></p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000020" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Perusahaan</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Tentang Kami"><span class="footer-link-fun">Alam Semesta Kami</span><span class="footer-link-plain">Tentang Kami</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Sudah Terjawab</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Ketentuan Penggunaan"><span class="footer-link-fun">Buku Panduan Galaksi</span><span class="footer-link-plain">Ketentuan Penggunaan</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Kebijakan Privasi"><span class="footer-link-fun">Protokol Privasi Alien</span><span class="footer-link-plain">Kebijakan Privasi</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Kebijakan Cookie"><span class="footer-link-fun">Daftar Cookie</span><span class="footer-link-plain">Kebijakan Cookie</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Memulai dengan</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Hubungi kami</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Bergabung ke Discord kami</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+<script src="/context/context-tool.js?v=67" defer></script>
+</body>
+</html>

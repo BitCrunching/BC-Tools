@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>소개 – BC Tools</title>
+<meta name="description" content="BC Tools 소개: 파일을 어디에도 업로드하지 않고 빠르게 작동하도록 만든 무료 브라우저 기반 이미지 도구.">
+<link rel="canonical" href="https://bitcrunching.com/ko/about/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/about/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/about/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/about/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/about/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/about/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/about/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/about/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/about/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/about/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/about/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/about/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/about/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/about/">
+<script src="/shared/i18n/ko.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="소개 – BC Tools">
+<meta property="og:description" content="BC Tools 소개: 파일을 어디에도 업로드하지 않고 빠르게 작동하도록 만든 무료 브라우저 기반 이미지 도구.">
+<meta property="og:url" content="https://bitcrunching.com/ko/about/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="소개 – BC Tools">
+<meta name="twitter:description" content="BC Tools 소개: 파일을 어디에도 업로드하지 않고 빠르게 작동하도록 만든 무료 브라우저 기반 이미지 도구.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.about-article{
+  max-width:700px;
+  margin:0 auto;
+  padding:0 24px 80px;
+  text-align:left;
+}
+
+.mp-colors-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.mp-colors-article{
+  position:relative;
+  z-index:1;
+  margin-top:0;
+}
+
+/* Small hover payoff on the "Bonbonia" running gag — wobbles like it's
+   excited to be mentioned. Purely decorative, no click action. */
+.bonbonia-candy{
+  display:inline-block;
+  cursor:default;
+}
+
+.bonbonia-candy:hover{
+  animation:bonbonia-wobble .5s ease;
+}
+
+@keyframes bonbonia-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-18deg) scale(1.25); }
+  50%{ transform:rotate(18deg) scale(1.25); }
+  75%{ transform:rotate(-10deg) scale(1.1); }
+}
+.mp-colors-bg{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.mp-colors-bg-shape{
+  position:absolute;
+  display:block;
+  border-radius:28px;
+  background:var(--shape-color);
+  opacity:.45;
+  filter:blur(1px);
+  animation:mp-colors-drift 26s cubic-bezier(.45,0,.55,1) infinite;
+}
+
+@keyframes mp-colors-drift{
+  0%{ transform:translate(0, 0) rotate(0deg); }
+  25%{ transform:translate(20px, -24px) rotate(4deg); }
+  50%{ transform:translate(36px, -44px) rotate(8deg); }
+  75%{ transform:translate(16px, -20px) rotate(3deg); }
+  100%{ transform:translate(0, 0) rotate(0deg); }
+}
+.shape-blue{
+  --shape-color:#4da6ff;
+  width:230px;
+  height:268px;
+  top:80px;
+  right:22%;
+  animation-name:mp-colors-drift-x;
+  animation-duration:28s;
+  animation-delay:-3s;
+}
+
+.shape-teal{
+  /* Was a distinct teal (#2dd4bf) — close enough to green that it read
+     as "the green one" rather than its own hue, so matched to the same
+     #4ade80 used for the mainpage colors article's actual green shape
+     and everywhere else on the site (Cleanly's accent, etc). */
+  --shape-color:#4ade80;
+  width:210px;
+  height:246px;
+  top:260px;
+  left:4%;
+  animation-delay:-8s;
+}
+
+.shape-amber{
+  --shape-color:#fbbf24;
+  width:190px;
+  height:220px;
+  bottom:320px;
+  right:28%;
+  animation-delay:-13s;
+}
+
+/* Mobile: 15% smaller, shifted down to clear the text */
+@media (max-width:768px){
+  .shape-purple{
+    width:208px;
+    height:243px;
+    top:10px;
+  }
+  .shape-green{
+    width:208px;
+    height:243px;
+    top:320px;
+    right:calc(5% - 15px);
+  }
+  .shape-salmon{
+    width:170px;
+    height:196px;
+    bottom:0;
+  }
+  .shape-blue{
+    width:196px;
+    height:228px;
+    top:10px;
+  }
+  .shape-teal{
+    width:178px;
+    height:209px;
+    top:320px;
+    left:calc(4% - 15px);
+  }
+  .shape-amber{
+    width:162px;
+    height:187px;
+    bottom:330px;
+  }
+}
+
+.about-article p{
+  color:var(--text);
+  margin:0 0 16px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+.about-section-heading{
+  font-size:clamp(28px, 3.6vw, 40px);
+  margin:0 0 20px;
+  color:var(--text);
+  text-align:left;
+}
+
+.about-story-heading{
+  margin-top:-36px;
+}
+
+/* .engine-status-card's own margin is top-only (32px) and the
+   following .about-section-heading has no top margin either, so the
+   banner and "Our Beliefs" right after it were sitting almost
+   flush together. Scoped bottom margin here rather than touching
+   either shared rule, which are both reused elsewhere. */
+.backlog-coms-banner{
+  margin-bottom:32px;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>우리의 우주</h1>
+    <p class="lead page-alias">지구에서는 소개 페이지로도 알려져 있습니다.</p>
+  </div>
+  <div class="mp-colors-wrap">
+    <div class="mp-colors-bg" aria-hidden="true">
+      <span class="mp-colors-bg-shape shape-blue"></span>
+      <span class="mp-colors-bg-shape shape-teal"></span>
+      <span class="mp-colors-bg-shape shape-amber"></span>
+    </div>
+    <article class="about-article mp-colors-article">
+      <h2 class="about-section-heading about-story-heading">우리의 이야기</h2>
+      <p>몇 광년이나 되는 것처럼 느껴지는 동안, 무료 웹 도구를 쓰는 것은 블랙홀을 헤매는 것 같았습니다. 끝없는 광고, 부풀려진 인터페이스, 고통스러울 만큼 느린 로딩 시간.</p>
+      <p>2026년 초, 우리는 이제 충분하다고 결심하고 더 나은 방식을 만들기 시작했습니다. 만드는 사람들이 실제로 즐겨 쓰는 빠르고 깔끔한 브라우저 기반 도구입니다.</p>
+      <p>BC Tools는 현재 지난번 섹터 7G를 지나다 훔친 AI 기술을 사용하는 외계인 한 명이 개발하고 있습니다. 그의 임무는 간단합니다. 사람들이 창작에 집중할 수 있는 도구를 만드는 것입니다.</p>
+      <p>그는 BC Tools 로고도 가져왔지만 그것이 무슨 뜻인지는 알려 주지 않았습니다. 그는 “인류 문명은 아직 그것을 받아들일 준비가 되지 않았다”고 말했습니다. 여기서 정체를 밝히고 싶지 않아 했으므로, 그가 하늘색을 좋아한다는 것만 알려 드리겠습니다.</p>
+      <p>사무실에서는 그의 고향 행성이 봉보니아라는 소문이 돕니다<span class="bonbonia-candy" aria-hidden="true">🍬</span>은(는) 은하계 전체에서 단 한 가지로 유명합니다. 바로 사탕입니다. 직접 물어보진 않았지만, 그의 책상 근처에는 수상할 만큼 많은 포장지가 널려 있습니다.</p>
+
+      <div class="engine-status-card backlog-coms-banner">
+        <div class="engine-status-body">
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">금요일 12:13 전송</span>&gt; <span class="backlog-coms-sender">발신자_해왕성:</span> 그에게 근로 계약서나 어떤 종류의 근무 서류를 줘야 하지 않을까요?</div>
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">금요일 12:15 전송</span>&gt; <span class="backlog-coms-sender">수신자_명왕성:</span> 알아요, 하지만 그는 우리가 지구에서 일하는 방식을 이해하지 못해요. 결국 외계인이니까요.</div>
+          <div class="engine-status-row backlog-coms-row"><span class="backlog-coms-meta">금요일 12:19 전송</span>&gt; <span class="backlog-coms-sender">발신자_해왕성:</span> 뭐, 이제 인사팀 문제네요...</div>
+        </div>
+      </div>
+
+      <h2 class="about-section-heading">우리의 신념</h2>
+      <p>웹 도구의 표준이 바뀌어야 합니다.</p>
+      <p>훌륭한 도구는 깔끔한 인터페이스를 갖추고, 빠르게 로딩되며, 만드는 사람의 시간을 존중해야 합니다. 언제나 실행할 준비가 되어 있고, 프로젝트가 현실이 되도록 항상 도와줍니다.</p>
+      <p>모든 것이 손 닿는 곳에 있어야 합니다. 웜홀도, 구독의 함정도 없이, 빠르고 믿을 수 있는, 제대로 작동하는 도구만 있으면 됩니다.</p>
+      <h2 class="about-section-heading">우리의 목표</h2>
+      <p>우리의 목표는 궁극의 브라우저 기반 Creative Hub를 만드는 것입니다.</p>
+      <p>이미지, 비디오, 오디오, 코드 중 무엇을 다루든, 브라우저에서 직접 실행할 수 있는 도구라면 어디서나 접근 가능한 한곳에 모으고 싶습니다.</p>
+
+      <div class="ad-slot ad-slot-banner">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000019"></ins>
+      </div>
+    </article>
+  </div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="소개"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="이용 약관"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="개인정보 처리방침"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="쿠키 정책"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=93" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>
