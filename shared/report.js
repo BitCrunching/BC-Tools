@@ -27,7 +27,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=14";
+  css.href = "/shared/report.css?v=15";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -103,6 +103,7 @@
   function close(){
     box.hidden = true;
     btn.setAttribute("aria-expanded", "false");
+    if (document.activeElement === btn) btn.blur();
   }
   function refresh(){
     count.textContent = text.value.length + "/" + TABS[tab].max;
