@@ -175,7 +175,7 @@ def build_page(rel, tr, lang, built_pages, missing):
     result = re.sub(r'[ \t]*<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", result)
 
     # <head> additions: alternate links + the language dictionary for bcT()
-    alternates = alternate_block(rel) + f'<script src="/shared/i18n/{lang}.js?v=1"></script>\n'
+    alternates = alternate_block(rel) + f'<script src="/shared/i18n/{lang}.js?v=2"></script>\n'
     result = re.sub(r"(<link rel=\"canonical\"[^>]*>\s*)", lambda mm: mm.group(1) + alternates, result, count=1)
     if alternates not in result:  # no canonical tag on the page
         result = result.replace("</head>", alternates + "</head>", 1)
@@ -223,7 +223,7 @@ def js_strings():
     """English strings the page scripts translate at runtime: bcT("...") calls
     plus the help-banner step texts (translated centrally in site.js)."""
     found = set()
-    files = [ROOT / "shared" / "site.js"] + [
+    files = [ROOT / "shared" / "site.js", ROOT / "shared" / "report.js"] + [
         ROOT / Path(p).parent / f"{Path(p).parent.name}-tool.js" for p in PAGES if p != "index.html"
     ]
     for f in files:
