@@ -1,10 +1,15 @@
-/* Bug report button (header, next to the theme toggle) — sends a short
-   description and up to three optional screenshots to the support channel on Discord. */
+/* Report button (header, next to the theme toggle) — three tabs (bug, translation,
+   feedback); each sends a short message and up to three optional screenshots to its
+   own Discord channel through the Worker. */
 (function(){
   /* The Cloudflare Worker that forwards reports to Discord (workers/report.js).
      */
   const ENDPOINT = "https://bc-report.lukasbrzlinekbusiness.workers.dev";
-  const MAX_CHARS = 100;
+  const TABS = {
+    bug: { label: "Bug", title: "Report a bug", max: 100, ph: "What went wrong?", aria: "Describe the bug", done: "Thanks, your report was sent." },
+    translation: { label: "Translation", title: "Suggest a translation", max: 200, ph: "Which wording is wrong, and what should it say?", aria: "Describe the translation issue", done: "Thanks, your suggestion was sent." },
+    feedback: { label: "Feedback", title: "Send feedback", max: 100, ph: "Your idea or feedback", aria: "Your feedback", done: "Thanks, your feedback was sent." }
+  };
   const MAX_SHOTS = 3;
   const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
   const COOLDOWN_MS = 60000;
@@ -15,7 +20,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=10";
+  css.href = "/shared/report.css?v=11";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -35,9 +40,12 @@
   box.setAttribute("role", "dialog");
   box.setAttribute("aria-label", "Report a bug");
   box.innerHTML =
-    '<div class="bc-report-title">Report a bug</div>' +
-    '<textarea class="bc-report-text" maxlength="' + MAX_CHARS + '" placeholder="What went wrong? (max ' + MAX_CHARS + ' characters)" aria-label="Describe the bug"></textarea>' +
-    '<div class="bc-report-count">0/' + MAX_CHARS + '</div>' +
+    '<div class="bc-report-tabs" role="group" aria-label="Report type">' +
+      Object.keys(TABS).map(k => '<button type="button" data-tab="' + k + '" aria-pressed="false">' + TABS[k].label + '</button>').join("") +
+    '</div>' +
+    '<div class="bc-report-title"></div>' +
+    '<textarea class="bc-report-text"></textarea>' +
+    '<div class="bc-report-count"></div>' +
     '<div class="bc-report-shot">' +
       '<button type="button" class="bc-report-attach">Add screenshot</button>' +
       '<input type="file" accept="image/*" multiple hidden>' +
@@ -56,11 +64,31 @@
   const consent = box.querySelector(".bc-report-consent input");
   const send = box.querySelector(".bc-report-send");
   const status = box.querySelector(".bc-report-status");
+  const title = box.querySelector(".bc-report-title");
+  const tabBtns = [...box.querySelectorAll(".bc-report-tabs button")];
+  const drafts = {};
+  let tab = "bug";
   let shots = [];
   let busy = false;
 
+  function setTab(next){
+    drafts[tab] = text.value;
+    tab = next;
+    const t = TABS[tab];
+    tabBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tab === tab)));
+    title.textContent = t.title;
+    box.setAttribute("aria-label", t.title);
+    text.maxLength = t.max;
+    text.placeholder = t.ph + " (max " + t.max + " characters)";
+    text.setAttribute("aria-label", t.aria);
+    text.value = (drafts[tab] || "").slice(0, t.max);
+    status.textContent = "";
+    refresh();
+  }
+
   function isOpen(){ return !box.hidden; }
-  function open(){
+  function open(which){
+    if (which && which !== tab) setTab(which);
     box.hidden = false;
     btn.setAttribute("aria-expanded", "true");
     text.focus();
@@ -70,7 +98,7 @@
     btn.setAttribute("aria-expanded", "false");
   }
   function refresh(){
-    count.textContent = text.value.length + "/" + MAX_CHARS;
+    count.textContent = text.value.length + "/" + TABS[tab].max;
     send.disabled = busy || !text.value.trim() || !consent.checked;
   }
   function renderShots(){
@@ -118,6 +146,7 @@
   }
 
   btn.addEventListener("click", () => { isOpen() ? close() : open(); });
+  tabBtns.forEach(b => b.addEventListener("click", () => { setTab(b.dataset.tab); text.focus(); }));
 
   const footerContact = document.getElementById("footerContactSection");
   let footerBtn = null;
@@ -129,7 +158,7 @@
     footerBtn.setAttribute("role", "button");
     footerBtn.title = btn.title;
     footerBtn.innerHTML = '<span class="footer-link-fun">Squash a Bug</span><span class="footer-link-plain">Report a bug</span>';
-    footerBtn.addEventListener("click", (e) => { e.preventDefault(); open(); });
+    footerBtn.addEventListener("click", (e) => { e.preventDefault(); open("bug"); });
     footerWrap.appendChild(footerBtn);
     footerContact.appendChild(footerWrap);
   }
@@ -152,6 +181,8 @@
   if (typeof bcRegisterEscapable === "function") bcRegisterEscapable(isOpen, close, 60);
   else document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) close(); });
 
+  setTab("bug");
+
   send.addEventListener("click", async () => {
     const message = text.value.trim();
     if (!message || busy || !consent.checked) return;
@@ -166,6 +197,8 @@
     status.textContent = "Sending...";
     const theme = document.documentElement.getAttribute("data-theme") || "light";
     const form = new FormData();
+    form.append("type", tab);
+    form.append("lang", document.documentElement.lang || "en");
     form.append("message", message);
     form.append("page", location.pathname || "/");
     form.append("screen", innerWidth + "x" + innerHeight + " · " + theme);
@@ -179,9 +212,10 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (err) { /* storage unavailable */ }
       text.value = "";
+      drafts[tab] = "";
       clearShots();
       consent.checked = false;
-      status.textContent = "Thanks, your report was sent.";
+      status.textContent = TABS[tab].done;
     } catch (err){
       console.error(err);
       status.textContent = "Couldn't send the report. Please try again.";
