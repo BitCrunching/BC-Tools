@@ -1567,9 +1567,14 @@ bcRegisterEscapable(
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
-    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!menu.classList.contains("open")); });
+    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    if (window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
+    }
     wrap.append(btn, menu);
     nav.insertBefore(wrap, nav.firstChild);
   }
