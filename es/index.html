@@ -150,7 +150,7 @@
      own banner can opt into the same treatment its homepage card uses,
      instead of the homepage keeping a private copy only it can see. -->
 <link rel="stylesheet" href="/shared/textures.css?v=2">
-<link rel="stylesheet" href="/shared/buttons.css?v=58">
+<link rel="stylesheet" href="/shared/buttons.css?v=59">
 
 <style>
 html{ min-width:335px; }
@@ -831,6 +831,7 @@ html[data-theme="light"] .brand-text{
   color:#121727;
 }
 
+
 /* ===== ICON SLOTS =====
    Icons are base64 background-images via --icon-* custom properties,
    applied through .icon-* classes on a sized span:
@@ -860,7 +861,7 @@ span.gfx-md, span.gfx-lg{
 
 @media (max-width:768px){
   .site-nav-brand{font-size:30px;}
-  .site-logo{width:34px;height:34px;}
+  .site-logo{width:40px;height:40px;}
 }
 
 /* Below the general mobile breakpoint, the brand text + logo + 3 nav
@@ -873,7 +874,7 @@ span.gfx-md, span.gfx-lg{
    actually need it — 375px+ devices keep full-size everything. */
 @media (max-width:370px){
   .site-nav-brand{font-size:23px; gap:9px;}
-  .site-logo{width:26px;height:26px;}
+  .site-logo{width:40px;height:40px;}
   .nav-right{gap:6px;}
   .nav-theme-btn, .nav-share-btn{width:32px;height:32px;}
 }
@@ -2199,6 +2200,10 @@ footer a{
   background:transparent !important;
   color:var(--btn-fill) !important;
   opacity:.7;
+}
+@media (max-width:415px){
+  .brand-text{display:none}
+  .site-logo{width:40px;height:40px;}
 }
 </style>
 </head>
@@ -3577,9 +3582,14 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
-    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!menu.classList.contains("open")); });
+    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    if (window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
+    }
     wrap.append(btn, menu);
     nav.insertBefore(wrap, nav.firstChild);
   }
