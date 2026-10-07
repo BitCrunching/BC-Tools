@@ -27,7 +27,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=11";
+  css.href = "/shared/report.css?v=12";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -58,7 +58,7 @@
       '<input type="file" accept="image/*" multiple hidden>' +
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
-    '<label class="bc-report-consent"><input type="checkbox"><span>' + bcT("I understand that sending this report is not covered by the \"on-device guarantee\" and that the {privacy} rules apply (beware: browser and device details will be shared).", { privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + ' <b>' + bcT("Thank you for your help!") + '</b></span></label>' +
+    '<label class="bc-report-consent"><input type="checkbox"><div><p>' + bcT("I understand that sending this report is {anon}, browser, device and other details will be shared. (read more in {privacy})", { anon: "<b>" + bcT("not anonymous") + "</b>", privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + '</p><p><b>' + bcT("Thank you for your help!") + '</b></p></div></label>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
