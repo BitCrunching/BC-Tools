@@ -22,7 +22,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("combine", "cb", [
-    ["WELCOME_TO_COMBINE", "Combine merges multiple PDFs into one, in whatever order you drag them into. Click or drop your PDFs below to get started."],
+    ["WELCOME_TO_COMBINE", "Combine merges multiple PDFs into one, in whatever order you drag them into. Click, drop, or press (A) to add your PDFs to get started."],
     ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF."],
     ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail of its first page and its size — check them before combining, and remove any you don't need."],
     ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],

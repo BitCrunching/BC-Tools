@@ -13,7 +13,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
-    ["WELCOME_TO_CONTEXT", "Context lets you type text, sign, or drop shapes anywhere on a PDF, no account or upload required. Click or drop a PDF below to get started."],
+    ["WELCOME_TO_CONTEXT", "Context lets you type text, sign, or drop shapes anywhere on a PDF, no account or upload required. Click, drop, or press (A) to add a PDF to get started."],
     ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to pick a circle, square, triangle, or cross."],
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — drag a box's handles to move or resize it, and use its red × to remove it."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],

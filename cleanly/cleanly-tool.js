@@ -15,7 +15,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("cleanly", "ex", [
-    ["WELCOME_TO_CLEANLY", "Cleanly scans your images for hidden metadata — GPS location, camera model, timestamps — so you can strip it before sharing. Click or drop an image below to get started."],
+    ["WELCOME_TO_CLEANLY", "Cleanly scans your images for hidden metadata — GPS location, camera model, timestamps — so you can strip it before sharing. Click, drop, or press (A) to add an image to get started."],
     ["WHAT_IT_FINDS", "Once a file's in, we scan it and show exactly what's hiding inside — GPS location, camera model, timestamps, or editor data."],
     ["CHECK_BEFORE_STRIPPING", "Your files show up below once picked — check what was found, and remove any you don't need."],
     ["NOT_SURE_WHY_IT_MATTERS", "Scroll down to the guide further down the page — it explains what metadata actually reveals and why stripping it matters."],

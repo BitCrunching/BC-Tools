@@ -47,7 +47,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("congify", "gif", [
-    ["WELCOME_TO_CONGIFY", "Congify turns a video clip into a GIF — trim it, add captions, pick the frame rate and size. Click or drop a video below to get started."],
+    ["WELCOME_TO_CONGIFY", "Congify turns a video clip into a GIF — trim it, add captions, pick the frame rate and size. Click, drop, or press (A) to add a video to get started."],
     ["TRIM_YOUR_CLIP", "Once a video's in, drag the two handles on the filmstrip to pick exactly which part becomes the GIF."],
     ["ADD_TEXT_IF_YOU_WANT", "Hit Add text to drop a caption on the frame — style it, drag it around, resize it right from its own corner handle."],
     ["PICK_FRAME_RATE_AND_SIZE", "Frame rate trades smoothness for file size; pick the Resolution dropdown to set the actual export size — the corner handle only resizes the preview on screen."],
