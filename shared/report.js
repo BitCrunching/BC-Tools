@@ -27,7 +27,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=13";
+  css.href = "/shared/report.css?v=14";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -59,7 +59,7 @@
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
     '<label class="bc-report-consent"><input type="checkbox"><div><p>' + bcT("I understand that sending this report is {anon}, browser, device and other details will be shared. (read more in {privacy})", { anon: "<b>" + bcT("not anonymous") + "</b>", privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + '</p></div></label>' +
-    '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
+    '<div class="bc-report-actions"><button type="button" class="bc-report-close">' + bcT("Close") + '</button><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
 
@@ -176,6 +176,7 @@
     e.preventDefault();
     if (!send.disabled) send.click();
   });
+  box.querySelector(".bc-report-close").addEventListener("click", close);
   attach.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => { addShots([...fileInput.files]); fileInput.value = ""; });
   box.addEventListener("paste", (e) => {
