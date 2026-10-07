@@ -6,9 +6,9 @@
      */
   const ENDPOINT = "https://bc-report.lukasbrzlinekbusiness.workers.dev";
   const TABS = {
-    bug: { label: () => bcT("Bug"), title: () => bcT("Report a bug"), max: 100, ph: () => bcT("What went wrong? (max {n} characters)", { n: 100 }), aria: () => bcT("Describe the bug"), done: () => bcT("Thanks, your report was sent.") },
-    translation: { label: () => bcT("Translation"), title: () => bcT("Suggest a translation"), max: 200, ph: () => bcT("Which wording is wrong, and what should it say? (max {n} characters)", { n: 200 }), aria: () => bcT("Describe the translation issue"), done: () => bcT("Thanks, your suggestion was sent.") },
-    feedback: { label: () => bcT("Feedback"), title: () => bcT("Send feedback"), max: 100, ph: () => bcT("Your idea or feedback (max {n} characters)", { n: 100 }), aria: () => bcT("Your feedback"), done: () => bcT("Thanks, your feedback was sent.") }
+    bug: { label: () => bcT("Bug"), title: () => bcT("Report a bug"), max: 100, ph: () => bcT("What went wrong? (max {n} characters)", { n: 100 }), aria: () => bcT("Describe the bug"), done: () => bcT("Thank you for your help!") },
+    translation: { label: () => bcT("Translation"), title: () => bcT("Suggest a translation"), max: 200, ph: () => bcT("Which wording is wrong, and what should it say? (max {n} characters)", { n: 200 }), aria: () => bcT("Describe the translation issue"), done: () => bcT("Thank you for your help!") },
+    feedback: { label: () => bcT("Feedback"), title: () => bcT("Send feedback"), max: 100, ph: () => bcT("Your idea or feedback (max {n} characters)", { n: 100 }), aria: () => bcT("Your feedback"), done: () => bcT("Thank you for your help!") }
   };
   const MAX_SHOTS = 3;
   const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
@@ -27,7 +27,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=12";
+  css.href = "/shared/report.css?v=13";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -58,7 +58,7 @@
       '<input type="file" accept="image/*" multiple hidden>' +
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
-    '<label class="bc-report-consent"><input type="checkbox"><div><p>' + bcT("I understand that sending this report is {anon}, browser, device and other details will be shared. (read more in {privacy})", { anon: "<b>" + bcT("not anonymous") + "</b>", privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + '</p><p><b>' + bcT("Thank you for your help!") + '</b></p></div></label>' +
+    '<label class="bc-report-consent"><input type="checkbox"><div><p>' + bcT("I understand that sending this report is {anon}, browser, device and other details will be shared. (read more in {privacy})", { anon: "<b>" + bcT("not anonymous") + "</b>", privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + '</p></div></label>' +
     '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
