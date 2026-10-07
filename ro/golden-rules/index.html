@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reguli de aur – BC Tools</title>
+<meta name="description" content="Reguli de aur pentru alegerea formatelor de imagine, a compresiei și a setărilor cu BC Tools.">
+<link rel="canonical" href="https://bitcrunching.com/ro/golden-rules/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/golden-rules/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/golden-rules/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/golden-rules/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/golden-rules/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/golden-rules/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/golden-rules/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/golden-rules/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/golden-rules/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
+<script src="/shared/i18n/ro.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Reguli de aur – BC Tools">
+<meta property="og:description" content="Reguli de aur pentru alegerea formatelor de imagine, a compresiei și a setărilor cu BC Tools.">
+<meta property="og:url" content="https://bitcrunching.com/ro/golden-rules/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reguli de aur – BC Tools">
+<meta name="twitter:description" content="Reguli de aur pentru alegerea formatelor de imagine, a compresiei și a setărilor cu BC Tools.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+/* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
+.golden-rules-switcher{
+  display:flex;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
+.golden-rules-tool-btn{
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  font-family:inherit;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+
+.golden-rules-tool-btn:hover{
+  border-color:var(--border-strong);
+}
+
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
+.golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
+.golden-rules-articles{
+  display:none;
+  position:relative;
+  max-width:820px;
+  margin:0 auto 80px;
+  padding:0 24px;
+}
+
+.golden-rules-articles.active{
+  display:block;
+}
+
+.golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
+
+.golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+
+.golden-rules-article summary::-webkit-details-marker{
+  display:none;
+}
+
+.golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  color:var(--text);
+  transition:.2s;
+}
+
+.golden-rules-article[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+}
+
+.golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  margin:24px 0 10px;
+}
+
+.golden-rules-body h3:first-child{
+  margin-top:0;
+}
+
+.golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Folosim cookie-uri. Alege mai jos ce categorii permiți — vezi <a data-goto="cookies">Politica privind cookie-urile</a> pentru detalii.</p>
+  <p class="cookie-banner-text-mobile">Alege ce categorii permiți</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Comută conținutul setărilor cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE-URI_DEV_TOOLS:</span>
+    </span>
+    <span>Alege ce categorii permiți</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mai multe despre cookie-urile necesare">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necesare (mereu active)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Acestea păstrează esențialul funcțional — își amintesc alegerea ta privind cookie-urile, limba și tema deschisă/închisă. Nu pot fi dezactivate și, ca tot restul de pe acest site, nu îți părăsesc niciodată dispozitivul.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mai multe despre cookie-urile de analiză">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analiză - Pentru confidențialitate deplină, păstreaz-o dezactivată.</span><span class="cookie-label-docked">Analiză (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Acest lucru ne permite să îmbunătățim experiența utilizatorului primind date valoroase prin (Google Analytics) despre cum navighează utilizatorii prin site-ul nostru - Dacă vrei să rămâi complet anonim, îți recomandăm să dezactivezi această opțiune.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mai multe despre cookie-urile de publicitate">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicitate (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Folosit de Google AdSense pentru a afișa reclame. În prezent dezactivat pe tot site-ul în timp ce așteptăm aprobarea AdSense, deci acest comutator nu are încă niciun efect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Acceptă tot</button>
+    <button type="button" id="cookieBannerSave">Confirmă alegerile</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Sigla BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Comută între modul deschis și închis" title="Comută între modul deschis și închis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partajează" title="Partajează">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiază linkul</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mai multe opțiuni de partajare"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Înapoi la Creative Hub" title="Înapoi la Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+    <div class="hero">
+      <h1>Reguli de aur</h1>
+      <p class="lead">Ghiduri practice, aprofundate, pentru a obține maximum din fiecare instrument — cum, de ce și greșelile care merită evitate.</p>
+    </div>
+
+    <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+      <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+    </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
+
+    <div class="golden-rules-articles active" data-tool="convert">
+
+      <details class="golden-rules-article">
+        <summary>1. Ghidul complet al formatelor de imagine: JPG vs PNG vs WEBP</summary>
+        <div class="golden-rules-body">
+          <p>Fiecare format de imagine a fost conceput pentru a rezolva o problemă diferită, iar alegerea celui potrivit are un efect mai mare asupra dimensiunii și calității fișierului decât aproape orice altă decizie pe care o iei la pregătirea imaginilor. Iată ce se întâmplă de fapt în spate cu fiecare și când contează cu adevărat.</p>
+
+          <h3>JPG (JPEG): formatul pentru fotografii</h3>
+          <p>JPG folosește compresie cu pierderi, ceea ce înseamnă că aruncă o parte din datele imaginii de fiecare dată când îl salvezi, pentru a micșora fișierul. Pentru fotografii — cu tranziții graduale de culoare, zgomot natural și lipsă de margini dure — funcționează remarcabil de bine, deoarece ochiul uman nu observă ușor informațiile specifice pe care JPG le elimină. De aceea JPG rămâne formatul implicit pentru fotografie pe web, în camere și pe telefoane: compresie excelentă, fișiere mici, suport universal.</p>
+          <p>Ceea ce JPG nu poate face este transparența. Formatul nu are deloc canal alfa, așa că dacă ai nevoie de un fundal transparent, JPG este complet exclus. Se degradează puțin și de fiecare dată când este resalvat (mai multe în articolul despre greșeli de mai jos) și se descurcă prost cu grafica cu margini ascuțite, precum textul sau siglele, unde artefactele de compresie devin vizibile ca neclaritate în jurul liniilor dure.</p>
+
+          <h3>PNG: formatul fără pierderi, prietenos cu transparența</h3>
+          <p>PNG folosește compresie fără pierderi — fiecare pixel este păstrat exact, fără pierdere de calitate, indiferent de câte ori îl salvezi din nou. Asta îl face alegerea potrivită pentru orice are margini ascuțite, culori plate sau text: sigle, capturi de ecran, pictograme, diagrame. Acceptă pe deplin și transparența, inclusiv transparența parțială (margini moi, estompate), pe care JPG pur și simplu nu o poate face.</p>
+          <p>Compromisul este dimensiunea. Compresia fără pierderi nu poate micșora un fișier nici pe departe cât abordarea cu pierderi a JPG, mai ales pentru fotografii cu multe variații subtile de culoare. O fotografie salvată ca PNG poate ajunge ușor de 5-10 ori mai mare decât aceeași fotografie salvată ca JPG, pentru o diferență de calitate pe care majoritatea oamenilor n-o vor putea vedea.</p>
+
+          <h3>WEBP: formatul modern, bun la toate</h3>
+          <p>WEBP este formatul mai nou de la Google și este într-adevăr ce e mai bun din ambele lumi în majoritatea cazurilor: acceptă atât compresia cu pierderi, cât și fără pierderi (deci poate acționa ca JPG sau ca PNG, în funcție de ce ai nevoie), acceptă transparența și produce de obicei fișiere mai mici decât JPG sau PNG la calitate echivalentă — adesea cu 25-35% mai mici decât JPG pentru fotografii și semnificativ mai mici decât PNG pentru grafice.</p>
+          <p>Singura limitare reală este compatibilitatea cu software-ul mai vechi — unele editoare de imagini mai vechi, unii clienți de e-mail și unele dispozitive mai vechi nu gestionează bine WEBP. Pentru un site modern, aceasta este rareori o problemă practică în zilele noastre, dar dacă trimiți un fișier cuiva al cărui software nu îl controlezi, merită un gând.</p>
+
+          <h3>HEIC: formatul iPhone pe care vei vrea să-l convertești</h3>
+          <p>HEIC (și rudele sale apropiate, HEIF) este formatul implicit de fotografie al Apple încă de la iOS 11 — comprimă mai bine decât JPG la aceeași calitate, motiv pentru care iPhone-urile îl folosesc automat. Capcana este compatibilitatea: majoritatea software-ului non-Apple, instrumentele de editare mai vechi și o mulțime de site-uri și formulare de încărcare tot nu pot deschide direct un fișier HEIC.</p>
+          <p>Convert acceptă HEIC/HEIF ca intrare și îl decodează în întregime în browser, așa că poți trage o fotografie direct de pe iPhone și primi înapoi un JPG, PNG sau WEBP care se deschide oriunde. Nu există opțiune de ieșire HEIC, deoarece toată ideea conversiei este să lași în urmă acel decalaj de compatibilitate.</p>
+
+          <h3>Regula rapidă de decizie</h3>
+          <p>Fotografii fără nevoie de transparență → JPG sau WEBP. Tot ce are nevoie de transparență sau de margini ascuțite (sigle, capturi de ecran, grafice) → PNG sau WEBP. Ai nevoie de cel mai mic fișier posibil cu suport în browserele moderne → WEBP.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Cum transformi fotografiile într-un PDF (și de ce ai vrea asta)</summary>
+        <div class="golden-rules-body">
+          <p>Conversia imaginilor într-un singur PDF este unul dintre cele mai utile lucruri pe care le poate face Convert și pe care oamenii nu le descoperă imediat — este răspunsul la „cum trimit aceste 12 fotografii ca un singur fișier, nu ca 12 atașamente separate”.</p>
+
+          <h3>De ce să combini imaginile într-un PDF în loc să le pui doar într-un ZIP</h3>
+          <p>Un fișier ZIP cere destinatarului să îl descarce, să îl extragă și să deschidă fiecare imagine în parte — pași în plus pe care majoritatea oamenilor nu se vor obosi să îi facă. Un PDF se deschide direct într-un browser sau în vizualizatorul PDF încorporat pe care îl are aproape orice dispozitiv, iar paginile apar exact în ordinea setată de tine, ceea ce contează enorm pentru lucruri precum candidaturile la locuri de muncă (scrisoare de intenție, apoi CV, apoi mostre din portofoliu) sau documentele scanate care trebuie să rămână în secvență.</p>
+          <p>Este și formatul așteptat pentru o gamă largă de depuneri oficiale și semi-oficiale: candidaturi la locuri de muncă, cereri de asigurare, documente fiscale, teme școlare și cereri de închiriere specifică adesea „te rugăm să depui ca un singur PDF” tocmai pentru că este lipsit de ambiguitate și nu poate fi reordonat sau împărțit din greșeală așa cum se poate întâmpla cu un dosar de imagini separate.</p>
+
+          <h3>Pas cu pas</h3>
+          <p>Pune imaginile în Convert — poți selecta mai multe deodată. Dă clic pe butonul de format „PDF”; spre deosebire de celelalte formate, acesta nu convertește fiecare imagine separat, ci le combină pe toate într-un singur PDF în care fiecare imagine devine propria pagină. Dă clic pe „Convert and download” și vei primi un singur fișier PDF cu fiecare imagine selectată, câte una pe pagină, în ordinea în care le-ai încărcat.</p>
+          <p>Ordinea contează aici, așa că verifică de două ori ordinea în care au fost selectate fișierele înainte de conversie — în prezent, Convert respectă ordinea în care ai ales sau ai adus fișierele, deci dacă secvența este importantă (de exemplu, un document scanat cu mai multe pagini), selectează-le sau adu-le în ordinea în care vrei să apară.</p>
+
+          <h3>O notă despre calitatea imaginii din PDF</h3>
+          <p>Deoarece imaginile tale sunt încorporate așa cum sunt, o imagine cu rezoluție mică va arăta tot cu rezoluție mică în interiorul PDF-ului — conversia în PDF nu adaugă detalii care nu existau. Dacă pregătești ceva precum un portofoliu tipărit, merită să-ți comprimi sau să-ți redimensionezi imaginile la o rezoluție sensibilă dinainte, în loc să arunci acolo fișiere inutil de mari, originale de cameră, care vor produce un PDF umflat, lent la deschidere și incomod de trimis prin e-mail.</p>
+
+          <h3>Când acesta este instrumentul greșit</h3>
+          <p>Dacă combini PDF-uri pe care le ai deja (nu imagini brute), vrei instrumentul Combine — rezultatul PDF din Convert este special pentru transformarea imaginilor într-un PDF nou, nu pentru îmbinarea documentelor PDF existente.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Extragerea imaginilor dintr-un PDF: ghid practic</summary>
+        <div class="golden-rules-body">
+          <p>Direcția inversă — extragerea imaginilor dintr-un PDF existent — rezolvă o altă problemă, la fel de frecventă: ai un PDF și ai nevoie doar de o pagină sau de toate paginile, ca fișiere de imagine de sine stătătoare.</p>
+
+          <h3>Motive frecvente pentru care oamenii au nevoie de asta</h3>
+          <p>Extragerea unui singur slide dintr-o prezentare PDF pentru a-l pune într-un e-mail sau un mesaj. Extragerea paginilor unui document scanat ca să le poți edita sau adnota individual într-un editor de imagini. Preluarea unei diagrame sau a unui grafic dintr-un raport PDF pentru a-l refolosi în altă parte. Arhivarea fiecărei pagini dintr-un document scanat vechi ca fișier de imagine separat, mai universal vizualizabil.</p>
+
+          <h3>Cum funcționează de fapt</h3>
+          <p>Dacă pui în Convert un PDF în loc de o imagine, instrumentul detectează asta automat — opțiunile de format se schimbă și arată doar JPG, PNG și WEBP, deoarece convertirea unui PDF într-un alt PDF sau în SVG nu are sens. Alege formatul de imagine care ți se potrivește (JPG pentru fișiere mai mici, PNG dacă paginile PDF conțin ceva care are nevoie de transparență sau de text clar, WEBP pentru cel mai bun echilibru între cele două), apoi convertește.</p>
+          <p>Fiecare pagină a PDF-ului devine propriul fișier de imagine separat. Un PDF de 10 pagini convertit în JPG îți va da 10 fișiere JPG individuale, numerotate automat după pagină. Dacă extragi mai mult de 5 pagini, ele sunt grupate automat într-o singură descărcare ZIP, în loc să declanșeze zece descărcări separate.</p>
+
+          <h3>Considerații privind rezoluția și calitatea</h3>
+          <p>Paginile PDF sunt randate în imagini la o scară fixă, concepută să producă rezultate clare și lizibile pentru documente și prezentări obișnuite. Dacă extragi o diagramă foarte detaliată sau ai nevoie de o rezoluție deosebit de mare pentru tipar, merită să verifici calitatea rezultatului înainte de a te baza pe el pentru ceva critic pentru tipar — extragerea la rezoluție de ecran este de obicei mai mult decât suficientă pentru uz digital, dar lucrările de tipar foarte fine pot necesita un alt instrument creat special pentru extragere la DPI mare.</p>
+
+          <h3>PDF-uri cu mai multe pagini și denumirea fișierelor</h3>
+          <p>Fiecare imagine extrasă este etichetată automat cu numărul paginii, așa încât poți vedea dintr-o privire ce rezultat corespunde cărei pagini din documentul original — util când lucrezi cu un PDF lung și ai nevoie doar de câteva pagini anume, nu de tot documentul.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să-ți convertești imaginile: scenarii din viața reală</summary>
+        <div class="golden-rules-body">
+          <p>A cunoaște diferențele tehnice dintre formate este un lucru — a ști care se aplică de fapt situației din fața ta este altul. Iată o modalitate bazată pe scenarii de a te gândi la asta.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situație</th><th>Cel mai bun format</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situație">O platformă cere un anumit format</td><td data-label="Cel mai bun format">Orice cere platforma — verifică mai întâi</td></tr>
+              <tr><td data-label="Situație">Accelerarea propriului site</td><td data-label="Cel mai bun format">WEBP</td></tr>
+              <tr><td data-label="Situație">Ai nevoie de un fundal transparent</td><td data-label="Cel mai bun format">PNG sau WEBP</td></tr>
+              <tr><td data-label="Situație">Pregătirea pentru tipar sau utilizare profesională</td><td data-label="Cel mai bun format">PNG</td></tr>
+              <tr><td data-label="Situație">Arhivare pe termen lung</td><td data-label="Cel mai bun format">PNG (sau WEBP în modul fără pierderi)</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Încărcarea pe o platformă care acceptă doar anumite formate</h3>
+          <p>Acesta este cel mai frecvent motiv pentru care oamenii ajung să aibă nevoie de un convertor: un site, o aplicație sau un formular de depunere specifică „doar JPG sau PNG”, dar imaginea ta este WEBP sau SVG. Convert rezolvă asta în secunde — alege formatul cerut de platformă și gata. Verifică întotdeauna mai întâi cerințele declarate ale platformei, deoarece ghicirea greșită înseamnă o tură irosită.</p>
+
+          <h3>Accelerarea unui site pe care îl administrezi</h3>
+          <p>Dacă încarci imagini pe propriul site, convertirea imaginilor JPG și PNG vechi în WEBP este una dintre cele mai valoroase îmbunătățiri cu cel mai mic efort pe care le poți face — fișierele mai mici înseamnă încărcări mai rapide ale paginii, ceea ce influențează atât experiența utilizatorilor, cât și pozițiile în motoarele de căutare. Contează mai mult pentru paginile pline de imagini (galerii, liste de produse, bloguri cu multe fotografii) decât pentru o pagină cu doar una-două pictograme mici.</p>
+
+          <h3>Nevoia de un fundal transparent</h3>
+          <p>Dacă ai un JPG (care nu poate avea transparență) și trebuie să-l plasezi peste un fundal colorat, un șablon de design sau altă imagine, va trebui să-l convertești — deși merită să știi că Convert poate adăuga un înveliș de format transparent, dar nu poate elimina ca prin magie un fundal solid existent din interiorul fotografiei. Dacă fundalul trebuie înlăturat cu adevărat (nu doar făcut compatibil cu transparența), asta cere un instrument de eliminare a fundalului, nu un convertor de format.</p>
+
+          <h3>Pregătirea pentru tipar sau utilizare profesională</h3>
+          <p>Tipografiile și fluxurile de lucru profesionale de design au uneori cerințe specifice de format — PNG pentru sigle și grafice cu margini ascuțite este una frecventă, deoarece evită artefactele de compresie moi pe care JPG le poate introduce în jurul textului și al liniilor dure. Dacă nu ești sigur ce vrea o anumită tipografie, PNG este de obicei o alegere implicită sigură, fără pierderi, pentru orice nu este o fotografie obișnuită.</p>
+
+          <h3>Arhivare sau stocare pe termen lung</h3>
+          <p>Pentru tot ce vrei să păstrezi la cea mai bună calitate posibilă ani la rând, formatele fără pierderi (PNG) sunt alegerea mai sigură pe termen lung față de JPG-uri comprimate repetat, deoarece JPG pierde puțină calitate de fiecare dată când este salvat din nou. Dacă spațiul de stocare este o restricție reală, cântărește asta față de modul fără pierderi al WEBP, care este mai eficient ca spațiu decât PNG, evitând totodată pierderea generațională de calitate a JPG.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la conversie (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea problemelor de conversie vin dintr-o mână de greșeli repetabile. Iată la ce să fii atent.</p>
+
+          <h3>Resalvarea repetată a unui JPG ca JPG</h3>
+          <p>De fiecare dată când un JPG este deschis, editat chiar și puțin și salvat din nou, pierde puțin mai multă calitate — aceasta se numește pierdere generațională și se acumulează. Dacă vei edita o imagine de mai multe ori, lucrează într-un format fără pierderi (PNG) pe parcursul editării și convertește în JPG doar ca ultimul pas de export, o singură dată, la sfârșit.</p>
+
+          <h3>Folosirea JPG când ai de fapt nevoie de transparență</h3>
+          <p>Aceasta este cea mai frecventă întrebare de asistență pe care o primesc convertoarele: „de ce are sigla mea o casetă albă în jur în loc de fundal transparent?” Răspunsul este aproape întotdeauna că formatul sursă sau de ieșire era JPG, care nu poate reprezenta deloc transparența — nicio setare sau truc nu rezolvă asta, deoarece formatul în sine nu are conceptul de canal alfa. Dacă ai nevoie de transparență, atât imaginea sursă, cât și formatul de ieșire trebuie să o accepte (PNG sau WEBP).</p>
+
+          <h3>Conversie în sus, nu doar între formate</h3>
+          <p>Conversia unei imagini mici, cu rezoluție mică, într-un alt format nu adaugă detalii și nu îi mărește rezoluția reală — un JPG de 400×300 pixeli convertit în PNG rămâne o imagine de 400×300 pixeli, doar într-un alt container. Dacă ai nevoie de o imagine mai mare, ai nevoie de originalul la o rezoluție mai mare de la început; conversia de format singură nu poate crea detalii care nu au fost niciodată captate.</p>
+
+          <h3>Alegerea PNG pentru fotografii mari ca opțiune implicită</h3>
+          <p>Compresia fără pierderi a PNG este fantastică pentru grafice, dar nepotrivită pentru fotografii, unde produce fișiere mult mai mari decât este necesar pentru o diferență de calitate pe care majoritatea privitorilor nu o vor percepe. Dacă convertești un lot de fotografii din vacanță „doar ca să fii sigur”, JPG sau WEBP te vor servi mult mai bine — păstrează PNG special pentru imagini cu transparență, text sau margini grafice ascuțite.</p>
+
+          <h3>Neverificarea rezultatului înainte de a-l trimite undeva important</h3>
+          <p>Pentru tot ce merge către un client, un angajator sau o depunere oficială, merită să deschizi o dată fișierul convertit înainte de trimitere — confirmând ordinea paginilor într-un PDF cu mai multe pagini, verificând dacă transparența a ieșit corect sau că fișierul nu este neașteptat de mare. Durează câteva secunde și evită problema mult mai consumatoare de timp a unei depuneri respinse sau a unei retrimiteri jenante.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="golden-rules-articles" data-tool="compress">
+      <details class="golden-rules-article">
+        <summary>1. Cum funcționează de fapt compresia imaginilor</summary>
+        <div class="golden-rules-body">
+          <p>Compresia pare un singur glisor sau un singur clic, dar dedesubt două abordări cu adevărat diferite fac micșorarea, iar înțelegerea celei care lucrează explică aproape orice rezultat vei vedea de la un instrument ca acesta.</p>
+
+          <h3>Compresie cu pierderi: aruncarea a ceea ce nu vei observa</h3>
+          <p>Compresia cu pierderi, cea folosită de JPG și WEBP, funcționează identificând informațiile dintr-o imagine pe care ochiul uman le percepe slab și eliminându-le. Gradientele subtile de culoare sunt simplificate, detaliile fine de înaltă frecvență sunt netezite, iar rezultatul este un fișier care poate fi o fracțiune din originalul ca dimensiune, arătând totuși corect pentru un privitor ocazional. Problema este că această eliminare este permanentă — odată ce detaliul a dispărut, nicio redeschidere sau resalvare nu îl readuce, iar comprimarea repetată a unui fișier deja comprimat cu pierderi agravează pierderea de fiecare dată.</p>
+          <p>„Raportul de calitate” sau nivelul de compresie pe care îl alegi controlează cât de agresiv se întâmplă asta. O setare de calitate ridicată aruncă foarte puțin și micșorează fișierul modest; o setare de calitate scăzută aruncă mult mai mult și îl micșorează dramatic, cu prețul unor artefacte vizibile — blocuri în jurul marginilor, detalii șterse, benzi de culoare pe cer și în gradiente.</p>
+
+          <h3>Compresie fără pierderi: reîmpachetare fără a pierde nimic</h3>
+          <p>Compresia fără pierderi, abordarea PNG, funcționează complet diferit: găsește modalități mai inteligente și mai eficiente de a stoca exact aceleași date de pixeli, la fel cum un fișier ZIP micșorează un document text fără a schimba un singur caracter din el. Nimic nu este aruncat, așa că poți comprima și decomprima de câte ori vrei, fără nicio schimbare de calitate. Compromisul este că reducerea de dimensiune este mult mai mică, deoarece există o limită matematică fermă a cât poți micșora datele fără a arunca nimic din ele — mai ales pentru imaginile fotografice, pline de tipul de detaliu fin și neregulat care se împotrivește reîmpachetării fără pierderi.</p>
+
+          <h3>De ce instrumentul nostru Compress convertește PNG în JPG</h3>
+          <p>Iată de ce Compress convertește automat fotografiile PNG în JPG în timpul compresiei: o fotografie PNG trecută doar prin compresie fără pierderi abia se micșorează, dar aceeași fotografie lăsată să folosească compresie cu pierderi se poate micșora dramatic. Pentru o fotografie propriu-zisă, acest schimb merită aproape întotdeauna — diferența de calitate este invizibilă la dimensiunile normale de vizualizare, iar diferența de dimensiune este enormă. Este o altă poveste pentru PNG-urile care nu sunt fotografii (capturi de ecran, sigle, grafice cu transparență sau text ascuțit), motiv pentru care această conversie este reglată special pentru conținut de tip fotografie, nu aplicată orbește fiecărui PNG.</p>
+
+          <h3>Ce se întâmplă de fapt când muți glisorul de calitate</h3>
+          <p>Intern, o setare de calitate mai joasă mărește cât de grosier sunt grupate și simplificate informațiile de culoare și detaliu ale imaginii înainte de stocare. Gândește-te ca la rotunjirea numerelor: rotunjirea „calității 95” abia schimbă ceva, în timp ce rotunjirea „calității 40” schimbă mult mai mult, dar ocupă și mult mai puțin spațiu pentru a fi descrisă. Nu există un număr universal „corect” — setarea potrivită depinde în întregime de pentru ce va fi folosită imaginea, exact subiectul următorului articol.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Alegerea nivelului potrivit de compresie pentru cazul tău</summary>
+        <div class="golden-rules-body">
+          <p>Nu există o singură setare de compresie „cea mai bună” — nivelul potrivit depinde în întregime de unde ajunge imaginea și de ce trebuie să reziste. Iată cum să te gândești la asta pe scenarii.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destinație</th><th>Nivel recomandat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destinație">Rețele sociale / aplicații de mesagerie</td><td data-label="Nivel recomandat">Mediu</td></tr>
+              <tr><td data-label="Destinație">Propriul tău site web sau magazin online</td><td data-label="Nivel recomandat">Mediu spre ridicat</td></tr>
+              <tr><td data-label="Destinație">Tipar sau livrare profesională către client</td><td data-label="Nivel recomandat">Scăzut sau fără compresie</td></tr>
+              <tr><td data-label="Destinație">Arhivare pe termen lung</td><td data-label="Nivel recomandat">Scăzut</td></tr>
+              <tr><td data-label="Destinație">Limite de dimensiune pentru atașamentele de e-mail</td><td data-label="Nivel recomandat">Ridicat</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Rețele sociale și mesagerie</h3>
+          <p>Platforme precum Instagram, WhatsApp și majoritatea fluxurilor sociale recomprimă deja fiecare imagine pe care o încarci, adesea agresiv, indiferent ce le trimiți. Încărcarea unui fișier uriaș, abia comprimat, nu îți aduce nimic — platforma îl va comprima oricum din nou la ea. Un nivel de compresie moderat-spre-ridicat îți păstrează încărcarea rapidă și dimensiunea fișierului original rezonabilă, fără a renunța la nicio calitate pe care ai vedea-o oricum după procesarea proprie a platformei.</p>
+
+          <h3>Site-uri web și magazine online</h3>
+          <p>Pentru tot ce găzduiești tu însuți — un site de portofoliu, un blog, o pagină de produs — dimensiunea fișierelor afectează direct cât de repede se încarcă pagina, ceea ce influențează atât experiența vizitatorilor, cât și, pentru orice este comercial, ratele de conversie și poziția în căutări. Aici merită să te înclini spre o compresie mai agresivă, deoarece vizualizarea pe web rareori are nevoie de detalii la nivel de tipar, iar o pagină plină de imagini uriașe, neoptimizate, este unul dintre cele mai frecvente motive pentru care site-urile par lente.</p>
+
+          <h3>Tipar și utilizare profesională</h3>
+          <p>Acesta este singurul loc în care vrei să fii conservator. Tiparul dezvăluie detalii și artefacte pe care un ecran pur și simplu nu le arată, deoarece este privit la o rezoluție efectivă mai mare și adesea la o dimensiune fizică mai mare. Pentru orice merge la o tipografie, la o galerie sau la o livrare profesională către client, folosește un nivel ușor de compresie sau sari peste compresie pentru acea copie anume și păstrează un fișier master necomprimat sau ușor comprimat ca sursă de adevăr.</p>
+
+          <h3>Arhivare și stocare pe termen lung</h3>
+          <p>Dacă scopul este să păstrezi o fotografie ani de zile — fotografii de familie, o arhivă, orice ai vrea să revezi mai târziu la calitate completă — evită compresia puternică cu pierderi pe singura ta copie. Odată ce detaliile sunt aruncate, nu mai pot fi recuperate, chiar dacă o utilizare ulterioară se dovedește a avea nevoie de ele. O abordare rezonabilă este să păstrezi o copie de arhivă de calitate mai înaltă și să generezi separat versiuni comprimate, la cerere, pentru ce are nevoie de fapt o anumită utilizare.</p>
+
+          <h3>Atașamente de e-mail și limite de dimensiune a fișierelor</h3>
+          <p>Mulți furnizori de e-mail limitează dimensiunea atașamentelor, de obicei în jur de 25 MB în total. Dacă trimiți mai multe fotografii, un nivel mai puternic de compresie te aduce sub acest plafon în mod sigur. Acesta este unul dintre puținele cazuri în care constrângerea practică (încape sau nu în e-mail) contează mai mult decât diferența vizuală dintre nivelurile de compresie, așa că nu te teme să comprimi mai tare decât ai face pentru alte utilizări.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Compresia pentru web: viteză fără a sacrifica calitatea</summary>
+        <div class="golden-rules-body">
+          <p>Greutatea imaginilor este unul dintre cei mai mari factori, și cei mai ușor de remediat, ai unui site lent, și este totodată unul dintre cele mai ușor de greșit în ambele direcții — prea puțină compresie și paginile se târăsc, prea multă și fotografiile arată vizibil degradate. Iată cum nimerești mijlocul util.</p>
+
+          <h3>De ce contează atât de mult dimensiunea imaginii pentru viteză</h3>
+          <p>Pe majoritatea paginilor cu mult conținut, imaginile reprezintă marea majoritate a greutății totale a paginii — mult mai mult decât HTML, CSS sau JavaScript la un loc. Timpul de încărcare a paginii pentru un vizitator, precum și evaluarea acestuia de către motoarele de căutare, sunt influențate disproporționat de cât de grele sunt imaginile tale, ceea ce înseamnă că o comprimare corectă este adesea cea mai eficientă schimbare de performanță disponibilă, înaintea majorității optimizărilor de cod.</p>
+
+          <h3>Potrivirea compresiei cu modul în care va fi afișată de fapt imaginea</h3>
+          <p>O imagine afișată pe o pagină la 400 de pixeli lățime nu trebuie livrată ca un fișier original de cameră de 4000 de pixeli, comprimat ușor — are nevoie de mult mai puține detalii ca să arate clară la dimensiunea reală de afișare. Înainte să te gândești deloc la nivelul de compresie, asigură-te că dimensiunile imaginii se potrivesc aproximativ cu cât de mare va apărea; comprimarea unei imagini supradimensionate înseamnă să tratezi simptomul și să lași cauza mai mare (rezoluția inutilă) la locul ei.</p>
+
+          <h3>Alegerea unui format pentru web</h3>
+          <p>Pentru conținut fotografic, JPG sau WEBP la un nivel de compresie moderat-spre-puternic este aproape întotdeauna alegerea potrivită — vizitatorii care răsfoiesc o pagină nu au nevoie de fidelitate la nivel de tipar, iar câștigul de viteză al unui fișier mai mic este foarte real și foarte vizibil, mai ales pe conexiuni mobile. Pentru grafice cu culori plate, capturi de ecran sau orice are text și margini ascuțite, PNG fără pierderi (lăsat necomprimat de metodele cu pierderi) arată de obicei mai bine și poate ieși chiar mai mic decât o versiune cu pierderi, plină de artefacte, a aceluiași grafic.</p>
+
+          <h3>Punctul randamentelor descrescătoare</h3>
+          <p>Compresia nu scade liniar odată cu calitatea vizuală pierdută — prima bucată de compresie dintr-un original necomprimat elimină o cantitate enormă de dimensiune a fișierului aproape fără schimbări vizibile, în timp ce împingerea compresiei tot mai adânc în teritoriul agresiv elimină progresiv tot mai puțină dimensiune pentru tot mai multe stricăciuni vizibile. În practică, majoritatea fotografiilor ating un punct optim cu mult înainte de „compresia maximă”, și merită să verifici o imagine comprimată la dimensiunea ei reală de afișare, în loc să presupui că mai multă compresie înseamnă mereu mai multă viteză.</p>
+
+          <h3>Procesarea în lot a imaginilor unui întreg site</h3>
+          <p>Dacă optimizezi multe imagini deodată — un catalog de produse, o galerie, arhiva de imagini a unui blog — aplică un nivel de compresie consecvent pentru tipuri de conținut similare, în loc să le evaluezi din ochi pe fiecare în parte. Asta păstrează calitatea vizuală consecventă pe tot site-ul și face mult mai rapid să refaci procesul mai târziu dacă te răzgândești asupra setării, deoarece nu mai decizi de la caz la caz.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să comprimi și când să lași o imagine în pace</summary>
+        <div class="golden-rules-body">
+          <p>Compresia este un instrument cu adevărat util, dar nu este automat mișcarea potrivită pentru fiecare imagine în fiecare situație — să știi când s-o sari este la fel de important ca să știi cum s-o folosești.</p>
+
+          <h3>Semne că o imagine este un bun candidat pentru compresie</h3>
+          <p>Fotografiile mari, originale de cameră, destinate web-ului, e-mailului sau mesageriei aproape întotdeauna au de câștigat — de obicei conțin mult mai multă rezoluție și greutate decât are nevoie destinația. Orice fișier care atinge o limită strictă de dimensiune (o limită de atașament de e-mail, o restricție de încărcare, un plafon de dimensiune al unui formular) este și el un candidat evident, deoarece compresia este adesea cea mai rapidă cale de a coborî sub limită fără a decupa sau a redimensiona conținut din imagine.</p>
+
+          <h3>Semne că ar trebui să lași o imagine în pace (sau s-o comprimi foarte ușor)</h3>
+          <p>Graficele cu text, linii ascuțite sau culori plate — capturi de ecran, diagrame, sigle, documente scanate — tind să se comprime prost cu metodele cu pierderi, deoarece artefactele de compresie apar ca neclaritate și franjuri de culoare exact acolo unde ochiul observă cel mai mult: în jurul marginilor și al textului. Acestea sunt de obicei mai bine servite de abordarea fără pierderi a PNG sau de renunțarea la compresie, în loc să te lupți cu artefactele.</p>
+          <p>Ceea ce a fost deja comprimat o dată nu ar trebui comprimat din nou „pentru siguranță”. Recomprimarea unui JPG deja comprimat cu pierderi nu îl micșorează semnificativ în majoritatea cazurilor și poate introduce o a doua rundă de pierdere de calitate peste prima, adunând artefacte în loc să le elimine.</p>
+
+          <h3>Obiceiul copiei master</h3>
+          <p>O regulă simplă care evită cele mai multe regrete: păstrează o copie master de înaltă calitate (sau necomprimată) a oricărui lucru pe care l-ai putea reutiliza și generează versiuni comprimate din acel master, după cum e nevoie pentru fiecare utilizare, în loc să-ți suprascrii singura copie cu una comprimată. Spațiul de stocare e ieftin; recrearea unui original pierdut nu mai e posibilă odată ce a dispărut.</p>
+
+          <h3>Judecând după destinație, nu după obicei</h3>
+          <p>Întrebarea potrivită nu este „ar trebui să comprim această imagine” în abstract, ci „de ce are nevoie de fapt locul unde ajunge această imagine”. O fotografie destinată unui mesaj text are nevoie de aproape niciunul din detaliile ei originale; una destinată unui banner tipărit mare are nevoie de aproape toate. Lasă destinația să stabilească ștacheta, în loc să aplici același nivel de compresie din obișnuință la tot ce trece prin fluxul tău de lucru.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la compresie (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea plângerilor despre compresie duc la un set restrâns de greșeli repetabile. Iată la ce să fii atent.</p>
+
+          <h3>Comprimarea aceluiași fișier iar și iar</h3>
+          <p>Fiecare trecere de compresie cu pierderi aruncă puțin mai multe detalii, iar pierderea se adună cu fiecare trecere în plus — un fișier comprimat, redeschis, editat și recomprimat de mai multe ori va arăta vizibil mai rău decât unul comprimat o singură dată dintr-un original curat. Comprimă întotdeauna din original sau dintr-un master necomprimat, nu dintr-o copie deja comprimată.</p>
+
+          <h3>Suprascrierea singurei tale copii</h3>
+          <p>Comprimarea pe loc și ștergerea originalului este cea mai frecventă cale prin care oamenii pierd definitiv accesul la calitatea completă. Odată ce o trecere de compresie cu pierderi a eliminat detalii, nu mai există cale de întoarcere — păstrează originalul undeva în siguranță până ești sigur că nu vei mai avea nevoie de el la o calitate mai înaltă.</p>
+
+          <h3>Comprimarea graficelor ca și cum ar fi fotografii</h3>
+          <p>Capturile de ecran, siglele și grafica cu mult text nu răspund bine la aceeași compresie cu pierderi care funcționează excelent pe fotografii — marginile ascuțite și culorile plate care fac aceste imagini ceea ce sunt devin pete vizibile și franjuri de culoare sub compresia cu pierderi. De obicei sunt mai bine tratate cu formate fără pierderi sau cu o compresie mult mai ușoară decât ai folosi pentru o fotografie.</p>
+
+          <h3>Alegerea unui nivel de compresie fără a verifica rezultatul</h3>
+          <p>Este tentant să alegi „compresia maximă” pentru cel mai mic fișier posibil și să mergi mai departe, dar acea setare introduce adesea artefacte evident vizibile odată ce te uiți de fapt la rezultat la dimensiunea reală. O verificare rapidă a rezultatului comprimat — la dimensiunea la care va fi de fapt văzut — durează secunde și previne trimiterea sau publicarea a ceva care arată vizibil mai rău decât intenționai.</p>
+
+          <h3>Ignorarea compresiei proprii a destinației</h3>
+          <p>Încărcarea unui fișier uriaș, abia comprimat, pe o platformă care îl va comprima oricum (majoritatea rețelelor sociale și aplicațiilor de mesagerie) irosește timp de încărcare și lățime de bandă fără niciun beneficiu vizual, deoarece procesarea proprie a platformei determină o mare parte din calitatea finală, indiferent ce ai trimis. Potrivește efortul de compresie cu ceea ce va păstra de fapt destinația, nu cu presupunerea că „mai multă calitate originală la intrare înseamnă mai multă calitate finală la ieșire”.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="combine">
+      <details class="golden-rules-article">
+        <summary>1. Cum combini PDF-urile în ordinea corectă, de fiecare dată</summary>
+        <div class="golden-rules-body">
+          <p>Întreaga sarcină a lui Combine este înșelător de simplă — iei mai multe fișiere și le îmbini într-un PDF — dar detaliul care îi încurcă cel mai des pe oameni nu este îmbinarea în sine, ci să se asigure că paginile ajung în ordinea pe care ai intenționat-o de fapt.</p>
+
+          <h3>Cum determină Combine ordinea paginilor</h3>
+          <p>Combine îți îmbină fișierele în ordinea în care apar în selecția ta — ordinea în care le-ai ales în browserul de fișiere sau ordinea în care au fost aduse, de sus în jos. Nu încearcă să ghicească o ordine „corectă” după nume, date sau conținut, pentru că nu există o regulă universală pentru ordinea pe care o vrei; respectă pur și simplu secvența pe care i-ai dat-o. Asta înseamnă că responsabilitatea pentru ordinea corectă ține în întregime de felul în care selectezi sau aranjezi fișierele înainte să apeși pe combinare.</p>
+
+          <h3>De ce numele fișierelor pot induce în eroare</h3>
+          <p>O presupunere frecventă este că fișierele se îmbină automat în ordine alfabetică sau numerică. Dacă selectorul de fișiere al sistemului tău de operare listează fișierele așa și le selectezi trăgând peste toată lista, adesea asta vei obține — dar este un efect secundar al ordinii de afișare a selectorului, nu o garanție. În momentul în care selectezi fișierele individual, cu mouse-ul, în afara secvenței sau le tragi pe rând, ordinea îmbinării urmează clicurile tale, nu numele fișierelor.</p>
+
+          <h3>O verificare prealabilă de încredere înainte de combinare</h3>
+          <p>Înainte de a apăsa pe combinare, uită-te la lista de previzualizare pe care ți-o arată Combine — aceasta reflectă ordinea reală pe care o va folosi îmbinarea. Dacă ceva nu e la locul lui, elimină-l și adaugă-l din nou în poziția corectă sau reordonează selecția înainte de încărcare. Această verificare de treizeci de secunde este mult mai rapidă decât să descarci un PDF îmbinat, să descoperi că pagina 4 trebuia de fapt să fie pagina 2 și să o iei de la capăt.</p>
+
+          <h3>Denumirea fișierelor astfel încât ordinea să fie la toată lumea clară</h3>
+          <p>Dacă îmbini regulat seturi cu mai multe fișiere — pagini scanate, rapoarte în mai multe părți, capitole consecutive — un obicei simplu care elimină complet presupunerile despre ordine este să prefixezi numele fișierelor cu numere înainte de combinare: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Selectarea tuturor odată într-un browser de fișiere va urma apoi în mod firesc acea ordine numerică și obții secvențierea corectă fără să aranjezi nimic manual în Combine.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Combine pentru candidaturi la locuri de muncă: scrisoare de intenție, CV, portofoliu</summary>
+        <div class="golden-rules-body">
+          <p>Candidaturile la locuri de muncă și la stagii sunt unul dintre cele mai frecvente motive pentru care oamenii apelează la un instrument de îmbinare PDF, iar structurarea corectă poate afecta cu adevărat cum este primită candidatura ta.</p>
+
+          <h3>De ce preferă angajatorii un singur PDF în locul mai multor atașamente</h3>
+          <p>Un manager de angajări sau un recruiter analizează adesea zeci sau sute de candidaturi, de multe ori pe telefon sau răsfoind rapid între ședințe. O candidatură care ajunge sub forma a trei-patru atașamente separate (scrisoare de intenție, CV, portofoliu, referințe) îl obligă să deschidă și să jongleze cu mai multe fișiere doar ca să aibă imaginea completă, și e ușor ca un atașament să fie ratat, clasat greșit sau pur și simplu să nu fie deschis. Un singur PDF, bine ordonat, elimină complet această fricțiune — un clic deschide totul, în ordinea în care ai vrut să fie citit.</p>
+
+          <h3>Ordinea care funcționează pentru majoritatea candidaturilor</h3>
+          <p>O secvență implicită sensibilă este: scrisoarea de intenție prima (este cea mai scurtă și dă contextul), CV-ul al doilea (esența a ceea ce vor de fapt majoritatea evaluatorilor), apoi materialele de susținere — mostre din portofoliu, certificate, referințe — la sfârșit. Aceasta oglindește felul în care majoritatea oamenilor vor în mod firesc să citească o candidatură: context, apoi substanță, apoi dovezi de susținere, nu începând cu un portofoliu înainte să știi pentru ce post aplici.</p>
+
+          <h3>Combinarea fișierelor care au pornit în formate diferite</h3>
+          <p>Este obișnuit ca o scrisoare de intenție să existe ca PDF exportat din Word, un CV ca alt PDF, iar mostrele din portofoliu ca fișiere de imagine (fotografii ale unor lucrări fizice, capturi de ecran ale unor proiecte digitale, certificate scanate). Dacă piesele din portofoliu sunt imagini, nu PDF-uri, convertește-le mai întâi în PDF folosind ieșirea PDF a instrumentului Convert, care transformă un lot de imagini într-un PDF în care fiecare imagine este propria pagină — apoi combină acel PDF cu scrisoarea de intenție și cu CV-ul în ordinea în care vrei să apară.</p>
+
+          <h3>Păstrarea unei dimensiuni rezonabile a fișierului</h3>
+          <p>Imaginile din portofoliu, mai ales fotografiile făcute cu camera unor lucrări fizice sau capturile de ecran de rezoluție mare, pot fi inutil de mari. Dacă PDF-ul tău de candidatură combinat iese uriaș, merită să comprimi imaginile sursă înainte de a le converti în PDF și a le îmbina, nu după — un atașament mare, lent la deschidere, este o mică, dar reală sursă de fricțiune pentru oricine îl evaluează sub presiunea timpului.</p>
+
+          <h3>Verificarea dublă înainte de a depune</h3>
+          <p>După îmbinare, deschide PDF-ul final și parcurge-l o dată, de la început până la sfârșit. Asta prinde paginile în ordine greșită, o versiune ciornă inclusă din greșeală sau o imagine din portofoliu care nu s-a convertit cum te așteptai — genul de greșeală mică, invizibilă până te uiți de fapt, și mult mai jenantă de descoperit după ce un angajator l-a deschis deja.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Îmbinarea documentelor scanate fără a pierde ordinea paginilor</summary>
+        <div class="golden-rules-body">
+          <p>Actele scanate — contracte, formulare, acte de identitate, scrisori cu mai multe pagini — vin cu propriile provocări de ordonare, mai ales din cauza felului în care are loc de obicei scanarea.</p>
+
+          <h3>De ce paginile scanate ies din ordine mai des decât alte fișiere</h3>
+          <p>Mulți scanere și multe aplicații de scanare salvează fiecare pagină ca un fișier separat, cu un nume generic, generat automat (scan001.pdf, IMG_2024.jpg etc.), uneori numerotat după ordinea în care paginile au fost introduse fizic în scaner, alteori nu. Dacă ai scanat o grămadă de pagini în afara ordinii fizice sau o imprimantă multifuncțională le-a numerotat neașteptat, numele fișierelor nu vor reflecta în mod sigur adevărata ordine de citire a documentului — ceea ce înseamnă că selectarea fișierelor „în ordinea numelor” poate produce în tăcere un document îmbinat cu paginile în afara secvenței.</p>
+
+          <h3>Abordarea cea mai sigură: verifică conținutul, nu doar numele fișierelor</h3>
+          <p>Înainte de îmbinare, aruncă o privire asupra conținutului real al fiecărei pagini scanate (miniaturile de previzualizare din Combine fac asta rapid), nu te baza doar pe numele fișierului. Durează câteva secunde să confirmi că pagina unu este într-adevăr începutul documentului și că pagina doi îi urmează logic, dar este cea mai sigură cale de a evita trimiterea unui document amestecat unei bănci, unei instituții guvernamentale sau unui proprietar — locuri unde un document în ordine greșită poate cauza întârzieri reale.</p>
+
+          <h3>Scanări mixte: unele pagini fotografiate, altele scanate</h3>
+          <p>Este obișnuit să ai o scanare corectă pentru majoritatea paginilor și o fotografie făcută cu telefonul pentru una sau două (o pagină care nu a încăput pe scaner sau a fost scanată mai târziu, ca un gând de după). Combine tratează imaginile și PDF-urile interschimbabil, așa că tehnic nu este o problemă — dar vizual, o pagină fotografiată arată adesea diferit ca lumină și încadrare față de o scanare adevărată. Dacă aspectul consecvent al documentului contează, merită să rescanezi corect pagina care iese din rând, în loc să amesteci formate, deși aceasta este o preocupare estetică, nu una funcțională.</p>
+
+          <h3>Contracte cu mai multe pagini și pagini de semnătură</h3>
+          <p>Pentru contracte sau formulare cu o pagină de semnătură, acea pagină trebuie să ajungă exact în poziția corectă față de restul documentului, deoarece o pagină de semnătură îmbinată în locul greșit poate face un document juridic să pară nevalid sau incomplet. Tratează-le ca pe un caz dificil pentru verificarea de previzualizare dinaintea combinării de mai sus — este exact situația în care o privire de cinci secunde pe lista ordonată de previzualizare te scutește de un document care trebuie semnat din nou și retrimis.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să combini și când să păstrezi fișierele separate</summary>
+        <div class="golden-rules-body">
+          <p>Îmbinarea tuturor într-un singur PDF nu este întotdeauna alegerea mai bună — uneori fișierele separate îl servesc cu adevărat mai bine pe destinatar, și merită să știi în ce situație te afli.</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situație</th><th>Combină sau păstrează separat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situație">Candidatură sau raport cu mai multe pagini, care trebuie citit în ordine</td><td data-label="Combină sau păstrează separat">Combine</td></tr>
+              <tr><td data-label="Situație">O platformă cere explicit un singur PDF</td><td data-label="Combină sau păstrează separat">Combine</td></tr>
+              <tr><td data-label="Situație">Destinatarul trebuie să acționeze independent asupra fiecărui fișier</td><td data-label="Combină sau păstrează separat">Păstrează separat</td></tr>
+              <tr><td data-label="Situație">Un lot mare de fișiere de referință fără legătură între ele</td><td data-label="Combină sau păstrează separat">Păstrează separat sau pune în ZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Când combinarea este clar alegerea potrivită</h3>
+          <p>Tot ce trebuie citit într-o anumită ordine — o candidatură cu mai multe pagini, un contract scanat, un raport cu o introducere urmată de date de susținere — beneficiază enorm de a fi un singur fișier, deoarece garantează că cititorul întâlnește totul în ordinea intenționată și nu poate deschide din greșeală paginile în altă ordine sau sări peste ceva. Oriunde un formular sau o platformă cere explicit „un singur PDF” este, de asemenea, o decizie ușoară: combină și trimite exact ce se cere.</p>
+
+          <h3>Când fișierele separate îl servesc mai bine pe destinatar</h3>
+          <p>Dacă un destinatar trebuie să acționeze independent asupra documentelor — de exemplu, să trimită doar factura la contabilitate păstrând avizul de livrare pentru evidențele proprii — îmbinarea lor într-un singur fișier îi îngreunează munca, nu o ușurează, deoarece ar trebui să extragă sau să retipărească doar bucata de care are nevoie. De asemenea, dacă trimiți mai multe documente cu adevărat fără legătură cuiva care le va arhiva în locuri diferite, fișierele separate îi permit să le gestioneze pe fiecare în parte, nu să se lupte cu un PDF grupat.</p>
+
+          <h3>Colecții mari de materiale de referință</h3>
+          <p>Dacă trimiți un lot mare de imagini sau documente vag legate între ele, care nu sunt făcute să fie citite în secvență — un lot mare de fotografii de referință, de exemplu — o arhivă ZIP cu fișiere separate poate fi de fapt mai utilă decât un PDF uriaș, deoarece destinatarul poate răsfoi și deschide elemente individuale în loc să deruleze printr-un singur document enorm ca să găsească o fotografie.</p>
+
+          <h3>O modalitate rapidă de a decide</h3>
+          <p>Întreabă-te dacă fișierele reprezintă un singur lucru coerent, care trebuie citit de la început până la sfârșit (combină-l), sau mai multe lucruri independente care se întâmplă să fie trimise împreună (păstrează-le separate sau pune-le într-un ZIP). Majoritatea candidaturilor, contractelor și documentelor scanate cu mai multe pagini intră clar în prima categorie; majoritatea materialelor de referință, a livrabilelor în lot și a documentelor care pot fi tratate independent intră în a doua.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la combinare (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Combine este un instrument simplu, dar o mână de greșeli evitabile explică majoritatea frustrărilor pe care le întâmpină oamenii.</p>
+
+          <h3>Încrederea în numele fișierelor pentru ordine, în loc să verifici previzualizarea</h3>
+          <p>După cum se arată în articolele despre ordonare de mai sus, numele fișierelor nu reflectă mereu ordinea pe care o vrei de fapt — mai ales pentru scanări și descărcări cu nume generate automat. Aruncă întotdeauna o privire pe lista de previzualizare înainte de a combina, în loc să presupui că ordinea selecției a corespuns intenției tale.</p>
+
+          <h3>Amestecarea documentelor fără legătură într-un singur fișier „pentru comoditate”</h3>
+          <p>Combinarea mai multor documente fără legătură doar ca să ai mai puține fișiere de gestionat se întoarce adesea împotriva ta — destinatarul trebuie acum să deschidă un fișier mare îmbinat și să deruleze ca să găsească secțiunea de care are nevoie, în loc să deschidă direct fișierul potrivit. Păstrează combinarea pentru documentele care aparțin cu adevărat împreună, ca o singură lectură coerentă.</p>
+
+          <h3>Neverificarea fișierului final înainte de a-l trimite</h3>
+          <p>Un PDF îmbinat ar trebui deschis și răsfoit o dată înainte de a ajunge undeva important. Acesta este pasul care prinde o pagină în ordine greșită, un document duplicat din greșeală sau o pagină care nu s-a afișat cum te așteptai — probleme banale de rezolvat înainte de trimitere și mult mai incomode de explicat după aceea.</p>
+
+          <h3>Uitarea de a converti imaginile înainte de a le îmbina cu PDF-uri</h3>
+          <p>Dacă ai imagini separate pe care vrei să le incluzi în același document îmbinat cu PDF-uri existente, amintește-ți că Combine îmbină fișierele așa cum sunt furnizate — pentru cel mai bun rezultat, asigură-te că imaginile sunt deja în formatul și ordinea dorite, deoarece repararea orientării sau a conținutului unei imagini după ce face deja parte dintr-un PDF îmbinat este mult mai supărătoare decât repararea ei dinainte.</p>
+
+          <h3>Trimiterea unui fișier îmbinat inutil de mare</h3>
+          <p>Îmbinarea mai multor PDF-uri deja mari sau a unor imagini scanate la rezoluție mare produce un fișier combinat care moștenește toată greutatea lor — dacă rezultatul este neașteptat de mare, merită să comprimi imaginile sursă înainte de îmbinare, nu după, deoarece un PDF umflat și lent la deschidere este o sursă frecventă de plângeri din partea destinatarilor cu conexiuni mai lente sau dispozitive mai vechi.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="exif">
+      <details class="golden-rules-article">
+        <summary>1. Ce dezvăluie de fapt metadatele EXIF despre tine</summary>
+        <div class="golden-rules-body">
+          <p>Fiecare fotografie făcută de telefon sau de cameră conține mult mai mult decât imaginea în sine. În fișier se află un bloc de metadate — date EXIF — care înregistrează discret o cantitate surprinzătoare de detalii despre când, unde și cum a fost făcută fotografia.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Tip de metadate</th><th>Ce dezvăluie</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tip de metadate">Locație GPS</td><td data-label="Ce dezvăluie">Locul exact în care a fost făcută fotografia, adesea la câțiva metri</td></tr>
+              <tr><td data-label="Tip de metadate">Marca și modelul dispozitivului</td><td data-label="Ce dezvăluie">Camera sau telefonul specific folosit</td></tr>
+              <tr><td data-label="Tip de metadate">Marcaj de timp</td><td data-label="Ce dezvăluie">Data și ora exactă, până la secundă</td></tr>
+              <tr><td data-label="Tip de metadate">Setările camerei</td><td data-label="Ce dezvăluie">Apertură, timp de expunere, ISO, distanță focală</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Locația: cea mai importantă</h3>
+          <p>Dacă serviciile de localizare au fost activate când a fost făcută fotografia, majoritatea telefoanelor încorporează coordonatele GPS exacte ale locului unde a fost făcută poza, adesea precise la câțiva metri. Oricine deschide fișierul original într-un vizualizator potrivit sau îl trece printr-un cititor de metadate poate marca acea locație pe o hartă — ceea ce înseamnă că o fotografie făcută acasă, la locul de muncă sau la școala unui copil poate dezvălui exact unde se află acel loc, fără ca tu să fi scris vreodată adresa undeva.</p>
+
+          <h3>Detalii despre dispozitiv</h3>
+          <p>EXIF include de obicei marca și modelul exact al camerei sau al telefonului care a făcut poza, uneori până la versiunea software-ului. Singur pare inofensiv, dar combinat cu alte metadate adaugă încă un detaliu de identificare unei fotografii și, în anumite contexte (anunțuri pe platforme de vânzare, conturi anonime), poate fi încă un fir care leagă o fotografie de dispozitivele cunoscute ale unei anumite persoane.</p>
+
+          <h3>Marcaje de timp</h3>
+          <p>Data și ora exactă la care a fost făcută fotografia sunt înregistrate până la secundă, ceea ce este mai precis decât își dau seama majoritatea oamenilor — o fotografie postată „ocazional” poate dezvălui exact când se afla cineva într-un anumit loc, ceea ce devine relevant pentru oricine se gândește că rutina sau locurile în care se află ar putea fi reconstituite dintr-un tipar de fotografii postate în timp.</p>
+
+          <h3>Setările camerei și, uneori, mai mult</h3>
+          <p>Detalii tehnice precum apertura, timpul de expunere și ISO sunt, de asemenea, stocate; ele contează pentru fotografii care își analizează propriile cadre, dar altfel nu sunt sensibile din punct de vedere al confidențialității. Unele dispozitive și aplicații de editare încorporează în plus o previzualizare miniatură, istoricul software/editărilor sau chiar un câmp pentru drepturi de autor sau numele autorului, în funcție de setări — câmpurile exacte prezente variază în funcție de dispozitiv și aplicație, dar datele de locație și de marcaj de timp sunt cele două cu cea mai mare greutate reală pentru confidențialitate.</p>
+
+          <h3>De ce contează chiar și pentru fotografiile „neimportante”</h3>
+          <p>Majoritatea fotografiilor individuale par cu miză mică, dar metadatele se adună: un străin cu acces la datele de locație ale mai multor fotografii ale tale poate trasa un tipar al locurilor pe care le frecventezi — acasă, locul de muncă, sala, școala unui copil — pe care nicio fotografie singură nu l-ar dezvălui. Exact această lacună este cea pe care Cleanly există s-o închidă: eliminarea acestor metadate înainte ca o fotografie să-ți părăsească dispozitivul înlătură tot acest strat de informații ascunse, lăsând imaginea vizibilă complet neschimbată.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Cum elimini metadatele înainte de a vinde sau a posta fotografii</summary>
+        <div class="golden-rules-body">
+          <p>Două dintre cele mai frecvente situații în care datele EXIF cauzează discret probleme reale sunt vânzarea de obiecte online și postarea publică de fotografii — ambele implică fotografii care ajung la străini, exact când metadatele ascunse contează cel mai mult.</p>
+
+          <h3>Vânzarea pe platforme de vânzare</h3>
+          <p>Fotografiile obiectelor de vânzare — mobilă, electronice, o mașină, o locuință de închiriat — sunt aproape întotdeauna făcute acasă sau la locul de muncă al vânzătorului. Lăsate neatinse, aceste fotografii pot oferi unui cumpărător adresa ta exactă înainte să vă fi întâlnit vreodată sau să fi convenit ceva, doar deschizând metadatele imaginii. Este un mod real, documentat, prin care oamenilor li s-a expus locuința unor străini care nu aveau niciun motiv legitim anterior s-o cunoască. Trecerea fotografiilor de anunț prin Cleanly înainte de încărcare elimină complet acest risc, fără nicio diferență vizibilă pentru cumpărător.</p>
+
+          <h3>Postarea pe rețele sociale și forumuri</h3>
+          <p>Majoritatea platformelor sociale mari elimină automat metadatele la încărcare, ceea ce este o veste bună, dar nu o fac toate, iar copiile redirecționate sau descărcate ale fotografiei tale (capturi de ecran, salvări, redistribuiri) nu trec în mod sigur prin același proces de eliminare. Dacă o fotografie este vreodată descărcată de unde ai postat-o și repartajată în altă parte, orice metadate care au supraviețuit încărcării inițiale o însoțesc. Eliminarea metadatelor înainte de a posta este singura cale de a garanta că nu mai sunt prezente nicăieri în lanț.</p>
+
+          <h3>Un obicei simplu înainte de postare</h3>
+          <p>Înainte de a încărca fotografii oriunde vor fi vizibile pentru oameni pe care nu îi cunoști personal — un anunț pe o platformă de vânzare, o postare socială publică, un forum, un profil de dating — trece-le mai întâi prin Cleanly. Durează secunde, funcționează pe un întreg lot de fotografii deodată și produce copii identice vizual, fără datele ascunse. Dacă faci din asta un pas implicit, nu ceva de care îți amintești doar pentru fotografiile „sensibile”, nu vei fi niciodată prins nepregătit de o fotografie la care nu te-ai gândit de două ori.</p>
+
+          <h3>Ce nu schimbă eliminarea</h3>
+          <p>Merită să fie clar ce face și ce nu face Cleanly: elimină metadatele ascunse din fișier, dar nu poate elimina informațiile vizibile în imaginea însăși — un indicator de stradă în fundal, un număr de casă vizibil, o reflexie care îți arată locația. Eliminarea metadatelor se ocupă de stratul invizibil; tot ce este vizibil în fotografie este o altă chestiune pe care tot trebuie s-o verifici cu ochii tăi înainte de postare.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Cleanly pentru fotografi: confidențialitate fără pierderi de calitate</summary>
+        <div class="golden-rules-body">
+          <p>Fotografii au o relație ușor diferită cu metadatele decât utilizatorii ocazionali de telefon — o parte din ele este cu adevărat utilă de păstrat pentru propriile evidențe, ceea ce face ca „elimină tot, mereu” să nu fie tocmai instinctul potrivit.</p>
+
+          <h3>De ce ar putea fotografii să vrea să păstreze local o parte din metadate</h3>
+          <p>Setările camerei — apertura, timpul de expunere, ISO, distanța focală — sunt valoroase când îți revezi mai târziu propriile fotografii: să înțelegi ce setări au produs o fotografie care ți-a plăcut te ajută s-o repeți. Pentru copiile tale de lucru, păstrate privat, nu există niciun motiv să elimini aceste informații, fiindcă sunt date de referință cu adevărat utile, care nu prezintă risc de confidențialitate atâta timp cât fișierele rămân la tine.</p>
+
+          <h3>De ce copiile livrate sau publicate sunt altă poveste</h3>
+          <p>În momentul în care o fotografie este livrată unui client, publicată pe un site de portofoliu sau postată public, socoteala se schimbă — datele de locație mai ales nu au ce căuta într-un fișier destinat clientului sau public, deoarece pot dezvălui locații de filmare care trebuiau să rămână private (casa unui client pentru o ședință de familie, un loc privat, adresa exactă a unui studio dacă nu trebuie să fie publică). Cleanly este făcut exact pentru acest pas: trece exporturile finale, orientate spre exterior, prin el înainte de livrare sau publicare, păstrând propriile fișiere de lucru cu metadatele complete pentru referința ta.</p>
+
+          <h3>Fără pierdere de calitate, niciodată</h3>
+          <p>O îngrijorare frecventă (și rezonabilă) este că eliminarea metadatelor ar putea afecta calitatea imaginii — nu o afectează. Metadatele sunt un bloc separat de informații de tip text, stocat alături de datele pixelilor, nu amestecat cu ele, deci eliminarea lor nu are niciun efect asupra rezoluției, culorii sau clarității. Rezultatul din Cleanly este exact aceeași fotografie, pixel cu pixel, doar fără datele ascunse care o însoțeau.</p>
+
+          <h3>Integrarea într-un flux de livrare</h3>
+          <p>Pentru fotografii care livrează galerii sau exportă loturi în mod regulat, cea mai simplă abordare este să tratezi eliminarea metadatelor ca ultim pas înainte de export, aplicat întregului lot deodată, nu fotografie cu fotografie. Astfel devine o parte de rutină a încheierii unei lucrări, ca o verificare finală de calitate, nu ceva de care trebuie să-ți amintești separat pentru fiecare client sau fiecare platformă pe care se partajează o galerie.</p>
+
+          <h3>Protejarea clienților la fel de mult ca pe tine</h3>
+          <p>Merită să-ți amintești că datele de locație și de dispozitiv puse în pericol în fotografiile unui client țin adesea de viața clientului, nu de a ta — o ședință foto de familie făcută la ei acasă, fotografii de logodnă ale unui cuplu într-un loc privat cu semnificație. Eliminarea metadatelor înainte de livrare protejează confidențialitatea clienților tăi la fel de mult ca reputația ta profesională de a le trata imaginile cu grijă.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când contează cel mai mult eliminarea metadatelor</summary>
+        <div class="golden-rules-body">
+          <p>Nu toate fotografiile au aceleași mize de confidențialitate — să știi în ce situații eliminarea metadatelor chiar contează te ajută să concentrezi obiceiul acolo unde contează cel mai mult.</p>
+
+          <h3>Fotografii făcute acasă sau la locul de muncă</h3>
+          <p>Orice fotografie făcută în casa ta sau chiar în apropierea ei, ori la locul de muncă — inclusiv fotografiile pentru anunțuri pe platforme de vânzare, pozele „de acasă” sau cele făcute la repezeală în sufragerie — poartă metadate de locație care indică direct un loc în care îți petreci timp în mod regulat și previzibil. Aceasta este constant categoria cu cele mai mari mize, pentru că este locația cea mai valoroasă de știut pentru altcineva și cea pe care majoritatea oamenilor nu se gândesc să o protejeze.</p>
+
+          <h3>Fotografii cu copii</h3>
+          <p>Fotografiile cu copii — la școală, la o activitate regulată, într-un cartier — poartă un strat suplimentar de risc dacă metadatele de locație supraviețuiesc, deoarece pot dezvălui unde se află previzibil un copil la anumite ore recurente. Mulți părinți se gândesc deja cu atenție la ce se vede într-o fotografie înainte de a posta; aceeași grijă merită extinsă și la ce nu se vede, adică la metadate.</p>
+
+          <h3>Orice merge către un străin înainte ca încrederea să fie stabilită</h3>
+          <p>Cumpărătorii de pe platformele de vânzare, potrivirile de pe aplicațiile de dating și alte contexte în care partajezi fotografii cu cineva pe care nu l-ai verificat personal sunt exact situațiile în care nu vrei să dai mai multe informații decât intenționai. O fotografie de anunț sau de profil este cel mai clar exemplu: destinatarul nu are încă nicio relație stabilită cu tine, iar metadatele eliminate înseamnă că fotografia dezvăluie doar ce se vede în ea, nimic mai mult.</p>
+
+          <h3>Când contează mai puțin</h3>
+          <p>Eliminarea metadatelor este mult mai puțin critică pentru fotografiile partajate privat cu oameni pe care îi cunoști și în care ai încredere — trimiterea unei fotografii direct unui membru al familiei sau unui prieten apropiat printr-un canal privat nu are același risc de expunere ca postarea publică sau trimiterea către un străin. Nu este vorba că metadatele ar fi vreodată benefice de lăsat din motive de confidențialitate, ci doar că urgența practică crește odată cu cât destinatarul este mai public sau mai puțin de încredere.</p>
+
+          <h3>O valoare implicită rezonabilă</h3>
+          <p>Având în vedere cât de rapid și fără pierderi este procesul, există puține dezavantaje în a face din eliminarea metadatelor un obicei implicit pentru tot ce iese din cercul tău apropiat, de încredere — nu te costă nimic în calitate sau efort și înseamnă că nu te bazezi niciodată pe faptul că îți amintești s-o faci selectiv tocmai pentru fotografia care se dovedește a conta.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente de confidențialitate pe care le fac oamenii cu fotografiile</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea problemelor de confidențialitate a fotografiilor vin dintr-o mână de obiceiuri care par inofensive pe moment. Iată la ce să fii atent.</p>
+
+          <h3>Presupunând că platforma se ocupă deja de asta</h3>
+          <p>Este adevărat că multe platforme sociale mari elimină automat metadatele la încărcare, dar nu toate o fac, iar copiile redirecționate, descărcările și redistribuirile nu trec în mod sigur prin aceeași eliminare. A te baza pe „platforma probabil se ocupă” este un pariu; eliminarea metadatelor tu însuți înainte de postare înlătură complet incertitudinea.</p>
+
+          <h3>Gândirea doar la ce este vizibil în fotografie</h3>
+          <p>Oamenii verifică adesea cu grijă o fotografie pentru detalii vizibile — niciun document sensibil în fundal, nicio plăcuță de stradă lizibilă — uitând că metadatele invizibile pot scurge exact același tip de informații (în special locația) chiar dacă imaginea în sine arată perfect sigură. Verificarea conținutului vizibil și eliminarea metadatelor sunt doi pași separați, ambii necesari.</p>
+
+          <h3>Vânzarea de obiecte cu fotografii de anunț neatinse</h3>
+          <p>Anunțurile pe platformele de vânzare sunt una dintre cele mai frecvente surse reale de expunere accidentală a locației, deoarece vânzătorii fotografiază obiectele exact acolo unde locuiesc și încarcă fotografiile așa cum sunt. Este unul dintre cele mai clare cazuri, cu cea mai mare valoare, pentru eliminarea metadatelor înainte de postare, deoarece riscul (dezvăluirea adresei tale unor străini) este concret, iar remedierea durează secunde.</p>
+
+          <h3>Uitarea fotografiilor vechi, deja postate</h3>
+          <p>Eliminarea metadatelor protejează doar fotografiile pe care le cureți înainte de partajare — nu repară retroactiv fotografiile deja postate undeva cu metadatele intacte. Dacă te îngrijorează postările trecute, soluția este să te întorci la acele fotografii, să le elimini și să le înlocuiești cu versiuni curățate dacă platforma permite, nu să presupui că obiceiul de acum încolo acoperă tot ce există deja.</p>
+
+          <h3>Tratarea ca pe o sarcină ocazională, de tipul tot-sau-nimic</h3>
+          <p>A aștepta să elimini metadatele doar pentru fotografiile care „par sensibile” înseamnă să te bazezi pe propria judecată de fiecare dată, exact genul de obicei care până la urmă ratează una. Integrarea eliminării metadatelor în rutina ta implicită pentru tot ce iese din cercul de încredere elimină complet decizia — este aplicată consecvent, nu selectiv.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly pentru SVG-uri: eliminarea metadatelor editorului, nu a EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Tot ce este mai sus privește datele EXIF încorporate în fotografii — GPS, modelul camerei, marcaje de timp. Fișierele SVG nu au deloc EXIF, pentru că nu sunt fotografii; sunt text XML care descrie forme. Dar instrumentele de design încorporează într-un SVG propriul lor fel de metadate ascunse, iar Cleanly le detectează și le elimină și pe acestea când pui un astfel de fișier.</p>
+
+          <h3>Ce încorporează instrumentele de design într-un SVG</h3>
+          <p>Illustrator, Inkscape, Sketch și Figma scriu toate în fișier mai mult decât formele pe care le-ai desenat: un element încorporat <code>&lt;metadata&gt;</code>/RDF (uneori cu informații despre autor și licență prin etichete Dublin Core), atribute proprii editorului, cu spațiu de nume (cele ale Inkscape <code>sodipodi:</code> etichetele sunt cele mai frecvente) și comentarii XML simple lăsate de procesul de export. Nimic din toate acestea nu este vizibil când SVG-ul se randează, dar totul este livrat odată cu fișierul oricui îl trimiți.</p>
+
+          <h3>De ce contează pentru partajare</h3>
+          <p>Același raționament care se aplică etichetei GPS a unei fotografii se aplică și aici: metadatele pe care nu le-ai adăugat în mod conștient sunt tot metadate care ies pe ușă împreună cu fișierul. O pictogramă sau o siglă exportată pentru un client, un anunț sau un depozit public poate purta informații despre versiunea software-ului sau atribuirea autorului pe care nu ai vrut niciodată să le publici. Eliminarea lor înainte de partajare este același obicei „nu costă nimic, previne o surpriză” ca eliminarea EXIF dintr-o fotografie.</p>
+
+          <h3>Ce îți arată Cleanly înainte de eliminare</h3>
+          <p>Așa cum listează etichetele GPS, ale camerei și de dată găsite într-o fotografie, Cleanly scanează un SVG adus și arată exact ce a găsit — metadate încorporate, date de autor ale editorului sau comentarii — ca să vezi ce este de fapt în fișier înainte de a-l elimina, nu să elimini pe nevăzute.</p>
+
+          <h3>Fără pierderi, nu cu pierderi</h3>
+          <p>Spre deosebire de compresia fotografiilor, aici nu este vorba de un compromis de calitate. Curățarea elimină doar resturile pe care browserul nu le-a randat niciodată — formele, culorile și structura create de instrumentul tău de design rămân complet neatinse, așa că fișierul curățat arată identic pixel cu pixel și poate fi deschis și editat în continuare într-un editor vectorial.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="context">
+      <details class="golden-rules-article">
+        <summary>1. Cum funcționează de fapt adăugarea de text într-un PDF</summary>
+        <div class="golden-rules-body">
+          <p>O pagină PDF nu este un document text în care poți da clic și scrie — este mai aproape de o foaie tipărită, o imagine fixă cu text și grafică așezate în poziții exacte. Înțelegerea acestei diferențe explică atât ce face Context, cât și de ce funcționează așa cum funcționează.</p>
+
+          <h3>Pagina este o imagine, nu un document</h3>
+          <p>Majoritatea PDF-urilor (tot ce nu este construit special ca formular completabil) nu au conceptul de „spațiu gol în care poți scrie”. Ceea ce vezi ca o linie, o casetă sau un câmp gol este de fapt doar cerneală plasată la coordonate fixe — nu există niciun câmp de text care să aștepte introducerea ta, cum există într-un document Word sau într-un formular web. Când Context îți permite să „adaugi text” într-un PDF, nu găsește un câmp ascuns pe care să-l completeze; plasează un strat nou, independent de text deasupra paginii existente, poziționat oriunde îl tragi.</p>
+
+          <h3>Suprapunere vs. editare</h3>
+          <p>Această abordare cu suprapunere este aceeași folosită de practic orice instrument de adnotare PDF, nu doar de acesta — editarea efectivă a textului original al unui PDF (schimbarea unei propoziții deja tipărite pe pagină) cere software specializat și adesea nici nu este posibilă dacă fișierul original nu a păstrat straturi de text editabile. Ceea ce face Context în schimb este mai simplu și mult mai util în general: adaugă o bucată de text nouă, separată, care stă vizual deasupra paginii, exact ce vrei pentru subtitrări, note, inițiale sau completarea unei linii goale dintr-un formular.</p>
+
+          <h3>Puncte, nu pixeli</h3>
+          <p>Paginile PDF măsoară poziția în puncte (1/72 dintr-un inch), nu în pixelii de pe ecran cu care tragi cu degetul sau cursorul. Context se ocupă de această conversie pentru tine — ceea ce vezi pe ecran, la orice nivel de mărire vizualizezi pagina, se potrivește mereu cu poziția fixă corectă din PDF-ul real, așa că o casetă de text pe care o plasezi sus pe o pagină rămâne sus pe pagină, indiferent pe ce dispozitiv sau la ce mărire o deschide altcineva mai târziu.</p>
+
+          <h3>Ce se întâmplă când descarci</h3>
+          <p>Când dai clic pe Download, fiecare casetă de text și formă pe care ai plasat-o este desenată permanent pe paginile PDF-ului — culori, stil aldin/cursiv/subliniat, poziție și dimensiune exactă incluse — producând un singur fișier PDF obișnuit. Nu există un „format Context” special și nimic separat de urmărit: fișierul rezultat se deschide și se tipărește identic cu orice alt PDF, în orice cititor PDF, pe orice dispozitiv.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Alegerea dimensiunii și a poziției potrivite a fontului pentru diferite documente</summary>
+        <div class="golden-rules-body">
+          <p>Dimensiunea și poziția potrivită a textului depind în întregime de felul de document pe care îl marchezi și de cine îl va citi mai departe. Iată cum să te gândești la asta pe scenarii.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Tip de document</th><th>Abordare recomandată</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tip de document">Completarea liniilor goale ale unui formular</td><td data-label="Abordare recomandată">Potrivește dimensiunea etichetei tipărite, plasează deasupra liniei</td></tr>
+              <tr><td data-label="Tip de document">Adăugarea unei note sau a unui comentariu</td><td data-label="Abordare recomandată">Folosește o culoare contrastantă, ține-o clar separată de textul original</td></tr>
+              <tr><td data-label="Tip de document">Semnare sau parafare</td><td data-label="Abordare recomandată">Puțin mai mare decât textul din jur, centrat pe linie</td></tr>
+              <tr><td data-label="Tip de document">Subtitrarea unui PDF plin de imagini</td><td data-label="Abordare recomandată">Dimensiune consecventă a fiecărei subtitrări pe fiecare pagină</td></tr>
+              <tr><td data-label="Tip de document">Documente formale sau juridice</td><td data-label="Abordare recomandată">Potrivește îndeaproape dimensiunea fontului documentului, folosește negru</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Potrivirea cu textul existent al documentului</h3>
+          <p>Cel mai mare lucru care face ca o linie adăugată să pară intenționată, nu lipită, este potrivirea dimensiunii ei cu ceea ce este deja tipărit în apropiere. Dacă etichetele formularului sunt tipărite la aproximativ 11–12 pt, adăugarea răspunsului tău la 24 pt face să pară că nu aparține, chiar dacă poziția este perfectă. Mărește mai întâi textul tipărit din jur, ia o idee aproximativă despre scara lui și alege o dimensiune apropiată — Context ține minte ultima dimensiune folosită, așa că odată ce ai potrivit-o o dată, fiecare casetă următoare pornește automat de la aceeași dimensiune.</p>
+
+          <h3>Rămânerea în limite — la propriu</h3>
+          <p>Rândurile și casetele goale din formulare sunt de obicei dimensionate pentru o anumită cantitate de text la o anumită mărime. Înainte să scrii un răspuns lung pe o linie scurtă, gândește-te dacă trebuie micșorat puțin ca să încapă, deoarece textul care depășește sfârșitul unei linii tipărite pare o greșeală pentru cine citește documentul final, chiar dacă tehnic nimic nu este stricat.</p>
+
+          <h3>Alegerea unei culori care se citește ca „adăugată”, nu „ascunsă”</h3>
+          <p>Textul negru este de obicei cea mai sigură alegere implicită, deoarece se potrivește cu modul în care sunt tipărite deja majoritatea formularelor și documentelor și nu atrage atenția ca un adaos. Textul colorat este cu adevărat util pentru note, corecturi sau orice vrei să iasă în evidență față de conținutul original — doar asigură-te că culoarea aleasă are contrast real cu pagina din spate; culorile deschise, precum galbenul, se pierd ușor pe o pagină albă.</p>
+
+          <h3>Lăsarea unei marje pentru neprevăzut</h3>
+          <p>Plasarea textului chiar la marginea paginii riscă să-l taie dacă documentul este tipărit ulterior pe o altă dimensiune de hârtie sau cu alte setări de margini decât te așteptai. Lăsarea unui mic spațiu între text și marginea paginii — și între text și orice conținut tipărit din apropiere — păstrează rezultatul curat, indiferent cum este tipărit sau vizualizat până la urmă.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Completarea formularelor și semnarea documentelor fără imprimantă</summary>
+        <div class="golden-rules-body">
+          <p>A tipări, semna, scana și trimite înapoi prin e-mail este încă modul în care se rezolvă multe acte — și aproape întotdeauna este inutil. Iată cum o sari folosind doar un browser.</p>
+
+          <h3>Înlocuirea buclei tipărire-semnare-scanare</h3>
+          <p>Dacă un formular are nevoie doar de un nume, o dată, câteva răspunsuri scurte și un semn acolo unde merge semnătura, rareori există un motiv real să implici o imprimantă sau un scaner. Deschide PDF-ul direct în Context, plasează o casetă de text pe fiecare linie goală, scrie răspunsul și descarcă — tot circuitul care înainte cerea hârtie se petrece acum în întregime pe ecran, iar rezultatul este un PDF mai curat și mai lizibil decât o copie scanată de pe hârtie, oricum. Pentru o casetă de bifat sau o opțiune cu alegere multiplă, pune o formă (o cruce pentru a marca, un cerc pentru a selecta) în loc să încerci să scrii un caracter de bifă care s-ar putea să nu existe nici măcar în font.</p>
+
+          <h3>Semnături și inițiale tastate</h3>
+          <p>Scrierea numelui tău într-o manieră asemănătoare scrisului de mână pe o linie de semnătură este o practică obișnuită pentru o mare parte din actele de zi cu zi — formulare interne ale companiei, înțelegeri informale, formulare de confirmare și documente similare cu miză mică. Merită totuși să fii lucid într-o privință: un nume tastat nu este același lucru cu o semnătură electronică recunoscută juridic conform unor legi precum eIDAS sau ESIGN Act din S.U.A., care cer în general pași specifici de consimțământ și verificare pe care o simplă suprapunere tastată nu îi oferă. Pentru contracte, depuneri juridice sau orice unde validitatea semnăturii contează cu adevărat, folosește în schimb un serviciu dedicat de semnătură electronică — Context este instrumentul potrivit pentru acte informale, nu un înlocuitor al acestuia.</p>
+
+          <h3>Aliniarea răspunsurilor cu etichetele tipărite</h3>
+          <p>Majoritatea formularelor tipăresc o etichetă („Nume:”, „Data:”) urmată de o linie sau o casetă goală pentru răspuns. Trage caseta de text astfel încât să stea chiar deasupra liniei, nu peste ea — textul plasat direct pe o linie tipărită devine greu de citit când cele două se suprapun, în timp ce textul care plutește chiar deasupra rămâne clar lizibil și tot se citește ca „răspunsul la acea etichetă” pentru oricine se uită la pagina finală.</p>
+
+          <h3>Verificarea dublă înainte de trimitere</h3>
+          <p>După ce toate câmpurile sunt completate, merită să parcurgi fiecare pagină la dimensiunea reală (nu doar miniatura în care scriai) pentru a confirma că nimic nu se suprapune, nimic nu depășește marginea unei linii și fiecare câmp obligatoriu a fost într-adevăr completat — o casetă de text care arată bine cât o editezi activ poate ocazional să stea puțin diferit când vezi pagina finală în ansamblu.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Lucrul cu PDF-uri cu mai multe pagini: consecvență și editare pagină cu pagină</summary>
+        <div class="golden-rules-body">
+          <p>Contractele, rapoartele și formularele cu mai multe pagini cer o abordare ușor diferită de o editare rapidă a unei singure pagini — mai ales pentru a păstra consecvența pe măsură ce parcurgi documentul.</p>
+
+          <h3>Navigarea între pagini fără a-ți pierde locul</h3>
+          <p>Navigarea între pagini din Context ține fiecare casetă de text legată de pagina anume pe care a fost plasată, așa că trecerea de la o pagină la alta pentru a completa secțiuni diferite ale unui document lung nu riscă să amestece nimic — o casetă adăugată pe pagina 3 rămâne pe pagina 3, indiferent câte alte pagini vizitezi înainte de descărcare.</p>
+
+          <h3>Păstrarea consecventă a dimensiunii și a culorii pe pagini</h3>
+          <p>Pentru tot ce are o structură repetată de la o pagină la alta — de exemplu același fel de etichetă apărând pe fiecare pagină a unui formular cu mai multe pagini — reutilizarea deliberată a aceleiași dimensiuni și culori de font de fiecare dată păstrează documentul final ca pe o trecere coerentă, nu ca mai multe editări inconsecvente cusute laolaltă. Cum ultima dimensiune și culoare folosite se păstrează automat pentru următoarea casetă de text pe care o adaugi, consecvența într-un document lung înseamnă de obicei pur și simplu să nu le schimbi decât dacă chiar vrei.</p>
+
+          <h3>Planificarea unei treceri înainte de a începe să scrii</h3>
+          <p>Pentru documente mai lungi, merită o primă trecere rapidă prin toate paginile — doar privit, fără scris încă — ca să vezi întinderea completă a ceea ce trebuie completat înainte să te angajezi la o dimensiune și o poziție pe prima pagină. O dimensiune care pare potrivită pe o primă pagină aerisită poate ieși prea mare pentru o pagină mai deasă, mai departe, iar prinderea asta devreme te scutește să te întorci și să redimensionezi casete deja plasate.</p>
+
+          <h3>Revizuirea întregului document înainte de descărcare</h3>
+          <p>Deoarece fiecare pagină se redă și se editează independent, este ușor să te concentrezi strâns pe pagina la care lucrezi în acel moment și să pierzi din vedere documentul în ansamblu. Înainte de descărcare, răsfoiește-l de la început — este singura cale de a prinde o pagină sărită cu totul sau o casetă care arată diferit de celelalte fără să fi observat în timp ce lucrai.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la adăugarea de text în PDF-uri (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea problemelor unui PDF editat duc la un set restrâns de greșeli ușor de ratat. Iată la ce să fii atent.</p>
+
+          <h3>Text prea mic după micșorarea la loc</h3>
+          <p>Este ușor să scrii la o dimensiune care pare perfect lizibilă cât timp ești mărit și concentrat pe o singură casetă, doar ca să descoperi că este vizibil mică când pagina este văzută la dimensiunea ei normală, completă. Micșorează la loc (sau verifică PDF-ul final într-un vizualizator separat) înainte de descărcare, ca să confirmi că fiecare casetă este lizibilă la dimensiunea reală, nu doar la dimensiunea de editare.</p>
+
+          <h3>Plasarea textului peste conținutul existent, în loc de lângă el</h3>
+          <p>Dacă pui o casetă de text direct peste text tipărit sau peste o linie, ambele devin greu de citit când se suprapun — conținutul de dedesubt nu se mută din drum. Mută în schimb textul nou într-un spațiu cu adevărat gol din apropiere, în loc să-l așezi direct peste ceva ce este deja tipărit acolo.</p>
+
+          <h3>Editarea paginii greșite</h3>
+          <p>Într-un document mai lung este ușor să pierzi evidența paginii active, mai ales după mărire sau derulare, și să ajungi să adaugi text pe pagina greșită. Verifică indicatorul de pagină înainte de a adăuga o casetă în orice document cu mai mult de o pagină, în special imediat după ce ai navigat la o pagină nouă.</p>
+
+          <h3>Folosirea unei culori cu contrast slab</h3>
+          <p>Culorile deschise — mai ales galbenul pal — pot arăta bine la dimensiunea de editare pe un ecran luminos și apoi pot deveni greu de citit odată tipărite sau văzute pe alt afișaj. Rămâi la culori cu contrast puternic față de alb, precum negrul sau o culoare saturată, pentru tot ce trebuie citit, nu doar remarcat.</p>
+
+          <h3>Uitarea de a redenumi fișierul înainte de partajare</h3>
+          <p>Descărcarea direct dintr-un nume de fișier generic încărcat te poate lăsa (pe tine sau pe cel căruia îi trimiți) cu un fișier numit pur și simplu „document” sau ceva similar, imposibil de deosebit de o duzină de alte fișiere cu același nume implicit. Să-ți iei un moment ca să-i dai un nume clar și specific înainte de descărcare — ce este și, adesea, data — te scutește de multă confuzie mai târziu, mai ales când câteva versiuni ale aceluiași formular încep să se adune într-un dosar de descărcări.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="gif">
+      <details class="golden-rules-article">
+        <summary>1. Ghidul complet al GIF-urilor: rata de cadre, dimensiunea și de ce sunt încă peste tot</summary>
+        <div class="golden-rules-body">
+          <p>Formatul GIF are zeci de ani și este primitiv din punct de vedere tehnic în comparație cu videoul modern, dar nu a dispărut niciodată — este singurul format de imagine în mișcare care se redă automat peste tot, fără comenzi de player, fără sunet și fără bariera „dă clic pentru a reda”. Înțelegerea a ceea ce este de fapt explică atât limitele sale, cât și de ce setările Congify au forma pe care o au.</p>
+
+          <h3>Ce este de fapt un GIF</h3>
+          <p>Un GIF nu este un video comprimat — este o secvență de imagini individuale, fiecare limitată la o paletă de cel mult 256 de culori, redate una după alta în buclă. Nu există nicio pistă audio și nici nu se poate adăuga una; un GIF este mut prin definiție, motiv pentru care pornește automat în locuri unde un video nu ar porni (aplicații de chat, fluxuri sociale, postări pe forumuri), fără buton de dezactivare a sunetului sau o atingere pentru a porni.</p>
+          <p>Limita de 256 de culori este cea mai mare constrângere tehnică a formatului. Nu este același lucru cu compresia cu pierderi a JPG, care estompează detaliile pentru a economisi spațiu — un GIF chiar nu poate afișa mai mult de 256 de culori distincte într-un singur cadru, așa că gradientele netede și adâncimea de culoare fotografică sunt reduse la o paletă mai mică. Pentru majoritatea clipurilor obișnuite (înregistrări de ecran, clipuri de reacție, secvențe scurte cu o mână de culori dominante) acest lucru este invizibil sau aproape; pentru un apus cu un gradient larg și subtil de culoare, vei vedea uneori benzi vizibile.</p>
+
+          <h3>Rata de cadre: compromisul fps</h3>
+          <p>Congify oferă 5, 10, 15 sau 20 de cadre pe secundă. Fiecare cadru în plus este o imagine completă adăugată în fișier, așa că rata de cadre este cea mai mare pârghie asupra dimensiunii fișierului — trecerea de la 10 la 20 fps dublează aproximativ numărul de cadre (și aproximativ dimensiunea fișierului) pentru aceeași durată a clipului, pentru o îmbunătățire a fluidității care adesea este greu de observat la rezoluțiile GIF și la dimensiunile obișnuite de vizualizare.</p>
+          <p>10 fps este o valoare implicită rezonabilă pentru majoritatea clipurilor — mișcarea pare fluidă fără ca fișierul să se umfle. Coboară la 5 fps pentru orice este lung sau în mare parte static (un slide cu text, o panoramare lentă), unde mai puține cadre nu se observă. Alege 15-20 fps doar când mișcarea în sine este rapidă și sacadarea ar deranja cu adevărat — gameplay rapid, gesturi rapide ale mâinilor, orice are multe schimbări de la un cadru la altul.</p>
+
+          <h3>Dimensiune și decupare: Full, Square, Portrait</h3>
+          <p>Full păstrează neatins raportul de aspect original al videoclipului sursă — cea mai sigură alegere implicită când nu ești sigur unde va ajunge GIF-ul. Square (1:1) decupează la un pătrat centrat, ceea ce majoritatea platformelor sociale afișează curat într-un flux, fără bare negre sau decupări imprevizibile de partea lor. Portrait se potrivește pentru stories și plasări video verticale, unde un clip peisaj ar apărea altfel mic, cu bare pe ambele părți.</p>
+          <p>Decuparea se face înainte de generarea GIF-ului, nu după, deci tot ce este tăiat de Square sau Portrait dispare cu adevărat din rezultat — merită să previzualizezi decuparea față de subiectul tău real (este partea importantă a cadrului centrată?) în loc să presupui că va nimeri mereu.</p>
+
+          <h3>Regula rapidă de decizie</h3>
+          <p>Un clip scurt, de zi cu zi, cu oameni sau mișcare → 10 fps, Full. O postare pe un flux care oricum decupează la pătrat → Square, ca să controlezi tu decuparea, nu platforma. Imagini lungi sau în mare parte statice → coboară mai întâi la 5 fps, înainte să recurgi la orice altă reducere a dimensiunii.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Tăierea: alegerea duratei potrivite a clipului</summary>
+        <div class="golden-rules-body">
+          <p>Cel mai mare lucru pe care îl controlezi asupra dimensiunii unui GIF și a felului în care se citește nu este fps-ul sau decuparea — ci cât material îi dai de la început. O tăiere bună contează mai mult decât orice setare de după ea.</p>
+
+          <h3>De ce mai scurt este aproape întotdeauna mai bine</h3>
+          <p>Un GIF rulează în buclă, ceea ce înseamnă că spectatorul îl vede de obicei de mai multe ori — un GIF bun merită a doua și a treia buclă, nu are nevoie de una doar ca să se înțeleagă ce s-a întâmplat. Tăierea la exact momentul care contează (un gest, o reacție, o poantă, o acțiune anume pe ecran) în loc de câteva secunde în jurul lui produce aproape întotdeauna ceva mai eficient, nu doar mai mic — un GIF care are nevoie de 10 secunde ca să aibă sens de obicei nu este un bun candidat pentru GIF.</p>
+          <p>Dimensiunea fișierului crește direct cu durata clipului — o tăiere de 6 secunde are aproximativ de două ori dimensiunea unei tăieri de 3 secunde, la aceleași setări de fps și dimensiune, toate celelalte egale. Cum GIF-urile se partajează atât de des în aplicații de chat și pe conexiuni mai lente, o tăiere strânsă este de obicei un câștig mai mare decât scăderea fps-ului sau o decupare mai mică.</p>
+
+          <h3>Folosirea precisă a cursorului de derulare</h3>
+          <p>Trage cele două mânere de pe filmstrip pentru a stabili exact unde începe și unde se termină clipul — previzualizarea se actualizează live, ca să vezi precis ce păstrezi înainte să te angajezi la o rată de cadre sau la o dimensiune. Derulează lent mai ales în jurul punctelor de intrare și de ieșire; o jumătate de secundă de gol la început sau un cadru în plus la sfârșit este un motiv frecvent pentru care un GIF tăiat pare mai puțin incisiv decât momentul pe care îl aveai în minte.</p>
+
+          <h3>Direcția redării: Normal, Reverse, Boomerang</h3>
+          <p>Normal redă o singură dată clipul tăiat, revenind din capăt direct la început — potrivit pentru majoritatea imaginilor, dar acea revenire bruscă la început poate părea abruptă dacă primul și ultimul cadru nu se potrivesc în mod firesc. Reverse redă același clip înapoi, ceea ce este util mai ales ca efect deliberat, nu ca setare de uz general. Boomerang redă înainte, apoi imediat înapoi, înainte de a repeta, așa că GIF-ul face ping-pong în loc să sară înapoi la început — este setarea de ales ori de câte ori punctul de buclă ar părea altfel supărător și a devenit, la rândul său, un stil familiar, ușor de recunoscut, pentru clipuri scurte în buclă.</p>
+
+          <h3>Viteza: încetinirea sau accelerarea buclei</h3>
+          <p>Viteza schimbă rata de redare independent de fps-ul la care ai extras clipul — 0,5x redă la jumătate de viteză, pentru accent sau un aer de slow-motion, în timp ce 2x sau 4x comprimă o acțiune mai lungă într-o buclă mai strânsă și mai incisivă. Este un control diferit de rata de cadre: fps decide câte cadre există, viteza decide cât de repede parcurge GIF-ul cadrele pe care le are deja, așa că un GIF încetinit la un fps mic poate arăta tot sacadat — asociază o viteză mai mică cu un fps mai mare dacă ai nevoie și de fluiditate, și de aerul de slow-motion.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Adăugarea unor subtitrări care funcționează cu adevărat</summary>
+        <div class="golden-rules-body">
+          <p>Subtitrările transformă un GIF în ceva care se citește chiar și cu sunetul oprit peste tot în rest pe pagină — ceea ce, din moment ce GIF-urile nu au deloc sunet, este mereu cazul. Să le faci lizibile pe un fundal în mișcare și imprevizibil cere ceva mai multă grijă decât să pui text pe o imagine statică.</p>
+
+          <h3>Alegerea fontului și lizibilitatea</h3>
+          <p>Impact (celebrul font gros și condensat de meme-uri) se citește clar la dimensiuni mici și rezistă mai bine pe fundaluri aglomerate decât o față mai ușoară și mai subțire — este o alegere deliberată și practică, nu doar o setare implicită de stil. Arial este alegerea mai sigură și mai neutră pentru orice trebuie să se citească informativ, nu ca un meme. Times și Comic Sans există pentru când tonul cere ceva anume, dar niciunul nu se ține la fel de bine pe un fundal în mișcare la dimensiuni mici de subtitrare.</p>
+
+          <h3>Contur: de ce un text conturat se citește mai bine pe orice fundal</h3>
+          <p>Fundalul unui GIF se schimbă de la un cadru la altul, așa că un text fără contur poate fi perfect lizibil într-un cadru și aproape invizibil în următorul, dacă imaginea din spate trece de la închis la deschis. Un contur — o margine într-o culoare contrastantă, de obicei negru în jurul textului alb sau alb în jurul textului negru — păstrează subtitrarea lizibilă pe tot parcursul acestor schimbări, deoarece conturul (nu doar umplerea) este ceea ce prinde ochiul pe un fundal aglomerat sau în schimbare. Activează-l pentru aproape orice are mișcare reală în fundal; este una dintre puținele setări care merită lăsate implicit pornite.</p>
+
+          <h3>Noțiuni de bază despre contrastul culorilor</h3>
+          <p>Textul alb sau galben cu contur negru este combinația clasică, de încredere — rezistă pe aproape orice imagine. Textul negru poate funcționa pe imagini constant deschise, dar este mai riscant în clipa în care o parte din clip devine întunecată. Când ești în dubiu, previzualizează subtitrarea peste cele mai întunecate și cele mai luminoase momente din clipul tău tăiat, nu doar peste cadrul la care te uitai în timp ce o scriai.</p>
+
+          <h3>Poziționarea și mai multe subtitrări</h3>
+          <p>Subtitrările pot fi trase oriunde în cadru și redimensionate trăgând de mânerul din colț, deci nu ți se impune un loc fix „sus” sau „jos” — poziționează fiecare subtitrare acolo unde nu acoperă partea din imagine care contează cu adevărat. Congify acceptă mai multe subtitrări în același GIF, util pentru o glumă în mai multe etape sau o secvență etichetată, dar fiecare adaugă aglomerație vizuală, așa că merită să te întrebi dacă o singură linie bine plasată face treaba înainte de a le suprapune pe mai multe.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să folosești un GIF, un MP4 sau o imagine statică</summary>
+        <div class="golden-rules-body">
+          <p>Un GIF nu este întotdeauna răspunsul corect doar pentru că sursa este un clip video — să știi când chiar învinge alternativele te scutește de un fișier umflat pe care un video l-ar fi gestionat mai bine sau de o imagine cu text care nu avea nevoie deloc de mișcare.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situație</th><th>Cea mai bună alegere</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situație">Aplicații de chat și mesagerie</td><td data-label="Cea mai bună alegere">GIF — se redă automat, fără nicio atingere</td></tr>
+              <tr><td data-label="Situație">Clip mai lung cu sunet important</td><td data-label="Cea mai bună alegere">MP4 — GIF-urile nu pot purta deloc sunet</td></tr>
+              <tr><td data-label="Situație">Un singur moment, fără nevoie de mișcare</td><td data-label="Cea mai bună alegere">O imagine statică — mai mică și mai simplă</td></tr>
+              <tr><td data-label="Situație">Pas dintr-un tutorial sau o documentație</td><td data-label="Cea mai bună alegere">GIF pentru acțiuni scurte repetabile, video pentru demonstrații mai lungi</td></tr>
+              <tr><td data-label="Situație">Postare în flux social</td><td data-label="Cea mai bună alegere">Ambele merg — verifică ce redă de fapt automat platforma</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Aplicații de mesagerie și reacții</h3>
+          <p>Acesta este terenul de acasă al formatului — un GIF se așază direct într-un chat și se redă imediat, fără atingere, fără indicator de încărcare, fără un player video separat. Pentru o reacție rapidă, o buclă repetabilă sau un clip scurt menit să ajungă instant într-o conversație, nimic altceva nu se comportă așa.</p>
+
+          <h3>Postări pe rețele sociale</h3>
+          <p>Majoritatea platformelor vor converti oricum intern un GIF încărcat într-un video în buclă, așa că diferența practică față de postarea directă a unui MP4 este adesea mică — dar un GIF rămâne alegerea mai sigură dacă nu ești sigur că o anumită platformă sau încorporare va trata un MP4 încărcat la fel (redare automată, fără pictogramă de sunet, fără elemente de player).</p>
+
+          <h3>Documentație și tutoriale</h3>
+          <p>Un GIF scurt, în buclă, este într-adevăr excelent pentru a arăta o singură acțiune repetabilă din interfață — dă clic aici, trage acolo, uită-te cum se deschide acest meniu — pentru că rulează singur în buclă, fără ca cititorul să apese play sau să dea înapoi ca să revadă. Pentru orice depășește câteva secunde sau are nevoie de narațiune, un video real, cu comenzi de redare, servește cititorul mai bine decât o buclă lungă, mută, cu redare automată.</p>
+
+          <h3>E-mail și prezentări</h3>
+          <p>Suportul pentru GIF-uri animate în clienții de e-mail și în software-ul de prezentări este inconsecvent — unele afișează fiecare cadru așa cum trebuie, altele arată doar primul cadru ca imagine statică. Dacă animația este esențială pentru ce comunici într-unul dintre aceste contexte, merită să testezi mai întâi în destinația reală, în loc să presupui că se va anima ca într-un browser.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la GIF-uri (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea GIF-urilor dezamăgitoare se reduc la un set restrâns de alegeri evitabile făcute devreme în proces, înainte să intre în joc vreo subtitrare sau setare de decupare.</p>
+
+          <h3>Ridicarea implicită a fps-ului la maximum</h3>
+          <p>Este tentant să alegi 20 fps de fiecare dată, presupunând că mai mare înseamnă pur și simplu mai bine, dar pentru majoritatea clipurilor obișnuite câștigul de fluiditate față de 10 fps este abia vizibil, în timp ce dimensiunea fișierului aproape se dublează. Păstrează ratele de cadre mai mari pentru imaginile în care mișcarea este cu adevărat destul de rapidă ca să le ceară.</p>
+
+          <h3>Tăierea prea largă</h3>
+          <p>Câteva secunde în plus înainte și după momentul propriu-zis nu doar umflă fișierul — diluează și ideea GIF-ului, obligând spectatorul să stea prin pregătirea pe care o tăiere mai strânsă ar fi sărit-o. Când ești în dubiu, taie mai strâns decât ți se pare confortabil și verifică previzualizarea; rareori este prea scurt.</p>
+
+          <h3>Subtitrări fără contur peste imagini aglomerate</h3>
+          <p>Textul care părea perfect lizibil pe singurul cadru pe care te uitai în timp ce îl scriai poate dispărea complet o secundă mai târziu, odată ce fundalul se schimbă. Activarea implicită a conturului pentru orice are mișcare reală în fundal evită redescoperirea acestui lucru după ce GIF-ul a fost deja partajat.</p>
+
+          <h3>Ignorarea dimensiunii fișierului pe o conexiune mobilă</h3>
+          <p>Un GIF lung, cu fps mare și dimensiune completă poate ajunge de câteva ori mai mare decât același clip codat corect ca video — și, spre deosebire de un video, un GIF nu poate fi „pus pe pauză înainte să se încarce complet” în majoritatea locurilor unde este distribuit, așa că tot fișierul trebuie să ajungă înainte să pornească. Dacă un GIF iese neașteptat de mare, tăierea mai scurtă și scăderea fps-ului sunt primele două setări de verificat, cu mult înainte de a recurge la o decupare mai mică.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="coudio">
+      <details class="golden-rules-article">
+        <summary>1. Ghidul complet al formatelor audio: MP3 vs WAV</summary>
+        <div class="golden-rules-body">
+          <p>Formatele audio se împart pe aceeași linie cu/fără pierderi ca formatele de imagine, iar aceeași întrebare de fond decide pe care îl vrei de fapt: pregătești ceva de ascultat și de partajat sau ceva de păstrat la cea mai bună calitate posibilă pentru lucru ulterior?</p>
+
+          <h3>MP3: formatul universal, cu pierderi</h3>
+          <p>MP3 folosește compresie cu pierderi, eliminând detaliile audio pe care auzul uman le observă mai greu pentru a micșora drastic fișierul — adesea la o zecime din dimensiunea originalului necomprimat sau mai puțin, în funcție de bitrate-ul folosit. Este acceptat de aproape orice: fiecare telefon, fiecare sistem audio din mașină, fiecare aplicație de muzică, fiecare site. Pentru ascultare, partajare și utilizare de zi cu zi, MP3 este aproape întotdeauna alegerea implicită potrivită.</p>
+          <p>Compromisul este același ca la JPG: o parte din detalii dispar cu adevărat după compresie și nu revin dacă mai târziu convertești MP3-ul în altceva. Pentru ascultarea ocazională, acest lucru este inaudibil la bitrate-uri rezonabile; pentru ascultare critică, masterizare sau arhivare, începe să conteze.</p>
+
+          <h3>WAV: formatul necomprimat, fără pierderi</h3>
+          <p>WAV stochează audio necomprimat — fiecare eșantion păstrat exact, fără ca vreo dată să fie aruncată. Asta îl face alegerea potrivită pentru tot ce va fi editat, mixat sau procesat în continuare, deoarece artefactele de compresie cu pierderi nu se acumulează unele peste altele prin mai multe runde de editare, așa cum s-ar întâmpla cu un MP3 salvat repetat. Este și formatul standard pentru masterele de arhivă, fiind cel mai apropiat lucru de păstrarea intactă a înregistrării originale.</p>
+          <p>Prețul este dimensiunea: fișierele WAV sunt de obicei de 5-10 ori mai mari decât un MP3 cu același sunet la un bitrate rezonabil, deoarece nicio compresie nu face nimic din treabă. Câteva minute de audio WAV pot ajunge deja la zeci de megabyți, ceea ce contează dacă îl trimiți prin e-mail sau stochezi multe.</p>
+
+          <h3>Regula rapidă de decizie</h3>
+          <p>Partajare, ascultare, încărcare pe majoritatea platformelor → MP3. Editare, mixare sau arhivarea unei copii master la care te vei întoarce → WAV. Nu ești sigur și este ceva de o singură dată → MP3 este alegerea implicită mai sigură; aproape orice îl poate reda.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Bitrate-ul explicat: alegerea numărului potrivit pentru MP3</summary>
+        <div class="golden-rules-body">
+          <p>Bitrate-ul este singura setare MP3 care contează cu adevărat atât pentru dimensiunea fișierului, cât și pentru calitate, iar alegerea unui număr potrivit pentru ceea ce faci merită înțeleasă, nu ghicită.</p>
+
+          <h3>Ce controlează de fapt bitrate-ul</h3>
+          <p>Bitrate-ul este cantitatea de date folosită pentru a codifica fiecare secundă de audio, măsurată în kilobiți pe secundă (kbps). Un bitrate mai mare păstrează mai multe detalii din original și sună mai aproape de sursa necomprimată; un bitrate mai mic comprimă mai tare, eliminând mai mult, în schimbul unui fișier mai mic. Este un compromis direct, aproximativ liniar: dublarea bitrate-ului dublează aproximativ dimensiunea fișierului pentru aceeași durată de audio.</p>
+
+          <h3>Potrivirea bitrate-ului cu ceea ce codifici de fapt</h3>
+          <p>Vorbirea — podcasturi, note vocale, cărți audio, narațiune — nu are deloc nevoie de un bitrate mare; vocea are mult mai puțină complexitate decât muzica, iar chiar și un bitrate scăzut sună clar și perfect inteligibil, păstrând fișierele mici. Muzica, mai ales orice are o gamă dinamică largă sau multe instrumente simultane, beneficiază de un bitrate semnificativ mai mare înainte ca artefactele de compresie (o ușoară asprime sau o calitate „subacvatică” în pasajele complexe) să devină audibile.</p>
+          <p>Există un punct real al randamentelor descrescătoare la capătul de sus: peste un anumit bitrate, majoritatea ascultătorilor cu căști sau boxe obișnuite nu mai pot distinge în mod sigur diferența față de sursă, așa că ridicarea numărului și mai sus doar umflă fișierul fără câștig perceptibil de calitate. Dacă nu ești sigur, un bitrate de nivel mediu este alegerea sigură de uz general — vizibil mai bun decât setările vocale cu bitrate scăzut, fără dimensiunea fișierului unei setări de masterizare muzicală la calitate maximă de care nu ai nevoie pentru partajarea de zi cu zi.</p>
+
+          <h3>Când bitrate-ul nu contează deloc</h3>
+          <p>Dacă convertești în WAV în loc de MP3, bitrate-ul este irelevant — WAV este necomprimat, deci nu există nicio setare de bitrate de ales. Bitrate-ul intră în joc doar când sacrifici deliberat din calitate pentru un fișier mai mic, ceea ce este chiar premisa alegerii MP3 în locul WAV.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Extragerea sunetului dintr-un fișier video</summary>
+        <div class="golden-rules-body">
+          <p>Coudio nu convertește doar fișiere audio existente — poate și să extragă pista audio dintr-un video și să-ți dea doar sunetul, eliminând complet imaginea.</p>
+
+          <h3>Motive frecvente pentru care oamenii au nevoie de asta</h3>
+          <p>Transformarea unui video cu o prelegere, o ședință sau un interviu înregistrat într-un fișier audio în stil podcast, mult mai mic și mai ușor de ascultat din mers. Extragerea unei melodii sau a unui clip sonor dintr-un video când ai nevoie de fapt doar de audio. Arhivarea doar a părții audio din vechi imagini video pentru a economisi spațiu. Conversia comentariului vocal al unei înregistrări de ecran într-un fișier audio de sine stătător pentru editare sau transcriere în altă parte.</p>
+
+          <h3>Cum funcționează de fapt</h3>
+          <p>Pune un fișier MP4, WEBM, MOV sau OGV în Coudio la fel cum ai pune un fișier audio — instrumentul detectează că este un video și extrage automat pista audio, eliminând imaginea. Alege MP3 sau WAV ca ieșire, la fel ca pentru un fișier audio obișnuit, și (pentru MP3) alege un bitrate. Videoul în sine nu este recodat și nici modificat; este extrasă doar pista audio existentă.</p>
+
+          <h3>Ce se întâmplă dacă videoul nu are pistă audio</h3>
+          <p>Un video fără sunet deloc — o înregistrare de ecran fără sunet, imagini filmate fără audio — nu are nimic pentru ca Coudio să extragă, deoarece în fișier nu există nicio pistă audio. Nu este ceva ce instrumentul poate ocoli; dacă înregistrarea originală chiar nu are sunet, nu există audio de extras din ea.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să folosești MP3 și când WAV: scenarii din viața reală</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situație</th><th>Cel mai bun format</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situație">Partajarea unei melodii, a unei înregistrări sau a unei note vocale</td><td data-label="Cel mai bun format">MP3</td></tr>
+              <tr><td data-label="Situație">Încărcarea pe o platformă de podcasturi</td><td data-label="Cel mai bun format">MP3, bitrate mediu</td></tr>
+              <tr><td data-label="Situație">Editarea sau mixarea ulterioară a sunetului</td><td data-label="Cel mai bun format">WAV</td></tr>
+              <tr><td data-label="Situație">Arhivarea unei înregistrări master</td><td data-label="Cel mai bun format">WAV</td></tr>
+              <tr><td data-label="Situație">Trimiterea rapidă a unei note vocale prin e-mail</td><td data-label="Cel mai bun format">MP3, bitrate scăzut este suficient pentru vorbire</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Podcasturi, note vocale și vorbire</h3>
+          <p>MP3 la un bitrate modest este standardul aici — dimensiunea fișierului contează mai mult decât la muzică, deoarece episoadele sunt adesea lungi, iar vorbirea tolerează compresia excepțional de bine, fără nicio pierdere audibilă de calitate pentru ascultător.</p>
+
+          <h3>Muzică pe care o partajezi sau o asculți</h3>
+          <p>MP3 la un bitrate mediu-spre-ridicat acoperă aproape orice caz de zi cu zi: trimiterea unei piese unui prieten, încărcarea pe majoritatea platformelor, păstrarea muzicii pe un telefon unde spațiul de stocare se adună. Alege WAV doar dacă ai nevoie în mod specific de originalul necomprimat — pentru editare, sampling sau o arhivă pentru ascultare cu adevărat critică.</p>
+
+          <h3>Audio pe care îl vei edita sau mixa mai târziu</h3>
+          <p>WAV evită adăugarea unei pierderi suplimentare de compresie peste orice editare faci — mixare, tăiere, suprapunere, ajustarea nivelurilor — deoarece în fișier nu există compresie cu pierderi de la început. Convertește în MP3 doar ca ultim pas de export, odată terminată editarea, aceeași regulă care se aplică resalvării repetate a unui JPG.</p>
+
+          <h3>Arhivare pe termen lung</h3>
+          <p>Pentru tot ce vrei să păstrezi la cea mai bună calitate posibilă pe termen nelimitat — o înregistrare originală, o piesă master, un interviu important — WAV este alegerea mai sigură pe termen lung, deoarece nu pierde niciodată detalii suplimentare, indiferent de câte ori este copiat sau salvat.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la conversia audio (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea plângerilor despre calitatea audio duc la o mână de alegeri evitabile.</p>
+
+          <h3>Conversia repetată de la MP3 la MP3</h3>
+          <p>Ca la resalvarea unui JPG, recodarea unui MP3 deja comprimat tot în MP3 pierde puțin mai multe detalii de fiecare dată — a doua trecere de compresie are mai puține informații originale cu care să lucreze decât prima. Când este posibil, păstrează și editează dintr-o sursă fără pierderi (WAV) și exportă în MP3 o singură dată, la sfârșit.</p>
+
+          <h3>Folosirea unui bitrate care nu se potrivește cu conținutul</h3>
+          <p>Un bitrate mic, perfect pentru voce, va suna vizibil comprimat pe muzică cu un mix instrumental complet, în timp ce un bitrate maxim pe o simplă notă vocală doar risipește spațiu fără niciun beneficiu audibil. Potrivește bitrate-ul cu ceea ce este de fapt în înregistrare, nu cu un singur număr folosit pentru orice.</p>
+
+          <h3>Neverificarea existenței unei piste audio înainte de extragere</h3>
+          <p>Încercarea de a extrage sunetul dintr-un video înregistrat fără sunet sau din care sunetul a fost eliminat mai devreme, într-un alt pas, va returna un rezultat gol — nu există nimic de extras. Merită o verificare rapidă (sau o ascultare rapidă a videoului original) înainte să presupui că extragerea a eșuat din partea Coudio, nu că sursa pur și simplu nu are sunet.</p>
+
+          <h3>Ignorarea dimensiunii fișierului pentru înregistrări lungi</h3>
+          <p>O înregistrare lungă a unui curs sau a unei întâlniri exportată ca WAV sau la un bitrate MP3 inutil de mare poate ajunge la o dimensiune incomodă pentru e-mail sau încărcare. Mai ales pentru conținut vorbit lung, un bitrate MP3 modest păstrează fișierul gestionabil, fără pierderi reale de inteligibilitate.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="codify">
+      <details class="golden-rules-article">
+        <summary>1. De ce contează capturile de ecran cu cod și cum să le faci ușor de citit</summary>
+        <div class="golden-rules-body">
+          <p>Un snippet de cod în text simplu, lipit într-un chat, un slide sau o postare socială, pierde tot ce face codul ușor de citit dintr-o privire — fără culori de sintaxă, fără spațiere consecventă, adesea fără ruperi de rând păstrate deloc. O captură de ecran stilizată rezolvă asta, dar numai dacă este lizibilă la dimensiunea la care va fi văzută.</p>
+
+          <h3>De ce evidențierea sintaxei nu este doar decor</h3>
+          <p>Codarea cu culori a cuvintelor-cheie, a șirurilor, a comentariilor și a numelor de funcții nu este cosmetică — este un ajutor real la citire. Dezvoltatorii cu experiență scanează codul evidențiat după formă și culoare înainte să-l citească cuvânt cu cuvânt, exact de aceea codul simplu, necolorat, dintr-o captură de ecran sau dintr-o aplicație de mesagerie cu contrast scăzut se citește vizibil mai lent, chiar și pentru cineva care stăpânește limbajul.</p>
+
+          <h3>Păstrarea snippet-ului scurt</h3>
+          <p>O captură de ecran cu cod este făcută pentru a fi citită dintr-o privire, nu derulată — în momentul în care un snippet trebuie micșorat sub o dimensiune confortabilă de citire ca să încapă în cadru, de obicei este semn că fragmentul e prea lung pentru o captură și ar fi mai bine servit ca fișier legat sau gist. Taie doar liniile care susțin ideea; un snippet mai scurt, mai mare și mai lizibil bate aproape întotdeauna unul complet, dar minuscul.</p>
+
+          <h3>Alegerea unei dimensiuni care este cu adevărat lizibilă unde va fi postată</h3>
+          <p>O captură de ecran care arată perfect clar la dimensiune completă pe propriul monitor poate deveni ilizibilă într-o miniatură de chat, într-un tweet încorporat sau într-un slide văzut din spatele unei săli. Dacă știi unde ajunge imaginea, previzualizeaz-o aproximativ la acea dimensiune înainte de finalizare — ce se citește confortabil pe tot ecranul nu se citește mereu confortabil ca miniatură.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Alegerea unei teme: Dracula, VS Code Dark, Monokai sau GitHub Light</summary>
+        <div class="golden-rules-body">
+          <p>Cele patru teme nu sunt doar palete de culori diferite de dragul lor — fiecare provine din (sau urmează îndeaproape) o temă de editor reală, larg folosită, iar alegerea uneia care arată familiar publicului tău poate conta la fel de mult ca alegerea uneia care arată bine.</p>
+
+          <h3>Dracula: contrast mare și caracter distinct</h3>
+          <p>Fundalul violet închis al temei Dracula, cu evidențieri vii în roz, verde și cian, este una dintre cele mai recognoscibile teme de editor din uz astăzi — instant familiară unei mari părți dintre dezvoltatori și suficient de contrastantă ca să rămână lizibilă chiar și micșorată. Este o alegere implicită solidă când nu ești sigur cine se uită sau unde va ajunge imaginea.</p>
+
+          <h3>VS Code Dark: cea mai comună bază</h3>
+          <p>Fiindcă Visual Studio Code este cel mai folosit editor de cod, tema sa închisă implicită este cea pe care cel mai mare număr de privitori o asociază deja cu „cum arată de obicei codul” — o alegere sigură, fără surprize, mai ales pentru un public care probabil include în mod special utilizatori VS Code (adică, statistic, majoritatea dezvoltatorilor).</p>
+
+          <h3>Monokai: caldă și veche de când lumea</h3>
+          <p>Monokai precedă majoritatea temelor mai noi și poartă o paletă caldă, distinctă — nuanțe de măsliniu în fundal, accente portocalii și roz — pe care mulți dezvoltatori care au folosit Sublime Text sau configurări mai vechi o vor recunoaște imediat. Se citește cu un contrast ușor mai blând decât Dracula, ceea ce unii oameni consideră mai odihnitor pentru ochi la vizualizare mai îndelungată.</p>
+
+          <h3>GitHub Light: cea pentru contexte luminoase</h3>
+          <p>Toate cele trei de mai sus sunt teme închise; GitHub Light este singura cu adevărat luminoasă, potrivită cu redarea implicită a codului de pe GitHub. Este alegerea potrivită pentru un slide sau un document altfel luminos, unde un bloc de cod închis ar ieși în evidență ca un dreptunghi supărător și rupt de designul din jur.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Alegerea limbajului și evidențierea corectă a sintaxei</summary>
+        <div class="golden-rules-body">
+          <p>Alegerea limbajului corect nu este doar o etichetă — este ceea ce îi spune evidențiatorului ce cuvinte sunt cuvinte-cheie, care sunt șiruri și care sunt comentarii, deci alegerea corectă (sau greșită) are un efect direct, vizibil asupra rezultatului.</p>
+
+          <h3>Ce se întâmplă dacă alegi limbajul greșit</h3>
+          <p>Evidențierea se face prin potrivirea unor tipare cu regulile de sintaxă ale unui anumit limbaj, deci alegerea celui greșit produce rezultate greșite cu mare încredere, nu o eroare — cuvintele-cheie ale altui limbaj pot să nu fie colorate deloc sau, mai rău, un alt cuvânt este clasificat greșit și colorat ca și cum ar fi cuvânt-cheie. Verifică mereu dublu că limbajul selectat corespunde cu ce este de fapt în casetă, mai ales după ce ai lipit dintr-un șablon sau ai schimbat limbajul în timpul editării.</p>
+
+          <h3>Snippeturi în mai multe limbaje</h3>
+          <p>Un snippet care încorporează un limbaj în altul — SQL într-un șir Python, HTML într-un template literal JavaScript — va fi evidențiat corect doar pentru singurul limbaj selectat; nu există nicio cale de a le evidenția pe ambele deodată într-un singur snippet. Pentru conținut cu adevărat mixt, alege limbajul care alcătuiește cea mai mare parte a snippet-ului sau împarte-l în două capturi separate dacă ambele jumătăți trebuie să se citească clar.</p>
+
+          <h3>Când evidențierea nu contează prea mult</h3>
+          <p>Pentru snippeturi foarte scurte — o singură linie, o valoare de configurare scurtă, o comandă pe o linie — limbajul exact contează mult mai puțin, deoarece conținutul este atât de mic încât un cititor îl poate parcurge corect indiferent de colorare. Contează cel mai mult pentru snippeturi mai lungi, complexe structural, unde culoarea chiar ajută la separarea logicii, a șirurilor și a comentariilor între ele.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Când să folosești o captură de ecran cu cod, un snippet live sau un gist</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situație</th><th>Cea mai bună alegere</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situație">Postare pe rețele sociale</td><td data-label="Cea mai bună alegere">Captură de ecran — majoritatea platformelor nu afișează deloc blocuri de cod</td></tr>
+              <tr><td data-label="Situație">Set de slide-uri sau prezentare</td><td data-label="Cea mai bună alegere">Captură de ecran — aspect consecvent, indiferent de cum e amenajată camera</td></tr>
+              <tr><td data-label="Situație">Chat cu un coleg care o va copia și lipi</td><td data-label="Cea mai bună alegere">Text simplu sau un snippet live — o captură de ecran nu poate fi copiată ca cod</td></tr>
+              <tr><td data-label="Situație">Documentație sau o postare de blog</td><td data-label="Cea mai bună alegere">Un bloc de cod real — căutabil, copiabil, accesibil</td></tr>
+              <tr><td data-label="Situație">Partajarea unui fișier întreg sau a unui exemplu lung</td><td data-label="Cea mai bună alegere">Un link către un gist sau un depozit — o captură de ecran nu se potrivește unei asemenea lungimi</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Rețele sociale și aplicații de chat fără suport pentru cod</h3>
+          <p>Majoritatea platformelor sociale nu au deloc conceptul de bloc de cod formatat — lipește cod brut într-un tweet sau o postare și pierde toată indentarea, rupturile de rând și colorarea, prăbușindu-se adesea într-un zid de text ilizibil. O captură de ecran ocolește complet asta, deoarece este doar o imagine și se afișează identic oriunde se afișează imagini.</p>
+
+          <h3>Când destinatarul chiar are nevoie să folosească codul</h3>
+          <p>O captură de ecran este o imagine — nu poate fi selectată, copiată sau lipită înapoi într-un editor. Dacă persoana căreia i-o trimiți chiar are nevoie să ruleze, să editeze sau să copieze codul (nu doar să se uite la el), textul simplu, un snippet live într-o aplicație de chat care are așa ceva sau un link către un gist o servesc mult mai bine decât o imagine din care ar trebui să retranscrie manual.</p>
+
+          <h3>Documentație și scriere tehnică</h3>
+          <p>Un bloc de cod real, bazat pe text, într-o documentație este căutabil, accesibil pentru cititoarele de ecran și copiabil — lucruri la care o captură de ecran renunță. Capturile de ecran își merită locul în documentație mai ales pentru a arăta ceea ce ele fac bine: o interfață adnotată, un diff evidențiat într-un anumit fel sau cod așa cum apare într-un anumit editor, ca ilustrație, nu pentru ca cititorul să-l copieze.</p>
+
+          <h3>Exemple mai lungi și fișiere întregi</h3>
+          <p>O captură de ecran cu cod funcționează cel mai bine pentru un fragment concentrat, care poate fi citit dintr-o privire sau două — pentru un fișier întreg, un exemplu cu mai multe funcții sau orice ar cere derularea unei imagini înalte, un link către un gist sau un depozit este alegerea mai practică și mai utilă.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Greșeli frecvente la capturile de ecran cu cod (și cum să le eviți)</summary>
+        <div class="golden-rules-body">
+          <p>Majoritatea capturilor de ecran cu cod care ajung greu de citit au una dintre câteva cauze evitabile.</p>
+
+          <h3>Includerea de mult mai mult cod decât cere ideea</h3>
+          <p>O captură de ecran cu 40 de linii de context ca să arate o singură linie relevantă îl obligă pe cititor să caute ceea ce contează. Taie doar liniile care susțin ideea — importurile, codul repetitiv și funcțiile fără legătură pot fi aproape întotdeauna eliminate fără a pierde mesajul.</p>
+
+          <h3>Alegerea limbajului greșit pentru evidențiatorul de sintaxă</h3>
+          <p>O selecție de limbaj rămasă de la un snippet anterior sau alegerea opțiunii cu sunet apropiat în loc de cea exactă produce o evidențiere subtil greșită, ușor de ratat la prima vedere, dar care pare ciudată pentru oricine cunoaște limbajul. Verifică de două ori că limbajul se potrivește înainte de export, mai ales după ce ai lipit un șablon.</p>
+
+          <h3>O temă care nu se potrivește cu locul unde este postată</h3>
+          <p>O captură de ecran cu temă închisă pusă într-un document sau un slide altfel luminos iese în evidență ca un dreptunghi supărător, în loc să se potrivească designului din jur — GitHub Light există tocmai pentru acest caz, așa că merită să treci la el în loc să folosești o temă închisă peste tot din obișnuință.</p>
+
+          <h3>Exportul la o dimensiune prea mică pentru a putea fi citit după partajare</h3>
+          <p>Ce este clar și lizibil la dimensiune completă pe propriul ecran poate deveni ilizibil când este o miniatură într-o aplicație de chat sau o încorporare mică într-o postare socială. Dacă știi unde ajunge, verifică imaginea aproximativ la acea dimensiune de afișare înainte să o consideri gata — un snippet mai scurt, cu text mai mare, comunică adesea mai bine decât unul mai lung, micșorat ca să încapă.</p>
+        </div>
+      </details>
+    </div>
+
+
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
+  </main>
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Companie</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Despre noi"><span class="footer-link-fun">Universul nostru</span><span class="footer-link-plain">Despre noi</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Întrebări frecvente"><span class="footer-link-fun">Deja răspuns</span><span class="footer-link-plain">Întrebări frecvente</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Termenii de utilizare"><span class="footer-link-fun">Manualul galactic</span><span class="footer-link-plain">Termenii de utilizare</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politica de confidențialitate"><span class="footer-link-fun">Protocol extraterestru de confidențialitate</span><span class="footer-link-plain">Politica de confidențialitate</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politica privind cookie-urile"><span class="footer-link-fun">Registrul cookie-urilor</span><span class="footer-link-plain">Politica privind cookie-urile</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primii pași cu</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactează-ne</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Intră pe Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=94" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Întrebări frecvente – BC Tools</title>
+<meta name="description" content="Întrebări frecvente despre BC Tools: instrumente gratuite pentru imagini, în browser, fără server.">
+<link rel="canonical" href="https://bitcrunching.com/ro/faq/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/faq/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/faq/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/faq/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/faq/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/faq/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/faq/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/faq/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/faq/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/faq/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/faq/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/faq/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/faq/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/faq/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/faq/">
+<script src="/shared/i18n/ro.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Întrebări frecvente – BC Tools">
+<meta property="og:description" content="Întrebări frecvente despre BC Tools: instrumente gratuite pentru imagini, în browser, fără server.">
+<meta property="og:url" content="https://bitcrunching.com/ro/faq/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Întrebări frecvente – BC Tools">
+<meta name="twitter:description" content="Întrebări frecvente despre BC Tools: instrumente gratuite pentru imagini, în browser, fără server.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.faq-group-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.hero + .faq-group-wrap{
+  margin-top:0;
+}
+
+.faq-group-wrap:last-child{
+  margin-bottom:56px;
+}
+
+.faq-group-wrap + .ad-slot-banner{
+  margin:3px auto;
+  line-height:0;
+}
+
+.ad-slot-banner + .faq-group-wrap{
+  margin-top:3px;
+}
+
+.faq-term-panel{
+  max-width:772px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+.faq-term-panel-box{
+  border-radius:16px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
+
+html[data-theme="light"] .faq-term-panel-box{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.faq-term-panel-head{
+  display:flex;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.02em;
+  font-size:14px;
+}
+
+html[data-theme="light"] .faq-term-panel-head{
+  border-bottom-color:rgba(29,36,54,.15);
+  color:#1d2436;
+}
+
+.faq-term-prompt{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.01em;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-q{
+  color:#1d2436;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q::before{
+  content:"> ";
+  opacity:.7;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-a{
+  font-family:var(--bc-mono);
+  color:#e5e7eb;
+  opacity:.85;
+  font-size:14px;
+  line-height:1.6;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-a{
+  color:#1d2436;
+  opacity:.8;
+}
+
+@media (max-width:768px){
+  .faq-term-panel-head,
+  .faq-term-panel-box .faq-item-mainpage .faq-q,
+  .faq-term-panel-box .faq-item-mainpage .faq-a{
+    font-size:12px;
+  }
+}
+
+.faq-list-mainpage{
+  max-width:772px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:grid;
+  gap:28px;
+}
+
+.faq-term-panel-box .faq-list-mainpage{
+  max-width:none;
+  margin:0;
+  padding:20px 20px 24px;
+  gap:22px;
+}
+
+.faq-item-mainpage{
+  padding:0;
+}
+
+.faq-item-mainpage .faq-q{
+  font-weight:700;
+  color:var(--text);
+  margin:0 0 8px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.5;
+}
+
+.faq-item-mainpage .faq-a{
+  color:var(--text);
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Folosim cookie-uri. Alege mai jos ce categorii permiți — vezi <a data-goto="cookies">Politica privind cookie-urile</a> pentru detalii.</p>
+  <p class="cookie-banner-text-mobile">Alege ce categorii permiți</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Comută conținutul setărilor cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE-URI_DEV_TOOLS:</span>
+    </span>
+    <span>Alege ce categorii permiți</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mai multe despre cookie-urile necesare">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necesare (mereu active)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Acestea păstrează esențialul funcțional — își amintesc alegerea ta privind cookie-urile, limba și tema deschisă/închisă. Nu pot fi dezactivate și, ca tot restul de pe acest site, nu îți părăsesc niciodată dispozitivul.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mai multe despre cookie-urile de analiză">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analiză - Pentru confidențialitate deplină, păstreaz-o dezactivată.</span><span class="cookie-label-docked">Analiză (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Acest lucru ne permite să îmbunătățim experiența utilizatorului primind date valoroase prin (Google Analytics) despre cum navighează utilizatorii prin site-ul nostru - Dacă vrei să rămâi complet anonim, îți recomandăm să dezactivezi această opțiune.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mai multe despre cookie-urile de publicitate">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicitate (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Folosit de Google AdSense pentru a afișa reclame. În prezent dezactivat pe tot site-ul în timp ce așteptăm aprobarea AdSense, deci acest comutator nu are încă niciun efect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Acceptă tot</button>
+    <button type="button" id="cookieBannerSave">Confirmă alegerile</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Sigla BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Comută între modul deschis și închis" title="Comută între modul deschis și închis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partajează" title="Partajează">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 3L9.5 14.5"></path>
+          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiază linkul</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mai multe opțiuni de partajare"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Înapoi la Creative Hub" title="Înapoi la Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Deja răspuns</h1>
+    <p class="lead page-alias">Cunoscută pe Pământ și ca pagina Întrebări frecvente.</p>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>ÎNTREBĂRI_GENERALE</div>
+          <div class="faq-list-mainpage">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Stocați fișierele mele pe un server?</p>
+              <p class="faq-a">Nu. Fiecare instrument rulează în întregime în browserul tău. Fișierele tale sunt procesate local, pe dispozitivul tău, și nu sunt niciodată încărcate nicăieri.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Funcționează BC Tools pe mobil?</p>
+              <p class="faq-a">Da, fiecare instrument funcționează în browsere de mobil și de desktop, fără nimic de instalat.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Există scurtături de la tastatură?</p>
+              <p class="faq-a">Da. (A) adaugă fișiere, (D) descarcă (sau convertește, sau continuă de unde ai rămas) și (Esc) închide orice meniu deschis. În Context, (T) adaugă text, (S) deschide Signature, (H) deschide formele, (R) redenumește fișierul, iar (B), (I), (U) stilizează textul. Congify are (T), (B), (I) și (U) pentru subtitrări. Scurtăturile sunt suspendate cât timp scrii într-un câmp de text.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Cum funcționează „Continuă de unde ai rămas”?</p>
+              <p class="faq-a">Majoritatea instrumentelor îți salvează local munca curentă pe măsură ce lucrezi — IndexedDB pentru date de dimensiunea fișierelor (imaginile, PDF-urile, codul tău), localStorage pentru preferințe mici (temă, limbă). Nu îți părăsește niciodată dispozitivul.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ce este Sectorul 7G?</p>
+              <p class="faq-a">Clasificat. Natura sa reală este restricționată pentru accesul oamenilor până când vom fi pregătiți, a spus el.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONVERT_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage convert">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Voi pierde din calitatea imaginii la conversie?</p>
+              <p class="faq-a">Conversia în JPG sau WEBP aplică o compresie ușoară cu pierderi. Conversia în PNG este fără pierderi.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Pot converti mai multe imagini deodată?</p>
+              <p class="faq-a">Da. Cu 5 imagini sau mai puține, fiecare se descarcă separat. Între 6 și 20 poți alege fișiere separate sau un singur ZIP. Peste 20, totul se descarcă împreună într-un singur ZIP — la acea scară nu există opțiunea fișierelor separate.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Este WEBP mai bun decât JPG?</p>
+              <p class="faq-a">WEBP atinge de obicei o dimensiune mai mică a fișierului la calitate comparabilă, dar JPG are suport mai larg în aplicațiile mai vechi.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Pot converti fotografii HEIC de pe iPhone?</p>
+              <p class="faq-a">Da. Pune o fotografie .HEIC sau .HEIF și alege JPG, PNG sau WEBP — Convert o decodează în întregime în browser, fără aplicație sau încărcare.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMPRESS_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage compress">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Cât se va micșora imaginea?</p>
+              <p class="faq-a">Depinde de imagine și de nivelul ales, dar de obicei este o reducere de 30–80% a dimensiunii fișierului original.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Va pierde imaginea din calitate?</p>
+              <p class="faq-a">Ușor, în funcție de nivelul ales. Nivelul Low aproape că nu are pierdere vizibilă; nivelul High oferă economii mai mari, în schimbul calității.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Acceptați și fișiere PNG?</p>
+              <p class="faq-a">Da. Fișierele PNG sunt convertite în JPG pentru o compresie mai bună, ceea ce le reduce semnificativ dimensiunea.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMBINE_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage combine">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Contează ordinea fișierelor?</p>
+              <p class="faq-a">Da. Paginile sunt combinate exact în ordinea afișată în listă, așa că trage fișierele în ordinea dorită înainte de combinare.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Există o limită a numărului de PDF-uri pe care le pot combina?</p>
+              <p class="faq-a">Nu există o limită strictă, deși fișierele foarte mari pot dura puțin mai mult, deoarece totul este procesat în browserul tău.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Păstrați fișierele mele?</p>
+              <p class="faq-a">Nu. Toată procesarea se întâmplă local în browserul tău, folosind API-ul File și biblioteci JavaScript (pdf-lib și pdf.js) — fișierele tale nu sunt niciodată încărcate pe un server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CLEANLY_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage cleanly">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ce metadate găsește acest instrument?</p>
+              <p class="faq-a">Locația GPS, marca și modelul camerei, data și ora la care a fost făcută fotografia și orice software de editare înregistrat în fișier — dacă există.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Eliminarea metadatelor reduce calitatea imaginii?</p>
+              <p class="faq-a">Nu. Imaginea în sine este recodată la aceeași rezoluție și la o calitate aproape originală — doar metadatele ascunse sunt eliminate.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Păstrați fotografiile mele sau metadatele pe care le găsiți?</p>
+              <p class="faq-a">Nu. Totul se întâmplă local în browserul tău, folosind API-ul File și biblioteci JavaScript (exif-js) — fotografiile tale și metadatele lor nu sunt niciodată încărcate pe un server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONTEXT_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage context">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Pot edita textul după ce l-am adăugat în PDF?</p>
+              <p class="faq-a">Da. Trage textul pentru a-l repoziționa sau folosește bara de instrumente pentru a-i schimba culoarea, dimensiunea și stilul în orice moment înainte de descărcare.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Salvează acest instrument PDF-ul meu undeva?</p>
+              <p class="faq-a">Nu. Totul se întâmplă local în browserul tău, folosind API-ul File și biblioteci JavaScript (pdf-lib și pdf.js) — PDF-ul tău și orice text adaugi nu sunt niciodată încărcate pe un server.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Pot folosi Context pe telefon?</p>
+              <p class="faq-a">Da. Context are un editor mobil dedicat, pe tot ecranul, cu zoom prin ciupire, așa că adăugarea de text funcționează la fel de bine pe telefon ca pe desktop.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONGIFY_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage congify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ce poate converti Congify?</p>
+              <p class="faq-a">Transformă un clip video într-un GIF. Taie intervalul dorit, apoi alege o rată de cadre (5, 10, 15 sau 20 fps) și o dimensiune înainte de conversie.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">De ce contează atât de mult rata de cadre pentru dimensiunea fișierului?</p>
+              <p class="faq-a">Fiecare cadru în plus este o imagine completă adăugată în fișier, așa că rata de cadre este cea mai mare pârghie asupra dimensiunii fișierului — 10 fps este o valoare implicită bună pentru majoritatea clipurilor.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Păstrați videoclipul meu?</p>
+              <p class="faq-a">Nu. Totul se întâmplă local în browserul tău — videoclipul tău și GIF-ul pe care îl produce nu sunt niciodată încărcate pe un server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COUDIO_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage coudio">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ce formate audio acceptă Coudio?</p>
+              <p class="faq-a">Conversia între MP3 și WAV. MP3 este mai mic și rulează peste tot; WAV este necomprimat și mai potrivit pentru editare ulterioară.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Pot converti mai multe fișiere audio deodată?</p>
+              <p class="faq-a">Da. Fiecare fișier pe care îl încarci primește propriul rând, cu propriile butoane de conversie și descărcare, așa că poți lucra independent cu mai multe fișiere.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Păstrați fișierele mele audio?</p>
+              <p class="faq-a">Nu. Totul se întâmplă local în browserul tău — sunetul tău nu este niciodată încărcat pe un server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODIFY_ÎNTREBĂRI</div>
+          <div class="faq-list-mainpage codify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ce produce de fapt Codify?</p>
+              <p class="faq-a">O captură de ecran stilizată, cu sintaxă evidențiată, a unui snippet de cod, exportată ca PNG — alege un limbaj și o temă înainte de export.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">De ce contează evidențierea sintaxei într-o captură de ecran?</p>
+              <p class="faq-a">Este un ajutor real la citire, nu decor — cuvintele-cheie, șirurile și comentariile codate cu culori te lasă să scanezi codul după formă și culoare înainte să-l citești cuvânt cu cuvânt.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Păstrați codul meu?</p>
+              <p class="faq-a">Nu. Totul se întâmplă local în browserul tău — codul pe care îl scrii nu este niciodată încărcat pe un server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012"></ins>
+  </div>
+
+
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Companie</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Despre noi"><span class="footer-link-fun">Universul nostru</span><span class="footer-link-plain">Despre noi</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Întrebări frecvente"><span class="footer-link-fun">Deja răspuns</span><span class="footer-link-plain">Întrebări frecvente</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Termenii de utilizare"><span class="footer-link-fun">Manualul galactic</span><span class="footer-link-plain">Termenii de utilizare</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politica de confidențialitate"><span class="footer-link-fun">Protocol extraterestru de confidențialitate</span><span class="footer-link-plain">Politica de confidențialitate</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politica privind cookie-urile"><span class="footer-link-fun">Registrul cookie-urilor</span><span class="footer-link-plain">Politica privind cookie-urile</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primii pași cu</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactează-ne</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Intră pe Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=94" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>
