@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ – BC Tools</title>
+<meta name="description" content="Häufig gestellte Fragen zu BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server.">
+<link rel="canonical" href="https://bitcrunching.com/de/faq/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/faq/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/faq/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/faq/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/faq/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/faq/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/faq/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/faq/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/faq/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/faq/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/faq/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/faq/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/faq/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/faq/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/faq/">
+<script src="/shared/i18n/de.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="FAQ – BC Tools">
+<meta property="og:description" content="Häufig gestellte Fragen zu BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server.">
+<meta property="og:url" content="https://bitcrunching.com/de/faq/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FAQ – BC Tools">
+<meta name="twitter:description" content="Häufig gestellte Fragen zu BC Tools: kostenlose Bild-Tools im Browser, ganz ohne Server.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+.faq-group-wrap{
+  position:relative;
+  margin-top:56px;
+}
+
+.hero + .faq-group-wrap{
+  margin-top:0;
+}
+
+.faq-group-wrap:last-child{
+  margin-bottom:56px;
+}
+
+.faq-group-wrap + .ad-slot-banner{
+  margin:3px auto;
+  line-height:0;
+}
+
+.ad-slot-banner + .faq-group-wrap{
+  margin-top:3px;
+}
+
+.faq-term-panel{
+  max-width:772px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+.faq-term-panel-box{
+  border-radius:16px;
+  background:#1d2436;
+  border:1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
+
+html[data-theme="light"] .faq-term-panel-box{
+  background:#e4e9f5;
+  border-color:rgba(29,36,54,.3);
+}
+
+.faq-term-panel-head{
+  display:flex;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.02em;
+  font-size:14px;
+}
+
+html[data-theme="light"] .faq-term-panel-head{
+  border-bottom-color:rgba(29,36,54,.15);
+  color:#1d2436;
+}
+
+.faq-term-prompt{
+  opacity:.7;
+  margin-right:6px;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q{
+  font-family:var(--bc-mono);
+  font-weight:700;
+  letter-spacing:.01em;
+  color:#e5e7eb;
+  font-size:14px;
+  line-height:1.5;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-q{
+  color:#1d2436;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-q::before{
+  content:"> ";
+  opacity:.7;
+}
+
+.faq-term-panel-box .faq-item-mainpage .faq-a{
+  font-family:var(--bc-mono);
+  color:#e5e7eb;
+  opacity:.85;
+  font-size:14px;
+  line-height:1.6;
+}
+
+html[data-theme="light"] .faq-term-panel-box .faq-item-mainpage .faq-a{
+  color:#1d2436;
+  opacity:.8;
+}
+
+@media (max-width:768px){
+  .faq-term-panel-head,
+  .faq-term-panel-box .faq-item-mainpage .faq-q,
+  .faq-term-panel-box .faq-item-mainpage .faq-a{
+    font-size:12px;
+  }
+}
+
+.faq-list-mainpage{
+  max-width:772px;
+  margin:0 auto 8px;
+  padding:0 24px;
+  display:grid;
+  gap:28px;
+}
+
+.faq-term-panel-box .faq-list-mainpage{
+  max-width:none;
+  margin:0;
+  padding:20px 20px 24px;
+  gap:22px;
+}
+
+.faq-item-mainpage{
+  padding:0;
+}
+
+.faq-item-mainpage .faq-q{
+  font-weight:700;
+  color:var(--text);
+  margin:0 0 8px;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.5;
+}
+
+.faq-item-mainpage .faq-a{
+  color:var(--text);
+  margin:0;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Wir verwenden Cookies. Wähle unten, welche Kategorien du erlauben möchtest – siehe unsere <a data-goto="cookies">Cookie-Richtlinie</a> für Details.</p>
+  <p class="cookie-banner-text-mobile">Wähle, welche Kategorien erlaubt sind</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie-Einstellungen ein- oder ausblenden" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Wähle, welche Kategorien erlaubt sind</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mehr zu notwendigen Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Notwendig (immer aktiv)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Sie halten das Wesentliche am Laufen – sie merken sich deine Cookie-Auswahl, deine Sprache und dein helles/dunkles Design. Sie lassen sich nicht abschalten und verlassen, wie alles auf dieser Seite, nie dein Gerät.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mehr zu Analyse-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse – für volle Privatsphäre deaktiviert lassen.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>So können wir die Nutzererfahrung verbessern, indem wir über (Google Analytics) wertvolle Daten darüber erhalten, wie Nutzer auf unserer Website navigieren – wenn du vollständig anonym bleiben möchtest, empfehlen wir, diese Option zu deaktivieren.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mehr zu Werbe-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Werbung (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Wird von Google AdSense zum Anzeigen von Werbung genutzt. Derzeit auf der gesamten Seite abgeschaltet, bis AdSense uns freigibt – dieser Schalter hat also noch keine Wirkung.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alle akzeptieren</button>
+    <button type="button" id="cookieBannerSave">Auswahl bestätigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC-Tools-Logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Zwischen hellem und dunklem Modus wechseln" title="Zwischen hellem und dunklem Modus wechseln">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Teilen" title="Teilen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopieren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Weitere Optionen zum Teilen"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-Mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zurück zum Creative Hub" title="Zurück zum Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Schon beantwortet</h1>
+    <p class="lead page-alias">Auf der Erde auch als FAQ-Seite bekannt.</p>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>ALLGEMEINE_FAQ</div>
+          <div class="faq-list-mainpage">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Speichert ihr meine Dateien auf einem Server?</p>
+              <p class="faq-a">Nein. Jedes Tool läuft vollständig in deinem Browser. Deine Dateien werden lokal auf deinem Gerät verarbeitet und nirgendwohin hochgeladen.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Funktioniert BC Tools auf dem Handy?</p>
+              <p class="faq-a">Ja, jedes Tool funktioniert in mobilen und Desktop-Browsern, ganz ohne Installation.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Gibt es Tastenkürzel?</p>
+              <p class="faq-a">Ja. (A) fügt Dateien hinzu, (D) lädt herunter (oder konvertiert oder setzt dort fort, wo du aufgehört hast) und (Esc) schließt jedes geöffnete Menü. In Context fügt (T) Text hinzu, (S) öffnet Signature, (H) öffnet Formen, (R) benennt die Datei um und (B), (I), (U) formatieren den Text. Congify hat (T), (B), (I) und (U) für Untertitel. Kürzel sind pausiert, solange du in ein Textfeld tippst.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wie funktioniert „Dort weitermachen, wo du aufgehört hast“?</p>
+              <p class="faq-a">Die meisten Tools speichern deine aktuelle Arbeit lokal beim Arbeiten – IndexedDB für dateigroße Daten (deine Bilder, PDFs, Code), localStorage für kleine Einstellungen (Design, Sprache). Sie verlässt nie dein Gerät.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Was ist Sektor 7G?</p>
+              <p class="faq-a">Geheim. Seine wahre Natur ist für Menschen gesperrt, bis wir bereit sind, sagte er.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000006"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONVERT_FAQ</div>
+          <div class="faq-list-mainpage convert">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Verliere ich beim Konvertieren Bildqualität?</p>
+              <p class="faq-a">Die Konvertierung zu JPG oder WEBP wendet eine leichte verlustbehaftete Komprimierung an. Die Konvertierung zu PNG ist verlustfrei.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kann ich mehrere Bilder gleichzeitig konvertieren?</p>
+              <p class="faq-a">Ja. Bei 5 oder weniger Bildern wird jedes einzeln heruntergeladen. Bei 6 bis 20 kannst du einzelne Dateien oder ein ZIP wählen. Ab 20 wird alles zusammen in einem ZIP heruntergeladen – bei dieser Menge gibt es keine Option für Einzeldateien.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Ist WEBP besser als JPG?</p>
+              <p class="faq-a">WEBP erreicht bei vergleichbarer Qualität meist eine kleinere Dateigröße, aber JPG wird von älteren Anwendungen breiter unterstützt.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kann ich HEIC-Fotos von meinem iPhone konvertieren?</p>
+              <p class="faq-a">Ja. Zieh ein .HEIC- oder .HEIF-Foto hinein und wähle JPG, PNG oder WEBP – Convert dekodiert es vollständig in deinem Browser, ohne App oder Upload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMPRESS_FAQ</div>
+          <div class="faq-list-mainpage compress">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Wie stark wird das Bild schrumpfen?</p>
+              <p class="faq-a">Das hängt vom Bild und der gewählten Stufe ab, aber meist sind es 30–80 % weniger als die ursprüngliche Dateigröße.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Verliert das Bild an Qualität?</p>
+              <p class="faq-a">Leicht, je nach gewählter Stufe. Bei niedriger Stufe gibt es kaum sichtbaren Verlust; hohe Stufe spart mehr auf Kosten der Qualität.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Unterstützt ihr auch PNG-Dateien?</p>
+              <p class="faq-a">Ja. PNG-Dateien werden für eine bessere Komprimierung in JPG umgewandelt, wodurch sich ihre Größe deutlich verringert.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000008"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COMBINE_FAQ</div>
+          <div class="faq-list-mainpage combine">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Spielt die Reihenfolge der Dateien eine Rolle?</p>
+              <p class="faq-a">Ja. Die Seiten werden genau in der Reihenfolge zusammengeführt, die in der Liste steht – zieh die Dateien also vor dem Zusammenführen in die gewünschte Reihenfolge.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Gibt es eine Grenze, wie viele PDFs ich zusammenführen kann?</p>
+              <p class="faq-a">Es gibt keine feste Grenze, allerdings können sehr große Dateien etwas länger dauern, da alles in deinem Browser verarbeitet wird.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Behaltet ihr meine Dateien?</p>
+              <p class="faq-a">Nein. Die gesamte Verarbeitung geschieht lokal in deinem Browser mit der File API und JavaScript-Bibliotheken (pdf-lib und pdf.js) – deine Dateien werden nie auf einen Server hochgeladen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CLEANLY_FAQ</div>
+          <div class="faq-list-mainpage cleanly">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Welche Metadaten findet dieses Tool?</p>
+              <p class="faq-a">GPS-Standort, Kameramarke und -modell, Datum und Uhrzeit der Aufnahme und jede in der Datei vermerkte Bearbeitungssoftware – sofern vorhanden.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Verringert das Entfernen von Metadaten die Bildqualität?</p>
+              <p class="faq-a">Nein. Das Bild selbst wird in derselben Auflösung und nahezu Originalqualität neu kodiert – nur die versteckten Metadaten werden entfernt.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Behaltet ihr meine Fotos oder die gefundenen Metadaten?</p>
+              <p class="faq-a">Nein. Alles geschieht lokal in deinem Browser mit der File API und JavaScript-Bibliotheken (exif-js) – deine Fotos und ihre Metadaten werden nie auf einen Server hochgeladen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONTEXT_FAQ</div>
+          <div class="faq-list-mainpage context">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kann ich den Text bearbeiten, nachdem ich ihn dem PDF hinzugefügt habe?</p>
+              <p class="faq-a">Ja. Zieh deinen Text, um ihn zu verschieben, oder ändere über die Werkzeugleiste jederzeit vor dem Herunterladen Farbe, Größe und Stil.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Speichert dieses Tool mein PDF irgendwo?</p>
+              <p class="faq-a">Nein. Alles geschieht lokal in deinem Browser mit der File API und JavaScript-Bibliotheken (pdf-lib und pdf.js) – dein PDF und der hinzugefügte Text werden nie auf einen Server hochgeladen.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kann ich Context auf meinem Handy nutzen?</p>
+              <p class="faq-a">Ja. Context hat einen eigenen mobilen Vollbild-Editor mit Pinch-Zoom, sodass das Hinzufügen von Text auf dem Handy genauso gut funktioniert wie am Computer.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CONGIFY_FAQ</div>
+          <div class="faq-list-mainpage congify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Was kann Congify konvertieren?</p>
+              <p class="faq-a">Einen Videoclip in ein GIF. Kürze den gewünschten Bereich und wähle dann vor der Konvertierung Bildrate (5, 10, 15 oder 20 fps) und Größe.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Warum spielt die Bildrate für die Dateigröße eine so große Rolle?</p>
+              <p class="faq-a">Jedes zusätzliche Bild ist ein weiteres vollständiges Bild in der Datei, daher ist die Bildrate der größte Hebel für die Dateigröße – 10 fps sind für die meisten Clips ein guter Standard.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Behaltet ihr mein Video?</p>
+              <p class="faq-a">Nein. Alles geschieht lokal in deinem Browser – dein Video und das daraus entstehende GIF werden nie auf einen Server hochgeladen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000010"></ins>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>COUDIO_FAQ</div>
+          <div class="faq-list-mainpage coudio">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Welche Audioformate unterstützt Coudio?</p>
+              <p class="faq-a">Die Konvertierung zwischen MP3 und WAV. MP3 ist kleiner und läuft überall; WAV ist unkomprimiert und eignet sich besser für weitere Bearbeitung.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Kann ich mehr als eine Audiodatei gleichzeitig konvertieren?</p>
+              <p class="faq-a">Ja. Jede geladene Datei erhält eine eigene Zeile mit eigenem Konvertieren- und Herunterladen-Button, sodass du mehrere Dateien unabhängig voneinander bearbeiten kannst.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Behaltet ihr meine Audiodateien?</p>
+              <p class="faq-a">Nein. Alles geschieht lokal in deinem Browser – dein Audio wird nie auf einen Server hochgeladen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-group-wrap">
+    <div class="faq-group-content">
+      <div class="faq-term-panel">
+        <div class="faq-term-panel-box">
+          <div class="faq-term-panel-head"><span class="faq-term-prompt">&gt;</span>CODIFY_FAQ</div>
+          <div class="faq-list-mainpage codify">
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Was erzeugt Codify eigentlich?</p>
+              <p class="faq-a">Einen gestalteten Screenshot eines Code-Snippets mit Syntaxhervorhebung, exportiert als PNG – wähle vor dem Export eine Sprache und ein Design.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Warum ist Syntaxhervorhebung bei einem Screenshot wichtig?</p>
+              <p class="faq-a">Sie ist eine echte Lesehilfe, keine Dekoration – farbig markierte Schlüsselwörter, Strings und Kommentare lassen dich Code nach Form und Farbe überfliegen, bevor du ihn Wort für Wort liest.</p>
+            </div>
+            <div class="faq-item-mainpage">
+              <p class="faq-q">Behaltet ihr meinen Code?</p>
+              <p class="faq-a">Nein. Alles geschieht lokal in deinem Browser – der Code, den du eintippst, wird nie auf einen Server hochgeladen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000012"></ins>
+  </div>
+
+
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Unternehmen</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Über uns"><span class="footer-link-fun">Unser Universum</span><span class="footer-link-plain">Über uns</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Schon beantwortet</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Nutzungsbedingungen"><span class="footer-link-fun">Galaktisches Handbuch</span><span class="footer-link-plain">Nutzungsbedingungen</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Datenschutzerklärung"><span class="footer-link-fun">Außerirdisches Datenschutzprotokoll</span><span class="footer-link-plain">Datenschutzerklärung</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookie-Richtlinie"><span class="footer-link-fun">Cookie-Register</span><span class="footer-link-plain">Cookie-Richtlinie</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Erste Schritte mit</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktiere uns</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Tritt unserem Discord bei</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=95" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

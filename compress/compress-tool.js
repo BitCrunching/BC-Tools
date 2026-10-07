@@ -133,7 +133,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("compress", "cp", [
-    ["WELCOME_TO_COMPRESS", "Compress shrinks your images' file size — pick a level and see the estimated result before committing. Click or drop an image below to get started."],
+    ["WELCOME_TO_COMPRESS", "Compress shrinks your images' file size — pick a level and see the estimated result before committing. Click, drop, or press (A) to add an image to get started."],
     ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows a live estimate of the resulting file size before you commit."],
     ["CHECK_BEFORE_COMPRESSING", "Your files show up below once picked — check them before compressing, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the level guide further down the page — it explains what each level is actually good for."],

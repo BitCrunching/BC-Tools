@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podmínky užívání – BC Tools</title>
+<meta name="description" content="Podmínky užívání BC Tools: bezplatné nástroje pro obrázky v prohlížeči, bez serveru. Přečtěte si, jak služba funguje a co pro vás její používání znamená.">
+<link rel="canonical" href="https://bitcrunching.com/cs/terms/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/terms/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/terms/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/terms/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/terms/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/terms/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/terms/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/terms/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/terms/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/terms/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/terms/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/terms/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/terms/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/terms/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/terms/">
+<script src="/shared/i18n/cs.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Podmínky užívání – BC Tools">
+<meta property="og:description" content="Podmínky užívání BC Tools: bezplatné nástroje pro obrázky v prohlížeči, bez serveru. Přečtěte si, jak služba funguje a co pro vás její používání znamená.">
+<meta property="og:url" content="https://bitcrunching.com/cs/terms/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Podmínky užívání – BC Tools">
+<meta name="twitter:description" content="Podmínky užívání BC Tools: bezplatné nástroje pro obrázky v prohlížeči, bez serveru. Přečtěte si, jak služba funguje a co pro vás její používání znamená.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Používáme cookies. Níže si vyberte, které kategorie povolit — viz naše <a data-goto="cookies">Zásady cookies</a> kde najdete podrobnosti.</p>
+  <p class="cookie-banner-text-mobile">Vyberte, které kategorie povolit</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Zobrazit nebo skrýt nastavení cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Vyberte, které kategorie povolit</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Více o nezbytných cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nezbytné (vždy zapnuto)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Zajišťují základní fungování — pamatují si vaši volbu cookies, jazyk a světlý/tmavý motiv. Nelze je vypnout a stejně jako vše na tomto webu nikdy neopustí vaše zařízení.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Více o analytických cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analytika - Pro plné soukromí ji nechte vypnutou.</span><span class="cookie-label-docked">Analytika (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Díky tomu můžeme zlepšovat uživatelský zážitek na základě cenných dat z (Google Analytics) o tom, jak uživatelé web procházejí. Chcete-li zůstat zcela anonymní, doporučujeme tuto možnost vypnout.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Více o reklamních cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Reklama (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Používá Google AdSense k zobrazování reklam. Na celém webu je momentálně vypnuto, dokud nedostaneme schválení AdSense, takže tento přepínač zatím nic nedělá.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Přijmout vše</button>
+    <button type="button" id="cookieBannerSave">Potvrdit výběr</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Přepnout světlý a tmavý režim" title="Přepnout světlý a tmavý režim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Sdílet" title="Sdílet">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Kopírovat odkaz</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Další možnosti sdílení"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zpět do Creative Hub" title="Zpět do Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Galaktická příručka</h1>
+    <p class="lead page-alias">Na Zemi také známo jako stránka Podmínky užívání.</p>
+  </div>
+  <article class="terms-article">
+    <p class="terms-updated">Naposledy aktualizováno: říjen 2026</p>
+    <p>Vítejte v BC Tools, službě provozované společností BitCrunching („my“, „náš“ nebo „nás“). Přístupem k našim BC Tools a prohlížečovým nástrojům Creative Hub nebo jejich používáním (společně „Služby“) souhlasíte, že vás tyto Podmínky použití zavazují. Pokud s těmito podmínkami nesouhlasíte, Služby nepoužívejte.</p>
+
+    <h2>1. Záruka soukromí &amp; zpracování na zařízení</h2>
+    <p>Naše služby, především nástroje Creative Hub, fungují zcela na straně klienta. To znamená, že veškeré zpracování souborů – včetně převodu obrázků, komprese, slučování souborů a odstraňování metadat – probíhá přímo ve vašem webovém prohlížeči, bez použití serveru.</p>
+    <ul>
+      <li>Vaše soubory se nikdy nenahrávají na naše servery. Neshromažďujeme, neprohlížíme, neukládáme, neprodáváme ani nemáme k dispozici žádný obsah ani soubory, které prostřednictvím našich nástrojů zpracováváte.</li>
+      <li>Vestavěný skener: každý nástroj během zpracování provádí živou kontrolu sítě a zobrazí výsledek přímo v záhlaví nástroje — hledejte řádek „&gt; BC_Tools_bot:“ po použití libovolného nástroje. Pokud narazíte na narušení bezpečnosti, okamžitě nás prosím informujte.</li>
+      <li>Záruka zpracování na zařízení se nevztahuje na tlačítko "Report a bug". Když se rozhodnete nahlásit chybu nebo jakýkoli problém s webem, sdílíte data v rozsahu uvedeném v oddílu 2 Zásad ochrany soukromí.</li>
+    </ul>
+
+    <h2>2. Práva duševního vlastnictví</h2>
+    <p>Veškerý obsah, kód, vlastní styly, struktury rozvržení a grafické prvky na BC Tools jsou výhradním vlastnictvím BitCrunching a jsou chráněny mezinárodními autorskými zákony.</p>
+    <ul>
+      <li>Naše nástroje můžete používat pro osobní i komerční kreativní projekty.</li>
+      <li>Bez výslovného písemného souhlasu nesmíte kopírovat, scrapovat, zrcadlit, zpětně analyzovat ani dále šířit náš zdrojový kód či základní prvky.</li>
+    </ul>
+
+    <h2>3. Jazyk a překlad</h2>
+    <p>Oficiálním a právně závazným jazykem BC Tools je angličtina.</p>
+    <ul>
+      <li><strong>Překlady:</strong> Jakékoli překlady těchto Podmínek, Zásad ochrany soukromí nebo Zásad cookies do jiných jazyků jsou poskytovány výhradně pro vaše pohodlí.</li>
+      <li><strong>Typografické chyby:</strong> Gramatické chyby, drobné nesrovnalosti překladu, typografické chyby nebo administrativní přehlédnutí v jakékoli neanglické verzi nelze použít k zneplatnění těchto Podmínek, změně jejich zamýšleného významu ani jako základ jakýchkoli právních nároků vůči nám.</li>
+      <li><strong>Zdroj pravdy:</strong> V případě jakéhokoli rozporu má vždy přednost anglická verze jako rozhodující právní text.</li>
+      <li><strong>Nahlásit chybu překladu:</strong> Chceme, aby naše nástroje byly přístupné všem. Pokud ve svém rodném jazyce zahlédnete překlep, nešikovný překlad nebo gramatickou chybu, pomozte nám se zlepšit jejím nahlášením.</li>
+    </ul>
+
+    <h2>4. Pravidla přijatelného užívání</h2>
+    <p>Souhlasíte s tím, že Služby budete používat pouze k zákonným účelům. Je přísně zakázáno používat automatizované boty, skripty nebo scrapery k zahlcení vizuálního prostředí nebo se pokoušet vložit škodlivý kód do prováděcího rámce webu.</p>
+
+    <h2>5. Vyloučení záruk („tak, jak je“)</h2>
+    <p>BC Tools poskytuje všechny nástroje „tak, jak jsou“ a „jak jsou dostupné“. Neposkytujeme žádné záruky, výslovné ani předpokládané, že zpracování souborů bude zcela bez chyb, kompatibilní s každým typem souboru nebo zařízení, nebo že služba bude zcela nepřerušená. Pokud narazíte na jakýkoli problém, pomozte nám se zlepšit jeho nahlášením.</p>
+    <p>Odstraňování metadat v nástroji Cleanly je skenování s maximální snahou, které hledá běžné vzory (například GPS a štítky fotoaparátu). Nemůže zaručit, že soubor neobsahuje žádná skrytá data, proto vše vysoce citlivé před sdílením zkontrolujte.</p>
+
+    <div class="engine-status-card">
+      <div class="engine-status-body">
+        <div class="engine-status-row">&gt; dev_log: Náš oddaný vývojář pravidelně vydává aktualizace a opravy chyb a o pokroku informuje na Discordu v #Announcements.</div>
+      </div>
+    </div>
+
+    <h2>6. Omezení odpovědnosti</h2>
+    <p>V maximálním rozsahu povoleném zákonem nenese BitCrunching ani jeho tvůrce odpovědnost za jakékoli škody — včetně, bez omezení, ztráty dat, přerušení provozu nebo pádů systému — vzniklé v důsledku používání nebo nemožnosti používat naše nástroje.</p>
+
+    <h2>7. Rozhodné právo</h2>
+    <p>Tyto Podmínky užívání se řídí a vykládají v souladu s právem Nizozemska. Jakékoli právní spory vzniklé na základě těchto podmínek budou řešeny výhradně u příslušných soudů v Nizozemsku.</p>
+  </article>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Společnost</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="O nás"><span class="footer-link-fun">Náš vesmír</span><span class="footer-link-plain">O nás</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Časté dotazy"><span class="footer-link-fun">Už zodpovězeno</span><span class="footer-link-plain">Časté dotazy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Podmínky použití"><span class="footer-link-fun">Galaktická příručka</span><span class="footer-link-plain">Podmínky použití</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Zásady ochrany soukromí"><span class="footer-link-fun">Mimozemský protokol soukromí</span><span class="footer-link-plain">Zásady ochrany soukromí</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Zásady cookies"><span class="footer-link-fun">Registr cookies</span><span class="footer-link-plain">Zásady cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Začínáme s</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktujte nás</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Připojte se na náš Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=95" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

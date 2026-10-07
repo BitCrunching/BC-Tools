@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Termenii de utilizare – BC Tools</title>
+<meta name="description" content="Termenii de utilizare pentru BC Tools: instrumente gratuite pentru imagini, în browser, fără server. Citește cum funcționează serviciul și ce înseamnă utilizarea lui pentru tine.">
+<link rel="canonical" href="https://bitcrunching.com/ro/terms/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/terms/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/terms/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/terms/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/terms/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/terms/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/terms/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/terms/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/terms/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/terms/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/terms/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/terms/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/terms/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/terms/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/terms/">
+<script src="/shared/i18n/ro.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Termenii de utilizare – BC Tools">
+<meta property="og:description" content="Termenii de utilizare pentru BC Tools: instrumente gratuite pentru imagini, în browser, fără server. Citește cum funcționează serviciul și ce înseamnă utilizarea lui pentru tine.">
+<meta property="og:url" content="https://bitcrunching.com/ro/terms/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Termenii de utilizare – BC Tools">
+<meta name="twitter:description" content="Termenii de utilizare pentru BC Tools: instrumente gratuite pentru imagini, în browser, fără server. Citește cum funcționează serviciul și ce înseamnă utilizarea lui pentru tine.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Folosim cookie-uri. Alege mai jos ce categorii permiți — vezi <a data-goto="cookies">Politica privind cookie-urile</a> pentru detalii.</p>
+  <p class="cookie-banner-text-mobile">Alege ce categorii permiți</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Comută conținutul setărilor cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE-URI_DEV_TOOLS:</span>
+    </span>
+    <span>Alege ce categorii permiți</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mai multe despre cookie-urile necesare">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necesare (mereu active)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Acestea păstrează esențialul funcțional — își amintesc alegerea ta privind cookie-urile, limba și tema deschisă/închisă. Nu pot fi dezactivate și, ca tot restul de pe acest site, nu îți părăsesc niciodată dispozitivul.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mai multe despre cookie-urile de analiză">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analiză - Pentru confidențialitate deplină, păstreaz-o dezactivată.</span><span class="cookie-label-docked">Analiză (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Acest lucru ne permite să îmbunătățim experiența utilizatorului primind date valoroase prin (Google Analytics) despre cum navighează utilizatorii prin site-ul nostru - Dacă vrei să rămâi complet anonim, îți recomandăm să dezactivezi această opțiune.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mai multe despre cookie-urile de publicitate">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicitate (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Folosit de Google AdSense pentru a afișa reclame. În prezent dezactivat pe tot site-ul în timp ce așteptăm aprobarea AdSense, deci acest comutator nu are încă niciun efect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Acceptă tot</button>
+    <button type="button" id="cookieBannerSave">Confirmă alegerile</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Sigla BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Comută între modul deschis și închis" title="Comută între modul deschis și închis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partajează" title="Partajează">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiază linkul</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mai multe opțiuni de partajare"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Înapoi la Creative Hub" title="Înapoi la Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Manualul galactic</h1>
+    <p class="lead page-alias">Cunoscută pe Pământ și ca pagina Termenii de utilizare.</p>
+  </div>
+  <article class="terms-article">
+    <p class="terms-updated">Ultima actualizare: octombrie 2026</p>
+    <p>Bun venit la BC Tools, un serviciu operat de BitCrunching („noi”, „al nostru” sau „nouă”). Prin accesarea sau utilizarea BC Tools și a utilitarelor Creative Hub bazate pe browser (denumite împreună „Serviciile”), ești de acord să respecți acești Termeni de utilizare. Dacă nu ești de acord cu acești termeni, te rugăm să nu folosești Serviciile noastre.</p>
+
+    <h2>1. Garanția confidențialității &amp; procesarea pe dispozitiv</h2>
+    <p>Serviciile noastre, în primul rând instrumentele Creative Hub, funcționează în întregime pe partea clientului. Asta înseamnă că toată procesarea fișierelor — inclusiv conversia imaginilor, compresia, combinarea fișierelor și eliminarea metadatelor — are loc direct în browserul tău, fără server.</p>
+    <ul>
+      <li>Fișierele tale nu sunt niciodată încărcate pe serverele noastre. Nu colectăm, nu vedem, nu stocăm, nu vindem și nu deținem niciun conținut sau fișier pe care îl procesezi prin instrumentele noastre.</li>
+      <li>Scanner integrat: fiecare instrument rulează o verificare de rețea în timp real în timpul procesării și afișează rezultatul chiar în antetul instrumentului — caută linia "&gt; BC_Tools_bot:" după ce folosești orice instrument. Te rugăm să ne raportezi imediat dacă întâlnești o încălcare a securității.</li>
+      <li>Garanția pe dispozitiv nu se aplică butonului "Report a bug". Când decizi să raportezi o eroare sau orice problemă a site-ului, partajezi date așa cum se arată în secțiunea 2 a Politicii de confidențialitate.</li>
+    </ul>
+
+    <h2>2. Drepturi de proprietate intelectuală</h2>
+    <p>Tot conținutul, codul, stilizarea personalizată, structurile de aspect și elementele grafice prezentate pe BC Tools sunt proprietatea exclusivă a BitCrunching și sunt protejate de legile internaționale privind drepturile de autor.</p>
+    <ul>
+      <li>Poți folosi instrumentele noastre pentru proiecte creative personale sau comerciale.</li>
+      <li>Nu ai voie să copiezi, să extragi, să oglindești, să dezasamblezi (reverse-engineering) sau să redistribui codul sursă sau resursele noastre de bază fără permisiune scrisă explicită.</li>
+    </ul>
+
+    <h2>3. Limbă &amp; traducere</h2>
+    <p>Limba oficială și obligatorie din punct de vedere juridic a BC Tools este engleza.</p>
+    <ul>
+      <li><strong>Traduceri:</strong> Orice traducere a acestor Termeni, a Politicii de confidențialitate sau a Politicii privind cookie-urile în alte limbi este oferită exclusiv pentru comoditatea ta.</li>
+      <li><strong>Erori de tipar:</strong> Greșelile gramaticale, discrepanțele minore de traducere, erorile tipografice sau scăpările de redactare din orice versiune non-engleză nu vor fi folosite pentru a invalida acești Termeni, a le modifica sensul intenționat sau a constitui baza unor pretenții juridice împotriva noastră.</li>
+      <li><strong>Sursa de adevăr:</strong> În cazul oricărui conflict, versiunea în limba engleză prevalează întotdeauna ca text juridic definitiv.</li>
+      <li><strong>Raportează o eroare de traducere:</strong> Vrem ca instrumentele noastre să fie accesibile tuturor. Dacă observi o greșeală de scriere, o traducere stângace sau o greșeală gramaticală în limba ta maternă, te rugăm să ne ajuți să ne îmbunătățim raportând-o.</li>
+    </ul>
+
+    <h2>4. Reguli de utilizare acceptabilă</h2>
+    <p>Ești de acord să folosești Serviciile noastre doar în scopuri legale. Îți este strict interzis să folosești roboți automatizați, scripturi sau instrumente de extragere de date pentru a copleși mediul vizual sau să încerci să injectezi cod rău intenționat în cadrul de execuție al site-ului.</p>
+
+    <h2>5. Declinarea garanțiilor ("ca atare")</h2>
+    <p>BC Tools oferă toate utilitarele „ca atare” și „în funcție de disponibilitate”. Nu oferim nicio garanție, expresă sau implicită, că procesarea fișierelor va fi complet lipsită de erori, compatibilă cu fiecare tip de fișier și/sau dispozitiv sau că serviciul va fi complet neîntrerupt. Dacă întâmpini probleme, te rugăm să ne ajuți să ne îmbunătățim raportându-le.</p>
+    <p>Eliminarea metadatelor din Cleanly este o scanare depusă cu cea mai bună intenție pentru modele comune (precum etichetele GPS și cele ale camerei). Nu poate garanta că un fișier nu are date ascunse, așa că verifică tot ce este foarte sensibil înainte de a-l partaja.</p>
+
+    <div class="engine-status-card">
+      <div class="engine-status-body">
+        <div class="engine-status-row">&gt; dev_log: Dezvoltatorul nostru devotat face actualizări și remedieri de erori în mod regulat și raportează progresul pe Discord #Announcements.</div>
+      </div>
+    </div>
+
+    <h2>6. Limitarea răspunderii</h2>
+    <p>În măsura maximă permisă de lege, BitCrunching și creatorul său nu vor fi trași la răspundere pentru niciun prejudiciu — inclusiv, fără limitare, pierderi de date, întreruperea activității sau blocări de sistem — rezultat din utilizarea sau imposibilitatea de a utiliza instrumentele noastre.</p>
+
+    <h2>7. Legea aplicabilă</h2>
+    <p>Acești Termeni de utilizare sunt guvernați și interpretați în conformitate cu legile Țărilor de Jos. Orice litigiu juridic care decurge din acești termeni va fi soluționat exclusiv de instanțele competente din Țările de Jos.</p>
+  </article>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Companie</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Despre noi"><span class="footer-link-fun">Universul nostru</span><span class="footer-link-plain">Despre noi</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Întrebări frecvente"><span class="footer-link-fun">Deja răspuns</span><span class="footer-link-plain">Întrebări frecvente</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Termenii de utilizare"><span class="footer-link-fun">Manualul galactic</span><span class="footer-link-plain">Termenii de utilizare</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politica de confidențialitate"><span class="footer-link-fun">Protocol extraterestru de confidențialitate</span><span class="footer-link-plain">Politica de confidențialitate</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politica privind cookie-urile"><span class="footer-link-fun">Registrul cookie-urilor</span><span class="footer-link-plain">Politica privind cookie-urile</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primii pași cu</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactează-ne</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Intră pe Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=95" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+</body>
+</html>

@@ -104,7 +104,7 @@
      localStorage under one key shared by this page and all 16 pair
      pages, so closing it anywhere means it stays closed everywhere. */
   bcSetupHelpBanner("convert", "cv", [
-    ["WELCOME_TO_CONVERT", "Convert switches images and PDFs between formats — JPG, PNG, WEBP, HEIC, PDF. Click or drop a file below to get started."],
+    ["WELCOME_TO_CONVERT", "Convert switches images and PDFs between formats — JPG, PNG, WEBP, HEIC, PDF. Click, drop, or press (A) to add a file to get started."],
     ["PICK_YOUR_FORMATS", "Once a file's in, we select the Input format for you — you just choose what you want as Output."],
     ["CHECK_BEFORE_CONVERTING", "Your files show up below once picked — check them before converting, and remove any you don't need."],
     ["NOT_SURE_WHAT_TO_PICK", "Scroll down to the format guide further down the page — it explains what each format (JPG, PNG, WEBP, HEIC, PDF) is actually good for."],
@@ -225,10 +225,12 @@
     const slug = entry && FORMAT_TO_SLUG[src] && FORMAT_TO_SLUG[dst]
       ? FORMAT_TO_SLUG[src] + "-to-" + FORMAT_TO_SLUG[dst]
       : null;
-    const path = slug ? "/convert/" + slug + "/" : "/convert/";
+    const translated = !!window.BC_LANG;
+    const path = slug && !translated ? "/convert/" + slug + "/" : bcLangPath("/convert/");
     if (location.pathname !== path){
       history.replaceState(null, "", path);
     }
+    if (translated) return;
     document.title = entry ? "Convert " + FORMAT_TO_SLUG[src].toUpperCase() + " to " + FORMAT_TO_SLUG[dst].toUpperCase() + " – Free Online Converter – BC Tools" : baseTitle;
   }
 

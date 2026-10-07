@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zlatá pravidla – BC Tools</title>
+<meta name="description" content="Zlatá pravidla pro výběr formátů obrázků, komprese a nastavení v BC Tools.">
+<link rel="canonical" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/golden-rules/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/golden-rules/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/golden-rules/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/golden-rules/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/golden-rules/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/golden-rules/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/golden-rules/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/golden-rules/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/golden-rules/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/golden-rules/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/golden-rules/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
+<script src="/shared/i18n/cs.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Zlatá pravidla – BC Tools">
+<meta property="og:description" content="Zlatá pravidla pro výběr formátů obrázků, komprese a nastavení v BC Tools.">
+<meta property="og:url" content="https://bitcrunching.com/cs/golden-rules/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Zlatá pravidla – BC Tools">
+<meta name="twitter:description" content="Zlatá pravidla pro výběr formátů obrázků, komprese a nastavení v BC Tools.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+/* ===== GOLDEN RULES ===== */
+/* Wheel-picker switcher: the "active" slot is a fixed position — dead
+   center of the row — and scrolling brings a different tool into that
+   slot rather than moving the highlight to wherever a pill happens to
+   sit. Two invisible spacer elements (below) padding the start/end of
+   the flex row let the FIRST and LAST real pills also reach center,
+   each sized calc(50% - half a pill's width) so the math holds at any
+   container width without JS measuring anything. Pills are a fixed
+   PILL_WIDTH (not auto-sized to their label) specifically so that
+   spacer formula is a plain CSS calc() instead of something JS has to
+   compute per-pill. scroll-snap-type:mandatory (not proximity) means a
+   scroll gesture always comes to rest with some pill exactly centered,
+   never half-settled between two. golden-rules-tool.js owns *which*
+   pill counts as centered (a scroll-driven proximity check — see its
+   own comment) and applies .active accordingly; this file only styles
+   the result. */
+.golden-rules-switcher{
+  display:flex;
+  align-items:center;
+  width:100%;
+  max-width:400px;
+  margin:32px auto 48px;
+  padding:6px 0;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.05);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+  /* Fades whatever pill currently sits at the scrollable edge, instead
+     of a hard clip — reads as "more this way" regardless of which tool
+     that happens to be as the row scrolls. A wider fade zone than the
+     first pass (was 28px) so less of a neighbor's label is legible
+     before it dissolves — most of the pill can still be scrolled to,
+     it just shouldn't read as plainly at rest. */
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 60px, #000 calc(100% - 60px), transparent);
+}
+.golden-rules-switcher::-webkit-scrollbar{ display:none; }
+
+html[data-theme="dark"] .golden-rules-switcher{
+  background:rgba(255,255,255,.05);
+}
+
+.golden-rules-switcher-spacer{
+  flex:0 0 auto;
+  width:calc(50% - 80px);
+  scroll-snap-align:none;
+}
+
+.golden-rules-tool-btn{
+  flex:0 0 auto;
+  width:160px;
+  scroll-snap-align:center;
+  /* Forces the browser to stop at every pill in turn during a fast
+     drag/momentum scroll instead of letting it fly past several to
+     wherever it happens to run out of momentum — the CSS half of the
+     "magnetic" feel (the wheel/trackpad step-one-at-a-time handling in
+     golden-rules-tool.js is the other half, for input that isn't a
+     native touch drag). */
+  scroll-snap-stop:always;
+  padding:12px 8px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  font-family:inherit;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+
+.golden-rules-tool-btn:hover{
+  border-color:var(--border-strong);
+}
+
+/* Each tool's active pill uses its own site-wide brand color (see
+   CLAUDE.md's "Tool banner color" palette) instead of one fixed blue.
+   Text stays on the shared var(--text) token (the base rule above
+   already sets it) instead of a fixed override, so it follows the
+   theme toggle the same way every other button's label does — dark
+   text in light mode, white in dark mode — rather than being frozen
+   at one appearance regardless of theme. */
+.golden-rules-tool-btn[data-tool="convert"].active{ background:#B84CFF; border-color:#B84CFF; }
+.golden-rules-tool-btn[data-tool="compress"].active{ background:#3FBFE8; border-color:#3FBFE8; }
+.golden-rules-tool-btn[data-tool="combine"].active{ background:#FF6961; border-color:#FF6961; }
+.golden-rules-tool-btn[data-tool="exif"].active{ background:#7ED321; border-color:#7ED321; }
+/* Context's pale yellow is the one color here where the theme-follow
+   text still fails contrast in dark mode (checked live: white-on-yellow
+   was genuinely hard to read, unlike every other color, which held up
+   fine bold at this size) — same "active state needs its own contrast
+   check" exception CLAUDE.md documents for Compress's format picker. */
+.golden-rules-tool-btn[data-tool="context"].active{ background:#F6D44A; border-color:#F6D44A; color:#020617; }
+.golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
+.golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
+.golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+
+.ad-slot-incontent{
+  margin:32px auto;
+}
+
+.ad-slot-banner{
+  margin:24px auto;
+}
+
+.ad-rail{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:160px;
+  max-height:80vh;
+  overflow:hidden;
+  z-index:5;
+}
+
+.ad-rail-left{ left:12px; }
+.ad-rail-right{ right:12px; }
+
+@media (min-width: 1200px){
+  .ad-rail{ display:block; }
+}
+
+.golden-rules-articles{
+  display:none;
+  position:relative;
+  max-width:820px;
+  margin:0 auto 80px;
+  padding:0 24px;
+}
+
+.golden-rules-articles.active{
+  display:block;
+}
+
+.golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+
+/* Per-tool tinted article backgrounds removed for now — every article
+   card uses .golden-rules-article's plain neutral background above
+   regardless of which tool's tab is open. */
+
+.golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+
+.golden-rules-article summary::-webkit-details-marker{
+  display:none;
+}
+
+.golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  color:var(--text);
+  transition:.2s;
+}
+
+.golden-rules-article[open] summary::after{
+  transform:rotate(45deg);
+}
+
+.golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+}
+
+.golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  margin:24px 0 10px;
+}
+
+.golden-rules-body h3:first-child{
+  margin-top:0;
+}
+
+.golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}
+
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Používáme cookies. Níže si vyberte, které kategorie povolit — viz naše <a data-goto="cookies">Zásady cookies</a> kde najdete podrobnosti.</p>
+  <p class="cookie-banner-text-mobile">Vyberte, které kategorie povolit</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Zobrazit nebo skrýt nastavení cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Vyberte, které kategorie povolit</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Více o nezbytných cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nezbytné (vždy zapnuto)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Zajišťují základní fungování — pamatují si vaši volbu cookies, jazyk a světlý/tmavý motiv. Nelze je vypnout a stejně jako vše na tomto webu nikdy neopustí vaše zařízení.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Více o analytických cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analytika - Pro plné soukromí ji nechte vypnutou.</span><span class="cookie-label-docked">Analytika (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Díky tomu můžeme zlepšovat uživatelský zážitek na základě cenných dat z (Google Analytics) o tom, jak uživatelé web procházejí. Chcete-li zůstat zcela anonymní, doporučujeme tuto možnost vypnout.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Více o reklamních cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Reklama (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Používá Google AdSense k zobrazování reklam. Na celém webu je momentálně vypnuto, dokud nedostaneme schválení AdSense, takže tento přepínač zatím nic nedělá.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Přijmout vše</button>
+    <button type="button" id="cookieBannerSave">Potvrdit výběr</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Přepnout světlý a tmavý režim" title="Přepnout světlý a tmavý režim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Sdílet" title="Sdílet">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Kopírovat odkaz</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Další možnosti sdílení"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zpět do Creative Hub" title="Zpět do Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+    <div class="hero">
+      <h1>Zlatá pravidla</h1>
+      <p class="lead">Praktické, podrobné návody, jak z každého nástroje vytěžit maximum — jak, proč a kterým chybám se vyhnout.</p>
+    </div>
+
+    <div class="golden-rules-switcher">
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+      <button type="button" class="golden-rules-tool-btn active" data-tool="convert">Convert</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="compress">Compress</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="combine">Combine</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="exif">Cleanly</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="context">Context</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
+    </div>
+
+    <ins class="adsbygoogle ad-rail ad-rail-left" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000002" data-ad-format="auto"></ins>
+    <ins class="adsbygoogle ad-rail ad-rail-right" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000003" data-ad-format="auto"></ins>
+
+    <div class="golden-rules-articles active" data-tool="convert">
+
+      <details class="golden-rules-article">
+        <summary>1. Kompletní průvodce formáty obrázků: JPG vs PNG vs WEBP</summary>
+        <div class="golden-rules-body">
+          <p>Každý obrazový formát vznikl k řešení jiného problému a správná volba má na velikost a kvalitu souboru větší vliv než téměř jakékoli jiné rozhodnutí při přípravě obrázků. Tady je, co se u každého z nich skutečně děje pod pokličkou a kdy na tom opravdu záleží.</p>
+
+          <h3>JPG (JPEG): formát pro fotografie</h3>
+          <p>JPG používá ztrátovou kompresi, což znamená, že při každém uložení zahodí část obrazových dat, aby zmenšil soubor. U fotografií — s plynulými barevnými přechody, přirozeným šumem a bez ostrých hran — to funguje výborně, protože lidské oko informace, které JPG zahodí, jen těžko zaznamená. Proto je JPG stále výchozím formátem fotografií na webu, ve fotoaparátech i telefonech: skvělá komprese, malé soubory, univerzální podpora.</p>
+          <p>Co JPG neumí, je průhlednost. Formát nemá alfa kanál vůbec, takže pokud potřebujete průhledné pozadí, JPG nepřipadá v úvahu. Také se mírně zhoršuje při každém opětovném uložení (více v článku o chybách níže) a špatně zvládá grafiku s ostrými hranami, jako je text nebo loga, kde se artefakty komprese projeví rozmazáním kolem tvrdých čar.</p>
+
+          <h3>PNG: bezeztrátový formát s podporou průhlednosti</h3>
+          <p>PNG používá bezeztrátovou kompresi — každý pixel zůstane přesně zachován, bez ztráty kvality, bez ohledu na to, kolikrát soubor znovu uložíte. Proto je to správná volba pro cokoli s ostrými hranami, plnými barvami nebo textem: loga, snímky obrazovky, ikony, diagramy. Plně také podporuje průhlednost, včetně částečné (měkké, rozmazané okraje), což JPG prostě neumí.</p>
+          <p>Cenou je velikost. Bezeztrátová komprese soubor zdaleka nezmenší tolik jako ztrátový přístup JPG, zejména u fotografií s mnoha jemnými barevnými odstíny. Fotka uložená jako PNG může být snadno 5–10× větší než stejná fotka v JPG, a to kvůli rozdílu v kvalitě, který většina lidí nepozná.</p>
+
+          <h3>WEBP: moderní univerzál</h3>
+          <p>WEBP je novější formát od Googlu a ve většině případů skutečně spojuje to nejlepší z obou světů: podporuje ztrátovou i bezeztrátovou kompresi (může tedy fungovat jako JPG i jako PNG podle potřeby), podporuje průhlednost a při srovnatelné kvalitě obvykle vytváří menší soubory než JPG i PNG — u fotografií často o 25–35 % menší než JPG a u grafiky výrazně menší než PNG.</p>
+          <p>Jediným skutečným omezením je kompatibilita se starším softwarem — některé starší obrazové editory, některé e-mailové klienty a některá starší zařízení WEBP nezvládají dobře. U moderního webu to už málokdy je praktický problém, ale pokud posíláte soubor někomu, jehož software neovlivníte, stojí to za zvážení.</p>
+
+          <h3>HEIC: formát iPhonu, který budete chtít převést</h3>
+          <p>HEIC (a jeho blízký příbuzný HEIF) je výchozí formát fotografií Applu od iOS 11 — při stejné kvalitě komprimuje lépe než JPG, proto ho iPhony používají automaticky. Háček je v kompatibilitě: většina softwaru mimo Apple, starší editační nástroje i spousta webů a nahrávacích formulářů soubor HEIC stále neotevře přímo.</p>
+          <p>Convert přijímá HEIC/HEIF jako vstup a dekóduje ho celý ve vašem prohlížeči, takže můžete vložit fotku přímo z iPhonu a získat JPG, PNG nebo WEBP, který se otevře kdekoli. Výstup do HEIC nabízen není, protože smyslem převodu je tuto mezeru v kompatibilitě opustit.</p>
+
+          <h3>Rychlé pravidlo rozhodování</h3>
+          <p>Fotky bez potřeby průhlednosti → JPG nebo WEBP. Cokoli, co potřebuje průhlednost nebo ostré hrany (loga, snímky obrazovky, grafika) → PNG nebo WEBP. Potřebujete nejmenší možný soubor s podporou moderních prohlížečů → WEBP.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Jak proměnit fotky v PDF (a proč to chtít)</summary>
+        <div class="golden-rules-body">
+          <p>Převod obrázků do jednoho PDF je jedna z nejužitečnějších věcí, které Convert umí a které lidé hned neobjeví — je to odpověď na otázku „jak poslat těchto 12 fotek jako jeden soubor místo 12 samostatných příloh“.</p>
+
+          <h3>Proč spojit obrázky do PDF místo jejich zabalení do ZIPu</h3>
+          <p>ZIP vyžaduje, aby si ho příjemce stáhl, rozbalil a otevřel každý obrázek zvlášť — kroky navíc, s nimiž se většina lidí nebude obtěžovat. PDF se otevře přímo v prohlížeči nebo ve vestavěné čtečce PDF, kterou má téměř každé zařízení, a strany se zobrazí přesně v pořadí, které nastavíte, což je nesmírně důležité například u žádostí o práci (motivační dopis, životopis, ukázky z portfolia) nebo u naskenovaných dokumentů, které musí zůstat ve správném pořadí.</p>
+          <p>Je to také očekávaný formát pro širokou škálu úředních i poloúředních podání: žádosti o práci, pojistné události, daňové dokumenty, školní úkoly a žádosti o pronájem často požadují „odevzdejte jako jedno PDF“ právě proto, že je to jednoznačné a nelze to omylem přeskládat ani rozdělit jako složku volných obrázků.</p>
+
+          <h3>Krok za krokem</h3>
+          <p>Přetáhněte obrázky do Convertu — můžete jich vybrat několik najednou. Klikněte na tlačítko formátu „PDF“; na rozdíl od ostatních formátů tento nepřevádí každý obrázek zvlášť, ale spojí všechny do jednoho PDF, kde se každý obrázek stane vlastní stranou. Klikněte na „Převést a stáhnout“ a získáte jeden soubor PDF obsahující všechny vybrané obrázky, jeden na stranu, v pořadí, v jakém jste je nahráli.</p>
+          <p>Pořadí je tu důležité, proto si před převodem zkontrolujte, v jakém pořadí byly soubory vybrány — Convert aktuálně dodržuje pořadí, v jakém jste soubory vybrali nebo přetáhli, takže pokud na pořadí záleží (například u vícestránkového skenu), vyberte nebo přetáhněte je v pořadí, v jakém se mají objevit.</p>
+
+          <h3>Poznámka ke kvalitě obrázků uvnitř PDF</h3>
+          <p>Protože se obrázky vkládají tak, jak jsou, obrázek s nízkým rozlišením bude v PDF stále vypadat nízkorozlišeně — převod do PDF nepřidá detail, který tam nebyl. Pokud připravujete například tištěné portfolio, vyplatí se obrázky předem zmenšit nebo komprimovat na rozumné rozlišení, místo abyste vkládali zbytečně obří originály z fotoaparátu, z nichž vznikne nafouknuté PDF, které se pomalu otevírá a špatně se posílá e-mailem.</p>
+
+          <h3>Kdy je to špatný nástroj</h3>
+          <p>Pokud spojujete PDF, která už máte (a ne surové obrázky), potřebujete místo toho nástroj Combine — výstup PDF v Convertu slouží výhradně k vytvoření nového PDF z obrázků, ne ke slučování existujících dokumentů PDF.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Extrakce obrázků z PDF: praktický návod</summary>
+        <div class="golden-rules-body">
+          <p>Opačný směr — vytažení obrázků z existujícího PDF — řeší jiný, stejně častý problém: máte PDF a potřebujete jen jednu stranu, nebo všechny strany, jako samostatné obrazové soubory.</p>
+
+          <h3>Časté důvody, proč to lidé potřebují</h3>
+          <p>Vytažení jednoho snímku z PDF prezentace a vložení do e-mailu nebo zprávy. Extrakce stran naskenovaného dokumentu, abyste je mohli jednotlivě upravovat nebo anotovat v obrazovém editoru. Získání diagramu nebo grafu z PDF zprávy pro opětovné použití jinde. Archivace každé strany starého skenu jako samostatného, univerzálněji zobrazitelného obrazového souboru.</p>
+
+          <h3>Jak to doopravdy funguje</h3>
+          <p>Přetáhněte do Convertu místo obrázku PDF a nástroj to automaticky pozná — nabídka formátů se změní a ukáže jen JPG, PNG a WEBP, protože převod PDF na jiné PDF nebo SVG nedává smysl. Vyberte obrazový formát, který vám vyhovuje (JPG pro menší soubory, PNG pokud strany PDF obsahují něco, co potřebuje průhlednost nebo ostrý text, WEBP pro nejlepší vyvážení obojího), a převeďte.</p>
+          <p>Každá strana PDF se stane samostatným obrazovým souborem. Desetistránkové PDF převedené na JPG vám dá 10 jednotlivých souborů JPG, automaticky očíslovaných podle stran. Pokud extrahujete více než 5 stran, automaticky se zabalí do jednoho ZIPu, místo aby spustily deset samostatných stahování.</p>
+
+          <h3>Rozlišení a kvalita</h3>
+          <p>Strany PDF se vykreslují do obrázků v pevném měřítku navrženém tak, aby dávalo ostré, čitelné výsledky u typických dokumentů a prezentací. Pokud extrahujete velmi detailní diagram nebo potřebujete zvlášť vysoké rozlišení pro tisk, vyplatí se zkontrolovat kvalitu výstupu, než se na něj u čehokoli tiskově kritického spolehnete — extrakce v rozlišení obrazovky obvykle stačí pro digitální použití více než dost, ale velmi jemná tisková práce může vyžadovat jiný nástroj určený přímo pro extrakci ve vysokém DPI.</p>
+
+          <h3>Vícestránková PDF a pojmenování souborů</h3>
+          <p>Každý extrahovaný obrázek je automaticky označen číslem strany, takže na první pohled poznáte, který výstup odpovídá které straně původního dokumentu — užitečné, když procházíte dlouhé PDF a potřebujete jen pár konkrétních stran místo celku.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy převádět obrázky: scénáře z praxe</summary>
+        <div class="golden-rules-body">
+          <p>Znát technické rozdíly mezi formáty je jedna věc — vědět, který se hodí na situaci, před kterou stojíte, je věc druhá. Tady je způsob, jak o tom přemýšlet podle scénářů.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situace</th><th>Nejlepší formát</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Platforma vyžaduje konkrétní formát</td><td data-label="Nejlepší formát">Cokoli platforma vyžaduje — nejdřív to ověřte</td></tr>
+              <tr><td data-label="Situace">Zrychlení vlastního webu</td><td data-label="Nejlepší formát">WEBP</td></tr>
+              <tr><td data-label="Situace">Potřebuji průhledné pozadí</td><td data-label="Nejlepší formát">PNG nebo WEBP</td></tr>
+              <tr><td data-label="Situace">Příprava pro tisk nebo profesionální použití</td><td data-label="Nejlepší formát">PNG</td></tr>
+              <tr><td data-label="Situace">Dlouhodobá archivace</td><td data-label="Nejlepší formát">PNG (nebo WEBP v bezeztrátovém režimu)</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Nahrávání na platformu, která přijímá jen určité formáty</h3>
+          <p>To je nejčastější důvod, proč lidé vůbec potřebují převodník: web, aplikace nebo formulář vyžaduje „pouze JPG nebo PNG“, ale váš obrázek je ve WEBP nebo SVG. Convert to vyřeší za pár vteřin — vyberte formát, který platforma požaduje, a je hotovo. Vždy si nejdřív ověřte požadavky platformy, protože špatný odhad stojí zbytečný oběh navíc.</p>
+
+          <h3>Zrychlení webu, který spravujete</h3>
+          <p>Pokud nahráváte obrázky na vlastní web, převod starých obrázků JPG a PNG na WEBP je jedním z nejhodnotnějších a nejméně pracných vylepšení — menší soubory znamenají rychlejší načítání stránek, což ovlivňuje uživatelský zážitek i pozice ve vyhledávačích. Víc na tom záleží u stránek plných obrázků (galerie, výpisy produktů, blogy s mnoha fotkami) než u stránky s jednou či dvěma malými ikonami.</p>
+
+          <h3>Potřeba průhledného pozadí</h3>
+          <p>Pokud máte JPG (který nemůže mít průhlednost) a potřebujete ho umístit na barevné pozadí, do návrhové šablony nebo na jiný obrázek, budete ho muset převést — ale vězte, že Convert dokáže přidat formát podporující průhlednost, avšak nedokáže kouzelně odstranit existující plné pozadí z fotky samotné. Pokud je potřeba pozadí skutečně odstranit (ne jen připravit na průhlednost), vyžaduje to nástroj na odstranění pozadí, ne převodník formátů.</p>
+
+          <h3>Příprava pro tisk nebo profesionální použití</h3>
+          <p>Tiskárny a profesionální designérské postupy mají někdy konkrétní požadavky na formát — častý je PNG pro loga a grafiku s ostrými hranami, protože se vyhne měkkým artefaktům komprese, které JPG může vnést kolem textu a tvrdých čar. Pokud si nejste jisti, co konkrétní tiskárna chce, PNG je obvykle bezpečná bezeztrátová výchozí volba pro cokoli, co není prosté foto.</p>
+
+          <h3>Archivace nebo dlouhodobé uložení</h3>
+          <p>Pro cokoli, co chcete roky uchovat v nejlepší možné kvalitě, jsou bezeztrátové formáty (PNG) bezpečnější dlouhodobou volbou než opakovaně komprimované JPG, protože JPG ztrácí malé množství kvality při každém opětovném uložení. Pokud je místo skutečným omezením, zvažte bezeztrátový režim WEBP, který je úspornější než PNG a přitom se vyhne generační ztrátě kvality JPG.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při převodu (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina problémů s převodem pochází z hrstky opakujících se chyb. Na co si dát pozor.</p>
+
+          <h3>Opakované ukládání JPG jako JPG</h3>
+          <p>Pokaždé, když se JPG otevře, byť jen mírně upraví a znovu uloží, ztratí o trochu víc kvality — říká se tomu generační ztráta a kumuluje se. Pokud budete obrázek upravovat vícekrát, pracujte během úprav v bezeztrátovém formátu (PNG) a na JPG převeďte až jako poslední krok exportu, jednou, na konci.</p>
+
+          <h3>Použití JPG, když ve skutečnosti potřebujete průhlednost</h3>
+          <p>To je vůbec nejčastější dotaz, který převodníky dostávají: „proč má mé logo kolem sebe bílý box místo průhledného pozadí?“ Odpověď je téměř vždy ta, že zdrojový nebo výstupní formát byl JPG, který průhlednost nedokáže vyjádřit vůbec — žádné nastavení ani trik to nespraví, protože formát alfa kanál vůbec nezná. Pokud potřebujete průhlednost, musí ji podporovat zdrojový obrázek i výstupní formát (PNG nebo WEBP).</p>
+
+          <h3>Převod „nahoru“, ne jen „do strany“</h3>
+          <p>Převod malého obrázku s nízkým rozlišením do jiného formátu nepřidá detail ani nezvýší jeho skutečné rozlišení — JPG o velikosti 400×300 pixelů převedený na PNG je stále obrázek 400×300 pixelů, jen v jiném obalu. Pokud potřebujete větší obrázek, potřebujete původní soubor ve vyšším rozlišení; samotný převod formátu nedokáže vytvořit detail, který nikdy nebyl zachycen.</p>
+
+          <h3>Výchozí volba PNG pro velké fotografie</h3>
+          <p>Bezeztrátová komprese PNG je skvělá pro grafiku, ale pro fotografie se hodí špatně, protože vytváří soubory mnohem větší, než je nutné, kvůli rozdílu v kvalitě, který většina diváků nepostřehne. Pokud převádíte dávku fotek z dovolené „pro jistotu“, JPG nebo WEBP poslouží mnohem lépe — PNG si nechte výhradně pro obrázky s průhledností, textem nebo ostrými grafickými hranami.</p>
+
+          <h3>Nezkontrolování výstupu před odesláním na důležité místo</h3>
+          <p>U všeho, co jde klientovi, zaměstnavateli nebo na úřední podání, stojí za to převedený soubor před odesláním jednou otevřít — ověřit pořadí stran ve vícestránkovém PDF, zkontrolovat, že se průhlednost správně zachovala, nebo že soubor není nečekaně obrovský. Zabere to pár vteřin a ušetří mnohem zdlouhavější problém s odmítnutým podáním nebo trapným opětovným odesláním.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="golden-rules-articles" data-tool="compress">
+      <details class="golden-rules-article">
+        <summary>1. Jak komprese obrázků doopravdy funguje</summary>
+        <div class="golden-rules-body">
+          <p>Komprese vypadá jako jeden posuvník nebo jedno kliknutí, ale pod povrchem zmenšování obstarávají dva skutečně odlišné přístupy a pochopení toho, který z nich právě pracuje, vysvětlí téměř každý výsledek, který od takového nástroje uvidíte.</p>
+
+          <h3>Ztrátová komprese: zahození toho, čeho si nevšimnete</h3>
+          <p>Ztrátová komprese, jakou používají JPG a WEBP, funguje tak, že v obrázku rozpozná informace, které lidské oko špatně vnímá, a zahodí je. Jemné barevné přechody se zjednoduší, jemný vysokofrekvenční detail se vyhladí a výsledkem je soubor, který může mít zlomek původní velikosti a přitom pro běžného diváka stále vypadá správně. Háček je v tom, že zahození je trvalé — když je detail pryč, žádné opětovné otevření ani uložení ho nevrátí a opakovaná komprese již komprimovaného souboru ztrátu pokaždé zvětší.</p>
+          <p>„Poměr kvality“ neboli úroveň komprese, kterou zvolíte, řídí, jak agresivně se to děje. Vysoké nastavení kvality zahodí velmi málo a soubor zmenší mírně; nízké nastavení zahodí mnohem víc a soubor zmenší dramaticky, za cenu viditelných artefaktů — kostkování kolem hran, rozmazaný detail, pruhování barev na obloze a v přechodech.</p>
+
+          <h3>Bezeztrátová komprese: přebalení bez jakékoli ztráty</h3>
+          <p>Bezeztrátová komprese, přístup PNG, funguje úplně jinak: najde chytřejší a účinnější způsoby, jak uložit úplně stejná pixelová data, stejně jako ZIP zmenší textový dokument, aniž změní jediný znak. Nic se nezahazuje, takže můžete komprimovat a rozbalovat libovolněkrát bez jakékoli změny kvality. Cenou je mnohem menší zmenšení, protože existuje pevná matematická hranice, o kolik lze data zmenšit, aniž byste cokoli zahodili — zejména u fotografií, které jsou plné jemných, nepravidelných detailů, jež se bezeztrátovému přebalení brání.</p>
+
+          <h3>Proč náš nástroj Compress převádí PNG na JPG</h3>
+          <p>Proto Compress při kompresi automaticky převádí fotky PNG na JPG: fotografie v PNG se samotnou bezeztrátovou kompresí sotva zmenší, ale stejná fotka, které se dovolí ztrátová komprese, se může zmenšit dramaticky. U skutečné fotografie se tento obchod téměř vždy vyplatí — rozdíl v kvalitě je při běžné velikosti zobrazení neviditelný a rozdíl ve velikosti souboru obrovský. U PNG, které nejsou fotografie (snímky obrazovky, loga, grafika s průhledností nebo ostrým textem), je to jiné, proto je tento převod laděn právě na obsah podobný fotkám a neaplikuje se slepě na každý PNG.</p>
+
+          <h3>Co se doopravdy děje, když posunete posuvník kvality</h3>
+          <p>Uvnitř nižší nastavení kvality zvyšuje hrubost, s jakou se informace o barvách a detailech obrázku před uložením seskupují a zjednodušují. Představte si to jako zaokrouhlování čísel: zaokrouhlení „kvality 95“ téměř nic nezmění, zatímco zaokrouhlení „kvality 40“ změní mnohem víc, ale k popisu stačí mnohem méně místa. Neexistuje univerzální „správné“ číslo — správné nastavení závisí zcela na tom, k čemu se obrázek použije, a právě tím se zabývá další článek.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Výběr správné úrovně komprese pro váš případ</summary>
+        <div class="golden-rules-body">
+          <p>Neexistuje jediné „nejlepší“ nastavení komprese — správná úroveň závisí zcela na tom, kam obrázek míří a čím musí projít. Takto o tom přemýšlet podle scénáře.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Cíl</th><th>Doporučená úroveň</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Cíl">Sociální sítě / aplikace pro zprávy</td><td data-label="Doporučená úroveň">Střední</td></tr>
+              <tr><td data-label="Cíl">Váš vlastní web nebo e-shop</td><td data-label="Doporučená úroveň">Střední až vysoká</td></tr>
+              <tr><td data-label="Cíl">Tisk nebo profesionální předání klientovi</td><td data-label="Doporučená úroveň">Nízká, nebo komprimaci vynechat</td></tr>
+              <tr><td data-label="Cíl">Dlouhodobá archivace</td><td data-label="Doporučená úroveň">Nízká</td></tr>
+              <tr><td data-label="Cíl">Limity velikosti e-mailových příloh</td><td data-label="Doporučená úroveň">Vysoká</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Sociální sítě a zprávy</h3>
+          <p>Platformy jako Instagram, WhatsApp a většina sociálních feedů každý nahraný obrázek stejně znovu komprimují, často agresivně, ať jim pošlete cokoli. Nahrávání obřího, sotva komprimovaného souboru vám tu nic nepřinese — platforma ho na své straně stejně zkomprimuje znovu. Střední až vysoká úroveň komprese udrží nahrávání rychlé a velikost původního souboru rozumnou, aniž byste přišli o kvalitu, kterou byste po zpracování platformou skutečně viděli.</p>
+
+          <h3>Weby a e-shopy</h3>
+          <p>U všeho, co hostujete sami — web s portfoliem, blog, stránka produktu — velikost souboru přímo ovlivňuje rychlost načítání stránky, což ovlivňuje zážitek návštěvníků a u komerčních věcí i konverzní poměr a pozice ve vyhledávání. Tady se vyplatí sáhnout po agresivnější kompresi, protože zobrazení na webu málokdy potřebuje detail na úrovni tisku a stránka plná obřích neoptimalizovaných obrázků je jedním z nejčastějších důvodů, proč weby působí pomalu.</p>
+
+          <h3>Tisk a profesionální použití</h3>
+          <p>Tady je třeba být opatrný. Tisk odhalí detaily a artefakty, které obrazovka prostě neukáže, protože se prohlíží ve vyšším efektivním rozlišení a často ve větší fyzické velikosti. U všeho, co jde do tiskárny, do galerie nebo profesionálně klientovi, použijte pro danou kopii nízkou úroveň komprese nebo komprimaci vynechte a nekomprimovaný či lehce komprimovaný master soubor si ponechte jako zdroj pravdy.</p>
+
+          <h3>Archivace a dlouhodobé uložení</h3>
+          <p>Pokud je cílem uchovat fotku na roky — rodinné fotky, archiv, cokoli, k čemu se možná budete chtít později vrátit v plné kvalitě — vyhněte se silné ztrátové kompresi jediné kopie. Jakmile se detail zahodí, nelze ho obnovit, i kdyby ho pozdější použití potřebovalo. Rozumným postupem je uchovávat archivní kopii ve vyšší kvalitě a samostatně komprimované verze vytvářet podle potřeby pro konkrétní použití.</p>
+
+          <h3>E-mailové přílohy a limity velikosti souborů</h3>
+          <p>Mnoho e-mailových služeb omezuje velikost příloh, běžně na zhruba 25 MB celkem. Pokud posíláte několik fotek, silnější úroveň komprese vás spolehlivě dostane pod tento strop. Je to jeden z mála případů, kdy praktické omezení (vejde se to vůbec do e-mailu) váží víc než vizuální rozdíl mezi úrovněmi komprese, takže se nebojte komprimovat víc než u jiných použití.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Komprese pro web: rychlost bez obětování kvality</summary>
+        <div class="golden-rules-body">
+          <p>Váha obrázků je jedním z největších a nejsnáze opravitelných důvodů pomalého webu a také se v obou směrech snadno pokazí — příliš malá komprese a stránky se plazí, příliš velká a fotky vypadají znatelně zhoršeně. Takto zamířit do užitečného středu.</p>
+
+          <h3>Proč na velikosti obrázků pro rychlost tolik záleží</h3>
+          <p>Na většině stránek plných obsahu tvoří obrázky velkou většinu celkové váhy stránky — mnohem víc než HTML, CSS a JavaScript dohromady. Doba načítání stránky u návštěvníka i její hodnocení vyhledávači jsou neúměrně ovlivněny tím, jak těžké vaše obrázky jsou, takže jejich správná komprese je často tou nejúčinnější jednotlivou změnou výkonu, před většinou optimalizací na úrovni kódu.</p>
+
+          <h3>Přizpůsobení komprese tomu, jak se obrázek skutečně zobrazí</h3>
+          <p>Obrázek zobrazený na stránce v šířce 400 pixelů nemusí být dodán jako 4000pixelový originál z fotoaparátu s lehkou kompresí — k ostrému vzhledu v reálné velikosti zobrazení potřebuje mnohem méně detailu. Než se začnete zabývat úrovní komprese, ujistěte se, že rozměry obrázku zhruba odpovídají tomu, jak velký se skutečně zobrazí; komprese příliš velkého obrázku léčí příznak a nechává na místě větší příčinu (zbytečné rozlišení).</p>
+
+          <h3>Výběr formátu pro web</h3>
+          <p>U fotografického obsahu je JPG nebo WEBP se střední až silnou kompresí téměř vždy správná volba — návštěvníci procházející stránku nepotřebují věrnost na úrovni tisku a zrychlení díky menšímu souboru je skutečné a velmi znatelné, zejména na mobilním připojení. U grafiky s plnými barvami, snímků obrazovky nebo čehokoli s textem a ostrými hranami vypadá bezeztrátový PNG (nedotčený ztrátovými metodami) obvykle lépe a může být dokonce menší než silně zaartefaktovaná ztrátová verze stejné grafiky.</p>
+
+          <h3>Bod klesajících výnosů</h3>
+          <p>Komprese neroste lineárně s ztrátou vizuální kvality — první dávka komprese z nekomprimovaného originálu odstraní obrovské množství velikosti souboru téměř bez viditelné změny, zatímco další a další zvyšování komprese do agresivního pásma odstraní postupně méně velikosti za postupně viditelnější poškození. V praxi většina fotek dosáhne ideálního bodu dávno před „maximální kompresí“ a vyplatí se zkontrolovat komprimovaný obrázek v jeho skutečné velikosti zobrazení, místo abyste předpokládali, že víc komprese je pro rychlost vždy lepší.</p>
+
+          <h3>Dávkové zpracování obrázků celého webu</h3>
+          <p>Pokud optimalizujete mnoho obrázků najednou — katalog produktů, galerii, zpětný katalog obrázků z článků blogu — používejte jednotnou úroveň komprese u podobných typů obsahu místo posuzování každého zvlášť od oka. Udrží to vizuální kvalitu napříč webem konzistentní a mnohem rychleji proces zopakujete, pokud si nastavení rozmyslíte, protože nerozhodujete případ od případu.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy komprimovat a kdy obrázek nechat být</summary>
+        <div class="golden-rules-body">
+          <p>Komprese je skutečně užitečný nástroj, ale není automaticky správným tahem pro každý obrázek v každé situaci — vědět, kdy ji vynechat, je stejně důležité jako vědět, jak ji použít.</p>
+
+          <h3>Příznaky, že obrázek je dobrým kandidátem na kompresi</h3>
+          <p>Velké originály z fotoaparátu určené pro web, e-mail nebo zprávy téměř vždy profitují — obvykle nesou mnohem víc rozlišení a váhy souboru, než cíl potřebuje. Zjevným kandidátem je i každý soubor narážející na pevný limit velikosti (strop e-mailové přílohy, omezení nahrávání, limit velikosti souboru ve formuláři), protože komprese je často nejrychlejší způsob, jak se dostat pod limit, aniž byste z obrázku museli ořezávat nebo zmenšovat obsah.</p>
+
+          <h3>Příznaky, že obrázek byste měli nechat být (nebo komprimovat velmi lehce)</h3>
+          <p>Grafika s textem, ostrými čarami nebo plnými barvami — snímky obrazovky, diagramy, loga, naskenované dokumenty — se při ztrátových metodách obvykle komprimuje špatně, protože se artefakty projeví rozmazáním a barevnými lemy přesně tam, kde si oko všímá nejvíc: kolem hran a textu. Těmto obvykle lépe poslouží bezeztrátový přístup PNG, nebo vynechání komprese místo boje s artefakty.</p>
+          <p>Cokoli, co už bylo jednou komprimováno, by se nemělo lehkovážně komprimovat znovu „pro jistotu“. Opětovná komprese JPG, který už je ztrátově komprimovaný, ho ve většině případů výrazně dál nezmenší a může přinést druhé kolo ztráty kvality navíc k prvnímu, kdy se artefakty nabalují místo odstraňování.</p>
+
+          <h3>Zvyk uchovávat master kopii</h3>
+          <p>Jednoduché pravidlo, které se vyhne většině lítosti: uchovejte jednu master kopii ve vysoké kvalitě (nebo nekomprimovanou) všeho, co byste mohli znovu použít, a komprimované verze vytvářejte z tohoto masteru podle potřeby pro každé konkrétní použití, místo abyste jedinou kopii přepsali komprimovanou. Úložiště je levné; znovu vytvořit ztracený originál není možné, jakmile je pryč.</p>
+
+          <h3>Posuzujte podle cíle, ne podle zvyku</h3>
+          <p>Správná otázka není „mám tento obrázek komprimovat“ obecně, ale „co místo, kam obrázek míří, skutečně potřebuje“. Fotka určená do textové zprávy potřebuje téměř nic z původního detailu; fotka určená na velký tištěný banner potřebuje téměř všechno. Nechte cíl nastavit laťku, místo abyste ze zvyku používali stejnou úroveň komprese na všechno, co vaším postupem projde.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při kompresi (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina stížností na kompresi vychází z malé sady opakujících se chyb. Na co si dát pozor.</p>
+
+          <h3>Opakovaná komprese stejného souboru</h3>
+          <p>Každý průchod ztrátové komprese zahodí o trochu víc detailu a ztráta se s každým dalším průchodem kumuluje — soubor, který byl komprimován, znovu otevřen, upraven a znovu komprimován několikrát, bude vypadat znatelně hůř než ten, který byl jednou komprimován z čistého originálu. Vždy komprimujte z originálu nebo nekomprimovaného masteru, ne z dříve komprimované kopie.</p>
+
+          <h3>Přepsání jediné kopie</h3>
+          <p>Komprese na místě a smazání originálu je vůbec nejčastější způsob, jak lidé trvale přijdou o plnou kvalitu. Jakmile ztrátová komprese detail zahodí, nelze ho získat zpět — uchovejte originál někde v bezpečí, dokud si nejste jisti, že ho později ve vyšší kvalitě nebudete potřebovat.</p>
+
+          <h3>Komprese grafiky, jako by šlo o fotky</h3>
+          <p>Snímky obrazovky, loga a grafika plná textu nereagují dobře na stejnou ztrátovou kompresi, která skvěle funguje na fotografie — ostré hrany a plné barvy, které z těchto obrázků dělají to, čím jsou, se při ztrátové kompresi změní ve viditelné rozmazání a barevné lemy. Obvykle je lépe zvládnout bezeztrátovými formáty nebo mnohem jemnějším dotykem komprese, než jaký byste použili u fotky.</p>
+
+          <h3>Volba úrovně komprese bez kontroly výsledku</h3>
+          <p>Svádí to zvolit „maximální kompresi“ pro co nejmenší soubor a jít dál, ale toto nastavení často přináší artefakty, které jsou zjevně viditelné, jakmile se na výstup podíváte ve skutečné velikosti. Rychlá kontrola komprimovaného výsledku — ve velikosti, v jaké se bude skutečně zobrazovat — zabere vteřiny a zabrání odeslání nebo zveřejnění něčeho, co vypadá znatelně hůř, než bylo zamýšleno.</p>
+
+          <h3>Ignorování vlastní komprese cíle</h3>
+          <p>Nahrávání sotva komprimovaného obřího souboru na platformu, která ho stejně zkomprimuje (většina sociálních sítí a aplikací pro zprávy), plýtvá časem nahrávání a datovým tokem bez vizuálního přínosu, protože vlastní zpracování platformy určuje velkou část konečné kvality bez ohledu na to, co jste poslali. Přizpůsobte úsilí komprese tomu, co cíl skutečně zachová, ne předpokladu, že „víc původní kvality na vstupu znamená víc konečné kvality na výstupu“.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="combine">
+      <details class="golden-rules-article">
+        <summary>1. Jak spojit PDF vždy ve správném pořadí</summary>
+        <div class="golden-rules-body">
+          <p>Celá úloha Combine je klamavě jednoduchá — vzít několik souborů a spojit je do jednoho PDF — ale detail, na kterém lidé nejčastěji klopýtnou, není samotné spojení, nýbrž zajištění, aby strany skončily v pořadí, jaké jste skutečně zamýšleli.</p>
+
+          <h3>Jak Combine určuje pořadí stran</h3>
+          <p>Combine spojuje soubory v pořadí, v jakém se objevují ve vašem výběru — v pořadí, v jakém jste je vybrali v prohlížeči souborů, nebo v jakém byly přetaženy, shora dolů. Nesnaží se hádat „správné“ pořadí podle názvů souborů, dat či obsahu, protože neexistuje univerzální pravidlo, jaké pořadí chcete; prostě respektuje posloupnost, kterou jste mu dali. Zodpovědnost za správné pořadí tak leží celá na tom, jak soubory před spojením vyberete nebo uspořádáte.</p>
+
+          <h3>Proč mohou být názvy souborů zavádějící</h3>
+          <p>Častým předpokladem je, že se soubory spojí automaticky v abecedním nebo číselném pořadí. Pokud výběr souborů ve vašem operačním systému soubory tak vypíše a vy je vyberete tažením přes celý seznam, často to tak dopadne — ale je to vedlejší efekt pořadí zobrazení v dialogu, ne záruka. V okamžiku, kdy soubory vybíráte jednotlivě myší, mimo pořadí, nebo je přetahujete po jednom, pořadí spojení se řídí vašimi kliknutími, ne názvy souborů.</p>
+
+          <h3>Spolehlivá kontrola před spojením</h3>
+          <p>Než kliknete na spojit, podívejte se na seznam náhledu, který Combine zobrazuje — odráží skutečné pořadí, které spojení použije. Pokud je něco na špatném místě, odeberte to a přidejte znovu na správnou pozici, nebo výběr přeuspořádejte už před nahráním. Tato třicetivteřinová kontrola je mnohem rychlejší než stažení spojeného PDF, zjištění, že strana 4 měla být ve skutečnosti stranou 2, a začínání od nuly.</p>
+
+          <h3>Pojmenování souborů pro bezchybné pořadí</h3>
+          <p>Pokud pravidelně spojujete sady více souborů — naskenované strany, vícedílné zprávy, po sobě jdoucí kapitoly — jednoduchý zvyk, který hádání pořadí úplně odstraní, je předřadit před spojením názvům souborů čísla: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Výběr všech najednou v prohlížeči souborů pak přirozeně bude následovat toto číselné pořadí a získáte správné řazení, aniž byste cokoli museli ručně uspořádávat v samotném Combine.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Combine pro žádosti o práci: motivační dopis, životopis, portfolio</summary>
+        <div class="golden-rules-body">
+          <p>Žádosti o práci a stáž jsou jedním z nejčastějších důvodů, proč lidé sahají po nástroji na spojování PDF, a správná struktura může skutečně ovlivnit, jak bude vaše žádost přijata.</p>
+
+          <h3>Proč zaměstnavatelé preferují jedno PDF před několika přílohami</h3>
+          <p>Personalista nebo náborář často posuzuje desítky či stovky žádostí, často na telefonu nebo letmo mezi schůzkami. Žádost, která přijde jako tři nebo čtyři samostatné přílohy (motivační dopis, životopis, portfolio, reference), je nutí otevírat a žonglovat s více soubory jen proto, aby získali celkový obraz, a snadno se stane, že se jedna příloha přehlédne, špatně uloží nebo se prostě neotevře. Jediné dobře seřazené PDF toto tření úplně odstraní — jedno kliknutí otevře vše, v pořadí, v jakém jste zamýšleli, aby se četlo.</p>
+
+          <h3>Pořadí, které funguje u většiny žádostí</h3>
+          <p>Rozumné výchozí pořadí je: nejdřív motivační dopis (je nejkratší a dává kontext), potom životopis (jádro toho, co většina posuzovatelů skutečně chce) a nakonec podpůrné materiály — ukázky z portfolia, certifikáty, reference. Odráží to, jak lidé přirozeně chtějí žádost číst: kontext, pak podstata, pak podpůrné důkazy, místo začátku portfoliem dřív, než vědí, na jakou pozici se vlastně hlásíte.</p>
+
+          <h3>Spojování souborů, které začaly v různých formátech</h3>
+          <p>Je běžné, že motivační dopis existuje jako PDF exportované z Wordu, životopis jako samostatné PDF a ukázky z portfolia jako obrazové soubory (fotky fyzické práce, snímky obrazovky digitálních projektů, naskenované certifikáty). Pokud jsou vaše ukázky obrázky a ne PDF, nejdřív je převeďte na PDF pomocí výstupu PDF v nástroji Convert, který dávku obrázků změní na jedno PDF, kde je každý obrázek vlastní stranou — a poté toto PDF spojte s PDF motivačního dopisu a životopisu v pořadí, v jakém se mají objevit.</p>
+
+          <h3>Udržení rozumné velikosti souboru</h3>
+          <p>Obrázky z portfolia, zejména fotky fyzické práce z fotoaparátu nebo screenshoty ve vysokém rozlišení, mohou být zbytečně velké. Pokud je výsledné spojené PDF žádosti obrovské, vyplatí se zdrojové obrázky komprimovat před převodem do PDF a spojením, ne až potom — velká, pomalu se otevírající příloha je malé, ale skutečné tření pro každého, kdo ji posuzuje v časovém tlaku.</p>
+
+          <h3>Dvojitá kontrola před odesláním</h3>
+          <p>Po spojení otevřete výsledné PDF a jednou ho celé projděte od začátku do konce. Zachytíte tak strany mimo pořadí, omylem zahrnutou koncepční verzi nebo obrázek z portfolia, který se nepřevedl, jak jste čekali — druh drobné chyby, která je neviditelná, dokud se skutečně nepodíváte, a mnohem trapnější je zjistit ji až poté, co ji zaměstnavatel už otevřel.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Spojování naskenovaných dokumentů bez ztráty pořadí stran</summary>
+        <div class="golden-rules-body">
+          <p>Naskenované doklady — smlouvy, formuláře, osobní doklady, vícestránkové dopisy — přinášejí vlastní specifické problémy s pořadím, hlavně kvůli tomu, jak skenování obvykle probíhá.</p>
+
+          <h3>Proč se naskenované strany pletou častěji než jiné soubory</h3>
+          <p>Mnoho skenerů a skenovacích aplikací ukládá každou stranu jako samostatný soubor s obecným, automaticky vygenerovaným názvem (scan001.pdf, IMG_2024.jpg apod.), někdy číslovaným podle pořadí, v jakém strany fyzicky vstoupily do skeneru, a někdy ne. Pokud jste stoh stran naskenovali mimo fyzické pořadí nebo je multifunkční tiskárna očíslovala nečekaně, názvy souborů spolehlivě neodrážejí skutečné pořadí čtení dokumentu — takže výběr souborů „podle názvu“ může tiše vytvořit spojený dokument se stranami mimo pořadí.</p>
+
+          <h3>Nejbezpečnější postup: kontrolujte obsah, ne jen názvy souborů</h3>
+          <p>Před spojením se podívejte na skutečný obsah každé naskenované strany (náhledy v Combine to zrychlí), místo abyste věřili samotnému názvu souboru. Zabere to jen pár vteřin, než ověříte, že strana jedna je opravdu začátek dokumentu a strana dvě na ni logicky navazuje, ale je to nejspolehlivější způsob, jak neodeslat zpřeházený dokument bance, úřadu nebo pronajímateli — místům, kde dokument mimo pořadí může způsobit skutečné zdržení.</p>
+
+          <h3>Smíšené skeny: některé strany vyfocené, některé naskenované</h3>
+          <p>Je běžné mít pro většinu stran řádný sken a pro jednu či dvě fotku z telefonu (strana, která se nevešla na sklo skeneru, nebo se skenovala později dodatečně). Combine zachází s obrázky a PDF zaměnitelně, takže technicky to není problém — ale vizuálně se vyfocená strana často liší osvětlením a rámováním od skutečného skenu. Pokud na jednotném vzhledu dokumentu záleží, vyplatí se odlišnou stranu řádně znovu naskenovat, místo míchání formátů, ačkoli jde spíš o kosmetický než funkční problém.</p>
+
+          <h3>Vícestránkové smlouvy a podpisové strany</h3>
+          <p>U smluv nebo formulářů s podpisovou stranou musí tato strana skončit přesně na správném místě vůči zbytku dokumentu, protože podpisová strana spojená na špatné místo může způsobit, že právní dokument vypadá neplatně nebo neúplně. Berte to jako zásadní případ pro kontrolu náhledu před spojením výše — právě v této situaci vás pětivteřinový pohled na seřazený seznam náhledu ušetří dokumentu, který by se musel znovu podepsat a poslat.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy spojovat a kdy nechat soubory oddělené</summary>
+        <div class="golden-rules-body">
+          <p>Sloučení všeho do jednoho PDF není vždy lepší volba — někdy příjemci skutečně lépe poslouží oddělené soubory a vyplatí se vědět, v jaké situaci jste.</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situace</th><th>Spojit, nebo nechat odděleně</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Vícestránková žádost nebo zpráva určená ke čtení popořadě</td><td data-label="Spojit, nebo nechat odděleně">Combine</td></tr>
+              <tr><td data-label="Situace">Platforma výslovně žádá jedno PDF</td><td data-label="Spojit, nebo nechat odděleně">Combine</td></tr>
+              <tr><td data-label="Situace">Příjemce musí s každým souborem nakládat samostatně</td><td data-label="Spojit, nebo nechat odděleně">Nechat odděleně</td></tr>
+              <tr><td data-label="Situace">Velká dávka nesouvisejících referenčních souborů</td><td data-label="Spojit, nebo nechat odděleně">Nechat odděleně, nebo ZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Kdy je spojení jednoznačně správná volba</h3>
+          <p>Cokoli, co se má číst v určitém pořadí — vícestránková žádost, naskenovaná smlouva, zpráva s úvodem a následnými podpůrnými daty — nesmírně těží z toho, že je jedním souborem, protože to zaručuje, že čtenář narazí na všechno v pořadí, jaké jste zamýšleli, a nemůže omylem otevřít strany mimo pořadí ani něco přeskočit. Snadné rozhodnutí je i tam, kde formulář nebo platforma výslovně žádá „jedno PDF“: spojte a odešlete přesně to, co se požaduje.</p>
+
+          <h3>Kdy příjemci lépe poslouží oddělené soubory</h3>
+          <p>Pokud příjemce musí s dokumenty nakládat nezávisle — třeba přeposlat jen fakturu účetní a dodací list si nechat pro vlastní záznamy — jejich sloučení do jednoho souboru mu práci ztíží, ne usnadní, protože by musel extrahovat nebo znovu vytisknout jen potřebnou část. Podobně, pokud posíláte několik skutečně nesouvisejících dokumentů někomu, kdo je založí na různých místech, oddělené soubory mu umožní naložit s každým po svém, místo aby bojoval se svázaným PDF.</p>
+
+          <h3>Velké sbírky referenčního materiálu</h3>
+          <p>Pokud posíláte velkou dávku volně souvisejících obrázků nebo dokumentů, které se nemají číst popořadě — například velkou dávku referenčních fotek — může být archiv ZIP s oddělenými soubory užitečnější než jedno obří PDF, protože příjemce může položky procházet a otevírat jednotlivě, místo aby listoval jedním obrovským dokumentem a hledal jednu fotku.</p>
+
+          <h3>Rychlý způsob rozhodnutí</h3>
+          <p>Zeptejte se, zda soubory představují jednu ucelenou věc, která se má číst od začátku do konce (spojte), nebo několik nezávislých věcí, které se náhodou posílají společně (nechte je oddělené, nebo je zabalte do ZIPu). Většina žádostí o práci, smluv a naskenovaných vícestránkových dokumentů jasně spadá do první kategorie; většina referenčního materiálu, dávkových výstupů a samostatně použitelných dokumentů do druhé.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při spojování (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Combine je jednoduchý nástroj, ale hrstka předejitelných chyb způsobuje většinu frustrace, na kterou lidé narazí.</p>
+
+          <h3>Spoléhání na názvy souborů místo kontroly náhledu</h3>
+          <p>Jak je řečeno v článcích o pořadí výše, názvy souborů ne vždy odrážejí pořadí, které skutečně chcete — zejména u skenů a stažených souborů s automaticky generovanými názvy. Před spojením se vždy podívejte na seznam náhledu, místo abyste předpokládali, že pořadí výběru odpovídalo vašemu záměru.</p>
+
+          <h3>Míchání nesouvisejících dokumentů do jednoho souboru „pro pohodlí“</h3>
+          <p>Spojování několika nesouvisejících dokumentů jen proto, aby bylo méně souborů ke správě, se často obrátí proti vám — příjemce teď musí otevřít velký spojený soubor a listovat, aby našel jedinou potřebnou část, místo aby otevřel přímo konkrétní soubor. Spojování si nechte pro dokumenty, které skutečně patří dohromady jako jeden ucelený text.</p>
+
+          <h3>Nezkontrolování výsledného souboru před odesláním</h3>
+          <p>Spojené PDF by se mělo jednou otevřít a prolétnout, než půjde na důležité místo. Tento krok zachytí stranu mimo pořadí, omylem zdvojený dokument nebo stranu, která se nevykreslila, jak jste čekali — problémy, které je triviální opravit před odesláním a mnohem trapnější vysvětlovat poté.</p>
+
+          <h3>Zapomenutí převést obrázky před spojením s PDF</h3>
+          <p>Pokud máte volné obrázky, které chcete zahrnout do stejného spojeného dokumentu jako existující PDF, pamatujte, že Combine spojuje soubory tak, jak jsou dodány — pro nejhladší výsledek se ujistěte, že obrázky jsou už ve správném formátu a pořadí, protože oprava orientace nebo obsahu obrázku poté, co je už součástí spojeného PDF, je mnohem větší potíž než oprava předem.</p>
+
+          <h3>Odeslání zbytečně obřího spojeného souboru</h3>
+          <p>Spojením několika už velkých PDF nebo naskenovaných obrázků ve vysokém rozlišení vznikne soubor, který zdědí veškerou jejich váhu — pokud je výsledek nečekaně obrovský, vyplatí se zdrojové obrázky komprimovat před spojením, ne po něm, protože pomalu se otevírající, nadměrné PDF je častým zdrojem stížností příjemců s pomalejším připojením nebo staršími zařízeními.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="exif">
+      <details class="golden-rules-article">
+        <summary>1. Co o vás metadata EXIF skutečně prozrazují</summary>
+        <div class="golden-rules-body">
+          <p>Každá fotka z telefonu nebo fotoaparátu nese mnohem víc než samotný obraz. Uvnitř souboru je ukrytý blok metadat — data EXIF — který tiše zaznamenává překvapivé množství podrobností o tom, kdy, kde a jak byla fotka pořízena.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Typ metadat</th><th>Co prozrazuje</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Typ metadat">Poloha GPS</td><td data-label="Co prozrazuje">Přesné místo pořízení fotky, často s přesností na pár metrů</td></tr>
+              <tr><td data-label="Typ metadat">Značka a model zařízení</td><td data-label="Co prozrazuje">Konkrétní použitý fotoaparát nebo telefon</td></tr>
+              <tr><td data-label="Typ metadat">Časové razítko</td><td data-label="Co prozrazuje">Přesné datum a čas, na vteřinu přesně</td></tr>
+              <tr><td data-label="Typ metadat">Nastavení fotoaparátu</td><td data-label="Co prozrazuje">Clona, expoziční čas, ISO, ohnisková vzdálenost</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Poloha: ta nejdůležitější</h3>
+          <p>Pokud byly při pořízení fotky zapnuté služby určování polohy, většina telefonů vloží přesné souřadnice GPS místa, kde snímek vznikl, často s přesností na pár metrů. Kdokoli, kdo originální soubor otevře ve vhodné prohlížečce nebo ho projde čtečkou metadat, může toto místo vykreslit na mapě — což znamená, že fotka pořízená doma, v práci nebo ve škole dítěte může přesně prozradit, kde to místo je, aniž byste kamkoli napsali adresu.</p>
+
+          <h3>Podrobnosti o zařízení</h3>
+          <p>EXIF obvykle obsahuje přesnou značku a model fotoaparátu nebo telefonu, který snímek pořídil, někdy až po konkrétní verzi softwaru. Samo o sobě to vypadá neškodně, ale v kombinaci s dalšími metadaty to přidává další identifikační údaj a v některých souvislostech (inzeráty, anonymní účty) to může být další nitka, která propojí fotku se známými zařízeními konkrétního člověka.</p>
+
+          <h3>Časová razítka</h3>
+          <p>Přesné datum a čas pořízení fotky se zaznamenává na vteřinu přesně, což je přesnější, než si většina lidí uvědomuje — „jen tak“ zveřejněná fotka může prozradit, kdy přesně byl někdo na určitém místě, což je důležité pro každého, kdo přemýšlí o tom, že by se jeho denní rutina nebo místa pobytu daly poskládat ze vzorce zveřejněných fotek v čase.</p>
+
+          <h3>Nastavení fotoaparátu a někdy i víc</h3>
+          <p>Ukládají se i technické údaje jako clona, expoziční čas a ISO, které zajímají fotografy při hodnocení vlastního focení, ale jinak samy o sobě nejsou z hlediska soukromí citlivé. Některá zařízení a editační aplikace navíc podle nastavení vkládají náhled, historii softwaru či úprav nebo i pole s autorským právem či jménem autora — konkrétní pole se liší podle zařízení a aplikace, ale údaje o poloze a časové razítko jsou dvě, které mají z hlediska soukromí největší váhu.</p>
+
+          <h3>Proč to záleží i u „nedůležitých“ fotek</h3>
+          <p>Většina jednotlivých fotek působí sama o sobě nevýznamně, ale metadata se sčítají: cizí člověk s přístupem k údajům o poloze několika vašich fotek může zmapovat vzorec míst, která navštěvujete — domov, práce, posilovna, škola dítěte — jaký by žádná jednotlivá fotka sama neprozradila. Právě tuto mezeru Cleanly zaceluje: odstranění těchto metadat před tím, než fotka opustí vaše zařízení, odstraní celou skrytou vrstvu informací a samotný viditelný obraz zůstane zcela beze změny.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Jak odstranit metadata před prodejem nebo zveřejněním fotek</summary>
+        <div class="golden-rules-body">
+          <p>Dvě nejčastější situace, kdy data EXIF tiše způsobují skutečné problémy, jsou online prodej věcí a veřejné zveřejňování fotek — v obou případech fotky míří k cizím lidem, a právě tehdy skrytá metadata záleží nejvíc.</p>
+
+          <h3>Prodej na bazarech</h3>
+          <p>Fotky prodávaných věcí — nábytku, elektroniky, auta, bytu k pronájmu — se téměř vždy pořizují u prodejce doma nebo v práci. Ponechané beze změny mohou tyto fotky kupujícímu prozradit vaši přesnou adresu dřív, než jste se vůbec potkali nebo na čemkoli dohodli, prostě otevřením metadat obrázku. Je to skutečný, zdokumentovaný způsob, jak lidé vyzradili polohu svého domova cizím lidem, kteří předtím neměli žádný legitimní důvod ji znát. Protažení fotek inzerátu přes Cleanly před nahráním toto riziko zcela odstraní, bez jakéhokoli viditelného rozdílu pro kupujícího.</p>
+
+          <h3>Zveřejňování na sociálních sítích a fórech</h3>
+          <p>Většina velkých sociálních platforem odstraňuje metadata automaticky při nahrání, což je dobrá zpráva, ale ne každá platforma to dělá a přeposlané nebo stažené kopie vaší fotky (snímky obrazovky, uložení, sdílení) tímto odstraněním spolehlivě neprojdou. Pokud je fotka někdy stažena z místa, kde jste ji zveřejnili, a sdílena jinde, veškerá metadata, která přežila původní nahrání, putují s ní. Odstranění metadat ještě před zveřejněním je jediný způsob, jak zaručit, že nikde v řetězci nebudou.</p>
+
+          <h3>Jednoduchý zvyk před zveřejněním</h3>
+          <p>Než nahrajete fotky kamkoli, kde je uvidí lidé, které osobně neznáte — inzerát na bazaru, veřejný příspěvek, fórum, seznamovací profil — nejdřív je protáhněte přes Cleanly. Zabere to vteřiny, funguje to na celou dávku fotek najednou a vytvoří to vizuálně identické kopie bez jakýchkoli skrytých dat. Pokud z toho uděláte výchozí krok, a ne něco, co si vybavíte jen u „citlivých“ fotek, nikdy vás nezaskočí fotka, nad kterou jste neuvažovali.</p>
+
+          <h3>Co odstranění nezmění</h3>
+          <p>Stojí za to jasně říct, co Cleanly dělá a nedělá: odstraní ze souboru skrytá metadata, ale nemůže odstranit informace viditelné přímo v obrázku — ceduli s názvem ulice v pozadí, viditelné číslo domu, odraz prozrazující vaši polohu. Odstranění metadat řeší neviditelnou vrstvu; vše, co je ve fotce viditelné, je samostatná věc, kterou musíte před zveřejněním stále zkontrolovat vlastníma očima.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Cleanly pro fotografy: soukromí bez ztráty kvality</summary>
+        <div class="golden-rules-body">
+          <p>Fotografové mají k metadatům trochu jiný vztah než běžní uživatelé telefonů — část z nich je skutečně užitečné uchovat pro vlastní záznamy, takže „odstranit všechno, vždy“ není tak úplně správný instinkt.</p>
+
+          <h3>Proč mohou chtít fotografové některá metadata lokálně zachovat</h3>
+          <p>Nastavení fotoaparátu — clona, expoziční čas, ISO, ohnisková vzdálenost — je cenné při pozdějším hodnocení vlastních snímků: pochopení, jaké nastavení vytvořilo snímek, který se vám líbil, pomáhá ho zopakovat. U vlastních pracovních kopií, uchovávaných soukromě, není důvod tyto informace odstraňovat, protože jde o skutečně užitečná referenční data, která nenesou riziko pro soukromí, dokud soubory zůstávají u vás.</p>
+
+          <h3>Proč jsou dodané nebo zveřejněné kopie věc jiná</h3>
+          <p>V okamžiku, kdy je fotka dodána klientovi, zveřejněna na webu s portfoliem nebo veřejně, se situace mění — zejména údaje o poloze nemají v souboru určeném klientovi nebo veřejnosti co dělat, protože mohou prozradit místa focení, která měla zůstat soukromá (domov klienta při rodinném focení, soukromé prostory, přesná adresa ateliéru, pokud nemá být veřejná). Cleanly je určen právě pro tento krok: finální exporty určené ven jím před dodáním či zveřejněním protáhněte a vlastní pracovní soubory s plnými metadaty si nechte pro vlastní potřebu.</p>
+
+          <h3>Nikdy žádná ztráta kvality</h3>
+          <p>Častá (a rozumná) obava je, že odstranění metadat nějak ovlivní kvalitu obrázku — neovlivní. Metadata jsou samostatný blok textových informací uložený vedle pixelových dat, ne v nich, takže jejich odstranění nemá žádný vliv na rozlišení, barvy ani ostrost. Výstup z Cleanly je pixel po pixelu stejná fotka, jen bez skrytých dat, která by ji doprovázela.</p>
+
+          <h3>Zařazení do postupu dodání</h3>
+          <p>Pro fotografy, kteří pravidelně dodávají galerie nebo exportují dávky, je nejjednodušší považovat odstranění metadat za poslední krok před exportem, aplikovaný na celou dávku najednou, ne fotku po fotce. Tak se z něj stane rutinní součást dokončení zakázky, podobně jako závěrná kontrola kvality, místo něčeho, na co je třeba pamatovat zvlášť u každého klienta nebo každé platformy, kam se galerie sdílí.</p>
+
+          <h3>Ochrana klientů stejně jako sebe</h3>
+          <p>Je dobré pamatovat, že údaje o poloze a zařízení, které jsou v klientových fotkách v ohrožení, se často týkají života klienta, ne vašeho — rodinné focení u nich doma, zásnubní fotky páru na smysluplném soukromém místě. Odstranění metadat před dodáním chrání soukromí vašich klientů stejně jako vaši profesní pověst někoho, kdo s jejich snímky zachází pečlivě.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy na odstranění metadat záleží nejvíc</summary>
+        <div class="golden-rules-body">
+          <p>Ne každá fotka nese stejné riziko pro soukromí — vědět, které situace skutečně vyžadují odstranění metadat, pomáhá soustředit tento zvyk tam, kde na něm záleží nejvíc.</p>
+
+          <h3>Fotky pořízené doma nebo v práci</h3>
+          <p>Každá fotka pořízená uvnitř nebo bezprostředně kolem vašeho domova či pracoviště — včetně fotek do inzerátů, snímků „z home office“ nebo náhodných fotek z obýváku — nese metadata o poloze, která přímo ukazují na místo, kde pravidelně a předvídatelně trávíte čas. Je to trvale kategorie s nejvyššími sázkami, protože jde o místo, které je pro někoho nejcennější znát, a které většina lidí nenapadne chránit.</p>
+
+          <h3>Fotky s dětmi</h3>
+          <p>Fotky dětí — ve škole, na pravidelné aktivitě, v okolí bydliště — nesou další vrstvu rizika, pokud metadata o poloze přežijí, protože mohou prozradit, kde se dítě předvídatelně nachází v opakujících se časech. Mnoho rodičů už před zveřejněním pečlivě zvažuje, co je na fotce vidět; stejnou péči stojí za to věnovat tomu, co je v metadatech neviditelné.</p>
+
+          <h3>Cokoli, co jde cizímu člověku dřív, než vznikne důvěra</h3>
+          <p>Kupující na bazarech, online seznamování a další souvislosti, kde sdílíte fotky s někým, koho jste osobně neprověřili, jsou přesně situace, kdy nechcete prozradit víc informací, než jste zamýšleli. Fotka inzerátu nebo profilová fotka je nejjasnějším příkladem: příjemce s vámi zatím nemá žádný vztah a odstraněná metadata znamenají, že fotka prozradí jen to, co je na ní vidět, nic víc.</p>
+
+          <h3>Kdy na tom záleží méně</h3>
+          <p>Odstranění metadat je mnohem méně kritické u fotek sdílených soukromě s lidmi, které už znáte a kterým důvěřujete — poslání fotky přímo členovi rodiny nebo blízkému příteli soukromým kanálem nenese stejné riziko jako zveřejnění nebo poslání cizímu člověku. Neznamená to, že by ponechání metadat bylo z hlediska soukromí někdy přínosné, jen že praktická naléhavost roste s tím, jak veřejný nebo nedůvěryhodný příjemce je.</p>
+
+          <h3>Rozumné výchozí nastavení</h3>
+          <p>Vzhledem k tomu, jak je proces rychlý a bezeztrátový, má jen malou nevýhodu udělat z odstranění metadat výchozí zvyk u všeho, co opouští váš blízký, důvěryhodný okruh — nestojí vás to nic na kvalitě ani úsilí a znamená to, že nemusíte spoléhat na to, že si vzpomenete udělat to selektivně právě u fotky, na které nakonec záleží.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby lidí v ochraně soukromí u fotek</summary>
+        <div class="golden-rules-body">
+          <p>Většina problémů se soukromím u fotek pochází z hrstky zvyků, které se v danou chvíli zdají neškodné. Na co si dát pozor.</p>
+
+          <h3>Domněnka, že to platforma už řeší</h3>
+          <p>Je pravda, že mnoho velkých sociálních platforem odstraňuje metadata automaticky při nahrání, ale ne všechny, a přeposlané kopie, stažené soubory a sdílení tímto odstraněním spolehlivě neprojdou. Spoléhat na to, že „to platforma asi řeší“, je hazard; odstranění metadat sami před zveřejněním nejistotu úplně odstraní.</p>
+
+          <h3>Přemýšlení jen o tom, co je na fotce vidět</h3>
+          <p>Lidé často pečlivě kontrolují fotku kvůli viditelným detailům — žádné citlivé dokumenty v pozadí, žádné čitelné cedule s ulicemi — a zapomínají, že neviditelná metadata mohou prozradit úplně stejný druh informací (konkrétně polohu), i když obrázek sám vypadá dokonale bezpečně. Kontrola viditelného obsahu a odstranění metadat jsou dva samostatné, oba nutné kroky.</p>
+
+          <h3>Prodej věcí s nijak neupravenými fotkami inzerátu</h3>
+          <p>Inzeráty na bazarech jsou jedním z nejčastějších reálných zdrojů nechtěného vyzrazení polohy, protože prodejci fotí věci přesně tam, kde bydlí, a nahrávají fotky tak, jak jsou. Je to jeden z nejjasnějších a nejcennějších případů pro odstranění metadat před zveřejněním, protože riziko (vyzrazení domácí adresy cizím lidem) je konkrétní a náprava zabere vteřiny.</p>
+
+          <h3>Zapomenutí na staré, už zveřejněné fotky</h3>
+          <p>Odstranění metadat chrání jen fotky, které jste před sdílením upravili — zpětně neopraví fotky už někde zveřejněné s nedotčenými metadaty. Pokud se o dřívější příspěvky obáváte, náprava spočívá v návratu k těm konkrétním fotkám, jejich odstranění a nahrazení verzemi bez metadat, pokud to platforma dovoluje, místo předpokladu, že zvyk do budoucna pokryje vše, co už venku je.</p>
+
+          <h3>Brát to jako občasný úkol typu všechno, nebo nic</h3>
+          <p>Odstraňovat metadata jen u fotek, které „působí citlivě“, znamená pokaždé spoléhat na vlastní úsudek, což je přesně ten druh zvyku, který nakonec jednu fotku mine. Zařadit odstranění metadat do výchozí rutiny u všeho, co opouští důvěryhodný okruh, rozhodování úplně odstraní — uplatňuje se důsledně, ne výběrově.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>6. Cleanly pro SVG: odstranění metadat editoru, ne EXIF</summary>
+        <div class="golden-rules-body">
+          <p>Vše výše se týká dat EXIF vložených do fotek — GPS, model fotoaparátu, časová razítka. Soubory SVG EXIF nemají vůbec, protože to nejsou fotky; jsou to XML text popisující tvary. Ale designérské nástroje do SVG vkládají vlastní druh skrytých metadat a Cleanly je při vložení souboru také rozpozná a odstraní.</p>
+
+          <h3>Co designérské nástroje do SVG vkládají</h3>
+          <p>Illustrator, Inkscape, Sketch i Figma zapisují do souboru víc než jen tvary, které jste nakreslili: vložený <code>&lt;metadata&gt;</code>/RDF blok (někdy včetně údajů o autorství a licenci pomocí značek Dublin Core), atributy specifické pro editor s vlastním jmenným prostorem (nejčastější jsou značky <code>sodipodi:</code> z Inkscape) a prosté komentáře XML zanechané procesem exportu. Nic z toho není vidět při vykreslení SVG, ale všechno putuje se souborem ke každému, komu ho pošlete.</p>
+
+          <h3>Proč to záleží při sdílení</h3>
+          <p>Platí stejná úvaha jako u značky GPS na fotce: metadata, která jste vědomě nepřidali, jsou stále metadata, která odcházejí se souborem. Ikona nebo logo exportované pro klienta, inzerát nebo veřejný repozitář může nést informace o verzi softwaru nebo uvedení autorství, které jste nikdy nechtěli zveřejnit. Jejich odstranění před sdílením je stejný zvyk „nestojí nic, předejde překvapení“ jako odstranění EXIF z fotky.</p>
+
+          <h3>Co vám Cleanly ukáže před odstraněním</h3>
+          <p>Stejně jako vypisuje značky GPS, fotoaparátu a data nalezené ve fotce, Cleanly prohledá vložený SVG a ukáže přesně, co našel — vložená metadata, autorská data editoru nebo komentáře — takže před odstraněním vidíte, co v souboru skutečně je, místo odstraňování poslepu.</p>
+
+          <h3>Bezeztrátově, ne ztrátově</h3>
+          <p>Na rozdíl od komprese fotek tu nejde o kompromis v kvalitě. Čištění odstraňuje jen balast, který prohlížeč stejně nikdy nevykresloval — tvary, barvy a struktura vytvořené vaším designérským nástrojem zůstávají zcela nedotčeny, takže vyčištěný soubor vypadá pixel po pixelu stejně a lze ho poté dál otevřít a upravovat ve vektorovém editoru.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="context">
+      <details class="golden-rules-article">
+        <summary>1. Jak přidávání textu do PDF doopravdy funguje</summary>
+        <div class="golden-rules-body">
+          <p>Strana PDF není textový dokument, do kterého můžete jen kliknout a psát — je blíž vytištěnému listu, pevnému obrazu textu a grafiky rozmístěných na přesných pozicích. Pochopení tohoto rozdílu vysvětluje, co Context dělá i proč funguje tak, jak funguje.</p>
+
+          <h3>Strana je obraz, ne dokument</h3>
+          <p>Většina PDF (cokoli, co není výslovně vytvořeno jako vyplnitelný formulář) nezná pojem „prázdné místo, do kterého lze psát“. To, co vidíte jako čáru, rámeček nebo prázdné pole, je ve skutečnosti jen barva umístěná na pevných souřadnicích — pod tím není žádné textové pole čekající na váš vstup, jako ve Wordu nebo webovém formuláři. Když vám Context umožní „přidat text“ do PDF, nenajde skryté pole a nevyplní ho; umístí zcela novou, nezávislou vrstvu textu na existující stranu, kamkoli ji přetáhnete.</p>
+
+          <h3>Překrytí vs. úpravy</h3>
+          <p>Tento přístup přes překrytí používá v podstatě každý nástroj na anotace PDF, nejen tento — skutečná úprava původního textu PDF (změna věty, která je už vytištěna na straně) vyžaduje specializovaný software a často není vůbec možná, pokud původní soubor nezachoval upravitelné textové vrstvy. Context dělá něco jednoduššího a mnohem univerzálnějšího: přidá nový, samostatný kus textu, který vizuálně leží nad stranou, což je přesně to, co chcete pro popisky, poznámky, iniciály nebo vyplnění prázdné čáry ve formuláři.</p>
+
+          <h3>Body, ne pixely</h3>
+          <p>Strany PDF měří pozici v bodech (1/72 palce), ne v pixelech na obrazovce, které přetahujete prstem nebo kurzorem. Context tento převod obstará za vás — to, co vidíte na obrazovce, při jakémkoli přiblížení, se vždy přesně promítne na správnou pevnou pozici ve skutečném PDF, takže textové pole umístěné nahoře na straně zůstane nahoře bez ohledu na to, na jakém zařízení nebo při jakém přiblížení ho někdo jiný později otevře.</p>
+
+          <h3>Co se stane při stažení</h3>
+          <p>Když kliknete na Stáhnout, každé textové pole a tvar, které jste umístili, se trvale vykreslí na strany PDF — včetně barev, tučného písma/kurzívy/podtržení, přesné pozice a velikosti — a vznikne jediný běžný soubor PDF. Neexistuje žádný zvláštní „formát Contextu“ ani nic samostatného ke sledování: výsledný soubor se otevře a vytiskne stejně jako jakékoli jiné PDF, v jakékoli čtečce PDF, na jakémkoli zařízení.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Výběr správné velikosti písma a umístění pro různé dokumenty</summary>
+        <div class="golden-rules-body">
+          <p>Správná velikost textu a pozice závisí zcela na tom, jaký dokument označujete a kdo ho bude číst dál. Takto o tom přemýšlet podle scénáře.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Typ dokumentu</th><th>Doporučený postup</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Typ dokumentu">Vyplňování prázdných řádků formuláře</td><td data-label="Doporučený postup">Odpovídat velikosti tištěného popisku, umístit těsně nad čáru</td></tr>
+              <tr><td data-label="Typ dokumentu">Přidání poznámky nebo komentáře</td><td data-label="Doporučený postup">Použít kontrastní barvu, držet ji jasně odděleně od původního textu</td></tr>
+              <tr><td data-label="Typ dokumentu">Podpis nebo parafování</td><td data-label="Doporučený postup">Mírně větší než okolní text, vystředěné na čáře</td></tr>
+              <tr><td data-label="Typ dokumentu">Popisky v PDF plném obrázků</td><td data-label="Doporučený postup">Jednotná velikost všech popisků na všech stranách</td></tr>
+              <tr><td data-label="Typ dokumentu">Formální nebo právní dokumenty</td><td data-label="Doporučený postup">Přesně odpovídat velikosti písma dokumentu, použít černou</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Přizpůsobení stávajícímu textu dokumentu</h3>
+          <p>Nejdůležitější věcí, díky které přidaný řádek vypadá záměrně a ne nalepeně, je přizpůsobení jeho velikosti tomu, co je už vytištěno poblíž. Pokud jsou popisky formuláře vytištěny zhruba 11–12bodovým písmem, přidání odpovědi 24bodovým písmem působí, jako by tam nepatřila, i když je pozice dokonalá. Nejdřív si přiblížte okolní tištěný text, udělejte si hrubou představu o jeho velikosti a zvolte podobnou — Context si pamatuje poslední použitou velikost, takže jakmile ji jednou přizpůsobíte, každé další pole začíná automaticky na stejné velikosti.</p>
+
+          <h3>Zůstat uvnitř čar — doslova</h3>
+          <p>Prázdné řádky a políčka ve formulářích jsou obvykle dimenzovány na konkrétní množství textu o konkrétní velikosti. Než do krátkého řádku napíšete dlouhou odpověď, zvažte, zda se nemá mírně zmenšit, aby se vešla, protože text přesahující konec tištěné čáry vypadá jako chyba pro každého, kdo hotový dokument čte dál, ačkoli technicky není nic porušeno.</p>
+
+          <h3>Výběr barvy, která působí jako „přidaná“, ne „skrytá“</h3>
+          <p>Černý text je obvykle nejbezpečnější výchozí volba, protože odpovídá tomu, jak je většina formulářů a dokumentů vytištěna, a neupozorňuje na sebe jako na dodatek. Barevný text je skutečně užitečný pro poznámky, opravy nebo cokoli, co se má od původního obsahu výrazně odlišit — jen se ujistěte, že zvolená barva má skutečný kontrast proti straně pod ní; světlé barvy jako žlutá snadno zaniknou na bílé straně.</p>
+
+          <h3>Ponechání okraje pro nečekané</h3>
+          <p>Umístění textu přímo na samý okraj strany riskuje jeho oříznutí, pokud se dokument později vytiskne na trochu jiný formát papíru nebo s jiným nastavením okrajů, než se čekalo. Ponechání malé rezervy mezi textem a okrajem strany — i mezi textem a okolním tištěným obsahem — udrží výsledek čistý bez ohledu na to, jak se nakonec vytiskne nebo zobrazí.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Vyplňování formulářů a podepisování dokumentů bez tiskárny</summary>
+        <div class="golden-rules-body">
+          <p>Vytisknout, podepsat, naskenovat a poslat zpět e-mailem je stále způsob, jakým se řeší spousta papírování — a téměř vždy je to zbytečné. Takto to přeskočit pouze s prohlížečem.</p>
+
+          <h3>Nahrazení cyklu tisk–podpis–sken</h3>
+          <p>Pokud formulář potřebuje jen jméno, datum, pár krátkých odpovědí a značku, kam patří podpis, málokdy existuje skutečný důvod zapojovat tiskárnu nebo skener. Otevřete PDF přímo v Contextu, umístěte textové pole na každý prázdný řádek, napište odpověď a stáhněte — celý okruh, který dřív vyžadoval papír, teď probíhá celý na obrazovce a výsledkem je čistší a čitelnější PDF, než jaké bývá naskenovaná papírová kopie. U zaškrtávacího políčka nebo možnosti s výběrem vložte tvar (kříž pro označení, kruh pro výběr) místo psaní znaku zaškrtnutí, který v písmu ani nemusí být.</p>
+
+          <h3>Psané podpisy a iniciály</h3>
+          <p>Napsat své jméno rukopisným stylem na řádek pro podpis je běžná praxe u velké části každodenního papírování — interní firemní formuláře, neformální dohody, potvrzení o převzetí a podobné dokumenty s nízkými sázkami. Jedno je ale třeba vidět střízlivě: napsané jméno není totéž co právně uznávaný elektronický podpis podle zákonů jako eIDAS nebo americký ESIGN Act, které obecně vyžadují konkrétní souhlas a ověřovací kroky, jaké jednoduché napsané překrytí neposkytuje. Pro smlouvy, právní podání nebo cokoli, kde na platnosti podpisu skutečně záleží, použijte místo toho specializovanou službu pro elektronický podpis — Context je správný nástroj pro neformální papírování, ne jeho náhrada.</p>
+
+          <h3>Zarovnání odpovědí s tištěnými popisky</h3>
+          <p>Většina formulářů tiskne popisek („Jméno:“, „Datum:“) a za ním prázdný řádek nebo políčko pro odpověď. Přetáhněte textové pole tak, aby leželo těsně nad čárou, ne přímo na ní — text umístěný přímo na tištěné čáře je po překrytí obtížně čitelný, zatímco text vznášející se těsně nad ní zůstává jasně čitelný a pro každého, kdo hotovou stranu vidí, stále vypadá jako „odpověď k tomu popisku“.</p>
+
+          <h3>Dvojitá kontrola před odesláním</h3>
+          <p>Jakmile je každé pole vyplněno, vyplatí se projít každou stranu ve skutečné velikosti (ne jen v náhledu, do kterého jste psali) a ověřit, že se nic nepřekrývá, nic nepřesahuje okraj čáry a každé povinné pole je skutečně vyplněno — textové pole, které vypadá dobře při aktivní úpravě, může při pohledu na hotovou stranu jako celek občas sedět trochu jinak.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Práce s vícestránkovými PDF: jednotnost a úpravy stranu po straně</summary>
+        <div class="golden-rules-body">
+          <p>Vícestránkové smlouvy, zprávy a formuláře vyžadují trochu jiný přístup než rychlá úprava jedné strany — hlavně v udržení jednotnosti při postupu dokumentem.</p>
+
+          <h3>Pohyb mezi stranami bez ztráty orientace</h3>
+          <p>Navigace stranami v Contextu udržuje každé textové pole vázané na konkrétní stranu, na kterou bylo umístěno, takže přecházení mezi stranami při vyplňování různých částí dlouhého dokumentu neriskuje žádné promíchání — pole přidané na straně 3 zůstane na straně 3, bez ohledu na to, kolik dalších stran před stažením navštívíte.</p>
+
+          <h3>Udržení jednotné velikosti a barvy napříč stranami</h3>
+          <p>U všeho, co má opakující se strukturu napříč stranami — například stejný druh popisku na každé straně vícestránkového formuláře — záměrné používání stejné velikosti písma a barvy pokaždé udrží hotový dokument jako jeden ucelený průchod, ne jako několik nejednotných úprav slepených dohromady. Protože se naposledy použitá velikost a barva automaticky přenášejí do dalšího přidaného pole, udržení jednotnosti v dlouhém dokumentu obvykle znamená jen je neměnit, pokud to opravdu nechcete.</p>
+
+          <h3>Plánování průchodu před začátkem psaní</h3>
+          <p>U delších dokumentů se vyplatí rychle projít každou stranu — jen se dívat, ještě nepsat — abyste viděli celý rozsah toho, co je třeba vyplnit, dřív než se zavážete k velikosti a pozici na první straně. Velikost, která vypadá správně na řídké první straně, se může ukázat jako příliš velká na hustší stranu dále v dokumentu a včasné zachycení ušetří návrat a změnu velikosti polí, která už jste umístili.</p>
+
+          <h3>Kontrola celého dokumentu před stažením</h3>
+          <p>Protože se každá strana vykresluje a upravuje samostatně, snadno se soustředíte na stranu, se kterou právě pracujete, a ztratíte přehled o dokumentu jako celku. Před stažením se vraťte od začátku — je to jediný způsob, jak zachytit zcela přeskočenou stranu nebo pole, které skončilo odlišně od ostatních, aniž byste si toho při práci všimli.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při přidávání textu do PDF (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina problémů s upraveným PDF vychází z malé sady snadno přehlédnutelných chyb. Na co si dát pozor.</p>
+
+          <h3>Text příliš malý po oddálení</h3>
+          <p>Snadno napíšete text velikostí, která při přiblížení a soustředění na jedno pole vypadá dokonale čitelně, jen abyste zjistili, že je znatelně malá, když se strana zobrazí v běžné plné velikosti. Před stažením oddalte (nebo zkontrolujte hotové PDF v samostatné čtečce) a ověřte, že je každé pole čitelné ve skutečné velikosti, ne jen ve velikosti při úpravách.</p>
+
+          <h3>Umístění textu přes existující obsah místo vedle něj</h3>
+          <p>Umístění textového pole přímo na tištěný text nebo čáru způsobí, že obojí je po překrytí špatně čitelné — podkladový obsah se neuhne. Posuňte nový text do skutečně prázdného místa poblíž, místo abyste ho kladli přímo na něco, co už je tam vytištěno.</p>
+
+          <h3>Úprava špatné strany</h3>
+          <p>U delšího dokumentu snadno ztratíte přehled, která strana je právě aktivní, zejména po přiblížení nebo posunu, a skončíte s textem přidaným na úplně špatnou stranu. U dokumentu delšího než jedna strana zkontrolujte před přidáním pole indikátor strany, zejména hned po přechodu na novou stranu.</p>
+
+          <h3>Použití barvy se slabým kontrastem</h3>
+          <p>Světlé barvy — zejména bledě žlutá — mohou vypadat dobře při úpravách na jasné obrazovce a pak být skutečně špatně čitelné po vytištění nebo na jiném displeji. U všeho, co se má skutečně přečíst, a ne jen zaznamenat, zůstaňte u barev se silným kontrastem proti bílé, jako černá nebo sytá barva.</p>
+
+          <h3>Zapomenutí přejmenovat soubor před sdílením</h3>
+          <p>Stažení rovnou pod obecným nahraným názvem vás (nebo toho, komu soubor pošlete) může nechat se souborem prostě nazvaným „dokument“ nebo podobně, k nerozeznání od tuctu dalších souborů se stejným výchozím názvem. Chvilka na jasný, konkrétní název před stažením — co to je a často datum — ušetří později skutečný zmatek, zejména když se ve složce stažených souborů začne hromadit několik verzí téhož formuláře.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="gif">
+      <details class="golden-rules-article">
+        <summary>1. Kompletní průvodce GIFy: počet snímků, velikost a proč jsou stále všude</summary>
+        <div class="golden-rules-body">
+          <p>Formát GIF je desítky let starý a technicky primitivní ve srovnání s moderním videem, přesto nikdy nezmizel — je to jediný formát pohyblivého obrazu, který se přehrává automaticky všude, bez ovládacích prvků přehrávače, bez zvuku a bez překážky „klikněte pro přehrání“. Pochopení toho, co to ve skutečnosti je, vysvětluje jeho limity i to, proč mají nastavení Congify právě takovou podobu.</p>
+
+          <h3>Co GIF doopravdy je</h3>
+          <p>GIF není komprimované video — je to sekvence jednotlivých obrázků, každý omezený na paletu nejvýše 256 barev, přehrávaná jeden po druhém ve smyčce. Nemá vůbec zvukovou stopu a nelze ji přidat; GIF je ze své podstaty němý, což je přesně důvod, proč se přehrává automaticky na místech, kde by video ne (chatovací aplikace, sociální feedy, příspěvky na fórech), aniž by potřeboval tlačítko ztlumení nebo klepnutí pro spuštění.</p>
+          <p>Limit 256 barev je největším technickým omezením formátu. Není to totéž co ztrátová komprese JPG, která rozmazává detail kvůli úspoře místa — GIF skutečně nedokáže zobrazit víc než 256 odlišných barev v jednom snímku, takže plynulé přechody a fotografická barevná hloubka se zredukují na menší paletu. U většiny běžných klipů (nahrávky obrazovky, reakční klipy, krátké záběry s hrstkou dominantních barev) je to neviditelné nebo téměř; u západu slunce se širokým, jemným barevným přechodem někdy uvidíte viditelné pruhování.</p>
+
+          <h3>Počet snímků za sekundu: kompromis fps</h3>
+          <p>Congify nabízí 5, 10, 15 nebo 20 snímků za sekundu. Každý další snímek je další celý obrázek přidaný do souboru, takže počet snímků za sekundu je největší páka na velikost souboru — přechod z 10 na 20 snímků za sekundu zhruba zdvojnásobí počet snímků (a zhruba i velikost souboru) při stejné délce klipu, za zlepšení plynulosti, které je při rozlišení GIFů a běžné velikosti zobrazení často těžké i zaznamenat.</p>
+          <p>10 snímků za sekundu je rozumné výchozí nastavení pro většinu klipů — pohyb působí plynule, aniž by se soubor nafoukl. Pro cokoli dlouhého nebo převážně statického (snímek s textem, pomalý přejezd) klesněte na 5, kde menší počet snímků nebude znatelný. K 15–20 snímkům za sekundu sáhněte jen tehdy, když je samotný pohyb rychlý a trhavost by skutečně rušila — rychlá hra, rychlá gesta rukou, cokoli s velkou změnou mezi snímky.</p>
+
+          <h3>Velikost a ořez: Celé, Čtverec, Na výšku</h3>
+          <p>Celé ponechá původní poměr stran zdrojového videa beze změny — nejbezpečnější výchozí volba, když si nejste jisti, kde GIF skončí. Čtverec (1:1) ořízne na vystředěný čtverec, který většina sociálních platforem čistě zobrazuje ve feedu bez pruhů nebo nepředvídatelného ořezu na své straně. Na výšku se hodí pro stories a umístění svislého videa, kde by se klip na šířku jinak zobrazil malý s pruhy po stranách.</p>
+          <p>Ořez probíhá před vytvořením GIFu, ne po něm, takže cokoli je odříznuto režimem Čtverec nebo Na výšku, je z výstupu skutečně pryč — vyplatí se prohlédnout si ořez na svém skutečném motivu (je důležitá část záběru uprostřed?), místo abyste předpokládali, že to vždy dopadne dobře.</p>
+
+          <h3>Rychlé pravidlo rozhodování</h3>
+          <p>Krátký, běžný klip s lidmi nebo pohybem → 10 snímků za sekundu, Celé. Zveřejnění do feedu, který stejně ořezává na čtverec → Čtverec, abyste ořez řídili vy, ne platforma. Dlouhý nebo převážně statický záznam → nejdřív snižte na 5 snímků za sekundu, než sáhnete po jiném zmenšení.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Střih: výběr správné délky klipu</summary>
+        <div class="golden-rules-body">
+          <p>Největší věcí, kterou ovlivníte na velikosti GIFu a na tom, jak dobře se čte, není počet snímků ani ořez — je to, kolik záznamu mu vůbec dodáte. Dobrý střih záleží víc než jakékoli nastavení po něm.</p>
+
+          <h3>Proč je kratší téměř vždy lepší</h3>
+          <p>GIF se opakuje, takže ho divák obvykle uvidí víckrát — dobrý GIF si zaslouží druhou a třetí smyčku, ne aby jednu potřeboval k pochopení, co se stalo. Zkrácení na jediný důležitý okamžik (gesto, reakce, pointa, konkrétní kousek dění na obrazovce) místo několika vteřin kolem skoro vždy vytvoří něco účinnějšího, nejen menšího — GIF, který potřebuje 10 vteřin, aby dával smysl, obvykle není dobrým kandidátem na GIF vůbec.</p>
+          <p>Velikost souboru roste přímo s délkou klipu — 6vteřinový střih má při stejném počtu snímků a nastavení velikosti zhruba dvojnásobnou velikost než 3vteřinový, při jinak stejných podmínkách. Protože se GIFy tak často sdílejí přes chatovací aplikace a pomalejší připojení, těsný střih je obvykle větší výhra než snížení počtu snímků nebo menší ořez.</p>
+
+          <h3>Přesné používání posuvníku</h3>
+          <p>Přetažením dvou úchytů na filmovém pásu nastavte přesně, kde klip začíná a končí — náhled se aktualizuje živě, takže přesně vidíte, co si necháváte, než zvolíte počet snímků nebo velikost. Zvlášť pomalu projděte okolí bodů začátku a konce; půlvteřina prázdna na začátku nebo zbylý snímek navíc na konci je častým důvodem, proč zkrácený GIF působí méně údernně než okamžik, který jste měli původně na mysli.</p>
+
+          <h3>Směr přehrávání: Normální, Zpětně, Bumerang</h3>
+          <p>Normální přehraje zkrácený klip jednou a ve smyčce skočí z konce rovnou na začátek — pro většinu záznamů v pořádku, ale tvrdý střih zpět na začátek může působit trhaně, pokud první a poslední snímek přirozeně nenavazují. Zpětně přehraje stejný klip pozpátku, což se hodí hlavně jako záměrný efekt, ne jako obecné nastavení. Bumerang přehraje klip dopředu a hned zpět, než se zopakuje, takže GIF se pohybuje sem a tam místo skoku na začátek — je to nastavení pro případy, kdy by místo zacyklení jinak vypadalo rušivě, a u krátkých smyčkových klipů se stalo známým, rozpoznatelným stylem samo o sobě.</p>
+
+          <h3>Rychlost: zpomalení nebo zrychlení smyčky</h3>
+          <p>Rychlost mění tempo přehrávání nezávisle na počtu snímků za sekundu, s jakým byl klip extrahován — 0,5× přehrává poloviční rychlostí pro důraz nebo efekt zpomaleného záběru, zatímco 2× nebo 4× stlačí delší děj do těsnější, údernější smyčky. Je to jiné ovládání než počet snímků: ten určuje, kolik snímků existuje, rychlost určuje, jak rychle GIF prochází snímky, které už má, takže zpomalený GIF s nízkým počtem snímků může stále vypadat trhaně — pokud potřebujete plynulost i efekt zpomalení, spojte pomalejší rychlost s vyšším počtem snímků.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Přidávání titulků, které opravdu fungují</summary>
+        <div class="golden-rules-body">
+          <p>Titulky z GIFu udělají něco, co se dá přečíst i s vypnutým zvukem všude jinde na stránce — což je, protože GIFy nemají zvuk vůbec, vždy. Aby byly čitelné na pohyblivém, nepředvídatelném pozadí, vyžaduje to o trochu víc péče než vložit text na statický obrázek.</p>
+
+          <h3>Volba písma a čitelnost</h3>
+          <p>Impact (klasické tlusté, úzké písmo pro memy) je čitelné i v malých velikostech a na rušném pozadí obstojí lépe než lehčí, tenčí řez — je to záměrná, praktická volba, ne jen stylová výchozí. Arial je bezpečnější, neutrálnější volba pro cokoli, co má působit informačně, ne jako mem. Times a Comic Sans jsou tu pro případ, kdy tón vyžaduje něco konkrétního, ale ani jedno na pohyblivém pozadí v malých velikostech titulků tak dobře neobstojí.</p>
+
+          <h3>Obrys: proč je text s obrysem čitelnější na jakémkoli pozadí</h3>
+          <p>Pozadí GIFu se mění snímek od snímku, takže text bez obrysu může být v jednom snímku dokonale čitelný a v dalším téměř neviditelný, pokud se záznam za ním změní z tmavého na světlý. Obrys — okraj v kontrastní barvě, obvykle černý kolem bílého textu nebo bílý kolem černého — udrží titulek čitelný i přes tyto změny, protože oko se na rušném nebo se měnícím pozadí zachytí na obrys (ne jen na výplň). Zapněte ho u téměř všeho se skutečným pohybem na pozadí; je to jedno z mála nastavení, které stojí za to mít ve výchozím stavu zapnuté.</p>
+
+          <h3>Základy barevného kontrastu</h3>
+          <p>Bílý nebo žlutý text s černým obrysem je klasická, spolehlivá kombinace — obstojí na téměř jakémkoli záznamu. Černý text může fungovat na trvale světlém záznamu, ale je riskantnější, jakmile se jakákoli část klipu ztmaví. Při pochybnostech si prohlédněte titulek přes nejtmavší a nejsvětlejší okamžiky zkráceného klipu, ne jen přes snímek, na který jste se při psaní zrovna dívali.</p>
+
+          <h3>Umístění a více titulků</h3>
+          <p>Titulky lze přetáhnout kamkoli v rámci záběru a měnit jejich velikost tažením rohového úchytu, takže vám není vnuceno pevné umístění „nahoře“ nebo „dole“ — umístěte každý tam, kde nezakrývá část záznamu, na které skutečně záleží. Congify podporuje několik titulků ve stejném GIFu, užitečných pro vtip o více taktech nebo označenou sekvenci, ale každý přidává vizuální neklid, takže než jich nasypete několik, vyplatí se zeptat, zda práci neudělá jediný dobře umístěný řádek.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy použít GIF, kdy MP4 a kdy statický obrázek</summary>
+        <div class="golden-rules-body">
+          <p>GIF není vždy správnou odpovědí jen proto, že zdrojem je videoklip — vědět, kdy skutečně porazí alternativy, vás ušetří nafouknutého souboru, který by video zvládlo lépe, nebo obrázku s titulkem, který pohyb vůbec nepotřeboval.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situace</th><th>Nejlepší volba</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Chatovací aplikace a zprávy</td><td data-label="Nejlepší volba">GIF — přehrává se automaticky, bez klepnutí</td></tr>
+              <tr><td data-label="Situace">Delší klip s důležitým zvukem</td><td data-label="Nejlepší volba">MP4 — GIFy zvuk vůbec nenesou</td></tr>
+              <tr><td data-label="Situace">Jediný okamžik, pohyb není potřeba</td><td data-label="Nejlepší volba">Statický obrázek — menší a jednodušší</td></tr>
+              <tr><td data-label="Situace">Krok návodu nebo dokumentace</td><td data-label="Nejlepší volba">GIF pro krátké opakovatelné akce, video pro delší průvodce</td></tr>
+              <tr><td data-label="Situace">Příspěvek na sociální síti</td><td data-label="Nejlepší volba">Funguje obojí — ověřte, co platforma skutečně přehrává automaticky</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Aplikace pro zprávy a reakce</h3>
+          <p>Tohle je domovské hřiště formátu — GIF se vloží přímo do chatu a hned se přehrává, bez klepnutí, bez načítání, bez samostatného přehrávače videa. Pro rychlou reakci, opakovatelnou smyčku nebo krátký klip, který má v konverzaci zapůsobit okamžitě, se nic jiného takto nechová.</p>
+
+          <h3>Příspěvky na sociálních sítích</h3>
+          <p>Většina platforem nahraný GIF stejně interně převede na smyčkové video, takže praktický rozdíl oproti přímému zveřejnění MP4 bývá malý — ale GIF je stále bezpečnější volba, pokud si nejste jisti, že daná platforma nebo vložený přehrávač bude nahrané MP4 chovat stejně (automatické přehrávání, bez ikony zvuku, bez ovládacích prvků přehrávače).</p>
+
+          <h3>Dokumentace a návody</h3>
+          <p>Krátký smyčkový GIF je skutečně vynikající pro ukázku jedné opakovatelné akce v rozhraní — klikněte sem, přetáhněte tohle, sledujte, jak se otevře tato nabídka — protože se opakuje sám a čtenář nemusí mačkat přehrát ani se vracet zpět. Pro cokoli delšího než pár vteřin nebo cokoli, co potřebuje komentář, poslouží čtenáři lépe skutečné video s ovládáním přehrávání než dlouhá, němá, automaticky přehrávaná smyčka.</p>
+
+          <h3>E-mail a prezentace</h3>
+          <p>Podpora animovaných GIFů v e-mailových klientech a prezentačním softwaru je nejednotná — některé vykreslí každý snímek, jak má, jiné zobrazí jen první snímek jako statický obrázek. Pokud je animace pro to, co v takové souvislosti sdělujete, podstatná, vyplatí se ji nejdřív otestovat v cílovém prostředí, místo abyste předpokládali, že se bude animovat jako v prohlížeči.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby u GIFů (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina zklamávajících GIFů pramení z malé sady předejitelných rozhodnutí učiněných brzy v procesu, ještě než přijde na řadu jediný titulek nebo nastavení ořezu.</p>
+
+          <h3>Výchozí nastavení počtu snímků na maximum</h3>
+          <p>Svádí to sáhnout pokaždé po 20 snímcích za sekundu s předpokladem, že víc je prostě lépe, ale u většiny běžných klipů je zisk plynulosti oproti 10 snímkům sotva viditelný, zatímco velikost souboru se zhruba zdvojnásobí. Vyšší počty si nechte pro záznam, kde je pohyb opravdu dost rychlý, aby je potřeboval.</p>
+
+          <h3>Příliš volný střih</h3>
+          <p>Pár vteřin navíc před skutečným okamžikem a po něm soubor nejen nafoukne — také zředí pointu GIFu a donutí diváka přetrpět rozjezd, který by těsnější střih rovnou přeskočil. Při pochybnostech střihněte těsněji, než je příjemné, a zkontrolujte náhled; málokdy je to příliš krátké.</p>
+
+          <h3>Titulky bez obrysu přes rušný záznam</h3>
+          <p>Text, který vypadal dokonale čitelně na jediném snímku, na který jste při psaní zírali, může o vteřinu později úplně zmizet, jakmile se pozadí změní. Zapnutí obrysu ve výchozím stavu u všeho se skutečným pohybem na pozadí předejde tomu, že na to přijdete až po sdílení GIFu.</p>
+
+          <h3>Ignorování velikosti souboru na mobilním připojení</h3>
+          <p>Dlouhý GIF s vysokým počtem snímků v plné velikosti může být několikrát větší než stejný klip jako správně zakódované video — a na rozdíl od videa nelze GIF na většině míst, kde se sdílí, „pozastavit před úplným načtením“, takže musí dorazit celý soubor, než se vůbec začne přehrávat. Pokud GIF vychází nečekaně velký, jsou dvě nastavení, která stojí za to zkontrolovat nejdřív, kratší střih a nižší počet snímků, dávno před menším ořezem.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="coudio">
+      <details class="golden-rules-article">
+        <summary>1. Kompletní průvodce zvukovými formáty: MP3 vs WAV</summary>
+        <div class="golden-rules-body">
+          <p>Zvukové formáty se dělí podél stejné čáry ztrátové vs bezeztrátové jako formáty obrázků a stejná základní otázka rozhoduje, který skutečně chcete: připravujete něco k poslechu a sdílení, nebo něco k uchování v nejlepší možné kvalitě pro další práci?</p>
+
+          <h3>MP3: ztrátový, univerzální formát</h3>
+          <p>MP3 používá ztrátovou kompresi a zahazuje zvukový detail, který lidský sluch hůř zaznamenává, aby soubor dramaticky zmenšil — často na desetinu velikosti nekomprimovaného originálu nebo méně, podle použitého datového toku. Podporuje ho v podstatě všechno: každý telefon, každé autorádio, každá hudební aplikace, každý web. Pro poslech, sdílení a každodenní použití je MP3 téměř vždy správnou výchozí volbou.</p>
+          <p>Kompromis je stejný jako u JPG: část detailu je po kompresi skutečně pryč a nevrátí se, když MP3 později převedete na něco jiného. Při běžném poslechu je to při rozumném datovém toku neslyšitelné; u kritického poslechu, masteringu nebo archivace to začíná záležet.</p>
+
+          <h3>WAV: bezeztrátový, nekomprimovaný formát</h3>
+          <p>WAV ukládá zvuk nekomprimovaně — každý vzorek zachován přesně, bez zahození dat. Proto je správnou volbou pro cokoli, co se bude dál upravovat, míchat nebo zpracovávat, protože artefakty ztrátové komprese se nenabalují jeden na druhý během několika kol úprav jako u opakovaně ukládaného MP3. Je to také standardní formát pro archivní mastery, protože je to nejblíž uchování původní nahrávky v neporušené podobě.</p>
+          <p>Cenou je velikost: soubory WAV jsou obvykle 5–10× větší než MP3 téhož zvuku při rozumném datovém toku, protože žádná komprese nic nepřispívá. Pár minut zvuku ve WAV může mít už desítky megabajtů, což záleží, když ho posíláte e-mailem nebo ukládáte ve velkém.</p>
+
+          <h3>Rychlé pravidlo rozhodování</h3>
+          <p>Sdílení, poslech, nahrávání na většinu platforem → MP3. Úpravy, míchání nebo archivace master kopie, ke které se vrátíte → WAV. Nejste si jisti a jde o jednorázovou věc → MP3 je bezpečnější výchozí volba; přehraje ho téměř všechno.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Datový tok vysvětlen: výběr správného čísla pro MP3</summary>
+        <div class="golden-rules-body">
+          <p>Datový tok je jediné nastavení MP3, na kterém skutečně záleží jak u velikosti souboru, tak u kvality, a vyplatí se pochopit, jak zvolit rozumné číslo pro to, co děláte, místo hádání.</p>
+
+          <h3>Co datový tok doopravdy řídí</h3>
+          <p>Datový tok je množství dat použitých ke kódování každé vteřiny zvuku, měřené v kilobitech za sekundu (kb/s). Vyšší datový tok zachová víc původního detailu a zní blíž nekomprimovanému zdroji; nižší komprimuje silněji, víc zahazuje, výměnou za menší soubor. Je to přímý, zhruba lineární vztah: zdvojnásobení datového toku zhruba zdvojnásobí velikost souboru při stejné délce zvuku.</p>
+
+          <h3>Přizpůsobení datového toku tomu, co kódujete</h3>
+          <p>Mluvené slovo — podcasty, hlasové poznámky, audioknihy, komentáře — vůbec nepotřebuje vysoký datový tok; hlas je mnohem méně složitý než hudba a i nízký datový tok zní jasně a dokonale srozumitelně při malých souborech. Hudba, zejména s širokým dynamickým rozsahem nebo mnoha současně hrajícími nástroji, těží z výrazně vyššího datového toku, než se artefakty komprese (lehká drsnost nebo „podvodní“ zvuk ve složitých pasážích) stanou slyšitelnými.</p>
+          <p>Na horním konci existuje skutečný bod klesajících výnosů: za určitým datovým tokem už většina posluchačů na běžných sluchátkách nebo reproduktorech spolehlivě nerozezná rozdíl od zdroje, takže další zvyšování čísla jen nafoukne soubor bez znatelného zisku kvality. Pokud si nejste jisti, střední datový tok je bezpečná univerzální volba — znatelně lepší než nastavení hlasu s nízkým tokem, bez velikosti souboru nastavení pro mastering hudby s maximální kvalitou, které pro běžné sdílení nepotřebujete.</p>
+
+          <h3>Kdy datový tok nehraje roli</h3>
+          <p>Pokud převádíte na WAV místo MP3, datový tok je irelevantní — WAV je nekomprimovaný, takže není co nastavovat. Datový tok přichází do hry, až když záměrně měníte část kvality za menší soubor, což je celý smysl volby MP3 místo WAV.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Extrakce zvuku z videosouboru</summary>
+        <div class="golden-rules-body">
+          <p>Coudio nepřevádí jen existující zvukové soubory — umí také vytáhnout zvukovou stopu z videa a dát vám jen zvuk, obraz úplně zahodí.</p>
+
+          <h3>Časté důvody, proč to lidé potřebují</h3>
+          <p>Proměnit nahrané video přednášky, schůzky nebo rozhovoru na zvukový soubor ve stylu podcastu, který je mnohem menší a lépe se poslouchá na cestách. Vytáhnout píseň nebo zvukový klip z videa, když je skutečně potřeba jen zvuk. Archivovat jen zvukovou část starých videozáznamů kvůli úspoře místa. Převést komentář z nahrávky obrazovky na samostatný zvukový soubor pro úpravy nebo přepis jinde.</p>
+
+          <h3>Jak to doopravdy funguje</h3>
+          <p>Přetáhněte soubor MP4, WEBM, MOV nebo OGV do Coudia stejně jako zvukový soubor — nástroj pozná, že jde o video, a automaticky extrahuje zvukovou stopu, obraz zahodí. Vyberte MP3 nebo WAV jako výstup stejně jako u běžného zvukového souboru a (u MP3) zvolte datový tok. Samotné video se nikdy znovu nekóduje ani nemění; vytáhne se jen jeho existující zvuková stopa.</p>
+
+          <h3>Co se stane, když video nemá zvukovou stopu</h3>
+          <p>Video bez jakéhokoli zvuku — ztlumená nahrávka obrazovky, záznam natočený bez zvuku — nemá pro Coudio co extrahovat, protože v souboru žádná zvuková stopa není. Nástroj to nemůže obejít; pokud původní nahrávka opravdu nemá zvuk, není z ní co vytáhnout.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy použít MP3 a kdy WAV: scénáře z praxe</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situace</th><th>Nejlepší formát</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Sdílení písně, nahrávky nebo hlasové poznámky</td><td data-label="Nejlepší formát">MP3</td></tr>
+              <tr><td data-label="Situace">Nahrávání na podcastovou platformu</td><td data-label="Nejlepší formát">MP3, střední datový tok</td></tr>
+              <tr><td data-label="Situace">Další úpravy nebo míchání zvuku</td><td data-label="Nejlepší formát">WAV</td></tr>
+              <tr><td data-label="Situace">Archivace master nahrávky</td><td data-label="Nejlepší formát">WAV</td></tr>
+              <tr><td data-label="Situace">Odeslání rychlé hlasové poznámky e-mailem</td><td data-label="Nejlepší formát">MP3, pro řeč stačí nízký datový tok</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Podcasty, hlasové poznámky a mluvené slovo</h3>
+          <p>MP3 s mírným datovým tokem je tu standardem — na velikosti souboru záleží víc než u hudby, protože epizody bývají dlouhé, a řeč snáší kompresi výjimečně dobře bez slyšitelné ztráty kvality pro posluchače.</p>
+
+          <h3>Hudba, kterou sdílíte nebo poslouchate</h3>
+          <p>MP3 se středním až vyšším datovým tokem pokryje téměř každý běžný případ: poslání skladby kamarádovi, nahrání na většinu platforem, uložení hudby v telefonu, kde se místo rychle sčítá. Po WAV sáhněte, jen pokud výslovně potřebujete nekomprimovaný originál — pro úpravy, samplování nebo skutečně kritický poslechový archiv.</p>
+
+          <h3>Zvuk, který budete později upravovat nebo míchat</h3>
+          <p>WAV se vyhne nabalování další ztráty komprese na vše, co při úpravách děláte — míchání, stříhání, vrstvení, úprava hlasitosti — protože v souboru žádná ztrátová komprese není. Na MP3 převádějte až jako poslední krok exportu, po dokončení úprav, stejně jako platí pravidlo pro opakované ukládání JPG.</p>
+
+          <h3>Dlouhodobá archivace</h3>
+          <p>Pro cokoli, co chcete uchovat v nejlepší možné kvalitě na neurčito — původní nahrávku, master stopu, důležitý rozhovor — je WAV bezpečnější dlouhodobou volbou, protože nikdy neztratí žádný další detail, ať se zkopíruje nebo zazálohuje kolikrát chce.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při převodu zvuku (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina stížností na kvalitu zvuku vychází z jednoho z hrstky předejitelných rozhodnutí.</p>
+
+          <h3>Opakovaný převod MP3 na MP3</h3>
+          <p>Stejně jako opakované ukládání JPG, i opětovné kódování už komprimovaného MP3 zpět do MP3 pokaždé ztratí trochu víc detailu — druhý průchod komprese má méně původních informací než první. Pokud je to možné, uchovávejte a upravujte z bezeztrátového zdroje (WAV) a do MP3 exportujte jen jednou, na konci.</p>
+
+          <h3>Použití datového toku, který neodpovídá obsahu</h3>
+          <p>Nízký datový tok, který je pro mluvené slovo naprosto v pořádku, bude u hudby s plným instrumentálním mixem znatelně komprimovaně znít, zatímco maximální datový tok u jednoduché hlasové poznámky jen plýtvá velikostí souboru bez slyšitelného přínosu. Přizpůsobte datový tok tomu, co je skutečně v nahrávce, ne jednomu číslu používanému pro všechno.</p>
+
+          <h3>Nezkontrolování zvukové stopy před extrakcí</h3>
+          <p>Pokus vytáhnout zvuk z videa, které bylo nahráno ztlumené nebo ze kterého byl zvuk dříve odstraněn jiným krokem, skončí prázdným výsledkem — není co extrahovat. Vyplatí se rychlá kontrola (nebo krátký poslech původního videa), než usoudíte, že extrakce selhala na straně Coudia, a ne že zdroj prostě nemá zvuk.</p>
+
+          <h3>Ignorování velikosti souboru u dlouhých nahrávek</h3>
+          <p>Dlouhá nahrávka přednášky nebo schůzky exportovaná jako WAV nebo se zbytečně vysokým datovým tokem MP3 může nabobtnat na velikost, která se špatně posílá e-mailem nebo nahrává. Zejména u dlouhého mluveného obsahu udrží mírný datový tok MP3 soubor zvladatelný bez skutečné ztráty srozumitelnosti.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="codify">
+      <details class="golden-rules-article">
+        <summary>1. Proč na snímcích kódu záleží a jak je udělat čitelné</summary>
+        <div class="golden-rules-body">
+          <p>Čistý textový úryvek kódu vložený do chatu, snímku prezentace nebo příspěvku na sociální síti ztratí vše, co činí skutečný kód čitelným na první pohled — žádné barvy syntaxe, nejednotné odsazení, často ani zachované zalomení řádků. Stylizovaný snímek to řeší, ale jen tehdy, je-li čitelný ve velikosti, ve které se zobrazí.</p>
+
+          <h3>Proč zvýraznění syntaxe není jen dekorace</h3>
+          <p>Barevné odlišení klíčových slov, řetězců, komentářů a názvů funkcí není kosmetické — je to skutečná pomůcka při čtení. Zkušení vývojáři prohlížejí zvýrazněný kód podle tvaru a barvy, než ho začnou číst slovo po slovu, a právě proto se prostý, nezbarvený kód na snímku nebo v nízkokontrastní aplikaci pro zprávy čte znatelně pomaleji, i pro někoho, kdo jazyk ovládá.</p>
+
+          <h3>Udržení krátkého úryvku</h3>
+          <p>Snímek kódu je určen k přečtení jedním pohledem, ne k posouvání — ve chvíli, kdy se úryvek musí zmenšit pod pohodlnou velikost čtení, aby se vešel do záběru, je to obvykle znamení, že je pro snímek příliš dlouhý a čtenáři by lépe posloužil jako odkazovaný soubor nebo gist. Ořežte jen na řádky, které vystihují podstatu; kratší, větší a čitelnější úryvek porazí úplný, ale drobný téměř vždy.</p>
+
+          <h3>Volba velikosti, která je čitelná tam, kde se zveřejní</h3>
+          <p>Snímek, který na vašem monitoru ve plné velikosti vypadá dokonale ostře, se může v náhledu v chatu, ve vloženém příspěvku nebo na snímku prezentace sledovaném z konce místnosti zmenšit do nečitelnosti. Pokud víte, kam obrázek míří, prohlédněte si ho před dokončením zhruba v této velikosti — co se pohodlně čte na celou obrazovku, se nemusí pohodlně číst jako náhled.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Výběr motivu: Dracula, VS Code Dark, Monokai nebo GitHub Light</summary>
+        <div class="golden-rules-body">
+          <p>Čtyři motivy nejsou jen různé barevné palety pro samotnou změnu — každý pochází z (nebo se úzce řídí) skutečného, široce používaného motivu editoru a výběr motivu, který je vašemu publiku povědomý, může záležet stejně jako výběr motivu, který dobře vypadá.</p>
+
+          <h3>Dracula: vysoký kontrast a výrazný charakter</h3>
+          <p>Tmavě fialové pozadí Draculy se sytě růžovými, zelenými a azurovými akcenty je jedním z nejrozpoznatelnějších dnes používaných motivů editoru — okamžitě povědomý obrovskému podílu vývojářů a dostatečně kontrastní, aby zůstal čitelný i po zmenšení. Je to silná výchozí volba, když nevíte, kdo se bude dívat nebo kde obrázek skončí.</p>
+
+          <h3>VS Code Dark: nejběžnější základ</h3>
+          <p>Protože Visual Studio Code je nejpoužívanější editor kódu, jeho výchozí tmavý motiv je ten, který největší počet diváků už spojuje s tím, „jak kód normálně vypadá“ — bezpečná, nepřekvapivá volba, zejména pro publikum, které pravděpodobně zahrnuje právě uživatele VS Code (což jsou statisticky většina vývojářů).</p>
+
+          <h3>Monokai: vřelý a dlouho zavedený</h3>
+          <p>Monokai předchází většinu novějších motivů a nese výraznou, vřelou paletu — olivové podtóny pozadí, oranžové a růžové akcenty — kterou hned poznají mnozí vývojáři, kteří používali Sublime Text nebo starší prostředí. Kontrastem je o něco měkčí než Dracula, což některým lidem při delším sledování méně namáhá oči.</p>
+
+          <h3>GitHub Light: ten pro světlé prostředí</h3>
+          <p>Všechny tři výše uvedené jsou tmavé motivy; GitHub Light je jediná skutečně světlá možnost, odpovídající výchozímu vykreslování kódu na GitHubu. Je to správná volba pro prezentaci nebo dokument, který je jinak ve světlém stylu, kde by tmavý blok kódu vyčníval jako rušivý, nesouvisející obdélník místo zapadnutí do okolního návrhu.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Výběr jazyka a správné zvýraznění syntaxe</summary>
+        <div class="golden-rules-body">
+          <p>Výběr správného jazyka není jen popisek — právě on říká zvýrazňovači, která slova jsou klíčová slova, která řetězce a která komentáře, takže jeho správné (nebo špatné) nastavení má přímý, viditelný vliv na výsledek.</p>
+
+          <h3>Co se stane, když zvolíte špatný jazyk</h3>
+          <p>Zvýraznění se provádí porovnáváním vzorů s pravidly syntaxe konkrétního jazyka, takže volba špatného jazyka vede k sebevědomě špatným výsledkům, ne k chybě — klíčová slova jiného jazyka se nemusí obarvit vůbec, nebo hůř, nějaké jiné slovo se zařadí špatně a obarví se, jako by bylo klíčovým slovem. Vždy si ověřte, že výběr jazyka odpovídá tomu, co je skutečně v poli, zejména po vložení ze šablony nebo přepnutí jazyka uprostřed úprav.</p>
+
+          <h3>Úryvky ve více jazycích</h3>
+          <p>Úryvek, který vkládá jeden jazyk do druhého — SQL v řetězci Pythonu, HTML v šablonovém řetězci JavaScriptu — se správně zvýrazní jen pro ten jediný vybraný jazyk; v rámci jednoho úryvku nelze zvýraznit oba najednou. U skutečně smíšeného obsahu zvolte jazyk, který tvoří většinu úryvku, nebo ho rozdělte na dva samostatné snímky, pokud se mají obě poloviny jasně číst.</p>
+
+          <h3>Kdy na zvýraznění tolik nezáleží</h3>
+          <p>U velmi krátkých úryvků — jeden řádek, krátká hodnota konfigurace, jednořádkový příkaz — záleží na konkrétním jazyce mnohem méně, protože obsahu je tak málo, že ho čtenář správně pochopí bez ohledu na barvy. Nejvíc záleží u delších, strukturně složitých úryvků, kde barva skutečně pomáhá oddělit logiku, řetězce a komentáře.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Kdy použít snímek kódu, živý úryvek nebo gist</summary>
+        <div class="golden-rules-body">
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situace</th><th>Nejlepší volba</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Příspěvek na sociální síti</td><td data-label="Nejlepší volba">Snímek — většina platforem bloky kódu vůbec nevykresluje</td></tr>
+              <tr><td data-label="Situace">Prezentace</td><td data-label="Nejlepší volba">Snímek — jednotný vzhled bez ohledu na vybavení místnosti</td></tr>
+              <tr><td data-label="Situace">Chat s kolegou, který kód zkopíruje</td><td data-label="Nejlepší volba">Prostý text nebo živý úryvek — snímek nelze zkopírovat jako kód</td></tr>
+              <tr><td data-label="Situace">Dokumentace nebo článek na blogu</td><td data-label="Nejlepší volba">Skutečný blok kódu — prohledávatelný, kopírovatelný, přístupný</td></tr>
+              <tr><td data-label="Situace">Sdílení celého souboru nebo dlouhého příkladu</td><td data-label="Nejlepší volba">Odkaz na gist nebo repozitář — snímek na takovou délku nestačí</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Sociální sítě a chatovací aplikace bez podpory kódu</h3>
+          <p>Většina sociálních platforem formátovaný blok kódu vůbec nezná — vložte surový kód do příspěvku a ztratí veškeré odsazení, zalomení řádků a barvy a často se sesype do nečitelné stěny textu. Snímek se tomu zcela vyhne, protože je to jen obrázek a vykreslí se stejně všude, kde se vykreslují obrázky.</p>
+
+          <h3>Když příjemce potřebuje kód skutečně použít</h3>
+          <p>Snímek je obrázek — nelze ho označit, zkopírovat ani vložit zpět do editoru. Pokud ten, komu ho posíláte, potřebuje kód skutečně spustit, upravit nebo zkopírovat (a ne jen se na něj podívat), poslouží mu mnohem lépe prostý text, živý úryvek v chatovací aplikaci, která ho podporuje, nebo odkaz na gist než obrázek, ze kterého by musel kód ručně přepisovat.</p>
+
+          <h3>Dokumentace a technické psaní</h3>
+          <p>Skutečný textový blok kódu v dokumentaci je prohledávatelný, přístupný pro čtečky obrazovky a kopírovatelný — vše, čeho se snímek vzdává. Snímky si v dokumentaci zaslouží místo hlavně tam, kde ukazují něco, v čem jsou skutečně dobré: anotované rozhraní, rozdíl zvýrazněný konkrétním způsobem nebo kód tak, jak se objevuje v konkrétním editoru, pro ilustraci, ne pro kopírování čtenářem.</p>
+
+          <h3>Delší příklady a celé soubory</h3>
+          <p>Snímek kódu funguje nejlépe pro soustředěný úryvek, který si lze přečíst jedním či dvěma pohledy — pro celý soubor, příklad s více funkcemi nebo cokoli, co by vyžadovalo posouvání vysokého obrázku, je praktičtější a použitelnější odkaz na gist nebo repozitář.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby u snímků kódu (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina snímků kódu, které se špatně čtou, sdílí jednu z hrstky předejitelných příčin.</p>
+
+          <h3>Zahrnutí mnohem víc kódu, než pointa vyžaduje</h3>
+          <p>Snímek se 40 řádky okolního kontextu kvůli ukázce jednoho relevantního řádku nutí čtenáře hledat, na čem záleží. Ořežte jen na řádky, které vystihují podstatu — importy, šablonový kód a nesouvisející funkce lze téměř vždy vynechat, aniž by se ztratilo sdělení.</p>
+
+          <h3>Volba špatného jazyka pro zvýrazňovač syntaxe</h3>
+          <p>Zbylý výběr jazyka z předchozího úryvku nebo volba nejpodobněji znějící možnosti místo přesné vede k nenápadně špatnému zvýraznění, které se snadno přehlédne na první pohled, ale každému, kdo jazyk zná, připadá divné. Před exportem si ověřte, že jazyk odpovídá, zejména po vložení šablony.</p>
+
+          <h3>Motiv, který se pere s místem zveřejnění</h3>
+          <p>Tmavý snímek vložený do jinak jasného, světlého dokumentu nebo snímku prezentace vyčnívá jako rušivý obdélník místo zapadnutí do okolního návrhu — GitHub Light existuje právě pro tento případ, takže se vyplatí na něj přepnout místo výchozího tmavého motivu všude ze zvyku.</p>
+
+          <h3>Export v příliš malé velikosti, nečitelné po sdílení</h3>
+          <p>Co je na vaší obrazovce ve plné velikosti ostré a čitelné, se může zmenšit do nečitelnosti, jakmile je to náhled v chatu nebo malé vložení v příspěvku. Pokud víte, kam míří, zkontrolujte obrázek zhruba v takové velikosti zobrazení, než ho prohlásíte za hotový — kratší úryvek s větším textem často sdělí víc než delší zmenšený do rámu.</p>
+        </div>
+      </details>
+    </div>
+
+
+    <div class="ad-slot ad-slot-bottom">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+
+  </main>
+
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Společnost</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="O nás"><span class="footer-link-fun">Náš vesmír</span><span class="footer-link-plain">O nás</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Časté dotazy"><span class="footer-link-fun">Už zodpovězeno</span><span class="footer-link-plain">Časté dotazy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Podmínky použití"><span class="footer-link-fun">Galaktická příručka</span><span class="footer-link-plain">Podmínky použití</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Zásady ochrany soukromí"><span class="footer-link-fun">Mimozemský protokol soukromí</span><span class="footer-link-plain">Zásady ochrany soukromí</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Zásady cookies"><span class="footer-link-fun">Registr cookies</span><span class="footer-link-plain">Zásady cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Začínáme s</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktujte nás</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Připojte se na náš Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=95" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
+</body>
+</html>

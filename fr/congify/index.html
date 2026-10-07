@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Congify – Convertisseur gratuit de vidéo en GIF – BC Tools</title>
+<meta name="description" content="Convertissez gratuitement un clip vidéo en GIF, dans votre navigateur. Découpez la plage, choisissez les i/s et la taille, sans téléversement, rien ne quitte votre appareil.">
+<link rel="canonical" href="https://bitcrunching.com/fr/congify/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/congify/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/congify/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/congify/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/congify/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/congify/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/congify/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/congify/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/congify/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/congify/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/congify/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/congify/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/congify/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/congify/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/congify/">
+<script src="/shared/i18n/fr.js?v=1"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Congify – Convertisseur gratuit de vidéo en GIF – BC Tools">
+<meta property="og:description" content="Convertissez gratuitement un clip vidéo en GIF, dans votre navigateur. Découpez la plage, choisissez les i/s et la taille, sans téléversement, rien ne quitte votre appareil.">
+<meta property="og:url" content="https://bitcrunching.com/fr/congify/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Congify – Convertisseur gratuit de vidéo en GIF – BC Tools">
+<meta name="twitter:description" content="Convertissez gratuitement un clip vidéo en GIF, dans votre navigateur. Découpez la plage, choisissez les i/s et la taille, sans téléversement, rien ne quitte votre appareil.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=231">
+<style>
+#page-gif::before{
+  background:#22D3D0;
+}
+#page-gif::after{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height:22px;
+  z-index:-1;
+  border-radius:36px 36px 0 0;
+  background-image:radial-gradient(circle, var(--bg) 4.5px, transparent 4.6px);
+  background-size:26px 22px;
+  background-position:13px center;
+}
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now — same recipe as Convert/Context's help banners. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+/* Lively springy hover, same feel as Convert's. Targets the whole
+   .tool-app banner (not #gifDrop) since #gifDrop itself has a
+   transparent background — brightening it alone produced no visible
+   change, only the colored banner underneath actually shows it.
+   :has() drops it the moment a video is loaded and #gifDrop is
+   hidden, so it never fights the caption/output controls once there's
+   real content to interact with. */
+#page-gif:has(#gifDrop:not([hidden])){
+  min-height:322.5px;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+/* Same "jump" also plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+#page-gif:has(#gifDrop:not([hidden])):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+#page-gif:has(#gifDrop:not([hidden])).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+#page-gif:has(#gifDrop:not([hidden])):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Drag-over highlight on the whole banner, same idea as Convert's —
+   toolApp.js adds this class while a file is being dragged over any
+   part of the banner before a video is loaded. */
+.tool-app.active{
+  background:rgba(235,70,126,.08);
+}
+
+/* Same as Convert's #cvDrop — since the whole banner is now the actual
+   click/drop target, the dashed box just blends into it (no border, no
+   fill of its own) instead of reading as a second, separate drop zone
+   nested inside the first. */
+#gifDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#gifDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#gifDrop.active{
+  border-color:#22D3D0;
+  background:rgba(235,70,126,.1);
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. Same recipe as Combine's. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .gfx-placeholder{ animation:icon-wobble .5s ease; }
+
+/* Congify only ever shows one result (unlike Compress/Cleanly's batch
+   row of small thumbnails, which the shared 160px .result width was
+   sized for) — so it gets its own much larger, centered size instead
+   of inheriting that fixed small card. */
+#page-gif #gifResults{
+  justify-content:center;
+  overflow-x:visible;
+}
+/* Full width like the drop zone and Continue button above/below it,
+   rather than a fixed 420px card floating in the middle — that fixed
+   width read as mis-sized next to those two full-width elements. Tall
+   (portrait-crop) results are capped by height instead so they don't
+   blow out the page, letterboxed rather than cropped. */
+#page-gif #gifResults .result{
+  flex:0 1 100%;
+  width:100%;
+  max-width:100%;
+}
+#page-gif #gifResults .result img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:70vh;
+  object-fit:contain;
+  margin:0 auto;
+  border-radius:10px;
+}
+
+/* Page-specific: trim scrubber + fps/width sliders — the two genuinely
+   new components this tool introduces. Uses the same tokens as
+   shared/site.css (var(--border-strong), var(--text)) rather than
+   inventing new colors. */
+.gif-video-wrap{
+  position:relative;
+  margin-top:24px;
+  display:none;
+}
+.gif-video-wrap.active{
+  display:block;
+}
+
+/* Same "×" remove button as Context's ctRemoveBtn — clears the loaded
+   clip and brings back the drop zone, rather than requiring a second
+   file pick to replace what's loaded. */
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here. */
+.gif-remove-btn{
+  position:absolute;
+  top:20px;
+  right:10px;
+  z-index:6;
+  font-size:19px;
+}
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position stay here, same split as
+   .gif-remove-btn/.bc-remove-btn above. Sits just to the left of
+   Remove, same corner. */
+.gif-back-btn{
+  position:absolute;
+  top:20px;
+  right:48px;
+  z-index:6;
+}
+/* The <video> itself is never shown — it stays in the DOM purely as the
+   decode source for the filmstrip thumbnails and the real frame-by-frame
+   canvas extraction at convert time. A hidden <video> can still be drawn
+   to a canvas via drawImage() in every browser this tool targets, so
+   there's no functional loss versus keeping it visible. */
+.gif-video-wrap video{
+  display:none;
+}
+
+/* Filmstrip timeline: a strip of evenly-spaced thumbnails spanning the
+   full clip, much shorter than the old full-width video preview. The
+   trim handles + dimming overlays sit on top of it so it doubles as
+   both "what does this clip look like" and "which frames are actually
+   getting cut into the GIF." */
+.gif-filmstrip{
+  position:relative;
+  margin-top:16px;
+  height:64px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid;
+  background:#000;
+  touch-action:none;
+}
+.gif-filmstrip canvas{
+  width:100%;
+  height:100%;
+  /* The canvas's real pixel size (60px per cell) rarely matches its
+     displayed CSS width, and width:100%/height:100% alone stretches a
+     replaced element's content to fill both dimensions independently —
+     that's what was blowing each thumbnail out wide. object-fit:cover
+     scales it uniformly instead, cropping any excess rather than
+     distorting it, so each cell keeps its real ~60:64 aspect. */
+  object-fit:cover;
+  display:block;
+}
+.gif-filmstrip-mask{
+  position:absolute;
+  top:0;
+  bottom:0;
+  background:rgba(0,0,0,.6);
+  pointer-events:none;
+}
+.gif-filmstrip-mask-left{ left:0; }
+.gif-filmstrip-mask-right{ right:0; }
+.gif-scrubber-handle{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:12px;
+  margin-left:-6px;
+  border-radius:5px;
+  border:1px solid;
+  background:var(--text);
+  opacity:.9;
+  cursor:ew-resize;
+  touch-action:none;
+  z-index:2;
+}
+/* Plain body font + full color (not the terminal-monospace/grey
+   treatment this used to inherit) — the ">" prompt glyph is the only
+   piece meant to carry that "readout" motif (see CLAUDE.md's Terminal
+   text section: reserved for transient confirmations/diagnostic copy,
+   not a standing duration/filename label like this one), and it
+   already scopes its own dim opacity to just itself via
+   .nav-terminal-prompt. */
+.gif-scrubber-label{
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.gif-scrubber-label-toggle{
+  appearance:none;
+  border:none;
+  background:none;
+  padding:0;
+  margin:0;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  border-radius:4px;
+}
+.gif-scrubber-label-toggle:hover,
+.gif-scrubber-label-toggle:focus-visible{
+  opacity:.6;
+}
+.gif-scrubber-filename-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.gif-scrubber-filename-tag{
+  flex-shrink:0;
+}
+.gif-scrubber-filename{
+  /* Sized to its actual content instead of stretching to fill the row
+     — a 10-char name shows a 10-char-wide underline, not one spanning
+     the full remaining width. field-sizing is Chrome-only for now; the
+     max-width cap plus ellipsis below is the fallback everywhere else,
+     capping how wide it can grow rather than how tightly it fits. */
+  field-sizing:content;
+  max-width:220px;
+  min-width:20px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:inherit;
+  font:inherit;
+  cursor:text;
+}
+.gif-scrubber-filename:hover{
+  border-bottom-color:var(--border-strong);
+}
+.gif-scrubber-filename:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+
+/* Preview frame: shows the actual crop + caption exactly as they'll be
+   baked into the output GIF (not the full source frame with an overlay
+   rectangle) — a true WYSIWYG preview. Static (one redrawn frame) at
+   rest — redrawn at controlled points (file load, trim release, crop/
+   caption change) — but playable: the play button loops actual video
+   playback between the trim handles, redrawing the crop+caption on
+   every animation frame while it runs. */
+/* The dark workspace the video lives in — same idea as Context's
+   .context-preview-panel: a bounded "playground" layer beneath
+   everything else in the editor. The video frame is contained fully
+   inside it; captions can be dragged freely within it but never past
+   its edges (see the caption drag clamp in congify-tool.js, which
+   clamps to this panel's rect rather than the frame's). Handles that
+   sit slightly outside the frame's own corners (resize handle, remove
+   button) render against this background instead of getting clipped —
+   no overflow:hidden needed here, same as the canvas-wrap it mirrors. */
+/* Panel is width:fit-content + margin:auto, so at the frame's 1006px max
+   inside the 1028px workspace, the 22px difference splits evenly into an
+   11px gap on the left and right automatically. Vertical padding is set
+   to that same 11px here so the frame sits with an even margin on all
+   four sides, not a wide top/bottom gap next to a tight left/right one. */
+.gif-preview-panel{
+  position:relative;
+  width:fit-content;
+  max-width:100%;
+  margin:16px auto 0;
+  padding:11px 0;
+  border-radius:20px;
+}
+.gif-preview-frame{
+  position:relative;
+  width:1006px;
+  max-width:100%;
+  margin:0 auto;
+  border-radius:16px;
+  background:#000;
+  border:1px solid;
+}
+.gif-preview-frame canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:16px;
+}
+
+/* Drag-to-resize handle on the preview's corner — resizes the on-screen
+   editor frame only (a display comfort control), not the real export
+   resolution; that's the Resolution dropdown's job (see
+   #gifResolutionDropdown). Circle geometry is the shared
+   .bc-resize-handle (shared/site.css, originated in Context) — only
+   the corner offset and cursor stay local. */
+.gif-resize-handle{
+  right:6px;
+  bottom:6px;
+  cursor:nwse-resize;
+}
+
+/* Result stays in its original spot (full width, below the editor) in
+   both the done view and while you're back editing — just collapsible
+   now, since it's secondary once you're restyling rather than looking
+   at what downloaded. */
+.gif-results-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:20px;
+}
+.gif-results-header span{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.gif-results-toggle{
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  border-radius:50%;
+  font-size:15px;
+  line-height:1;
+  cursor:pointer;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.gif-results-header-btns{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+/* Lets you grab the already-converted file again after "Continue
+   working" without re-running Convert — resultsHeader only shows once
+   back in the editor alongside an existing result (see
+   showDoneView()/hideDoneView() in congify-tool.js), so this and the
+   Minimize toggle next to it only ever appear together with something
+   to actually download. Text label instead of a glyph (an arrow icon
+   this small/plain read as ambiguous — "Download" doesn't need
+   explaining even at this size), so it trades the circle shape for a
+   small pill sized to the word instead of .gif-results-toggle's fixed
+   26px circle. */
+.gif-results-download{
+  width:auto;
+  height:26px;
+  padding:0 10px;
+  border-radius:13px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+#gifResults[hidden]{
+  display:none;
+}
+#gifResultsHeader[hidden]{
+  display:none;
+}
+
+/* Shown once conversion finishes, replacing the single "Continue where
+   you left off" button that used to sit here (that text/id — and its
+   own gifContinueBtn near the top of the page — belongs to restoring a
+   saved session on page load, a different thing this was borrowing
+   copy from). Download no longer fires automatically, so this pair is
+   the actual point where the user picks what happens to the result.
+   Stacked with Continue working on top — it's the button most people
+   reach for right after seeing the result (styling more, not leaving
+   with the file), Download sits right under it as the other option.
+   Both buttons reuse .tool-primary-btn's own look; this container just
+   overrides the margin .tool-continue-btn normally sets for being the
+   sole button in its slot, down to the gap between the two here. */
+.gif-done-actions{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:14px;
+}
+.gif-done-actions[hidden]{
+  display:none;
+}
+.gif-done-actions .tool-primary-btn{
+  margin-top:0;
+}
+/* .tool-continue-btn's shared mobile rule (shared/site.css) swaps in
+   "Continue editing" via ::before at ≤768px — written for the
+   page-load restore button, wrong wording for this one. Override just
+   the content, same media query so it doesn't leak a duplicate label
+   at desktop widths (font-size:0 there only exists inside that query). */
+@media (max-width:768px){
+  #gifDoneContinueBtn::before{
+    content:"Continue working";
+  }
+}
+.gif-preview-play-btn{
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  width:45px;
+  height:45px;
+  padding:0 0 0 2px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#22D3D0;
+  color:#fff;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:3;
+}
+.gif-preview-play-btn:hover{
+  background:#1aa8a6;
+}
+
+/* Aspect ratio, moved off the settings row onto the preview's own
+   top-left corner — click-to-advance-through CROP_OPTIONS behavior
+   (congify-tool.js's bcRegisterOptionChangeBtn call), restyled as a
+   viewfinder icon rather than a pill button: four corner brackets
+   filling the whole 30x30 square with the current ratio's label inside
+   (0 for Free, 16:9, 1:1, ...) — congify-tool.js's renderCropOption()
+   just updates #gifCropFreeIconNumber's text now, no separate icon/
+   label swap. Solid Congify teal (#22D3D0) square, sharp corners (no
+   border-radius) and no border/stroke — the brackets sit flush at the
+   button's own edges (0px inset) so the teal fill aligns exactly with
+   them instead of overflowing past. White brackets/label via
+   currentColor/inherited color. Sits directly on the video/canvas
+   surface like the play button and resize handle next to it, so it
+   stays fixed regardless of site theme rather than following the
+   normal light/dark flip: the thing behind it is unpredictable video
+   content, not a themed page surface.
+   top:10px/left:10px lines it up with the remove button (top-right,
+   same top offset) and the play button (bottom-left, same left
+   offset) — same 10px corner inset all three share, just on the one
+   corner still free. */
+#gifPreviewFrame .gif-crop-corner-btn{
+  position:absolute;
+  /* 9px, not 20px: the remove button it's aligning with sits on
+     .gif-preview-panel (top:20px there), but this button is positioned
+     relative to .gif-preview-frame instead, which itself starts 11px
+     further down (.gif-preview-panel's own padding-top) — this offsets
+     for that gap so the two buttons' top edges land on the same line. */
+  top:9px;
+  left:10px;
+  width:30px;
+  height:30px;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:0;
+  background:#22D3D0;
+  color:#fff;
+  cursor:pointer;
+  z-index:3;
+}
+#gifPreviewFrame .gif-crop-corner-btn:hover{
+  background:#1aa8a6;
+}
+/* Corner brackets fill the whole 30x30 button (not just a small icon
+   inside it), with the current ratio's label centered in the middle —
+   shown for every ratio (0, 16:9, 1:1, ...), not just Free. */
+.gif-crop-free-icon{
+  position:relative;
+  width:30px;
+  height:30px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.gif-crop-free-corner{
+  position:absolute;
+  width:9px;
+  height:9px;
+  border:2px solid currentColor;
+}
+.gif-crop-free-corner-tl{ top:0; left:0; border-right:none; border-bottom:none; }
+.gif-crop-free-corner-tr{ top:0; right:0; border-left:none; border-bottom:none; }
+.gif-crop-free-corner-bl{ bottom:0; left:0; border-right:none; border-top:none; }
+.gif-crop-free-corner-br{ bottom:0; right:0; border-left:none; border-top:none; }
+.gif-crop-free-icon-number{
+  font-size:15px;
+  font-weight:800;
+  line-height:1;
+}
+
+/* Caption text box — same click-to-edit/drag pattern as Context's text
+   boxes (.context-text-box/.context-text-inner/.context-text-remove),
+   just one box instead of many and centered on captionX/Y (its
+   position fraction) rather than a top-left corner. Typing happens
+   directly here, styled to match what actually gets baked into the
+   output (drawCaption() in congify-tool.js uses the same font/size/
+   color/stroke math) — no separate input field or live canvas redraw
+   needed for the caption itself. */
+.gif-caption-box{
+  position:absolute;
+  z-index:10;
+  transform:translate(-50%, -50%);
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+  touch-action:none;
+}
+.gif-caption-box[hidden]{
+  display:none;
+}
+/* Corner drag-to-resize handle for one caption's own text size — circle
+   geometry is the shared .bc-obj-resize-handle (shared/site.css), split
+   from the canvas-level .bc-resize-handle used by the video preview's
+   own resize handle since this one resizes an object ON the canvas. */
+.gif-caption-resize-handle{
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+}
+.gif-caption-resize-handle::before{
+  content:"";
+  width:16px;
+  height:16px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7 17 17'/><path d='M17 10v7h-7'/></svg>") no-repeat center / contain;
+}
+.gif-caption-size-badge{
+  position:absolute;
+  top:-34px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:4px 9px;
+  border-radius:999px;
+  background:rgba(0,0,0,.65);
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  z-index:4;
+  pointer-events:none;
+}
+.gif-caption-drag-handle{
+  flex-shrink:0;
+}
+.gif-caption-inner{
+  display:inline-block;
+  min-width:16px;
+  padding:2px 4px;
+  outline:1px dashed rgba(255,255,255,.5);
+  border-radius:4px;
+  cursor:text;
+  line-height:1.2;
+}
+.gif-caption-inner:focus{
+  outline:1px solid #22D3D0;
+}
+.gif-caption-remove{
+  top:-10px;
+  right:-10px;
+  z-index:6;
+}
+
+
+/* Toggle buttons (Add text, Stroke, Bold/Italic/Underline) are the
+   shared .bc-toggle-btn/.bc-toggle-btn-group/.bc-toggle-btn-icon
+   (shared/site.css). */
+
+/* Dropdown component shared by Crop, Playback, Playback speed, Font,
+   and Color & style — same trigger+menu pattern as Context's color
+   dropdown, so multi-choice settings read as pickers rather than a row
+   of always-visible buttons. The component itself (.bc-dropdown-*) now
+   lives in shared/site.css — Coudio uses the same classes —
+   this page only keeps the layout rule scoping it to this tool's own
+   .gif-slider-group, plus the color-swatch/width-line extras only
+   Congify's option rows need. */
+.gif-slider-group > .bc-dropdown{
+  display:inline-block;
+  min-width:100px;
+  max-width:140px;
+}
+/* Font's own label ("Arial", "Comic Sans", ...) runs longer than the
+   other pills in this row — 122px keeps the longest option from
+   ellipsis-truncating at the generic 100px floor above. */
+#gifCaptionFontDropdown{
+  min-width:122px;
+}
+.gif-slider-group > .option-change-btn{
+  min-width:100px;
+  max-width:140px;
+}
+/* The two groups that also carry a .bc-info-btn (Frame rate, Playback)
+   need to lay their pill + "i" out as a row instead of the plain block
+   every other single-control group defaults to — :has() scopes this to
+   just those two rather than a blanket layout change site-wide.
+   position:relative is what the "i" button's tooltip anchors against. */
+.gif-slider-group:has(> .bc-info-btn){
+  display:flex;
+  align-items:center;
+  gap:6px;
+  position:relative;
+}
+/* Fixed widths for the two option-change-btns whose labels are all a
+   known, similar length ("5 fps"…"33.3 fps", "Normal"/"Reverse"/
+   "Boomerang") — sized to fit the longest without the generic
+   100–140px range letting the button jump width as it cycles. */
+#gifFpsBtn{
+  min-width:126px;
+  max-width:126px;
+}
+#gifOrderBtn{
+  min-width:135px;
+  max-width:135px;
+}
+/* Chrome now lives in shared/site.css as .bc-color-dot (added as a
+   second class on the markup, class="gif-dropdown-dot bc-color-dot") —
+   this was a byte-for-byte duplicate of that recipe (Context's
+   .context-color-dot had grown the exact same one independently).
+   .gif-dropdown-dot itself now only exists as a JS-addressing hook. */
+/* Stroke thickness shown as an actual line at that weight, not a word
+   ("Thin"/"Medium"/...) — reads the same way a font-weight swatch would. */
+.gif-width-line{
+  display:inline-block;
+  width:28px;
+  border-radius:999px;
+  background:#fff;
+  flex-shrink:0;
+}
+.bc-dropdown-option .gif-width-line{
+  margin:0 auto;
+}
+
+/* Wraps the Basic/Advanced toggle, both slider rows, and the Convert
+   button in the shared .result card (shared/site.css) — same dark
+   translucent panel every tool's loaded-file row already uses (Coudio's
+   .result.cd-file-row is the reference), just holding controls instead
+   of a file. Sized to content rather than .result's own tight 10px/16px
+   defaults, since this is a whole panel of pill rows, not a compact
+   card. margin-top separates it from the scrubber/filename row above,
+   matching the same spacing .gif-sliders already used on its own. */
+.gif-controls-panel{
+  margin-top:16px;
+  padding:20px;
+  border-radius:20px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  box-sizing:border-box;
+  width:max(100%, 313px);
+  margin-left:min(0px, calc((100% - 313px) / 2));
+}
+@media (max-width:768px){
+  .gif-controls-panel{ padding:14px; }
+}
+/* gap on the panel above already spaces every visible child — the
+   toggle/sliders' own margin-top (used when they sat directly on the
+   banner) would just double up with it now. */
+.gif-controls-panel .gif-mode-toggle,
+.gif-controls-panel .gif-sliders{
+  margin-top:0;
+}
+/* #gifToolControls (the shared .tool-controls) brings its own 24px
+   margin-top for sitting directly on a banner — inside the panel the
+   flex gap already provides that spacing, so it would otherwise stack
+   on top of it. */
+.gif-controls-panel #gifToolControls{
+  margin-top:0;
+}
+
+/* Settings list: one row per control, all dropdown/button based now —
+   left-aligned, capped at 100px, aligned to the row's bottom edge. */
+.gif-sliders{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  align-content:center;
+  gap:14px;
+  margin-top:16px;
+}
+/* Basic/Advanced switch, right above whichever of the two .gif-sliders
+   groups below is currently shown — two segments, each independently
+   styled by its own [aria-pressed] state rather than one sliding
+   highlight: unselected matches Compress's unselected .tool-format-btn
+   (outline only, transparent fill); selected matches Congify's own
+   filled pills (.bc-toggle-btn's recipe, same as #gifAddTextBtn) — a
+   smooth border/background transition stands in for the "toggle
+   animation" instead of an animated chip sliding between them.
+   Mobile-only: at desktop widths both groups already fit comfortably
+   side by side with room to spare, so there's nothing to switch
+   between — the toggle only earns its keep once space is tight enough
+   that showing both at once gets cramped, i.e. mobile. Desktop hides
+   the toggle and force-shows both groups regardless of the JS-set
+   [hidden] attribute (see the two rules below). */
+.gif-mode-toggle{
+  display:none;
+}
+@media (max-width:768px){
+  .gif-mode-toggle{
+    display:flex;
+    width:100%;
+    max-width:280.5px;
+    margin:14px auto 0;
+  }
+}
+/* Connected segments, not two separate pills with a gap between them —
+   each button takes half the full 280.5px width, square on the
+   touching edge and rounded only on its own outer corner, with the
+   second button's left border dropped so the two share a single
+   dividing line instead of doubling it up. */
+.gif-mode-toggle button{
+  flex:1;
+  height:34px;
+  padding:0 14px;
+  border-radius:0;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.gif-mode-toggle button:first-child{
+  border-top-left-radius:17px;
+  border-bottom-left-radius:17px;
+}
+.gif-mode-toggle button:last-child{
+  border-top-right-radius:17px;
+  border-bottom-right-radius:17px;
+  border-left:none;
+}
+/* border-color above (not the border shorthand) is what keeps this
+   from re-adding a left border on the second segment when it's
+   selected — :last-child's own border-left:none needs to survive the
+   selected state too, or the shared divider between the two doubles
+   up the moment Advanced is active. */
+.gif-mode-toggle button:last-child[aria-pressed="true"]{
+  border-left:none;
+}
+/* Desktop keeps showing both groups regardless of whichever mode
+   congify-tool.js's setGifMode() last set (the toggle itself is hidden
+   above, but the [hidden] attribute it applies is still sitting on the
+   elements) — this is what makes them ignore it above 768px. */
+@media (min-width:769px){
+  #gifCaptionSliders[hidden],
+  #gifOutputSliders[hidden]{
+    display:flex;
+  }
+}
+.gif-slider-group > .bc-toggle-btn{
+  min-width:100px;
+  max-width:140px;
+  /* Was 38px, silently overriding .bc-toggle-btn's own shared 40px
+     default (shared/site.css) instead of matching it — this is the
+     actual desktop height for Stroke and every other plain toggle
+     button in this row. */
+  height:40px;
+  padding:0 12px;
+  white-space:nowrap;
+}
+
+/* Add text matches Context's "Add text" pill (130x74, 26px radius,
+   800-weight 18px text) instead of the smaller shared .bc-toggle-btn
+   sizing every other control here uses — it's the primary action on
+   this row, same as it is on Context's toolbar. */
+#gifAddTextBtn{
+  width:130px;
+  height:74px;
+  min-width:0;
+  max-width:none;
+  padding:0;
+  border-radius:26px;
+  font-size:18px;
+  font-weight:800;
+  white-space:nowrap;
+}
+/* Invisible flex line-break: forces whatever comes after it onto a
+   fresh row without occupying a row itself (a real element, not a
+   media-query display:none one, since a flex item needs to stay part
+   of the layout for the flex-basis:100% break trick to work) — no-op
+   on desktop (flex-basis:0), only breaks the row on mobile below. */
+.gif-row-break{ flex-basis:0; width:0; height:0; }
+
+/* Mobile-only control layout — desktop is untouched. Explicit rows,
+   none of them left to incidental flex-wrap (a pairing that only holds
+   "because it happens to fit at this width" silently breaks on a
+   slightly wider or narrower phone):
+     1. Add text (alone, 280.5x34)      4. Resolution (alone)
+     2. Font (180x34) + Color + B/I/U   5. Frame rate + Speed
+     3. Stroke (180x34) + Color + Thickness   6. Playback (alone)
+   Color/Stroke color/B/I/U/Thickness are each their own separate
+   button sized to fit their content within a 29-70px range (icons at
+   the low end, the width-line/hamburger combo at the high end) rather
+   than a single shared icon width — 34px tall throughout, matching. */
+@media (max-width:768px){
+  #gifCaptionSliders,
+  #gifOutputSliders{
+    width:280.5px;
+    height:190px;
+    /* Exactly 20px below the Basic/Advanced toggle regardless of the
+       shared (desktop) .gif-sliders margin-top:16px above. */
+    margin-top:20px;
+  }
+  /* .gif-sliders' own align-content:center vertically centers whatever
+     rows are present within the fixed height — fine when Advanced's 4
+     rows nearly fill it, but not always (and Basic's 3 rows sat lower
+     than its own top-flush Add text row too). Packing from the top on
+     both keeps their first row flush against the panel's own top edge
+     instead of drifting depending on row count. */
+  #gifCaptionSliders,
+  #gifOutputSliders{
+    align-content:flex-start;
+  }
+  #gifOutputSliders{
+    gap:10px;
+  }
+  /* Without this, [hidden] never actually took effect — .gif-sliders'
+     own display:flex is author CSS, which beats the browser's default
+     [hidden]{display:none} regardless of the attribute being set (same
+     bug already hit once on .gif-crop-free-icon) — so toggling Basic/
+     Advanced looked like it did nothing and both stayed visible at
+     once. */
+  #gifCaptionSliders[hidden],
+  #gifOutputSliders[hidden]{
+    display:none;
+  }
+  /* Basic panel doesn't use the shared `gap` at all — every gap here
+     (row AND column) is an explicit margin on the real items instead.
+     This was tried with `gap:10px` + a negative margin on
+     .gif-row-break to cancel its extra line, on the theory that a
+     flex item's margin offsets the fixed inter-line `gap` — verified
+     in an isolated test harness that it does NOT: `gap` is inserted
+     between flex lines independent of any item's margin, so the
+     negative margin silently did nothing and Font->Stroke stayed at
+     20px (double the intended 10px). Margins avoid that failure mode
+     entirely since there's no separate auto-inserted gap to fight. */
+  #gifCaptionSliders{
+    justify-content:flex-start;
+    gap:0;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionFontDropdown),
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionColorDropdown){
+    margin-top:18px;
+    margin-right:10px;
+  }
+  /* Font -> Color is the one exception at 2px instead of the flat
+     10px everywhere else in this row. */
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionFontDropdown){
+    margin-right:2px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(.bc-toggle-btn-group){
+    margin-top:18px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeBtn),
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeColorDropdown){
+    margin-top:10px;
+    margin-right:10px;
+  }
+  /* Stroke -> Color, same 2px exception as Font -> Color above. */
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeBtn){
+    margin-right:2px;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifCaptionStrokeWidthBtn){
+    margin-top:10px;
+  }
+  /* No longer contributes any space of its own (see the note above) —
+     it only still exists to force Stroke's row to wrap onto a fresh
+     line regardless of how wide the container happens to be; the
+     actual Font->Stroke gap now comes entirely from Stroke's own
+     margin-top above. */
+  .gif-row-break{
+    flex-basis:100%;
+    width:0;
+    height:0;
+    margin:0;
+  }
+  #gifCaptionSliders .gif-slider-group:has(#gifAddTextBtn){
+    flex:1 1 100%;
+    display:flex;
+    justify-content:center;
+  }
+  #gifCaptionSliders .bc-dropdown-trigger,
+  #gifCaptionSliders .bc-toggle-btn:not(#gifAddTextBtn),
+  #gifCaptionSliders .option-change-btn,
+  #gifOutputSliders .bc-dropdown-trigger,
+  #gifOutputSliders .bc-toggle-btn:not(#gifAddTextBtn),
+  #gifOutputSliders .option-change-btn{
+    height:34px;
+    font-size:15px;
+  }
+  /* Advanced: one control per row — Resolution, Frame rate, Speed,
+     Playback stacked in that order, each full-width. Frame rate/
+     Playback's own "i" button rides along in the same row (that
+     flex-row layout is .gif-slider-group:has(>.bc-info-btn) further up
+     this file). */
+  #gifOutputSliders .gif-slider-group{
+    flex:1 1 100%;
+    display:flex;
+    justify-content:center;
+  }
+  /* All four Advanced controls are a fixed 200x34px now, regardless of
+     row width or whether an "i" button rides along next to them. */
+  #gifOutputSliders .bc-dropdown-trigger,
+  #gifOutputSliders .option-change-btn{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  /* Resolution/Speed's own .bc-dropdown wrapper (not the trigger
+     itself) is what the row centers via justify-content — the
+     unconditional .gif-slider-group > .bc-dropdown rule caps it at
+     140px, so the 200px trigger above overflowed past its own centered
+     wrapper instead of sitting centered like Frame rate/Playback
+     (which have no such wrapper). Matching the wrapper's width to the
+     trigger's fixes it. */
+  #gifOutputSliders .bc-dropdown{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  #gifFpsBtn,
+  #gifOrderBtn{
+    width:200px;
+    min-width:200px;
+    max-width:200px;
+  }
+  /* The "i" rides ON the pill now instead of next to it — a badge
+     inset into the button's own left edge — rather than counting as a
+     separate item in the row that pulled the 200px pill's centering
+     off Resolution/Speed's identical centerline (whatever "i" position
+     was tried, it kept doing that as long as it stayed a sibling in
+     the same flex row). The pill itself keeps its normal 200px width;
+     only the badge overlaps into it, so nothing about the button's own
+     size changes. */
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn){
+    position:relative;
+    gap:0;
+    justify-content:center;
+  }
+  /* Belt-and-suspenders on top of the row's own justify-content:center
+     above — margin:0 auto centers the pill even if something about the
+     :has() row's flex context ever stops cooperating, since this
+     doesn't depend on it at all. */
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn) .option-change-btn{
+    margin:0 auto;
+  }
+  #gifOutputSliders .gif-slider-group:has(> .bc-info-btn) .bc-info-btn{
+    position:absolute;
+    left:calc(50% - 100px + 6px);
+    top:50%;
+    transform:translateY(-50%);
+    z-index:1;
+    background:var(--bg);
+  }
+  /* Row order is Resolution/Frame rate/Speed/Playback — DOM order is
+     actually Resolution/Frame rate/Playback/Speed (desktop's own
+     flex-wrap doesn't care), so this flips just the mobile visual
+     position without touching desktop or the markup itself. */
+  #gifOutputSliders .gif-slider-group:has(#gifSpeedDropdown){ order:1; }
+  #gifOutputSliders .gif-slider-group:has(#gifOrderBtn){ order:2; }
+  /* :not() above keeps this rule from clobbering the Add-text sizing
+     right below — #gifCaptionSliders .bc-toggle-btn (id + class, (1,1,0))
+     would otherwise outrank the plain #gifAddTextBtn selector (1,0,0)
+     regardless of source order. */
+  #gifAddTextBtn{
+    width:280.5px;
+    height:34px;
+    padding:0;
+    border-radius:17px;
+    font-size:15px;
+  }
+  #gifCaptionFontDropdown{
+    min-width:122px;
+    max-width:122px;
+  }
+  #gifCaptionStrokeBtn{
+    width:122px;
+    /* PC keeps .bc-toggle-btn's shared 40px default (no override
+       needed there) — mobile explicitly drops to 30px, since this was
+       the one toggle button in this row that never got a mobile
+       height override at all (every sibling here already has one, at
+       34px). */
+    height:30px;
+  }
+  /* Color/B/I/U/Thickness are each their own button now, sized to fit
+     their own content within a 29-70px range instead of a single
+     shared icon width — a plain color swatch needs less room than the
+     width-line + hamburger pair Thickness shows. */
+  #gifCaptionSliders .bc-toggle-btn-icon,
+  #gifCaptionColorTrigger,
+  #gifCaptionStrokeColorTrigger{
+    min-width:29px;
+    max-width:70px;
+    width:auto;
+    height:34px;
+    padding:0 8px;
+  }
+  #gifCaptionStrokeWidthBtn{
+    min-width:29px;
+    max-width:70px;
+    height:34px;
+  }
+  #gifCaptionColorTriggerLabel,
+  #gifCaptionStrokeColorTriggerLabel,
+  #gifCaptionColorTrigger .bc-dropdown-chevron,
+  #gifCaptionStrokeColorTrigger .bc-dropdown-chevron{
+    display:none;
+  }
+  /* Icon-only triggers above shrink the button itself, but the
+     .gif-slider-group > .bc-dropdown wrapper around it still enforces
+     the desktop 100-140px column width — without shrinking these two
+     wrappers as well, Color would keep reserving desktop-width space
+     it no longer needs. */
+  #gifCaptionColorDropdown,
+  #gifCaptionStrokeColorDropdown{
+    min-width:29px;
+    max-width:70px;
+  }
+  /* The open dropdown drops its text same as Context's #ctColorMenu on
+     mobile, but stays the default vertical stack (column, one swatch
+     per row) instead of Context's own horizontal row — narrowed to fit
+     just the dot per row instead of the desktop dot+label width. */
+  #gifCaptionColorMenu,
+  #gifCaptionStrokeColorMenu{
+    left:auto;
+    right:0;
+    width:50px;
+  }
+  #gifCaptionColorMenu .bc-color-option,
+  #gifCaptionStrokeColorMenu .bc-color-option{
+    justify-content:center;
+    padding:0;
+    height:40px;
+  }
+  #gifCaptionColorMenu .gif-option-label,
+  #gifCaptionStrokeColorMenu .gif-option-label{
+    display:none;
+  }
+  #gifCaptionColorMenu .gif-dropdown-dot,
+  #gifCaptionStrokeColorMenu .gif-dropdown-dot{
+    width:18px;
+    height:18px;
+  }
+}
+/* Mobile shows just "Convert" on the primary action button — the
+   fuller desktop label ("Convert to GIF") doesn't fit well at phone
+   widths. */
+@media (max-width:768px){
+  #gifConvertBtn{ font-size:0; }
+  #gifConvertBtn::before{
+    content:"Convert";
+    font-size:20px;
+  }
+}
+/* Mobile shortens "File name:" to "File:" — same font-size:0 +
+   ::before swap as #gifConvertBtn above, so congify-tool.js never
+   needs to know which text is on screen. */
+@media (max-width:768px){
+  .gif-scrubber-filename-tag-text{ font-size:0; }
+  .gif-scrubber-filename-tag-text::before{
+    content:"File:";
+    font-size:13px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Nous utilisons des cookies. Choisissez ci-dessous les catégories à autoriser. Consultez notre <a data-goto="cookies">Politique de cookies</a> pour les détails.</p>
+  <p class="cookie-banner-text-mobile">Choisissez les catégories à autoriser</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Afficher/masquer le contenu des paramètres de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIES_OUTILS_DEV :</span>
+    </span>
+    <span>Choisissez les catégories à autoriser</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="En savoir plus sur les cookies nécessaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nécessaires (toujours actifs)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Ils maintiennent l'essentiel en état de marche : mémoriser votre choix de cookies, votre langue et votre thème clair/sombre. Ils ne peuvent pas être désactivés et, comme tout le reste sur ce site, ils ne quittent jamais votre appareil.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="En savoir plus sur les cookies statistiques">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Statistiques - Pour une confidentialité totale, gardez ceci désactivé.</span><span class="cookie-label-docked">Statistiques (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Cela nous permet d'améliorer l'expérience utilisateur en recevant des données précieuses via (Google Analytics) sur la façon dont les utilisateurs naviguent sur notre site. Si vous souhaitez rester totalement anonyme, nous recommandons de désactiver cette option.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="En savoir plus sur les cookies publicitaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicité (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Utilisé par Google AdSense pour afficher des publicités. Actuellement désactivé sur tout le site dans l'attente de l'approbation d'AdSense, donc ce réglage n'a pas encore d'effet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Tout accepter</button>
+    <button type="button" id="cookieBannerSave">Confirmer les choix</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo de BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Basculer entre mode clair et mode sombre" title="Basculer entre mode clair et mode sombre">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partager" title="Partager">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copier le lien</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Plus d'options de partage"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Cliquez pour réinitialiser le guide de l'outil" title="Cliquez pour réinitialiser le guide de l'outil">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Retour au Creative Hub" title="Retour au Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="gifHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="gifHelpClose" aria-label="Fermer et ne plus afficher"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="gifHelpToggle" aria-label="Réduire" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="gifHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="gifHelpBack">&lt; RETOUR</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="gifHelpCloseMobile">FERMER</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="gifHelpNext">SUIVANT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="gifHelpBody">
+    <div class="engine-status-row">&gt; <span id="gifHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-gif">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-gif" role="img" aria-label="Icône de Congify"></span>
+        <span>Congify</span>
+      </div>
+      <span class="privacy-check-badge" id="gifPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <div class="tool-drop" id="gifDrop"><span class="tool-drop-click-word">Cliquer</span><span class="tool-drop-or-drop"> ou déposez </span><span class="tool-drop-rest">une vidéo</span></div>
+    <input type="file" id="gifInput" accept="video/*" hidden>
+
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="gifContinueBtn" hidden>Reprendre là où vous en étiez</button>
+
+    <div class="gif-video-wrap" id="gifVideoWrap">
+    <div id="gifEditorControls">
+      <video id="gifVideo" muted playsinline></video>
+
+      <div class="gif-preview-panel" id="gifPreviewPanel">
+        <button type="button" class="gif-back-btn bc-canvas-back-btn" id="gifBackBtn" data-goto="mainpage" aria-label="Retour au Creative Hub" title="Retour au Creative Hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5"></path>
+            <path d="M11 18l-6-6 6-6"></path>
+          </svg>
+        </button>
+        <button type="button" class="gif-remove-btn bc-remove-btn bc-canvas-remove-btn" id="gifRemoveBtn" aria-label="Supprimer la vidéo">×</button>
+        <div class="gif-preview-frame" id="gifPreviewFrame">
+          <canvas id="gifPreviewCanvas"></canvas>
+          <button type="button" class="gif-crop-corner-btn" id="gifCropBtn" title="Format d'image">
+            <span class="gif-crop-free-icon" id="gifCropFreeIcon" aria-hidden="true">
+              <span class="gif-crop-free-corner gif-crop-free-corner-tl"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-tr"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-bl"></span>
+              <span class="gif-crop-free-corner gif-crop-free-corner-br"></span>
+              <span class="gif-crop-free-icon-number" id="gifCropFreeIconNumber">0</span>
+            </span>
+          </button>
+          <button type="button" class="gif-preview-play-btn" id="gifPreviewPlayBtn" aria-label="Lire l'aperçu" title="Lecture/pause (espace)">▶</button>
+          <div class="gif-resize-handle bc-resize-handle" id="gifResizeHandle" role="slider" aria-label="Taille de l'aperçu" tabindex="0"></div>
+        </div>
+      </div>
+
+      <div class="gif-filmstrip" id="gifFilmstrip">
+        <canvas id="gifFilmstripCanvas"></canvas>
+        <div class="gif-filmstrip-mask gif-filmstrip-mask-left" id="gifMaskLeft"></div>
+        <div class="gif-filmstrip-mask gif-filmstrip-mask-right" id="gifMaskRight"></div>
+        <div class="gif-scrubber-handle" id="gifScrubberStart" role="slider" aria-label="Début du découpage" tabindex="0"></div>
+        <div class="gif-scrubber-handle" id="gifScrubberEnd" role="slider" aria-label="Fin du découpage" tabindex="0"></div>
+      </div>
+      <div class="gif-scrubber-label">
+        <button type="button" class="gif-scrubber-label-toggle" id="gifScrubberLabelToggle" aria-label="Afficher/masquer le code temporel"><span class="nav-terminal-prompt">&gt;</span> <span id="gifScrubberLabel">0:00:00</span></button>
+        <span class="gif-scrubber-filename-group">
+          <span class="gif-scrubber-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="gif-scrubber-filename-tag-text">Nom du fichier :</span></span>
+          <input type="text" class="gif-scrubber-filename" id="gifScrubberFileName" aria-label="Nom du fichier de sortie" spellcheck="false">
+        </span>
+      </div>
+
+      <!-- Basic = text/stroke controls (gifCaptionSliders), Advanced =
+           video/export controls (gifOutputSliders) — only one of the two
+           groups below is ever shown at once, toggled here. Basic is the
+           default since captions are this tool's primary editing task;
+           Advanced's controls (resolution, fps, speed, playback) matter
+           less often and used to sit visible at all times. -->
+      <div class="gif-controls-panel result">
+      <div class="gif-mode-toggle" id="gifModeToggle">
+        <button type="button" id="gifModeBasicBtn" aria-pressed="true">Basique</button>
+        <button type="button" id="gifModeAdvancedBtn" aria-pressed="false">Avancé</button>
+      </div>
+
+      <div class="gif-sliders" id="gifCaptionSliders">
+        <div class="gif-slider-group">
+          <button type="button" class="bc-toggle-btn" id="gifAddTextBtn" title="Ajouter du texte (T)">Ajouter du texte</button>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionFontDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionFontTrigger" title="Police" aria-haspopup="listbox" aria-expanded="false" style="font-family:Arial, sans-serif;">
+              <span class="bc-dropdown-trigger-label" id="gifCaptionFontTriggerLabel">Police</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifCaptionFontMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-font="Arial, sans-serif" data-label="Arial" style="font-family:Arial, sans-serif;" role="option" aria-selected="false">Arial</button>
+              <button type="button" class="bc-dropdown-option" data-font="Impact, sans-serif" data-label="Impact" style="font-family:Impact, sans-serif;" role="option" aria-selected="false">Impact</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Times New Roman', serif" data-label="Times" style="font-family:'Times New Roman', serif;" role="option" aria-selected="false">Times</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Comic Sans MS', cursive" data-label="Comic Sans" style="font-family:'Comic Sans MS', cursive;" role="option" aria-selected="false">Comic Sans</button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionColorDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionColorTrigger" title="Couleur du texte" aria-haspopup="listbox" aria-expanded="false">
+              <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionColorTriggerDot" style="background:transparent;" hidden></span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionColorTriggerLabel">Couleur</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionColorMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#ffffff" data-label="Blanc" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#ffffff;"></span><span class="gif-option-label">Blanc</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#000000" data-label="Noir" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#000000;"></span><span class="gif-option-label">Noir</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#e11d48" data-label="Rouge" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#e11d48;"></span><span class="gif-option-label">Rouge</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#2563eb" data-label="Bleu" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#2563eb;"></span><span class="gif-option-label">Bleu</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#eab308" data-label="Jaune" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#eab308;"></span><span class="gif-option-label">Jaune</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-toggle-btn-group">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionBoldBtn" title="Gras (B)" aria-pressed="false" aria-label="Gras"><b>B</b></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionItalicBtn" title="Italique (I)" aria-pressed="false" aria-label="Italique"><i>I</i></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="gifCaptionUnderlineBtn" title="Souligné (U)" aria-pressed="false" aria-label="Souligné"><u>U</u></button>
+          </div>
+        </div>
+        <div class="gif-row-break" aria-hidden="true"></div>
+        <div class="gif-slider-group">
+          <button type="button" class="bc-toggle-btn" id="gifCaptionStrokeBtn" title="Contour" aria-pressed="false">Contour</button>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifCaptionStrokeColorDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifCaptionStrokeColorTrigger" title="Couleur du contour" aria-haspopup="listbox" aria-expanded="false">
+              <span class="gif-dropdown-dot bc-color-dot" id="gifCaptionStrokeColorTriggerDot" style="background:transparent;" hidden></span>
+              <span class="bc-dropdown-trigger-label" id="gifCaptionStrokeColorTriggerLabel">Couleur</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu bc-color-menu" id="gifCaptionStrokeColorMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#000000" data-label="Noir" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#000000;"></span><span class="gif-option-label">Noir</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#ffffff" data-label="Blanc" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#ffffff;"></span><span class="gif-option-label">Blanc</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#e11d48" data-label="Rouge" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#e11d48;"></span><span class="gif-option-label">Rouge</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#2563eb" data-label="Bleu" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#2563eb;"></span><span class="gif-option-label">Bleu</span></button>
+              <button type="button" class="bc-dropdown-option bc-color-option" data-color="#eab308" data-label="Jaune" role="option" aria-selected="false"><span class="gif-dropdown-dot bc-color-dot" style="background:#eab308;"></span><span class="gif-option-label">Jaune</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifCaptionStrokeWidthBtn" title="Épaisseur du contour" aria-label="Épaisseur du contour : Moyenne">
+            <span class="gif-width-line" id="gifCaptionStrokeWidthBtnLine" style="height:4px;"></span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="gif-sliders" id="gifOutputSliders" hidden>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifResolutionDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifResolutionTrigger" title="Résolution attendue" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label" id="gifResolutionTriggerLabel">Résolution</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifResolutionMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-width="320" data-label="320px" role="option" aria-selected="false">320px</button>
+              <button type="button" class="bc-dropdown-option" data-width="480" data-label="480px" role="option" aria-selected="false">480px</button>
+              <button type="button" class="bc-dropdown-option" data-width="640" data-label="640px" role="option" aria-selected="false">640px</button>
+              <button type="button" class="bc-dropdown-option" data-width="960" data-label="960px" role="option" aria-selected="false">960px</button>
+              <button type="button" class="bc-dropdown-option" data-width="1280" data-label="1280px" role="option" aria-selected="false">1280px</button>
+              <button type="button" class="bc-dropdown-option" data-width="1920" data-label="1920px" role="option" aria-selected="false">1920px</button>
+            </div>
+          </div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifFpsBtn" title="Fréquence d'images">
+            <span class="option-change-btn-label" id="gifFpsBtnLabel">10 i/s</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="bc-info-btn" id="gifFpsInfoBtn" aria-label="Que signifie Fréquence d'images ?" aria-expanded="false">i</button>
+          <div class="bc-info-tooltip" id="gifFpsInfoTooltip" hidden>Des fréquences d'images plus élevées donnent un rendu plus fluide mais un fichier plus gros : la plupart des clips restent très lisibles à 10–15 i/s.</div>
+        </div>
+        <div class="gif-slider-group">
+          <button type="button" class="option-change-btn" id="gifOrderBtn" title="Lecture">
+            <span class="option-change-btn-label" id="gifOrderBtnLabel">Normal</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="bc-info-btn" id="gifOrderInfoBtn" aria-label="Que signifie Lecture ?" aria-expanded="false">i</button>
+          <div class="bc-info-tooltip" id="gifOrderInfoTooltip" hidden>Inverse lit le clip à l'envers ; Boomerang le lit en avant puis en arrière pour un effet de rebond.</div>
+        </div>
+        <div class="gif-slider-group">
+          <div class="bc-dropdown" id="gifSpeedDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="gifSpeedTrigger" title="Vitesse de lecture" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label" id="gifSpeedTriggerLabel">Vitesse</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="gifSpeedMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-speed="0.25" data-label="0.25x" role="option" aria-selected="false">0.25x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="0.5" data-label="0.5x" role="option" aria-selected="false">0.5x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1" data-label="1x" role="option" aria-selected="false">1x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1.25" data-label="1.25x" role="option" aria-selected="false">1.25x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="1.5" data-label="1.5x" role="option" aria-selected="false">1.5x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="2" data-label="2x" role="option" aria-selected="false">2x</button>
+              <button type="button" class="bc-dropdown-option" data-speed="4" data-label="4x" role="option" aria-selected="false">4x</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gif-convert-fade" aria-hidden="true"></div>
+      <div class="tool-controls" id="gifToolControls" style="grid-template-columns:1fr;">
+        <button class="tool-primary-btn" id="gifConvertBtn" disabled data-ga-event="tool_primary_action" data-ga-tool="congify">Convertir en GIF</button>
+      </div>
+      </div>
+    </div>
+
+    <div class="gif-results-header" id="gifResultsHeader" hidden>
+      <span><span class="nav-terminal-prompt">&gt;</span> Résultat</span>
+      <div class="gif-results-header-btns">
+        <button type="button" class="gif-results-toggle gif-results-download" id="gifResultsDownloadBtn" aria-label="Télécharger le résultat" title="Télécharger le résultat">Télécharger</button>
+        <button type="button" class="gif-results-toggle" id="gifResultsToggle" aria-label="Réduire le résultat" title="Réduire le résultat" aria-expanded="true">&#8722;</button>
+      </div>
+    </div>
+    <div class="tool-results" id="gifResults"></div>
+    <div class="gif-done-actions" id="gifDoneActions" hidden>
+      <button type="button" class="tool-primary-btn tool-continue-btn" id="gifDoneContinueBtn">Continuer à travailler</button>
+      <button type="button" class="tool-primary-btn" id="gifDownloadBtn" title="Télécharger (D)">Télécharger</button>
+    </div>
+    </div>
+    <!-- Deliberately outside #gifVideoWrap (unlike every other control
+         above) — that wrap is display:none until a video's actually
+         loaded, so a status message written to it while still on/back at
+         the drop zone (e.g. "couldn't read that video") would be set but
+         invisible. Every other statusEl.textContent write only ever
+         happens once a video's already active, so moving it out here
+         doesn't change anything about how those already look. -->
+    <div class="tool-status" id="gifStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="gif">
+  <div class="content-section-article-wrap">
+    <div class="content-section-bg" aria-hidden="true">
+      <span class="cs-shape cs-shape-1"></span>
+      <span class="cs-shape cs-shape-3"></span>
+    </div>
+    <h3>Nouveau dans la création de GIF ?</h3>
+    <p>Un GIF n'est pas une vidéo compressée : c'est une suite d'images individuelles limitées à 256 couleurs chacune, sans piste audio, ce qui explique pourquoi la fréquence d'images, la durée et le recadrage influencent si différemment sa taille par rapport à une vidéo. Voici ce qui se passe réellement en coulisses et comment choisir des réglages qui tiennent la route.</p>
+    <p>Envie d'en savoir plus ? Lisez tout : <a class="golden-rules-link-inline go-to-golden-rules" data-tool="gif" href="/golden-rules/?tool=gif">à portée d'un seul clic.</a></p>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000021" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Entreprise</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="À propos"><span class="footer-link-fun">Notre univers</span><span class="footer-link-plain">À propos</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Déjà répondu</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Conditions d'utilisation"><span class="footer-link-fun">Manuel galactique</span><span class="footer-link-plain">Conditions d'utilisation</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politique de confidentialité"><span class="footer-link-fun">Protocole extraterrestre de confidentialité</span><span class="footer-link-plain">Politique de confidentialité</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politique de cookies"><span class="footer-link-fun">Registre des cookies</span><span class="footer-link-plain">Politique de cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Premiers pas avec</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactez-nous</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Rejoignez notre Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=95" defer></script>
+<script src="/shared/report.js?v=22" defer></script>
+<script src="/congify/congify-tool.js?v=133" defer></script>
+</body>
+</html>
