@@ -1487,6 +1487,7 @@ html[data-theme="dark"] .tool-primary-btn:focus-visible{
   html .nav-theme-btn,
   html .nav-help-btn,
   html .nav-close-btn{width:35px;height:35px;}
+  html .nav-lang-menu,
   html .nav-share-menu{top:43px;}
 }
 
@@ -1515,6 +1516,19 @@ html[data-theme="dark"] .tool-primary-btn:focus-visible{
   border-color:var(--border-strong);
 }
 
+.nav-lang-wrap{position:relative}
+.nav-lang-menu{position:absolute;top:48px;right:0;min-width:150px;padding:8px;border-radius:18px;background:#1d2436;border:1px solid rgba(255,255,255,.14);display:none;gap:2px;z-index:60}
+.nav-lang-menu.open{display:grid}
+.nav-lang-menu a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;color:#fff;text-decoration:none;font-size:14px;font-weight:700}
+.nav-lang-menu a:hover,.nav-lang-menu a[aria-current]{background:rgba(255,255,255,.12)}
+.nav-lang-menu svg{width:22px;height:15px;border-radius:2px;flex:none}
+.nav-theme-btn.nav-lang-btn svg{width:22px;height:15px;border-radius:2px;border:1px solid rgba(128,128,128,.4);box-sizing:content-box}
+.nav-lang-btn{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-decoration:none;
+}
 .nav-theme-btn svg{
   width:20px;
   height:20px;
@@ -3454,16 +3468,21 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
 .nav-help-btn:focus-visible,
 .nav-close-btn:focus-visible{ outline:2px solid var(--btn-fill); outline-offset:2px; }
 
-/* Share dropdown follows the theme and uses the same theme-fill hover. */
+/* Dropdown menus (language, share) follow the theme and use the same
+   theme-fill hover; the currently selected language stays filled. */
+.nav-lang-menu,
 .nav-share-menu{
   background:var(--btn-fill-text);
   border:var(--border-bold) solid var(--btn-fill);
 }
+.nav-lang-menu a,
 .nav-share-menu button{
   background:transparent;
   color:var(--btn-fill);
   transition:background-color .3s ease-in-out, color .3s ease-in-out;
 }
+.nav-lang-menu a:hover,
+.nav-lang-menu a[aria-current],
 .nav-share-menu button:hover{
   background:var(--btn-fill);
   color:var(--btn-fill-text);

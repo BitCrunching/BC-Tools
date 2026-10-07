@@ -78,6 +78,19 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3037236608651508" crossorigin="anonymous"></script>
 -->
 <link rel="canonical" href="https://bitcrunching.com/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="BC Tools – Free Image, Video, Audio & Code Tools">
@@ -1841,6 +1854,7 @@ footer a{
   html .nav-share-btn,
   html .nav-theme-btn,
   html .nav-help-btn{width:35px;height:35px;}
+  html .nav-lang-menu,
   html .nav-share-menu{top:43px;}
 }
 
@@ -1867,6 +1881,19 @@ footer a{
   border-color:var(--border-strong);
 }
 
+.nav-lang-wrap{position:relative}
+.nav-lang-menu{position:absolute;top:48px;right:0;min-width:150px;padding:8px;border-radius:18px;background:#1d2436;border:1px solid rgba(255,255,255,.14);display:none;gap:2px;z-index:60}
+.nav-lang-menu.open{display:grid}
+.nav-lang-menu a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;color:#fff;text-decoration:none;font-size:14px;font-weight:700}
+.nav-lang-menu a:hover,.nav-lang-menu a[aria-current]{background:rgba(255,255,255,.12)}
+.nav-lang-menu svg{width:22px;height:15px;border-radius:2px;flex:none}
+.nav-theme-btn.nav-lang-btn svg{width:22px;height:15px;border-radius:2px;border:1px solid rgba(128,128,128,.4);box-sizing:content-box}
+.nav-lang-btn{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-decoration:none;
+}
 .nav-theme-btn svg{
   width:20px;
   height:20px;
@@ -2146,16 +2173,21 @@ footer a{
 .nav-help-btn:focus-visible,
 .nav-close-btn:focus-visible{ outline:2px solid var(--btn-fill); outline-offset:2px; }
 
-/* Share dropdown follows the theme and uses the same theme-fill hover. */
+/* Dropdown menus (language, share) follow the theme and use the same
+   theme-fill hover; the currently selected language stays filled. */
+.nav-lang-menu,
 .nav-share-menu{
   background:var(--btn-fill-text);
   border:var(--border-bold) solid var(--btn-fill);
 }
+.nav-lang-menu a,
 .nav-share-menu button{
   background:transparent;
   color:var(--btn-fill);
   transition:background-color .3s ease-in-out, color .3s ease-in-out;
 }
+.nav-lang-menu a:hover,
+.nav-lang-menu a[aria-current],
 .nav-share-menu button:hover{
   background:var(--btn-fill);
   color:var(--btn-fill-text);
@@ -3110,9 +3142,15 @@ function pathToName(pathname){
    instead of gotoPage()'s normal in-page section swap. */
 const MIGRATED_PAGES = { about: "/about/", faq: "/faq/", terms: "/terms/", privacy: "/privacy/", cookies: "/cookies/", exif: "/cleanly/", combine: "/combine/", compress: "/compress/", convert: "/convert/", context: "/context/", "golden-rules": "/golden-rules/" };
 
+function bcLangPath(path){
+  const lang = window.BC_LANG;
+  if (lang && Array.isArray(window.BC_LANG_PAGES) && window.BC_LANG_PAGES.includes(path)) return "/" + lang + path;
+  return path;
+}
+
 function gotoPage(name){
   if (MIGRATED_PAGES[name]){
-    location.href = MIGRATED_PAGES[name];
+    location.href = bcLangPath(MIGRATED_PAGES[name]);
     return;
   }
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -3375,7 +3413,7 @@ if (VALID_PAGES.includes(startPage)) {
     peek.setAttribute("aria-label", `Preview of the ${name} tool`);
     title.textContent = name;
     desc.textContent = btn.dataset.previewDesc;
-    openLink.href = btn.dataset.previewHref;
+    openLink.href = bcLangPath(btn.dataset.previewHref);
     lastFocused = btn;
     overlay.hidden = false;
     document.body.style.overflow = "hidden";
@@ -3472,6 +3510,79 @@ if (VALID_PAGES.includes(startPage)) {
       applyFilter();
     });
   });
+})();
+
+
+/* ===== Language switch =====
+   A page lists its translations as <link rel="alternate" hreflang="..">
+   (the build script writes them). This adds one nav button that links to
+   the other language's copy of the same page; it never redirects on its
+   own and just remembers the last choice. */
+(function(){
+  const FLAGS = {
+      en: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="8"/></svg>',
+      de: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#FFCE00"/><rect width="60" height="26.7" fill="#DD0000"/><rect width="60" height="13.3" fill="#000"/></svg>',
+      nl: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#21468B"/><rect width="60" height="26.7" fill="#fff"/><rect width="60" height="13.3" fill="#AE1C28"/></svg>',
+      fr: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#0055A4"/><rect x="40" width="20" height="40" fill="#EF4135"/></svg>',
+      it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
+      pt: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#009C3B"/><polygon points="30,5 55,20 30,35 5,20" fill="#FFDF00"/><circle cx="30" cy="20" r="8" fill="#002776"/></svg>',
+      ja: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="12" fill="#BC002D"/></svg>',
+      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><g transform="rotate(-33.7 30 20)"><path d="M20 20A10 10 0 0 1 40 20A5 5 0 0 1 30 20A5 5 0 0 0 20 20z" fill="#CD2E3A"/><path d="M20 20A5 5 0 0 1 30 20A5 5 0 0 0 40 20A10 10 0 0 1 20 20z" fill="#0047A0"/></g><g fill="#000"><g transform="translate(10 8) rotate(-57)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 8) rotate(57)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g><g transform="translate(10 32) rotate(-123)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 32) rotate(123)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g></g></svg>',
+      cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
+      es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
+      id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',
+      pl: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#DC143C"/></svg>'
+    };
+  function applySavedLang(){
+    let saved = null;
+    try { saved = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
+    const current = document.documentElement.lang || "en";
+    if (!saved || saved === current) return;
+    const target = document.querySelector('link[rel="alternate"][hreflang="' + saved + '"]');
+    if (!target) return;
+    const internal = document.referrer && new URL(document.referrer).origin === location.origin;
+    if (current !== "en" && !internal) return;
+    location.replace(new URL(target.href, location.href).pathname + location.search + location.hash);
+  }
+  applySavedLang();
+  function addLangButton(){
+    const nav = document.querySelector(".nav-right");
+    if (!nav || nav.querySelector(".nav-lang-wrap")) return;
+    const current = document.documentElement.lang || "en";
+    const ORDER = ["en", "nl", "de", "es", "fr", "it", "pl", "pt", "cs", "id", "ja", "ko"];
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default").sort((a, b) => ORDER.indexOf(a.hreflang) - ORDER.indexOf(b.hreflang));
+    if (alts.length < 2) return;
+    const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano", pt: "Português", ja: "日本語", ko: "한국어" };
+    const wrap = document.createElement("div");
+    wrap.className = "nav-lang-wrap";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nav-theme-btn nav-lang-btn";
+    btn.innerHTML = FLAGS[current] || current.toUpperCase();
+    btn.title = NAMES[current] || current;
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+    const menu = document.createElement("div");
+    menu.className = "nav-lang-menu";
+    alts.forEach(l => {
+      const a = document.createElement("a");
+      a.href = new URL(l.href, location.href).pathname + location.search;
+      a.hreflang = l.hreflang;
+      a.innerHTML = (FLAGS[l.hreflang] || "") + "<span>" + (NAMES[l.hreflang] || l.hreflang) + "</span>";
+      if (l.hreflang === current) a.setAttribute("aria-current", "true");
+      a.addEventListener("click", () => { try { localStorage.setItem("bc-lang", l.hreflang); } catch (e) { /* storage unavailable */ } });
+      menu.appendChild(a);
+    });
+    const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(!menu.classList.contains("open")); });
+    document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    wrap.append(btn, menu);
+    nav.insertBefore(wrap, nav.firstChild);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addLangButton);
+  else addLangButton();
 })();
 
 </script>
