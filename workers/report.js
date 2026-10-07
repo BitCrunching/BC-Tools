@@ -16,7 +16,7 @@
 //      the Worker Settings > Bindings > Add > KV namespace, variable name RATE.
 //      Without it the Worker refuses every report (503) instead of running unlimited.
 
-const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
+const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com", "http://localhost:8000"]; // TEMP: localhost for testing, remove before deploying for good
 const TYPES = {
   bug: { secret: "DISCORD_WEBHOOK", title: "Bug report", color: 0xB91C3C, max: 100 },
   translation: { secret: "DISCORD_WEBHOOK_TRANSLATE", title: "Translation", color: 0x2563EB, max: 200 },
