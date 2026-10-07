@@ -1,10 +1,15 @@
-// Cloudflare Worker: receives a bug report from the site and posts it to the
-// support channel on Discord. The webhook URL lives only here, as a secret.
+// Cloudflare Worker: receives a bug report, a translation note or feedback from
+// the site and posts it to the matching Discord channel. The webhook URLs live
+// only here, as secrets.
 //
 // Setup (Cloudflare dashboard):
 //   1. Workers & Pages > Create > Worker > paste this file > Deploy.
-//   2. Settings > Variables and Secrets > add a Secret named DISCORD_WEBHOOK
-//      with the Discord webhook URL.
+//   2. Settings > Variables and Secrets > add three Secrets, each with its own
+//      Discord webhook URL:
+//        DISCORD_WEBHOOK            bug reports   (#support-help)
+//        DISCORD_WEBHOOK_TRANSLATE  translations  (#help-us-translate)
+//        DISCORD_WEBHOOK_FEEDBACK   feedback      (#feedback-and-ideas)
+//      A type whose secret is missing is refused; the others keep working.
 //   3. Copy the Worker's URL (https://<name>.<account>.workers.dev) into
 //      ENDPOINT in shared/report.js.
 //   4. Rate limit (required): Storage & Databases > KV > create a namespace, then on
@@ -12,7 +17,11 @@
 //      Without it the Worker refuses every report (503) instead of running unlimited.
 
 const ALLOWED_ORIGINS = ["https://bitcrunching.com", "https://www.bitcrunching.com"];
-const MAX_CHARS = 100;
+const TYPES = {
+  bug: { secret: "DISCORD_WEBHOOK", title: "Bug report", color: 0xB91C3C, max: 100 },
+  translation: { secret: "DISCORD_WEBHOOK_TRANSLATE", title: "Translation", color: 0x2563EB, max: 200 },
+  feedback: { secret: "DISCORD_WEBHOOK_FEEDBACK", title: "Feedback", color: 0x16A34A, max: 100 }
+};
 const MAX_SHOTS = 3;
 const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
 const COOLDOWN_SECONDS = 60;
@@ -50,7 +59,6 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return reply(405, { error: "POST only" }, origin);
     if (!ALLOWED_ORIGINS.includes(origin)) return reply(403, { error: "Origin not allowed" }, origin);
-    if (!env.DISCORD_WEBHOOK) return reply(500, { error: "Not configured" }, origin);
 
     // Rate limits first, before reading the body: one report per IP per minute and
     // MAX_REPORTS_PER_HOUR reports in total per hour. Fail closed if KV isn't bound.
@@ -65,18 +73,25 @@ export default {
     let form;
     try { form = await request.formData(); } catch (err) { return reply(400, { error: "Bad form" }, origin); }
 
-    const message = String(form.get("message") || "").trim().slice(0, MAX_CHARS);
+    const type = TYPES[String(form.get("type") || "bug")];
+    if (!type) return reply(400, { error: "Unknown type" }, origin);
+    const webhook = env[type.secret];
+    if (!webhook) return reply(500, { error: "Not configured" }, origin);
+
+    const message = String(form.get("message") || "").trim().slice(0, type.max);
     if (!message) return reply(400, { error: "Empty message" }, origin);
     const page = String(form.get("page") || "").slice(0, 120);
     const screen = String(form.get("screen") || "").slice(0, 60);
     const browser = String(form.get("browser") || "").slice(0, 200);
+    const lang = String(form.get("lang") || "").slice(0, 10);
 
     const embed = {
-      title: "Bug report",
+      title: type.title,
       description: message,
-      color: 0xB91C3C,
+      color: type.color,
       fields: [
         { name: "Page", value: page || "-", inline: true },
+        ...(lang ? [{ name: "Language", value: lang, inline: true }] : []),
         { name: "Screen", value: screen || "-", inline: true },
         { name: "Browser", value: browser || "-" }
       ]
@@ -99,7 +114,7 @@ export default {
 
     // Reserve the slot before posting so a quick second request is blocked; undo if Discord fails.
     await env.RATE.put(ipKey, "1", { expirationTtl: COOLDOWN_SECONDS });
-    const res = await fetch(env.DISCORD_WEBHOOK, { method: "POST", body: out });
+    const res = await fetch(webhook, { method: "POST", body: out });
     if (!res.ok){
       await env.RATE.delete(ipKey);
       return reply(502, { error: "Discord rejected the report" }, origin);
