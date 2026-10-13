@@ -159,9 +159,9 @@
   });
   if (window.matchMedia("(hover: hover)").matches){
     let closeTimer;
-    const busy = () => box.contains(document.activeElement) || text.value.trim() || shots.length;
-    const enter = () => { clearTimeout(closeTimer); if (window.innerWidth > 768 && !isOpen()) open(null, true); };
-    const leave = () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => { if (isOpen() && !busy()) close(); }, 150); };
+    const enter = () => { clearTimeout(closeTimer); if (window.innerWidth > 768 && !isOpen()){ open(null, true); document.dispatchEvent(new Event("bc-report-hover")); } };
+    const leave = () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => { if (isOpen()){ if (box.contains(document.activeElement)) document.activeElement.blur(); close(); } }, 150); };
+    document.addEventListener("bc-nav-hover", () => { clearTimeout(closeTimer); if (isOpen()){ if (box.contains(document.activeElement)) document.activeElement.blur(); close(); } });
     [btn, box].forEach(el => { el.addEventListener("mouseenter", enter); el.addEventListener("mouseleave", leave); });
   }
   tabBtns.forEach(b => b.addEventListener("click", () => { setTab(b.dataset.tab); text.focus(); }));
