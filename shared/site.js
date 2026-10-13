@@ -868,7 +868,7 @@ function showNavTerminal(text){
       };
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768 && !document.querySelector(".bc-report:not([hidden])")) shareMenu.classList.add("open");
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -886,6 +886,7 @@ function showNavTerminal(text){
       });
       if (window.matchMedia("(hover: hover)").matches){
         shareMoreToggle.addEventListener("mouseenter", () => {
+          if (document.querySelector(".bc-report:not([hidden])")) return;
           shareMoreList.hidden = false;
           shareMoreToggle.setAttribute("aria-expanded", "true");
         });
@@ -1572,7 +1573,7 @@ bcRegisterEscapable(
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768 && !document.querySelector(".bc-report:not([hidden])")) setOpen(true); });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);
