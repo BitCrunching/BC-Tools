@@ -94,11 +94,11 @@
   }
 
   function isOpen(){ return !box.hidden; }
-  function open(which){
+  function open(which, keepFocus){
     if (which && which !== tab) setTab(which);
     box.hidden = false;
     btn.setAttribute("aria-expanded", "true");
-    text.focus();
+    if (!keepFocus) text.focus();
   }
   function close(){
     box.hidden = true;
@@ -152,7 +152,18 @@
     renderShots();
   }
 
-  btn.addEventListener("click", () => { isOpen() ? close() : open(); });
+  const hoverOpens = () => window.matchMedia("(hover: hover)").matches && window.innerWidth > 768;
+  btn.addEventListener("click", (e) => {
+    if (e.detail > 0 && hoverOpens()){ open(); return; }
+    isOpen() ? close() : open();
+  });
+  if (window.matchMedia("(hover: hover)").matches){
+    let closeTimer;
+    const busy = () => box.contains(document.activeElement) || text.value.trim() || shots.length;
+    const enter = () => { clearTimeout(closeTimer); if (window.innerWidth > 768 && !isOpen()) open(null, true); };
+    const leave = () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => { if (isOpen() && !busy()) close(); }, 150); };
+    [btn, box].forEach(el => { el.addEventListener("mouseenter", enter); el.addEventListener("mouseleave", leave); });
+  }
   tabBtns.forEach(b => b.addEventListener("click", () => { setTab(b.dataset.tab); text.focus(); }));
 
   const footerContact = document.getElementById("footerContactSection");
