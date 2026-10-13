@@ -70,8 +70,8 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BC Tools – 画像・動画・音声・コード用の無料ツール</title>
-<meta name="description" content="ブラウザ上でそのまま動く無料ツールなので、ファイルがデバイスの外に出ることはありません。画像の変換・圧縮、PDFの結合、テキストや署名の追加、写真のメタデータ削除、動画のGIF化、音声変換、きれいなコードのスクリーンショット作成、色の抽出などができます。登録もアップロードも不要、楽しいだけ。">
+<title>BC Tools - NEW STANDARD</title>
+<meta name="description" content="すべてを1つで。画像・動画・音声・コードのツールなど。変換（JPG→PNG、PDF→JPG、SVG→PNG、WEBP→JPG）｜画像の圧縮｜PDFの結合｜メタデータの削除｜署名の作成｜音声の変換｜GIFの作成｜コードスニペットツール">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,13 +95,13 @@
 <script src="/shared/i18n/ja.js?v=5"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="BC Tools – 画像・動画・音声・コード用の無料ツール">
-<meta property="og:description" content="ブラウザで動く無料のプライベートツール。変換、圧縮、PDF結合、GIF作成などができます。ファイルがデバイスの外に出ることはなく、しかも楽しい。">
+<meta property="og:title" content="BC Tools - NEW STANDARD">
+<meta property="og:description" content="すべてを1つで。画像・動画・音声・コードのツールなど。変換（JPG→PNG、PDF→JPG、SVG→PNG、WEBP→JPG）｜画像の圧縮｜PDFの結合｜メタデータの削除｜署名の作成｜音声の変換｜GIFの作成｜コードスニペットツール">
 <meta property="og:url" content="https://bitcrunching.com/ja/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BC Tools – 画像・動画・音声・コード用の無料ツール">
-<meta name="twitter:description" content="ブラウザで動く無料のプライベートツール。変換、圧縮、PDF結合、GIF作成などができます。ファイルがデバイスの外に出ることはなく、しかも楽しい。">
+<meta name="twitter:title" content="BC Tools - NEW STANDARD">
+<meta name="twitter:description" content="すべてを1つで。画像・動画・音声・コードのツールなど。変換（JPG→PNG、PDF→JPG、SVG→PNG、WEBP→JPG）｜画像の圧縮｜PDFの結合｜メタデータの削除｜署名の作成｜音声の変換｜GIFの作成｜コードスニペットツール">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -3279,9 +3279,10 @@ if (VALID_PAGES.includes(startPage)) {
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -3586,12 +3587,13 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);

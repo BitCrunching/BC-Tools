@@ -70,8 +70,8 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BC Tools – Instrumente gratuite pentru imagini, video, audio și cod</title>
-<meta name="description" content="Instrumente gratuite care rulează chiar în browserul tău, deci fișierele tale nu îți părăsesc niciodată dispozitivul. Convertește și comprimă imagini, îmbină PDF-uri, adaugă text și semnături, elimină metadatele fotografiilor, transformă videoclipuri în GIF-uri, convertește audio, fă capturi de ecran frumoase cu cod, extrage culori și multe altele. Fără înregistrare, fără încărcări, doar distracție.">
+<title>BC Tools - NEW STANDARD</title>
+<meta name="description" content="Un singur instrument pentru toate. Instrumente pentru imagini, video, audio și cod și altele. Convertește (JPG în PNG, PDF în JPG, SVG în PNG, WEBP în JPG) | Comprimă imagini | Combină PDF-uri | Curăță metadatele | Creează o semnătură | Convertește audio | Creează GIF-uri | Instrument pentru fragmente de cod">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,13 +95,13 @@
 <script src="/shared/i18n/ro.js?v=5"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="BC Tools – Instrumente gratuite pentru imagini, video, audio și cod">
-<meta property="og:description" content="Instrumente gratuite și private care rulează în browserul tău. Convertește, comprimă, îmbină PDF-uri, fă GIF-uri și multe altele. Fișierele tale nu îți părăsesc niciodată dispozitivul și este chiar distractiv.">
+<meta property="og:title" content="BC Tools - NEW STANDARD">
+<meta property="og:description" content="Un singur instrument pentru toate. Instrumente pentru imagini, video, audio și cod și altele. Convertește (JPG în PNG, PDF în JPG, SVG în PNG, WEBP în JPG) | Comprimă imagini | Combină PDF-uri | Curăță metadatele | Creează o semnătură | Convertește audio | Creează GIF-uri | Instrument pentru fragmente de cod">
 <meta property="og:url" content="https://bitcrunching.com/ro/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BC Tools – Instrumente gratuite pentru imagini, video, audio și cod">
-<meta name="twitter:description" content="Instrumente gratuite și private care rulează în browserul tău. Convertește, comprimă, îmbină PDF-uri, fă GIF-uri și multe altele. Fișierele tale nu îți părăsesc niciodată dispozitivul și este chiar distractiv.">
+<meta name="twitter:title" content="BC Tools - NEW STANDARD">
+<meta name="twitter:description" content="Un singur instrument pentru toate. Instrumente pentru imagini, video, audio și cod și altele. Convertește (JPG în PNG, PDF în JPG, SVG în PNG, WEBP în JPG) | Comprimă imagini | Combină PDF-uri | Curăță metadatele | Creează o semnătură | Convertește audio | Creează GIF-uri | Instrument pentru fragmente de cod">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -3279,9 +3279,10 @@ if (VALID_PAGES.includes(startPage)) {
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -3586,12 +3587,13 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);

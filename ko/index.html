@@ -70,8 +70,8 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BC Tools – 이미지, 비디오, 오디오, 코드를 위한 무료 도구</title>
-<meta name="description" content="브라우저에서 바로 실행되는 무료 도구라서 파일이 기기 밖으로 나가지 않습니다. 이미지 변환과 압축, PDF 합치기, 텍스트와 서명 추가, 사진 메타데이터 제거, 비디오를 GIF로 변환, 오디오 변환, 예쁜 코드 스크린샷 만들기, 색 추출 등을 할 수 있습니다. 가입도 업로드도 필요 없이 재미만 있습니다.">
+<title>BC Tools - NEW STANDARD</title>
+<meta name="description" content="모든 것을 하나로. 이미지, 동영상, 오디오, 코드 도구 등. 변환 (JPG를 PNG로, PDF를 JPG로, SVG를 PNG로, WEBP를 JPG로) | 이미지 압축 | PDF 병합 | 메타데이터 정리 | 서명 만들기 | 오디오 변환 | GIF 만들기 | 코드 스니펫 도구">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,13 +95,13 @@
 <script src="/shared/i18n/ko.js?v=5"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="BC Tools – 이미지, 비디오, 오디오, 코드를 위한 무료 도구">
-<meta property="og:description" content="브라우저에서 실행되는 무료 비공개 도구. 변환, 압축, PDF 합치기, GIF 만들기 등을 할 수 있습니다. 파일은 기기 밖으로 나가지 않고, 게다가 재미있습니다.">
+<meta property="og:title" content="BC Tools - NEW STANDARD">
+<meta property="og:description" content="모든 것을 하나로. 이미지, 동영상, 오디오, 코드 도구 등. 변환 (JPG를 PNG로, PDF를 JPG로, SVG를 PNG로, WEBP를 JPG로) | 이미지 압축 | PDF 병합 | 메타데이터 정리 | 서명 만들기 | 오디오 변환 | GIF 만들기 | 코드 스니펫 도구">
 <meta property="og:url" content="https://bitcrunching.com/ko/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BC Tools – 이미지, 비디오, 오디오, 코드를 위한 무료 도구">
-<meta name="twitter:description" content="브라우저에서 실행되는 무료 비공개 도구. 변환, 압축, PDF 합치기, GIF 만들기 등을 할 수 있습니다. 파일은 기기 밖으로 나가지 않고, 게다가 재미있습니다.">
+<meta name="twitter:title" content="BC Tools - NEW STANDARD">
+<meta name="twitter:description" content="모든 것을 하나로. 이미지, 동영상, 오디오, 코드 도구 등. 변환 (JPG를 PNG로, PDF를 JPG로, SVG를 PNG로, WEBP를 JPG로) | 이미지 압축 | PDF 병합 | 메타데이터 정리 | 서명 만들기 | 오디오 변환 | GIF 만들기 | 코드 스니펫 도구">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -3279,9 +3279,10 @@ if (VALID_PAGES.includes(startPage)) {
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -3586,12 +3587,13 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);

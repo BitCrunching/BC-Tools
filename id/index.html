@@ -70,8 +70,8 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BC Tools – Alat Gambar, Video, Audio & Kode Gratis</title>
-<meta name="description" content="Alat gratis yang berjalan langsung di browser Anda, jadi file Anda tidak pernah meninggalkan perangkat. Konversi dan kompres gambar, gabungkan PDF, tambahkan teks dan tanda tangan, hapus metadata foto, ubah video menjadi GIF, konversi audio, buat tangkapan layar kode yang cantik, ambil warna, dan banyak lagi. Tanpa daftar, tanpa unggah, murni seru.">
+<title>BC Tools - NEW STANDARD</title>
+<meta name="description" content="Satu alat untuk semuanya. Alat gambar, video, audio, dan kode, serta lainnya. Konversi (JPG ke PNG, PDF ke JPG, SVG ke PNG, WEBP ke JPG) | Kompres gambar | Gabungkan PDF | Bersihkan metadata | Buat tanda tangan | Konversi audio | Buat GIF | Alat cuplikan kode">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,13 +95,13 @@
 <script src="/shared/i18n/id.js?v=5"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="BC Tools – Alat Gambar, Video, Audio & Kode Gratis">
-<meta property="og:description" content="Alat gratis dan privat yang berjalan di browser Anda. Konversi, kompres, gabungkan PDF, buat GIF, dan banyak lagi. File Anda tidak pernah meninggalkan perangkat, dan ini benar-benar menyenangkan.">
+<meta property="og:title" content="BC Tools - NEW STANDARD">
+<meta property="og:description" content="Satu alat untuk semuanya. Alat gambar, video, audio, dan kode, serta lainnya. Konversi (JPG ke PNG, PDF ke JPG, SVG ke PNG, WEBP ke JPG) | Kompres gambar | Gabungkan PDF | Bersihkan metadata | Buat tanda tangan | Konversi audio | Buat GIF | Alat cuplikan kode">
 <meta property="og:url" content="https://bitcrunching.com/id/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BC Tools – Alat Gambar, Video, Audio & Kode Gratis">
-<meta name="twitter:description" content="Alat gratis dan privat yang berjalan di browser Anda. Konversi, kompres, gabungkan PDF, buat GIF, dan banyak lagi. File Anda tidak pernah meninggalkan perangkat, dan ini benar-benar menyenangkan.">
+<meta name="twitter:title" content="BC Tools - NEW STANDARD">
+<meta name="twitter:description" content="Satu alat untuk semuanya. Alat gambar, video, audio, dan kode, serta lainnya. Konversi (JPG ke PNG, PDF ke JPG, SVG ke PNG, WEBP ke JPG) | Kompres gambar | Gabungkan PDF | Bersihkan metadata | Buat tanda tangan | Konversi audio | Buat GIF | Alat cuplikan kode">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -3279,9 +3279,10 @@ if (VALID_PAGES.includes(startPage)) {
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -3586,12 +3587,13 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);
