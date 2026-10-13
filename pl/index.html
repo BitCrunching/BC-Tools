@@ -70,8 +70,8 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu</title>
-<meta name="description" content="Darmowe narzędzia działające prosto w przeglądarce, więc Twoje pliki nigdy nie opuszczają urządzenia. Konwertuj i kompresuj obrazy, łącz PDF-y, dodawaj tekst i podpisy, usuwaj metadane ze zdjęć, zamieniaj filmy w GIF-y, konwertuj dźwięk, rób ładne zrzuty kodu, wybieraj kolory i nie tylko. Bez rejestracji, bez wysyłania, sama zabawa.">
+<title>BC Tools - NEW STANDARD</title>
+<meta name="description" content="Jedno narzędzie do wszystkiego. Narzędzia do obrazów, wideo, dźwięku i kodu oraz inne. Konwertuj (JPG na PNG, PDF na JPG, SVG na PNG, WEBP na JPG) | Kompresuj obrazy | Połącz PDF-y | Wyczyść metadane | Utwórz podpis | Konwertuj dźwięk | Utwórz GIF | Narzędzie do fragmentów kodu">
 <!-- AdSense disabled until further notice — placeholder ad-slot IDs
      cause console errors once this script actually tries to fill them.
      Re-enable by uncommenting once real ad units exist.
@@ -95,13 +95,13 @@
 <script src="/shared/i18n/pl.js?v=5"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
-<meta property="og:title" content="BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu">
-<meta property="og:description" content="Darmowe, prywatne narzędzia działające w przeglądarce. Konwertuj, kompresuj, łącz PDF-y, twórz GIF-y i nie tylko. Twoje pliki nigdy nie opuszczają urządzenia, a do tego to świetna zabawa.">
+<meta property="og:title" content="BC Tools - NEW STANDARD">
+<meta property="og:description" content="Jedno narzędzie do wszystkiego. Narzędzia do obrazów, wideo, dźwięku i kodu oraz inne. Konwertuj (JPG na PNG, PDF na JPG, SVG na PNG, WEBP na JPG) | Kompresuj obrazy | Połącz PDF-y | Wyczyść metadane | Utwórz podpis | Konwertuj dźwięk | Utwórz GIF | Narzędzie do fragmentów kodu">
 <meta property="og:url" content="https://bitcrunching.com/pl/">
 <meta property="og:image" content="https://bitcrunching.com/share.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BC Tools – darmowe narzędzia do obrazów, wideo, dźwięku i kodu">
-<meta name="twitter:description" content="Darmowe, prywatne narzędzia działające w przeglądarce. Konwertuj, kompresuj, łącz PDF-y, twórz GIF-y i nie tylko. Twoje pliki nigdy nie opuszczają urządzenia, a do tego to świetna zabawa.">
+<meta name="twitter:title" content="BC Tools - NEW STANDARD">
+<meta name="twitter:description" content="Jedno narzędzie do wszystkiego. Narzędzia do obrazów, wideo, dźwięku i kodu oraz inne. Konwertuj (JPG na PNG, PDF na JPG, SVG na PNG, WEBP na JPG) | Kompresuj obrazy | Połącz PDF-y | Wyczyść metadane | Utwórz podpis | Konwertuj dźwięk | Utwórz GIF | Narzędzie do fragmentów kodu">
 <meta name="twitter:image" content="https://bitcrunching.com/share.png">
 <script type="application/ld+json">
 {
@@ -3279,9 +3279,10 @@ if (VALID_PAGES.includes(startPage)) {
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -3586,12 +3587,13 @@ if (VALID_PAGES.includes(startPage)) {
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);
