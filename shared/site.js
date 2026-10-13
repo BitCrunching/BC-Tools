@@ -866,9 +866,10 @@ function showNavTerminal(text){
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -1567,12 +1568,13 @@ bcRegisterEscapable(
       menu.appendChild(a);
     });
     const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
     btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
     document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
     if (window.matchMedia("(hover: hover)").matches){
       let closeTimer;
-      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768) setOpen(true); });
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
       wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
     }
     wrap.append(btn, menu);
