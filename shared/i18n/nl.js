@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "Code wissen",
  "Clearing out a palette": "Een palet leegmaken",
  "Click": "Klik",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Klik ergens op een pdf om tekst, een handtekening of een vorm neer te zetten, geef die jouw stijl en download hem. Direct, rechtstreeks in je browser, zonder upload naar servers.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Voeg tekst, een handtekening of een vorm toe aan een pdf, geef die jouw stijl en download hem. Direct, rechtstreeks in je browser, zonder upload naar servers.",
  "Click to copy": "Klik om te kopiëren",
  "Click to outline the preview's click zones": "Klik om de klikzones van de voorvertoning te omlijnen",
  "Click to reset tool's guide": "Klik om de gids van de tool te resetten",

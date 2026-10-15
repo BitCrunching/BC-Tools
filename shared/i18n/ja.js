@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "コードをクリア",
  "Clearing out a palette": "パレットを空にする",
  "Click": "クリック",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "PDF上の好きな場所をクリックして、テキスト、署名、図形をドロップし、好みのスタイルに整えて、ダウンロードできます。サーバーへのアップロードは不要で、すぐにブラウザ上で完結します。",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "PDFにテキスト、署名、図形を追加し、好みのスタイルに整えて、ダウンロードできます。サーバーへのアップロードは不要で、すぐにブラウザ上で完結します。",
  "Click to copy": "クリックしてコピー",
  "Click to outline the preview's click zones": "クリックしてプレビューのクリック領域を枠線で表示",
  "Click to reset tool's guide": "クリックしてツールのガイドをリセット",

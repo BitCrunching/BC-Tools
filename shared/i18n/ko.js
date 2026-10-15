@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "코드 지우기",
  "Clearing out a palette": "팔레트 비우기",
  "Click": "클릭",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "PDF의 아무 곳이나 클릭해 텍스트, 서명, 도형을 놓고 원하는 대로 스타일을 정한 뒤 다운로드하세요. 서버에 업로드할 필요 없이 브라우저에서 바로 처리됩니다.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "PDF에 텍스트, 서명, 도형을 추가하고 원하는 대로 스타일을 정한 뒤 다운로드하세요. 서버에 업로드할 필요 없이 브라우저에서 바로 처리됩니다.",
  "Click to copy": "클릭하여 복사",
  "Click to outline the preview's click zones": "클릭하여 미리보기의 클릭 영역 윤곽 표시",
  "Click to reset tool's guide": "클릭하여 도구 가이드 초기화",

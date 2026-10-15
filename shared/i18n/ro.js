@@ -327,7 +327,7 @@ window.BC_I18N = {
  "Clear code": "Șterge codul",
  "Clearing out a palette": "Golirea unei palete",
  "Click": "Clic",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Dă clic oriunde pe un PDF pentru a pune text, o semnătură sau o formă, stilizeaz-o după cum vrei și descarcă — instant, chiar în browser, fără încărcare pe servere.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Adaugă text, o semnătură sau o formă într-un PDF, stilizeaz-o după cum vrei și descarcă — instant, chiar în browser, fără încărcare pe servere.",
  "Click to copy": "Dă clic pentru a copia",
  "Click to outline the preview's click zones": "Dă clic pentru a evidenția zonele de clic ale previzualizării",
  "Click to reset tool's guide": "Dă clic pentru a reseta ghidul instrumentului",

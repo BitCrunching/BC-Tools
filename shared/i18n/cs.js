@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "Vymazat kód",
  "Clearing out a palette": "Vyčištění palety",
  "Click": "Klikněte",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Klikněte kamkoli do PDF a vložte text, podpis nebo tvar, upravte vzhled podle sebe a stáhněte — okamžitě, přímo v prohlížeči, bez nahrávání na servery.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Přidejte do PDF text, podpis nebo tvar, upravte vzhled podle sebe a stáhněte — okamžitě, přímo v prohlížeči, bez nahrávání na servery.",
  "Click to copy": "Kliknutím zkopírujete",
  "Click to outline the preview's click zones": "Kliknutím zvýrazníte klikací zóny náhledu",
  "Click to reset tool's guide": "Klikněte pro obnovení průvodce nástrojem",
