@@ -240,6 +240,7 @@
   async function loadFile(file, restoreState){
     if (loadFileBusy) return;
     loadFileBusy = true;
+    if (isPdfFile(file)) continueBtn.hidden = true;
     try {
       await loadFileInner(file, restoreState);
     } finally {
