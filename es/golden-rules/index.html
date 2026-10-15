@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
-<script src="/shared/i18n/es.js?v=5"></script>
+<script src="/shared/i18n/es.js?v=6"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Reglas de oro – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=241">
+<link rel="stylesheet" href="/shared/site.css?v=242">
 <style>
 /* ===== GOLDEN RULES ===== */
 /* Wheel-picker switcher: the "active" slot is a fixed position — dead
@@ -176,6 +176,7 @@ html[data-theme="dark"] .golden-rules-switcher{
 .golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
 .golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 .golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+.golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
 
 .ad-slot-incontent{
   margin:32px auto;
@@ -385,6 +386,7 @@ html[data-theme="dark"] .golden-rules-switcher{
       <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
       <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
@@ -1327,6 +1329,115 @@ html[data-theme="dark"] .golden-rules-switcher{
     </div>
 
 
+    <div class="golden-rules-articles" data-tool="colorfy">
+      <details class="golden-rules-article">
+        <summary>1. HEX, RGB, HSB y HSL: qué significa realmente cada código de color</summary>
+        <div class="golden-rules-body">
+          <p>Todo color en una pantalla se reduce a los mismos valores subyacentes de luz roja/verde/azul: HEX, RGB, HSB y HSL son simplemente cuatro formas distintas de escribir ese mismo color, cada una adecuada para un tipo de trabajo diferente.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Formato</th><th>Ideal para</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formato">HEX (<code>#FF8A4C</code>)</td><td data-label="Ideal para">CSS, herramientas de diseño, cualquier sitio donde se espere un único código compacto</td></tr>
+              <tr><td data-label="Formato">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="Ideal para">Código que construye colores a partir de números separados, o mezcla/cálculos sobre canales</td></tr>
+              <tr><td data-label="Formato">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="Ideal para">Ajustar el brillo o la saturación de un color manteniendo el mismo tono</td></tr>
+              <tr><td data-label="Formato">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="Ideal para">Aclarar u oscurecer un color de forma predecible para estados hover/activo</td></tr>
+            </tbody>
+          </table>
+
+          <h3>HEX: el valor por defecto compacto y compatible en todas partes</h3>
+          <p>Un código HEX empaqueta rojo, verde y azul en una única cadena de seis dígitos, por eso es el formato que casi toda herramienta de diseño, hoja de estilos CSS y editor de imágenes espera por defecto. Es compacto y fácil de pegar de un sitio a otro, pero los números reales que contiene (pares en base 16) no son algo que la mayoría lea de un vistazo como puede hacer con simples números decimales.</p>
+
+          <h3>RGB: los mismos valores, desglosados</h3>
+          <p>RGB escribe los mismos tres canales que codifica HEX, solo que como tres números simples de 0 a 255 en lugar de pares hexadecimales empaquetados: es más fácil razonar con ellos si ajustas un canal a mano o escribes código que construye un color a partir de entradas separadas de rojo/verde/azul.</p>
+
+          <h3>HSB y HSL: construidos en torno a cómo se percibe realmente el color</h3>
+          <p>Ambos dividen el color en tono (el color propiamente dicho, como una posición en una rueda cromática) y otras dos dimensiones que describen lo vivo o lo claro que es: HSB usa saturación y brillo, HSL usa saturación y luminosidad. Cualquiera de los dos es mucho más fácil de razonar cuando quieres «el mismo color, pero más oscuro» o «el mismo color, pero más apagado»: dejas el tono intacto y ajustas solo el otro número, en lugar de recalcular a mano tres canales RGB distintos.</p>
+
+          <h3>Elegir un formato en Colorfy</h3>
+          <p>El menú de formato de Colorfy se aplica de una vez a la lectura de todos los selectores y colores guardados: cambia al que coincida con el lugar donde vas a pegarlo (HEX para CSS, HSB/HSL si vas a ajustar un tono a mano) en lugar de convertir tú mismo un código copiado después.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Igualar un color a partir de una captura, una foto o una referencia de diseño</summary>
+        <div class="golden-rules-body">
+          <p>Intentar igualar un color a ojo (el azul exacto de una marca, un tono de una foto de moodboard, un color del sitio de la competencia) de memoria o adivinando un código HEX rara vez acierta del todo. Muestrear el píxel real es la única forma de obtener el valor preciso.</p>
+
+          <h3>Por qué «casi igual» muchas veces no basta</h3>
+          <p>Dos colores que se ven casi idénticos uno al lado del otro pueden seguir siendo distintos de forma medible al comparar sus códigos reales: un matiz distinto en un solo canal RGB suele ser invisible a simple vista por separado, pero se vuelve evidente en cuanto se coloca junto a la referencia real. El muestreo elimina las conjeturas por completo: el selector lee exactamente lo que hay en el archivo, no una aproximación.</p>
+
+          <h3>Trabajar desde una captura de pantalla</h3>
+          <p>Una captura de una página web, una aplicación o un diseño ajeno se trata exactamente como cualquier otra imagen: suéltala, arrastra el selector hasta el píxel exacto que quieras igualar y copia el código. Es la forma más fiable de sacar el color de una marca o de una interfaz de una referencia de la que no tienes el archivo fuente original.</p>
+
+          <h3>Ojo con los artefactos de compresión e iluminación</h3>
+          <p>Un JPEG muy comprimido o una foto tomada bajo luz coloreada o cálida puede desplazar los valores reales de los píxeles respecto al color «verdadero» previsto: el código HEX real de un logotipo fotografiado bajo luz interior amarilla se muestreará algo más cálido de lo que el logotipo es en realidad. Cuando importa la exactitud (igualar el color oficial de una marca, por ejemplo), prefiere muestrear una captura limpia o una fuente sin comprimir antes que una foto siempre que haya una disponible.</p>
+
+          <h3>Muestrear más de un punto para comprobar la coherencia</h3>
+          <p>Una sola foto suele tener más variación de color en una zona supuestamente «uniforme» de lo que parece a simple vista: la compresión JPEG, los degradados sutiles y la iluminación introducen pequeñas diferencias entre píxeles. Usar dos o tres selectores en puntos distintos de la misma zona, en lugar de fiarse de una sola muestra, da una mejor idea de si ves una variación de color real o solo ruido.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Construir una paleta reutilizable mientras trabajas</summary>
+        <div class="golden-rules-body">
+          <p>La paleta de colores guardados de Colorfy existe justo para el caso en que sacas más de un color de una imagen y necesitas volver a todos más tarde, sin reabrir el archivo ni volver a elegir cada uno desde cero.</p>
+
+          <h3>Guardar sobre la marcha</h3>
+          <p>Al hacer clic en «Guardar» junto a cualquier color muestreado se añade a una paleta que persiste en tu navegador, aparte de la imagen en sí, así que sigue ahí la próxima vez que abras Colorfy, aunque cargues otra imagen o ninguna. Se pueden conservar hasta 20 colores a la vez, suficiente para una paleta completa sacada de varias imágenes de referencia distintas sin tener que copiar los códigos a otro sitio antes.</p>
+
+          <h3>Poner nombre a un color guardado</h3>
+          <p>Al hacer doble clic en un color guardado puedes darle un nombre corto (hasta 25 caracteres): útil cuando una paleta tiene más de un par de entradas y «el tercer naranja» deja de ser una forma fiable de distinguirlos. El nombre aparece como información emergente al pasar el cursor, de modo que las muestras siguen visualmente limpias y, aun así, son fáciles de identificar por nombre cuando hace falta.</p>
+
+          <h3>Vaciar una paleta</h3>
+          <p>Quitar un color guardado de uno en uno funciona con el mismo botón «×» que usa cada lista de archivos de este sitio. Mantener pulsado Mayús al hacer clic en ese botón borra en cambio todos los colores guardados a la vez, incluido el pulsado: el camino más rápido cuando ya no necesitas la paleta de un proyecto terminado y prefieres empezar la siguiente vacía a quitar cada entrada una por una.</p>
+
+          <h3>Cuándo merece la pena dejar abierta una paleta</h3>
+          <p>Una paleta guardada es más útil para un proyecto en curso (construir un conjunto coherente de colores de marca o de interfaz a lo largo de varias sesiones) que para una consulta puntual de un color, donde copiar el código directamente y seguir es más sencillo que guardarlo.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Comparar colores lado a lado con varios selectores</summary>
+        <div class="golden-rules-body">
+          <p>Un solo selector basta para tomar un color, pero comparar dos o más colores de la misma imagen (comprobar contraste, igualar los extremos de un degradado, muestrear una paleta repartida por una foto) es mucho más fácil con varios selectores activos a la vez.</p>
+
+          <h3>Añadir un segundo (o tercer, o cuarto) selector</h3>
+          <p>Pueden estar activos hasta 4 selectores en la misma imagen a la vez, cada uno numerado para que su fila de resultados de abajo sea fácil de relacionar con su anillo en la imagen. Añade uno con el botón «+» bajo la lista de selectores, o mantén Mayús y haz clic en cualquier parte de la imagen para colocar un nuevo selector numerado justo en ese punto: la opción más rápida cuando ya sabes más o menos dónde quieres muestrear.</p>
+
+          <h3>Leer los resultados juntos</h3>
+          <p>Cada selector activo tiene su propia fila con su propio código y botón Guardar, todos visibles a la vez: útil para ver si dos zonas que parecen del mismo color en la imagen comparten realmente el mismo código, o para construir una pequeña paleta multicolor de una imagen de una sola pasada en lugar de muestrear, guardar y volver a muestrear de uno en uno.</p>
+
+          <h3>Recolocar sin añadir más</h3>
+          <p>Un clic normal (sin Mayús) mueve el selector que estuvo activo más recientemente, en lugar de añadir uno nuevo: útil para afinar un punto de muestreo sin tener que quitar y volver a añadir un selector solo para retocarlo. Arrastrar un selector directamente, o usar las flechas del teclado una vez enfocado, funcionan igual para un ajuste fino a nivel de píxel.</p>
+
+          <h3>Cuándo un solo selector sigue siendo lo correcto</h3>
+          <p>Para tomar un color rápido, añadir selectores extra es una carga innecesaria: se justifican específicamente cuando necesitas comparar, contrastar o reunir más de un color de la misma imagen en una sesión.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Errores comunes al elegir colores (y cómo evitarlos)</summary>
+        <div class="golden-rules-body">
+          <p>La mayoría de las tomas de color inexactas se deben a un puñado de hábitos evitables, casi todos relacionados con dónde cae exactamente el selector y no con algún fallo de la herramienta.</p>
+
+          <h3>Muestrear justo en un borde</h3>
+          <p>Un píxel situado en el límite entre dos colores suele ser un color intermedio mezclado y suavizado, no una muestra limpia de ninguno de los lados; es especialmente fácil que ocurra con el zoom alejado y haciendo clic cerca del contorno de una forma. Acércate (agranda la vista previa) y apunta al interior sólido de la zona que realmente quieres, bien lejos de cualquier borde.</p>
+
+          <h3>Fiarse de una imagen muy comprimida</h3>
+          <p>La compresión JPEG puede desplazar ligeramente los valores de píxeles individuales respecto al color original, sobre todo en zonas recargadas o detalladas de una foto: una zona de color «uniforme» puede tener un pequeño ruido entre píxeles que no estaba en la escena original. Cuando importa la exactitud, prefiere un PNG u otra fuente sin pérdidas antes que un JPEG comprimido si hay uno disponible.</p>
+
+          <h3>No tener en cuenta tu propia pantalla</h3>
+          <p>El código que lee Colorfy es el valor exacto almacenado en el archivo de imagen, pero cómo se ve ese color depende de la pantalla que lo muestra, y las pantallas varían en calibración. Si un color muestreado debe coincidir exactamente con una referencia física (material impreso, un producto físico), trata el código muestreado como el punto de partida preciso y espera verificar el resultado final con la propia referencia física, no solo con cómo se ve en tu monitor.</p>
+
+          <h3>Olvidar que los colores guardados persisten entre imágenes</h3>
+          <p>Como la paleta guardada no está vinculada a ninguna imagen cargada, es fácil acabar con colores de varios proyectos sin relación mezclados en la misma paleta si no la vacías de vez en cuando. Haz clic con Mayús en el botón de quitar de cualquier color guardado para vaciar toda la paleta de una vez al empezar un proyecto nuevo y sin relación, en lugar de dejar que se acumulen colores antiguos y nuevos.</p>
+        </div>
+      </details>
+    </div>
+
     <div class="ad-slot ad-slot-bottom">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
     </div>
@@ -1357,6 +1468,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
         </div>
       </div>
     </div>

@@ -177,7 +177,7 @@
 
   function renumberPickers(){
     pickers.forEach((p, i) => {
-      const label = "Sampled pixel " + (i + 1);
+      const label = bcT("Sampled pixel {0}", [i + 1]);
       p.el.setAttribute("aria-label", label);
       p.el.querySelector(".colorfy-picker-num").textContent = String(i + 1);
     });
@@ -254,18 +254,18 @@
      by the "Continue where you left off" restore below. */
   async function setFile(file, restoreFracs){
     if (!isImageFile(file)){
-      status.textContent = "Please pick an image file.";
+      status.textContent = bcT("Please pick an image file.");
       return;
     }
     if (isHeicFile(file)){
-      status.textContent = "Converting HEIC to PNG...";
+      status.textContent = bcT("Converting HEIC to PNG...");
       try {
         const png = await heicToPngBlob(file);
         file = new File([png], file.name.replace(/\.(heic|heif)$/i, "") + ".png", { type: "image/png" });
         status.textContent = "";
       } catch (err){
         console.error(err);
-        status.textContent = "Couldn't read that HEIC file — it may be corrupted or unsupported.";
+        status.textContent = bcT("Couldn't read that HEIC file — it may be corrupted or unsupported.");
         return;
       }
     }
@@ -301,7 +301,7 @@
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      status.textContent = "Couldn't read that image — it may be corrupted or an unsupported format.";
+      status.textContent = bcT("Couldn't read that image — it may be corrupted or an unsupported format.");
       isRestoringSession = false;
     };
     img.src = url;
@@ -421,7 +421,7 @@
       const codeBtn = document.createElement("button");
       codeBtn.type = "button";
       codeBtn.className = "colorfy-code-btn";
-      codeBtn.title = "Click to copy";
+      codeBtn.title = bcT("Click to copy");
       const text = formatColor(p.rgb);
       codeBtn.textContent = text;
       codeBtn.dataset.value = text;
@@ -433,8 +433,8 @@
       const saveBtn = document.createElement("button");
       saveBtn.type = "button";
       saveBtn.className = "colorfy-save-btn";
-      saveBtn.textContent = "Save";
-      saveBtn.title = "Save this color to your palette";
+      saveBtn.textContent = bcT("Save");
+      saveBtn.title = bcT("Save this color to your palette");
       saveBtn.addEventListener("click", () => saveToPalette(p.rgb));
       row.appendChild(saveBtn);
 
@@ -442,8 +442,8 @@
         const rm = document.createElement("button");
         rm.type = "button";
         rm.className = "colorfy-picker-remove-btn bc-file-remove-btn";
-        rm.setAttribute("aria-label", "Remove picker " + (i + 1));
-        rm.title = "Remove picker " + (i + 1);
+        rm.setAttribute("aria-label", bcT("Remove picker {0}", [i + 1]));
+        rm.title = bcT("Remove picker {0}", [i + 1]);
         rm.textContent = "×";
         rm.addEventListener("click", () => removePicker(p.id));
         row.appendChild(rm);
@@ -498,7 +498,7 @@
     input.className = "colorfy-palette-name-input";
     input.maxLength = SAVED_COLOR_NAME_MAX;
     input.value = c.name || "";
-    input.setAttribute("aria-label", "Name this saved color");
+    input.setAttribute("aria-label", bcT("Name this saved color"));
     let done = false;
     function commit(){
       if (done) return;
@@ -533,7 +533,7 @@
       sw.type = "button";
       sw.className = "colorfy-palette-swatch";
       sw.style.background = `rgb(${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]})`;
-      sw.title = (c.name ? c.name + " — " : "") + formatColor(c.rgb) + " — click to copy, double-click to rename";
+      sw.title = (c.name ? c.name + " — " : "") + formatColor(c.rgb) + " — " + bcT("click to copy, double-click to rename");
       sw.addEventListener("click", () => copySwatch(sw, c.rgb));
       sw.addEventListener("dblclick", (e) => { e.preventDefault(); startRenameSwatch(chip, c); });
       chip.appendChild(sw);
@@ -541,8 +541,8 @@
       const rm = document.createElement("button");
       rm.type = "button";
       rm.className = "colorfy-palette-remove-btn bc-file-remove-btn";
-      rm.setAttribute("aria-label", "Remove saved color");
-      rm.title = "Remove saved color";
+      rm.setAttribute("aria-label", bcT("Remove saved color"));
+      rm.title = bcT("Remove saved color");
       rm.textContent = "×";
       rm.addEventListener("click", () => {
         savedColors = savedColors.filter(sc => sc.id !== c.id);
@@ -608,7 +608,7 @@
   const SAVED_COLORS_MAX = 20;
   function saveToPalette(rgb){
     if (savedColors.length >= SAVED_COLORS_MAX){
-      flashStatus("Chamber with saved colors is full  — remove one first.");
+      flashStatus(bcT("Chamber with saved colors is full  — remove one first."));
       return;
     }
     /* Colorfy's one real "produces something that persists" action —
@@ -621,7 +621,7 @@
     savedColors.push({ id: nextSavedId++, rgb: [...rgb], name: "" });
     persistPalette();
     renderPalette();
-    flashStatus(`Saved ${formatColor(rgb)}`);
+    flashStatus(bcT("Saved {0}", [formatColor(rgb)]));
     finishPrivacyCheck(document.getElementById("cyPrivacyBadge"), "save");
   }
 
@@ -741,9 +741,9 @@
     navigator.clipboard.writeText(value).then(() => {
       btn.classList.add("copied");
       setTimeout(() => btn.classList.remove("copied"), 1200);
-      flashStatus(`Copied ${value}`);
+      flashStatus(bcT("Copied {0}", [value]));
     }).catch(() => {
-      status.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
+      status.textContent = bcT("Couldn't copy — your browser may not allow clipboard access here.");
     });
   }
 
