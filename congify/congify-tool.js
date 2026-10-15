@@ -75,6 +75,14 @@
   modeBasicBtn.addEventListener("click", () => setGifMode("basic"));
   modeAdvancedBtn.addEventListener("click", () => setGifMode("advanced"));
   const statusEl = document.getElementById("gifStatus");
+  const statusHome = { parent: statusEl.parentNode, next: statusEl.nextSibling };
+  function placeStatus(){
+    if (videoWrap.classList.contains("active")){
+      if (statusEl.parentNode !== videoWrap) videoWrap.insertBefore(statusEl, document.getElementById("gifResults"));
+    } else if (statusEl.parentNode !== statusHome.parent){
+      statusHome.parent.insertBefore(statusEl, statusHome.next);
+    }
+  }
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
   const resultsToggle = document.getElementById("gifResultsToggle");
@@ -310,6 +318,7 @@
       statusEl.textContent = bcT("Couldn't read that video — it may be corrupted or in an unsupported format.");
     }, 8000);
     videoWrap.classList.remove("active");
+    placeStatus();
     scrubberFileName.value = file.name.replace(/\.[^.]+$/, "");
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
@@ -1277,6 +1286,7 @@
     duration = video.duration;
     drop.hidden = true;
     videoWrap.classList.add("active");
+    placeStatus();
     convertBtn.disabled = false;
     if (isRestoringSession) return;
     trimStart = 0;
@@ -1322,6 +1332,7 @@
     trimStart = 0;
     trimEnd = 0;
     videoWrap.classList.remove("active");
+    placeStatus();
     scrubberFileName.value = "";
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
