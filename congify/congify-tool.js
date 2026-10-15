@@ -75,13 +75,25 @@
   modeBasicBtn.addEventListener("click", () => setGifMode("basic"));
   modeAdvancedBtn.addEventListener("click", () => setGifMode("advanced"));
   const statusEl = document.getElementById("gifStatus");
-  const statusHome = { parent: statusEl.parentNode, next: statusEl.nextSibling };
+  const sizeEl = document.getElementById("gifSizeStatus");
+  const statusHome = { parent: statusEl.parentNode, next: sizeEl.nextSibling };
   function placeStatus(){
     if (videoWrap.classList.contains("active")){
-      if (statusEl.parentNode !== videoWrap) videoWrap.insertBefore(statusEl, document.getElementById("gifResults"));
+      if (statusEl.parentNode !== videoWrap){
+        const results = document.getElementById("gifResults");
+        videoWrap.insertBefore(statusEl, results);
+        videoWrap.insertBefore(sizeEl, results);
+      }
     } else if (statusEl.parentNode !== statusHome.parent){
       statusHome.parent.insertBefore(statusEl, statusHome.next);
+      statusHome.parent.insertBefore(sizeEl, statusHome.next);
     }
+  }
+  /* Terminal line under the Convert button: the size of the loaded video
+     (same wording as Context's "File size: ~48 KB"); hidden once the
+     result view takes over. */
+  function updateSizeLine(){
+    sizeEl.textContent = currentFile && !editorControls.hidden ? "File size: ~" + bcFormatFileSize(currentFile.size) : "";
   }
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
@@ -225,6 +237,7 @@
      button since it's secondary once you're restyling. */
   function showDoneView(){
     editorControls.hidden = true;
+    updateSizeLine();
     doneActions.hidden = false;
     /* Also doubles as the start of a new project: the drop zone comes
        back so dropping/picking a different video works right from this
@@ -237,6 +250,7 @@
   }
   function hideDoneView(){
     editorControls.hidden = false;
+    updateSizeLine();
     doneActions.hidden = true;
     drop.hidden = true;
     resultsHeader.hidden = false;
@@ -1287,6 +1301,7 @@
     drop.hidden = true;
     videoWrap.classList.add("active");
     placeStatus();
+    updateSizeLine();
     convertBtn.disabled = false;
     if (isRestoringSession) return;
     trimStart = 0;

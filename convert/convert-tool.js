@@ -455,11 +455,7 @@
     if (files.length > 0){
       const count = files.length;
       const word = count === 1 ? "file" : "files";
-      if (!selectedFormat){
-        status.textContent = bcT("{count} {word} loaded — choose an output format", { count, word });
-      } else {
-        status.textContent = bcT("Ready to convert: {count} {word}", { count, word });
-      }
+      status.textContent = bcT("{0} {1} loaded", [count, word]);
     } else {
       status.textContent = "";
     }
