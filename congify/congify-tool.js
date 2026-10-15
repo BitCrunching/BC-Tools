@@ -21,6 +21,24 @@
   const scrubberLabel = document.getElementById("gifScrubberLabel");
   const scrubberLabelToggle = document.getElementById("gifScrubberLabelToggle");
   const scrubberFileName = document.getElementById("gifScrubberFileName");
+  const doneFileName = document.getElementById("gifDoneFileName");
+  const resultNameRow = document.getElementById("gifResultNameRow");
+  function updateResultNameRow(){ resultNameRow.hidden = !lastResultBytes; }
+  /* The name field sits next to the Download button whenever the Result row
+     is showing, and above the Continue/Download buttons on the done screen. */
+  const resultNameHome = { parent: resultNameRow.parentNode, next: resultNameRow.nextSibling };
+  const wideScreen = window.matchMedia("(min-width:769px)");
+  function placeResultName(){
+    const hdr = document.getElementById("gifResultsHeader");
+    const btns = hdr.querySelector(".gif-results-header-btns");
+    if (!hdr.hidden && wideScreen.matches){
+      if (resultNameRow.parentNode !== btns) btns.insertBefore(resultNameRow, document.getElementById("gifResultsDownloadBtn"));
+    } else if (resultNameRow.parentNode !== resultNameHome.parent){
+      resultNameHome.parent.insertBefore(resultNameRow, resultNameHome.next);
+    }
+  }
+  wideScreen.addEventListener("change", placeResultName);
+  new MutationObserver(placeResultName).observe(document.getElementById("gifResultsHeader"), { attributes: true, attributeFilter: ["hidden"] });
   const fpsBtn = document.getElementById("gifFpsBtn");
   const fpsInfoBtn = document.getElementById("gifFpsInfoBtn");
   const fpsInfoTooltip = document.getElementById("gifFpsInfoTooltip");
@@ -89,16 +107,20 @@
       statusHome.parent.insertBefore(sizeEl, statusHome.next);
     }
   }
-  /* Terminal line under the Convert button: the size of the loaded video
-     (same wording as Context's "File size: ~48 KB"); hidden once the
-     result view takes over. */
+  /* Terminal line under the Convert button: the size of the loaded video;
+     hidden once the result view takes over. */
   function updateSizeLine(){
-    sizeEl.textContent = currentFile && !editorControls.hidden ? "File size: ~" + bcFormatFileSize(currentFile.size) : "";
+    sizeEl.textContent = currentFile && !editorControls.hidden ? "Original size: ~" + bcFormatFileSize(currentFile.size) : "";
   }
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
   const resultsLabel = document.getElementById("gifResultsLabel");
   const resultsLabelDefault = resultsLabel.textContent;
+  /* The "> Result GIF size: …" readout hides while the result is minimized
+     (visibility, not display, so Download and the toggle keep their place). */
+  function syncResultsLabel(){
+    resultsLabel.parentElement.style.visibility = resultsEl.hidden ? "hidden" : "";
+  }
   const resultsToggle = document.getElementById("gifResultsToggle");
   const resultsDownloadBtn = document.getElementById("gifResultsDownloadBtn");
   const previewCanvas = document.getElementById("gifPreviewCanvas");
@@ -271,7 +293,7 @@
        report whichever step just actually happened rather than always
        saying "download" the moment conversion alone finishes. */
     startPrivacyCheck();
-    const outName = (scrubberFileName.value.trim() || "converted") + ".gif";
+    const outName = (doneFileName.value.trim() || scrubberFileName.value.trim() || "converted") + ".gif";
     downloadBlob(new Blob([lastResultBytes], { type: lastResultType || "image/gif" }), outName);
     finishPrivacyCheck(document.getElementById("gifPrivacyBadge"));
   }
@@ -284,6 +306,7 @@
 
   resultsToggle.addEventListener("click", () => {
     const collapsed = resultsEl.hidden = !resultsEl.hidden;
+    syncResultsLabel();
     resultsToggle.textContent = collapsed ? "+" : "−";
     resultsToggle.setAttribute("aria-expanded", String(!collapsed));
     resultsToggle.setAttribute("aria-label", bcT(collapsed ? "Expand result" : "Minimize result"));
@@ -298,7 +321,7 @@
      those two views this render is happening into (see their own
      comments), not on the render itself. */
   function renderResult(blob){
-    resultsLabel.textContent = resultsLabelDefault + ", " + bcT("GIF size: {0}", [bcFormatFileSize(blob.size)]);
+    resultsLabel.textContent = resultsLabelDefault + " " + bcT("GIF size: {0}", [bcFormatFileSize(blob.size)]);
     const url = URL.createObjectURL(blob);
     const result = document.createElement("div");
     result.className = "result";
@@ -308,6 +331,7 @@
     resultsEl.innerHTML = "";
     resultsEl.appendChild(result);
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsToggle.textContent = "−";
     resultsToggle.setAttribute("aria-expanded", "true");
     resultsToggle.setAttribute("aria-label", bcT("Minimize result"));
@@ -340,8 +364,10 @@
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsHeader.hidden = true;
     lastResultBytes = null;
+    updateResultNameRow();
     lastResultType = null;
     statusEl.textContent = "";
     previewCanvas.width = previewCanvas.width; // clears the old clip's frame
@@ -1355,9 +1381,11 @@
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsHeader.hidden = true;
     resultsLabel.textContent = resultsLabelDefault;
     lastResultBytes = null;
+    updateResultNameRow();
     lastResultType = null;
     statusEl.textContent = "";
     previewCanvas.width = previewCanvas.width;
@@ -1524,10 +1552,56 @@
   startDrag(handleStart, "start");
   startDrag(handleEnd, "end");
 
+  /* Dragging the selected zone itself (between the handles) slides the
+     whole trim range, keeping its length. */
+  let regionDrag = false;
+  scrubber.addEventListener("pointermove", (e) => {
+    if (regionDrag) return;
+    if (e.target.closest(".gif-scrubber-handle")){ scrubber.style.cursor = ""; return; }
+    const t = clientXToTime(e.clientX);
+    scrubber.style.cursor = (duration > 0 && trimEnd - trimStart < duration - 0.001 && t >= trimStart && t <= trimEnd) ? "grab" : "";
+  });
+  scrubber.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".gif-scrubber-handle")) return;
+    const len = trimEnd - trimStart;
+    const t = clientXToTime(e.clientX);
+    if (!(duration > 0) || len >= duration - 0.001 || t < trimStart || t > trimEnd) return;
+    e.preventDefault();
+    stopPreviewPlayback();
+    regionDrag = true;
+    const offset = t - trimStart;
+    scrubber.setPointerCapture(e.pointerId);
+    scrubber.style.cursor = "grabbing";
+    function onMove(ev){
+      const start = Math.min(Math.max(0, clientXToTime(ev.clientX) - offset), duration - len);
+      trimStart = start;
+      trimEnd = start + len;
+      layoutScrubber();
+      scheduleDragPreview(trimStart);
+    }
+    function onUp(){
+      regionDrag = false;
+      try { scrubber.releasePointerCapture(e.pointerId); } catch (err) { /* skip */ }
+      scrubber.removeEventListener("pointermove", onMove);
+      scrubber.removeEventListener("pointerup", onUp);
+      scrubber.removeEventListener("pointercancel", onUp);
+      scrubber.style.cursor = "grab";
+      scheduleDragPreview(trimStart);
+      schedulePersist();
+    }
+    scrubber.addEventListener("pointermove", onMove);
+    scrubber.addEventListener("pointerup", onUp);
+    scrubber.addEventListener("pointercancel", onUp);
+  });
+
   /* Output file name — defaults to the source clip's name (minus
      extension) in setFile(), editable right there next to the trim
      range so renaming doesn't need a separate control. */
   scrubberFileName.addEventListener("input", schedulePersist);
+  /* The result has its own name field (copied from the project name when
+     the GIF is made) so the finished file can be renamed before
+     downloading, independent of the next conversion's name. */
+  doneFileName.addEventListener("input", schedulePersist);
 
   /* ===== conversion ===== */
   convertBtn.addEventListener("click", async () => {
@@ -1622,6 +1696,8 @@
         renderResult(blob);
         lastResultType = blob.type || "image/gif";
         lastResultBytes = await blob.arrayBuffer();
+        doneFileName.value = scrubberFileName.value;
+        updateResultNameRow();
         schedulePersist();
 
         convertBtn.disabled = false;
@@ -1663,6 +1739,7 @@
         file: { name: currentFile.name, type: currentFile.type, bytes },
         result: lastResultBytes ? { type: lastResultType, bytes: lastResultBytes } : null,
         outputName: scrubberFileName.value,
+        resultName: doneFileName.value,
         trimStart,
         trimEnd,
         fps,
@@ -1777,6 +1854,8 @@
         if (saved.result && saved.result.bytes){
           lastResultType = saved.result.type || "image/gif";
           lastResultBytes = saved.result.bytes;
+          doneFileName.value = typeof saved.resultName === "string" ? saved.resultName : scrubberFileName.value;
+          updateResultNameRow();
           renderResult(new Blob([lastResultBytes], { type: lastResultType }));
           /* Restores straight into the editor (no showDoneView() call in
              this path), so minimize is meaningful here — same as after
