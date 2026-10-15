@@ -97,6 +97,8 @@
   }
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
+  const resultsLabel = document.getElementById("gifResultsLabel");
+  const resultsLabelDefault = resultsLabel.textContent;
   const resultsToggle = document.getElementById("gifResultsToggle");
   const resultsDownloadBtn = document.getElementById("gifResultsDownloadBtn");
   const previewCanvas = document.getElementById("gifPreviewCanvas");
@@ -296,6 +298,7 @@
      those two views this render is happening into (see their own
      comments), not on the render itself. */
   function renderResult(blob){
+    resultsLabel.textContent = resultsLabelDefault + ", " + bcT("GIF size: {0}", [bcFormatFileSize(blob.size)]);
     const url = URL.createObjectURL(blob);
     const result = document.createElement("div");
     result.className = "result";
@@ -1353,6 +1356,7 @@
     resultsEl.innerHTML = "";
     resultsEl.hidden = false;
     resultsHeader.hidden = true;
+    resultsLabel.textContent = resultsLabelDefault;
     lastResultBytes = null;
     lastResultType = null;
     statusEl.textContent = "";
@@ -1610,7 +1614,7 @@
       });
 
       gif.on("finished", async (blob) => {
-        statusEl.textContent = bcT("Done. GIF size: {0}", [bcFormatFileSize(blob.size)]);
+        statusEl.textContent = "";
 
         recentWidth = outputWidth;
         try { localStorage.setItem(RECENT_WIDTH_KEY, String(outputWidth)); } catch (err) { /* skip */ }
