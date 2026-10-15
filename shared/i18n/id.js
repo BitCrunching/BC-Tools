@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "Hapus kode",
  "Clearing out a palette": "Mengosongkan palet",
  "Click": "Klik",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Klik di mana saja pada PDF untuk menaruh teks, tanda tangan, atau bentuk, atur gayanya sesuai keinginan, lalu unduh — seketika, langsung di browser Anda, tanpa perlu mengunggah ke server.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Tambahkan teks, tanda tangan, atau bentuk ke PDF, atur gayanya sesuai keinginan, lalu unduh — seketika, langsung di browser Anda, tanpa perlu mengunggah ke server.",
  "Click to copy": "Klik untuk menyalin",
  "Click to outline the preview's click zones": "Klik untuk menandai area klik pada pratinjau",
  "Click to reset tool's guide": "Klik untuk mengatur ulang panduan alat",

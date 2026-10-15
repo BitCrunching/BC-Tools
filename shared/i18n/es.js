@@ -335,7 +335,7 @@ window.BC_I18N = {
  "Clear code": "Borrar código",
  "Clearing out a palette": "Vaciar una paleta",
  "Click": "Haz clic",
- "Click anywhere on a PDF to drop in text, a signature, or a shape, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Haz clic en cualquier parte de un PDF para colocar texto, una firma o una forma, dale tu estilo y descarga: al instante, en tu navegador, sin subir nada a servidores.",
+ "Add text, a signature, or a shape to a PDF, style it your way, and download — instantly, right in your browser, no upload to servers necessary.": "Añade texto, una firma o una forma a un PDF, dale tu estilo y descarga: al instante, en tu navegador, sin subir nada a servidores.",
  "Click to copy": "Haz clic para copiar",
  "Click to outline the preview's click zones": "Haz clic para resaltar las zonas de clic de la vista previa",
  "Click to reset tool's guide": "Haz clic para reiniciar la guía de la herramienta",
