@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
-<script src="/shared/i18n/cs.js?v=5"></script>
+<script src="/shared/i18n/cs.js?v=6"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Zlatá pravidla – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=240">
+<link rel="stylesheet" href="/shared/site.css?v=244">
 <style>
 /* ===== GOLDEN RULES ===== */
 /* Wheel-picker switcher: the "active" slot is a fixed position — dead
@@ -176,6 +176,7 @@ html[data-theme="dark"] .golden-rules-switcher{
 .golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
 .golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 .golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+.golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
 
 .ad-slot-incontent{
   margin:32px auto;
@@ -385,6 +386,7 @@ html[data-theme="dark"] .golden-rules-switcher{
       <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
       <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
@@ -1327,6 +1329,115 @@ html[data-theme="dark"] .golden-rules-switcher{
     </div>
 
 
+    <div class="golden-rules-articles" data-tool="colorfy">
+      <details class="golden-rules-article">
+        <summary>1. HEX, RGB, HSB a HSL: co který barevný kód doopravdy znamená</summary>
+        <div class="golden-rules-body">
+          <p>Každá barva na obrazovce se redukuje na stejné základní hodnoty červeného/zeleného/modrého světla — HEX, RGB, HSB a HSL jsou jen čtyři různé způsoby zápisu téže barvy, každý vhodný pro jiný druh práce.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Formát</th><th>Nejlepší pro</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formát">HEX (<code>#FF8A4C</code>)</td><td data-label="Nejlepší pro">CSS, designérské nástroje, všude, kde se očekává jeden kompaktní kód</td></tr>
+              <tr><td data-label="Formát">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="Nejlepší pro">Kód, který skládá barvy z oddělených čísel, nebo míchání/výpočty na kanálech</td></tr>
+              <tr><td data-label="Formát">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="Nejlepší pro">Úprava jasu nebo sytosti barvy při zachování stejného odstínu</td></tr>
+              <tr><td data-label="Formát">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="Nejlepší pro">Předvídatelné zesvětlení nebo ztmavení barvy pro stavy po najetí/aktivní</td></tr>
+            </tbody>
+          </table>
+
+          <h3>HEX: kompaktní výchozí formát podporovaný všude</h3>
+          <p>Kód HEX zabalí červenou, zelenou a modrou do jediného šestimístného řetězce, proto je to formát, který téměř každý designérský nástroj, stylopis CSS a obrazový editor očekává ve výchozím stavu. Je kompaktní a snadno se vkládá, ale skutečná čísla uvnitř (dvojice v šestnáctkové soustavě) většina lidí nepřečte jedním pohledem jako běžná desítková čísla.</p>
+
+          <h3>RGB: stejné hodnoty, rozepsané</h3>
+          <p>RGB rozepisuje stejné tři kanály, které HEX kóduje, jen jako tři prostá čísla 0–255 místo zabalených šestnáctkových dvojic — snáze se o nich přemýšlí, když ručně upravujete jeden kanál nebo píšete kód, který skládá barvu z oddělených vstupů červené/zelené/modré.</p>
+
+          <h3>HSB a HSL: postavené na tom, jak barva působí</h3>
+          <p>Oba rozdělují barvu na odstín (samotná barva jako poloha na barevném kole) a dva další rozměry popisující, jak je sytá nebo světlá — HSB používá sytost a jas, HSL sytost a světlost. U obou se mnohem snáze uvažuje, když chcete „stejnou barvu, jen tmavší“ nebo „stejnou barvu, jen tlumenější“: odstín necháte být a upravíte jen další číslo, místo ručního přepočítávání tří samostatných kanálů RGB.</p>
+
+          <h3>Výběr formátu v Colorfy</h3>
+          <p>Nabídka formátu v Colorfy se použije na výpis všech kapátek i uložených barev najednou — přepněte na ten, který odpovídá tomu, kam kód budete vkládat (HEX pro CSS, HSB/HSL, pokud budete ručně dolaďovat odstín), místo abyste zkopírovaný kód potom sami převáděli.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. Zjištění barvy ze snímku obrazovky, fotky nebo návrhu</summary>
+        <div class="golden-rules-body">
+          <p>Pokus trefit barvu od oka — přesnou modrou značky, odstín z fotky moodboardu, barvu z webu konkurence — z paměti nebo hádáním kódu HEX málokdy dopadne přesně. Odebrání vzorku skutečného pixelu je jediný způsob, jak získat přesnou hodnotu.</p>
+
+          <h3>Proč „skoro stejné“ často nestačí</h3>
+          <p>Dvě barvy, které vedle sebe vypadají téměř stejně, se mohou po porovnání skutečných kódů měřitelně lišit — odstín odlišný jen v jednom kanálu RGB je oku samostatně často neviditelný, ale stane se zřejmým, jakmile se položí přímo vedle skutečné reference. Odebrání vzorku hádání zcela odstraní: kapátko přečte přesně to, co je v souboru, ne přibližnou hodnotu.</p>
+
+          <h3>Práce ze snímku obrazovky</h3>
+          <p>Snímek webové stránky, aplikace nebo cizího návrhu se bere stejně jako jakýkoli jiný obrázek — vložte ho, přetáhněte kapátko na přesný pixel, který chcete určit, a zkopírujte kód. Je to nejspolehlivější způsob, jak získat barvu značky nebo rozhraní z reference, k níž nemáte původní zdrojový soubor.</p>
+
+          <h3>Pozor na artefakty komprese a osvětlení</h3>
+          <p>Silně komprimovaný JPEG nebo fotka pořízená pod barevným/teplým osvětlením může posunout skutečné hodnoty pixelů od „pravé“ zamýšlené barvy — skutečný kód HEX loga vyfoceného pod žlutým vnitřním osvětlením vyjde o něco teplejší, než logo ve skutečnosti je. Když záleží na přesnosti (například při určování oficiální barvy značky), dejte přednost vzorkování z čistého snímku obrazovky nebo nekomprimovaného zdroje před fotkou, kdykoli je k dispozici.</p>
+
+          <h3>Vzorkování více míst pro kontrolu konzistence</h3>
+          <p>Jedna fotka má často v údajně „plné“ oblasti víc barevných odchylek, než se na první pohled zdá — komprese JPEG, jemné přechody a osvětlení vnášejí drobné rozdíly mezi pixely. Použití dvou nebo tří kapátek na různých bodech téže oblasti, místo důvěry jedinému vzorku, lépe napoví, zda vidíte skutečnou barevnou odchylku, nebo jen šum.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. Vytváření opakovaně použitelné palety za pochodu</summary>
+        <div class="golden-rules-body">
+          <p>Paleta uložených barev v Colorfy existuje přesně pro situaci, kdy z obrázku získáváte více než jednu barvu a potřebujete se ke všem později vrátit, aniž byste museli soubor znovu otevírat a každou vybírat od začátku.</p>
+
+          <h3>Ukládání za pochodu</h3>
+          <p>Kliknutím na „Uložit“ vedle libovolné vzorkované barvy ji přidáte do palety, která zůstane ve vašem prohlížeči — odděleně od samotného obrázku, takže tam bude i při příštím otevření Colorfy, i když je načten jiný obrázek nebo žádný. Najednou lze uchovat až 20 barev, což stačí na celou paletu z několika různých referenčních obrázků, aniž byste museli kódy nejdřív někam kopírovat.</p>
+
+          <h3>Pojmenování uložené barvy</h3>
+          <p>Dvojitým kliknutím na uloženou barvu jí dáte krátký název (až 25 znaků) — užitečné, jakmile má paleta víc než pár položek a „třetí oranžová“ přestane být spolehlivým způsobem, jak je rozlišit. Název se zobrazí jako nápověda po najetí myší, takže vzorníky zůstávají vizuálně čisté a přitom je lze podle názvu snadno identifikovat, když je to potřeba.</p>
+
+          <h3>Vyčištění palety</h3>
+          <p>Odebrání jedné uložené barvy funguje stejným tlačítkem „×“, jaké používá každý seznam souborů na tomto webu. Podržení Shiftu při kliknutí na toto tlačítko místo toho smaže všechny uložené barvy najednou, včetně té, na kterou jste klikli — rychlejší cesta, když paletu z dokončeného projektu už nepotřebujete a raději začnete další prázdnou, než abyste odebírali každou položku zvlášť.</p>
+
+          <h3>Kdy se vyplatí paletu nechat otevřenou</h3>
+          <p>Uložená paleta je nejužitečnější pro probíhající projekt — budování jednotné sady barev značky nebo rozhraní během několika sezení — ne pro jednorázové zjištění barvy, kde je jednodušší kód rovnou zkopírovat a jít dál než ho vůbec ukládat.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Porovnávání barev vedle sebe pomocí více kapátek</summary>
+        <div class="golden-rules-body">
+          <p>Jedno kapátko stačí na získání jedné barvy, ale porovnávání dvou nebo více barev z téhož obrázku — kontrola kontrastu, určení koncových bodů přechodu, vzorkování palety rozptýlené po jedné fotce — je mnohem snazší s několika aktivními kapátky najednou.</p>
+
+          <h3>Přidání druhého (třetího nebo čtvrtého) kapátka</h3>
+          <p>Na jednom obrázku může být aktivní až 4 kapátka, každé očíslované, aby se řádek výsledku pod ním snadno spároval s kroužkem na obrázku. Přidejte je tlačítkem „+“ pod seznamem kapátek, nebo podržte Shift a kliknutím kamkoli na obrázek umístěte nové očíslované kapátko přímo na to místo — rychlejší možnost, když už zhruba víte, kde chcete vzorkovat.</p>
+
+          <h3>Čtení výsledků společně</h3>
+          <p>Každé aktivní kapátko má vlastní řádek s vlastním kódem a tlačítkem Uložit, vše viditelné současně — užitečné pro zjištění, zda dvě oblasti, které na obrázku vypadají jako stejná barva, skutečně sdílejí stejný kód, nebo pro vytvoření malé vícebarevné palety z jednoho obrázku jedním průchodem, místo vzorkování, ukládání a opětovného vzorkování po jedné.</p>
+
+          <h3>Přesunutí bez přidávání dalších</h3>
+          <p>Obyčejné kliknutí (bez Shiftu) přesune kapátko, které bylo naposledy aktivní, místo přidání nového — užitečné pro jemné doladění bodu vzorku, aniž byste museli kapátko odebírat a znovu přidávat, jen abyste ho popostrčili. Přímé přetažení kapátka nebo použití šipek po jeho zaměření fungují stejně pro jemné úpravy na úrovni pixelů.</p>
+
+          <h3>Kdy je jedno kapátko stále správná volba</h3>
+          <p>Pro jedno rychlé zjištění barvy jsou další kapátka zbytečná režie — vyplatí se právě tehdy, když potřebujete porovnat, kontrastovat nebo shromáždit více než jednu barvu z téhož obrázku v jednom sezení.</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. Časté chyby při výběru barev (a jak se jim vyhnout)</summary>
+        <div class="golden-rules-body">
+          <p>Většina nepřesných výběrů barev vychází z hrstky předejitelných zvyků, z nichž většina se týká toho, kam přesně kapátko dopadne, ne chyby nástroje samotného.</p>
+
+          <h3>Vzorkování přímo na hraně</h3>
+          <p>Pixel na hranici dvou barev je často smíšená, vyhlazená barva mezi nimi, ne čistý vzorek žádné ze stran — to se snadno stane při oddálení a kliknutí poblíž obrysu tvaru. Přibližte (zvětšete náhled) a zamiřte na plný vnitřek oblasti, kterou skutečně chcete, daleko od jakékoli hrany.</p>
+
+          <h3>Důvěra v silně komprimovaný obrázek</h3>
+          <p>Komprese JPEG může posunout hodnoty jednotlivých pixelů mírně od původní barvy, zejména v rušných nebo detailních oblastech fotky — „plná“ barevná plocha může nést drobný šum mezi pixely, který v původní scéně nebyl. Když záleží na přesnosti, dejte přednost PNG nebo jinému bezeztrátovému zdroji před komprimovaným JPEG, pokud je k dispozici.</p>
+
+          <h3>Nezohlednění vlastní obrazovky</h3>
+          <p>Kód, který Colorfy přečte, je přesná hodnota uložená v obrazovém souboru — ale jak ta barva skutečně vypadá, závisí na obrazovce, která ji zobrazuje, a displeje se liší kalibrací. Pokud musí vzorkovaná barva přesně odpovídat fyzické referenci (tištěný materiál, fyzický produkt), berte vzorkovaný kód jako přesný výchozí bod a počítejte s tím, že konečný výsledek ověříte proti samotné fyzické referenci, ne jen podle toho, jak vypadá na monitoru.</p>
+
+          <h3>Zapomenutí, že uložené barvy přetrvávají napříč obrázky</h3>
+          <p>Protože uložená paleta není vázána na žádný načtený obrázek, snadno skončíte s barvami z několika nesouvisejících projektů smíchanými v téže paletě, pokud ji pravidelně nevyčistíte. Kliknutím se Shiftem na tlačítko odebrání libovolné uložené barvy smažete celou paletu najednou při zahájení nového, nesouvisejícího projektu, místo aby se staré a nové barvy hromadily dohromady.</p>
+        </div>
+      </details>
+    </div>
+
     <div class="ad-slot ad-slot-bottom">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
     </div>
@@ -1357,6 +1468,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
         </div>
       </div>
     </div>
