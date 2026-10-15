@@ -184,6 +184,9 @@
     });
 
     combineBtn.disabled = files.length === 0;
+    status.textContent = files.length
+      ? bcT("{0} {1} loaded", [files.length, files.length === 1 ? "file" : "files"])
+      : "";
     if (files.length === 0) bcDbClear(CB_DB_NAME, CB_DB_STORE);
     else schedulePersist();
   }
