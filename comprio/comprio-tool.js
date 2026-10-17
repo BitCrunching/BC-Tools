@@ -258,10 +258,9 @@
     renderStatus();
     renderAll();
     updateButtonState();
-    if (videos.length < incoming.length){
-      const skipped = incoming.length - videos.length;
-      status.textContent += " " + bcT("{0} file(s) weren't a video and were skipped.", [skipped]);
-    }
+    const skipped = incoming.length - videos.length;
+    const skippedText = skipped ? bcT("{0} file(s) weren't a video and were skipped.", [skipped]) : "";
+    if (skippedText) status.textContent += " " + skippedText;
     await runWithConcurrencyLimit(added, PROBE_CONCURRENCY, async entry => {
       try {
         entry.info = await probe(entry.file);
@@ -270,12 +269,19 @@
         entry.failed = true;
         entry.card.classList.add("cr-file-card-error");
         entry.card.title = bcT("Couldn't read \"{0}\" — it may not be a valid or supported video file.", [entry.file.name]);
-        status.textContent = bcT("Couldn't read {0}. Make sure it's a valid video file.", [entry.file.name]);
       }
       entry.probing = false;
       renderEntry(entry);
       updateButtonState();
     });
+    const unreadable = added.filter(e => e.failed);
+    if (unreadable.length || skippedText){
+      const parts = [];
+      if (unreadable.length === 1) parts.push(bcT("Couldn't read {0}. Make sure it's a valid video file.", [unreadable[0].file.name]));
+      else if (unreadable.length) parts.push(bcT("Couldn't read {0} files — they may be corrupted or not a supported video format.", [unreadable.length]));
+      if (skippedText) parts.push(skippedText);
+      status.textContent = parts.join(" ");
+    }
     schedulePersist();
   }
 
@@ -291,7 +297,7 @@
   }
 
   function resetTool(){
-    if (currentEntry && currentEntry.conversion) currentEntry.conversion.cancel().catch(() => {});
+    if (running) requestCancel();
     entries.forEach(e => URL.revokeObjectURL(e.objectUrl));
     entries = [];
     results.querySelectorAll(".result").forEach(el => el.remove());
@@ -353,14 +359,22 @@
     }
   }
 
+  let cancelRequested = false;
+  function requestCancel(){
+    cancelRequested = true;
+    if (currentEntry && currentEntry.conversion) currentEntry.conversion.cancel().catch(() => {});
+  }
+
   async function compressAll(){
     const queue = entries.filter(e => e.info);
     if (!queue.length) return;
     running = true;
+    cancelRequested = false;
     startPrivacyCheck();
-    let done = 0;
+    let done = 0, failed = 0;
     compressBtn.classList.add("cr-compress-btn-working");
     for (const entry of queue){
+      if (cancelRequested) break;
       if (!entries.includes(entry)) continue;
       currentEntry = entry;
       compressBtn.textContent = bcT("Cancel");
@@ -371,15 +385,12 @@
         renderEntry(entry);
       } catch (err){
         const canceled = err && /cancel/i.test(err.name || err.message || "");
-        if (!canceled){
-          console.error(err);
-          entry.card.classList.add("cr-file-card-error");
-          entry.card.title = bcT("Couldn't compress \"{0}\".", [entry.file.name]) + `\n(${err.message || err})`;
-          status.textContent = bcT("Couldn't compress {0}. Try another level or a smaller size.", [entry.file.name]);
-        } else {
-          status.textContent = bcT("Canceled.");
-        }
-        if (canceled) break;
+        if (cancelRequested) break;
+        if (canceled) continue;
+        console.error(err);
+        failed++;
+        entry.card.classList.add("cr-file-card-error");
+        entry.card.title = bcT("Couldn't compress \"{0}\".", [entry.file.name]) + `\n(${err.message || err})`;
       }
     }
     currentEntry = null;
@@ -388,16 +399,19 @@
     compressBtn.textContent = idleLabel();
     finishPrivacyCheck(badge);
     updateButtonState();
-    if (done) status.textContent = done === 1 && queue.length === 1
+    if (!entries.length){ status.textContent = ""; return; }
+    if (cancelRequested){ status.textContent = bcT("Canceled."); return; }
+    if (failed && !done) status.textContent = failed === 1 && queue.length === 1
+      ? bcT("Couldn't compress {0}. Try another level or a smaller size.", [queue[0].file.name])
+      : bcT("Couldn't compress {0} files. Try another level or a smaller size.", [failed]);
+    else if (failed) status.textContent = bcT("Done — {0} compressed, {1} couldn't be compressed.", [done, failed]);
+    else if (done) status.textContent = done === 1 && queue.length === 1
       ? bcT("Done — {0} saved.", [queue[0].result.name])
       : bcT("Done — {0} videos compressed.", [done]);
   }
 
   compressBtn.addEventListener("click", () => {
-    if (running){
-      if (currentEntry && currentEntry.conversion) currentEntry.conversion.cancel().catch(() => {});
-      return;
-    }
+    if (running){ requestCancel(); return; }
     compressAll();
   });
 
