@@ -83,8 +83,10 @@
     const meta = card.querySelector(".cr-card-meta");
     const size = card.querySelector(".result-size");
     if (!entry.info){
-      meta.textContent = entry.failed ? "" : bcT("Reading video…");
-      size.textContent = bcFormatFileSize(entry.file.size);
+      meta.textContent = "";
+      size.innerHTML = entry.failed || !entry.probing
+        ? bcFormatFileSize(entry.file.size)
+        : `${bcFormatFileSize(entry.file.size)}<br>${bcT("Waiting...")}`;
       return;
     }
     meta.textContent = `${entry.info.width}×${entry.info.height} · ${formatDuration(entry.info.duration)}`;
@@ -181,6 +183,15 @@
     onDrop: e => addFiles(e.dataTransfer.files)
   });
 
+  const PROBE_CONCURRENCY = 5;
+  async function runWithConcurrencyLimit(items, limit, worker){
+    let next = 0;
+    const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) await worker(items[next++]);
+    });
+    await Promise.all(runners);
+  }
+
   function isVideoFile(f){
     return f.type.startsWith("video/") || /\.(mp4|m4v|mov|webm|mkv|avi|mpe?g|3gp|ogv|ts|mts|m2ts)$/i.test(f.name);
   }
@@ -243,7 +254,7 @@
       return;
     }
     const added = videos.map(file => {
-      const entry = { file, objectUrl: URL.createObjectURL(file), info: null, failed: false, result: null };
+      const entry = { file, objectUrl: URL.createObjectURL(file), info: null, failed: false, result: null, probing: true };
       entry.card = buildCard(entry);
       results.appendChild(entry.card);
       entries.push(entry);
@@ -258,7 +269,7 @@
       const skipped = incoming.length - videos.length;
       status.textContent += " " + bcT("{0} file(s) weren't a video and were skipped.", [skipped]);
     }
-    for (const entry of added){
+    await runWithConcurrencyLimit(added, PROBE_CONCURRENCY, async entry => {
       try {
         entry.info = await probe(entry.file);
       } catch (err){
@@ -268,9 +279,10 @@
         entry.card.title = bcT("Couldn't read \"{0}\" — it may not be a valid or supported video file.", [entry.file.name]);
         status.textContent = bcT("Couldn't read {0}. Make sure it's a valid video file.", [entry.file.name]);
       }
+      entry.probing = false;
       renderEntry(entry);
       updateButtonState();
-    }
+    });
     schedulePersist();
   }
 
