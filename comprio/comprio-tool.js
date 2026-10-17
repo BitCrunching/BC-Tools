@@ -214,10 +214,9 @@
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
-      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div></div>
+      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div><div class="cr-progress"><div class="cr-progress-bar"></div></div></div>
       <div class="result-name"></div>
       <div class="cr-card-size"></div>
-      <div class="cr-progress"><div class="cr-progress-bar"></div></div>
     `;
     card.querySelector(".result-name").textContent = entry.file.name;
     card.querySelector(".result-name").title = entry.file.name;
