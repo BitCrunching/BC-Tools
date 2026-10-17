@@ -49,13 +49,6 @@
     return mbPromise;
   }
 
-  function formatDuration(sec){
-    sec = Math.max(0, Math.round(sec));
-    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-    const pad = n => String(n).padStart(2, "0");
-    return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-  }
-
   function even(n){ return Math.max(2, Math.round(n / 2) * 2); }
 
   function plan(entry){
@@ -89,7 +82,7 @@
         : `${bcFormatFileSize(entry.file.size)}<br>${bcT("Waiting...")}`;
       return;
     }
-    meta.textContent = `${entry.info.width}×${entry.info.height} · ${formatDuration(entry.info.duration)}`;
+    meta.textContent = `${entry.info.width}×${entry.info.height}`;
     const original = bcFormatFileSize(entry.file.size);
     const line = (bytes, approx) => {
       const pct = Math.max(0, Math.round((1 - bytes / entry.file.size) * 100));
