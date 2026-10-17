@@ -88,16 +88,18 @@
       return;
     }
     meta.textContent = `${entry.info.width}×${entry.info.height} · ${formatDuration(entry.info.duration)}`;
+    const original = bcFormatFileSize(entry.file.size);
+    const line = (bytes, approx) => {
+      const pct = Math.max(0, Math.round((1 - bytes / entry.file.size) * 100));
+      size.innerHTML = `${original} &gt; ${approx ? "~" : ""}${bcFormatFileSize(bytes)}<br>(-${pct}%)`;
+    };
     if (entry.result && entry.result.key === settingsKey()){
-      const saved = Math.round((1 - entry.result.blob.size / entry.file.size) * 100);
-      const arrow = `${bcFormatFileSize(entry.file.size)} → ${bcFormatFileSize(entry.result.blob.size)}`;
-      size.textContent = saved > 0 ? `${arrow} (−${saved}%)` : arrow;
+      line(entry.result.blob.size, false);
       return;
     }
     const p = plan(entry);
-    size.textContent = p
-      ? `${bcFormatFileSize(entry.file.size)} → ~${bcFormatFileSize(Math.min(p.bytes, entry.file.size))}`
-      : bcFormatFileSize(entry.file.size);
+    if (p) line(Math.min(p.bytes, entry.file.size), true);
+    else size.textContent = original;
   }
 
   function renderAll(){ entries.forEach(renderEntry); }
