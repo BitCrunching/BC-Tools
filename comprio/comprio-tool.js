@@ -214,9 +214,8 @@
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
-      <div class="cr-thumb"><video muted playsinline preload="metadata"></video></div>
+      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div></div>
       <div class="result-name"></div>
-      <div class="cr-card-meta"></div>
       <div class="cr-card-size"></div>
       <div class="cr-progress"><div class="cr-progress-bar"></div></div>
     `;
