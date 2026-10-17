@@ -24,6 +24,7 @@ the harness fetches files from `/test-assets/`). `T.load([files])` feeds files t
 | 12 | Unsupported video containers (.avi .wmv .flv, no real content) | Red card ("Couldn't read") |
 | 13 | WebM and MKV inputs, no-audio 1080p to 480p | All compress to MP4 |
 | 14 | Mixed batch: 1 valid + corrupt + RAW | Valid one works, status reports both problems |
+| 15 | 571 MB 1080p 120 s clip scaled to 480p | Estimate ~11.4 MB, result 11.5 MB, 8 s |
 
 Known limits: the output is built in memory (`BufferTarget`), so a result above ~2 GB can
 fail with a normal "Couldn't compress" card; sessions above 300 MB are not saved for
