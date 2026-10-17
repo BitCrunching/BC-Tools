@@ -81,7 +81,7 @@
   function renderEntry(entry){
     const card = entry.card;
     const meta = card.querySelector(".cr-card-meta");
-    const size = card.querySelector(".cr-card-size");
+    const size = card.querySelector(".result-size");
     if (!entry.info){
       meta.textContent = entry.failed ? "" : bcT("Reading video…");
       size.textContent = bcFormatFileSize(entry.file.size);
@@ -216,7 +216,7 @@
     card.innerHTML = `
       <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div><div class="cr-progress"><div class="cr-progress-bar"></div></div></div>
       <div class="result-name"></div>
-      <div class="cr-card-size"></div>
+      <div class="result-size"></div>
     `;
     card.querySelector(".result-name").textContent = entry.file.name;
     card.querySelector(".result-name").title = entry.file.name;
