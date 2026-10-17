@@ -506,6 +506,20 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
    34px. Widen it and anchor its right edge to the trigger instead of
    its left, so it doesn't overflow the toolbar's edge on narrow
    layouts. */
+#ctFontDropdown .bc-dropdown-menu{
+  width:180px;
+  left:0;
+  right:auto;
+}
+#ctFontDropdown .bc-dropdown-option{
+  font-size:15px;
+}
+@media (max-width:768px){
+  #ctFontDropdown .bc-dropdown-menu{
+    top:auto;
+    bottom:calc(100% + 6px);
+  }
+}
 .ct-shape-btn-icon{
   width:16px;
   height:16px;
@@ -513,9 +527,27 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   margin:auto;
 }
 #ctShapeKindDropdown .bc-dropdown-menu{
-  width:140px;
+  width:auto;
   left:auto;
   right:0;
+}
+#ctShapeKindDropdown .bc-dropdown-menu:not([hidden]){
+  display:grid;
+  grid-template-columns:repeat(3, 44px);
+  gap:4px;
+}
+#ctShapeKindDropdown .bc-dropdown-option{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:40px;
+  padding:0;
+}
+.ct-shape-opt-icon{
+  width:20px;
+  height:20px;
+  display:block;
+  pointer-events:none;
 }
 /* On mobile the toolbar sits at the bottom of the screen, so the menu
    opens upward — below it would be off-screen. */
@@ -940,6 +972,36 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   outline:1px solid rgba(37,99,235,.7);
 }
 
+.context-date-popup{
+  position:fixed;
+  z-index:2200;
+  display:flex;
+  gap:8px;
+  padding:10px;
+  border-radius:16px;
+  background:var(--btn-fill-text);
+  border:var(--border-bold) solid var(--btn-fill);
+  color:var(--btn-fill);
+}
+.context-date-popup[hidden]{ display:none; }
+.dp-main,
+.dp-chip{
+  height:40px;
+  border-radius:12px;
+  border:var(--border-bold) solid var(--btn-fill);
+  background:transparent;
+  color:var(--btn-fill);
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background-color .3s ease-in-out, color .3s ease-in-out;
+}
+.dp-main{ padding:0 14px; }
+.dp-chip{ padding:0 10px; }
+.dp-main:hover,
+.dp-chip:hover{ background:var(--btn-fill); color:var(--btn-fill-text); }
 #ctSizeStatus{ margin-top:0; min-height:0; }
 #ctSizeStatus:empty{ display:none; }
 
@@ -1029,12 +1091,19 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   left:-22px;
   transform:translateY(-50%);
 }
+/* Handles sit well clear of the shape so they never cover it — matters most
+   for the small checkmark/crossmark. */
+.context-shape-box .context-text-drag-handle{
+  left:-40px;
+}
+.context-shape-box .context-text-remove{
+  top:-34px;
+  right:-34px;
+}
 .context-shape-box .context-text-resize-handle{
   display:flex;
-  /* Mirrors the remove button's -10px/-10px at the opposite corner so the
-     two handles line up vertically on the box's right edge. */
-  right:-10px;
-  bottom:-10px;
+  right:-34px;
+  bottom:-34px;
 }
 
 /* ===== Signature capture modal ===== */
@@ -1554,6 +1623,20 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Signature (S)"><span class="ct-desktop-only">Signature</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
+          <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctFontBtn" title="Font" aria-label="Font" aria-haspopup="listbox" aria-expanded="false">F</button>
+            <div class="bc-dropdown-menu" id="ctFontMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-font="arial" data-label="Arial" role="option" aria-selected="false">Arial</button>
+              <button type="button" class="bc-dropdown-option" data-font="times" data-label="Times" role="option" aria-selected="false">Times</button>
+              <button type="button" class="bc-dropdown-option" data-font="courier" data-label="Courier" role="option" aria-selected="false">Courier</button>
+              <button type="button" class="bc-dropdown-option" data-font="roboto" data-label="Roboto" role="option" aria-selected="false">Roboto</button>
+              <button type="button" class="bc-dropdown-option" data-font="opensans" data-label="Open Sans" role="option" aria-selected="false">Open Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="comicneue" data-label="Comic Neue" role="option" aria-selected="false">Comic Neue</button>
+              <button type="button" class="bc-dropdown-option" data-font="anton" data-label="Anton" role="option" aria-selected="false">Anton</button>
+              <button type="button" class="bc-dropdown-option" data-font="caveat" data-label="Caveat" role="option" aria-selected="false">Caveat</button>
+              <button type="button" class="bc-dropdown-option" data-font="playfair" data-label="Playfair Display" role="option" aria-selected="false">Playfair Display</button>
+            </div>
+          </div>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Underline (U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Italic (I)" aria-label="Italic" aria-pressed="false"><i>I</i></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Bold (B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
@@ -1564,6 +1647,8 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Square" role="option" aria-selected="false">Square</button>
               <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Triangle" role="option" aria-selected="false">Triangle</button>
               <button type="button" class="bc-dropdown-option" data-kind="cross" data-label="Cross" role="option" aria-selected="false">Cross</button>
+              <button type="button" class="bc-dropdown-option" data-kind="check" data-label="Checkmark" role="option" aria-selected="false">Checkmark</button>
+              <button type="button" class="bc-dropdown-option" data-kind="xmark" data-label="Crossmark" role="option" aria-selected="false">Crossmark</button>
             </div>
           </div>
         </div>
@@ -1848,6 +1933,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=69" defer></script>
+<script src="/context/context-tool.js?v=79" defer></script>
 </body>
 </html>

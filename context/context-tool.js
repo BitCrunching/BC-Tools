@@ -51,6 +51,8 @@
   const italicBtn = document.getElementById("ctItalicBtn");
   const underlineBtn = document.getElementById("ctUnderlineBtn");
   const shapeBtn = document.getElementById("ctShapeBtn");
+  const fontBtn = document.getElementById("ctFontBtn");
+  const fontMenu = document.getElementById("ctFontMenu");
   const shapeKindMenu = document.getElementById("ctShapeKindMenu");
   const pageNav = document.getElementById("ctPageNav");
   const pageNavDesktopSlot = document.getElementById("ctPageNavDesktopSlot");
@@ -95,7 +97,8 @@
   let fsPanX = 0;
   let fsPanY = 0;
   let activeColor = "#000000";
-  let activeSize = 16;
+  let activeSize = 10;
+  let activeFont = "arial";
   let activeBold = false;
   let activeItalic = false;
   let activeUnderline = false;
@@ -488,6 +491,8 @@
         o.classList.toggle("active", o === opt);
         o.setAttribute("aria-selected", String(o === opt));
       });
+      activeFont = box.font || "arial";
+      renderFontBtn();
       activeBold = !!box.bold;
       activeItalic = !!box.italic;
       activeUnderline = !!box.underline;
@@ -504,6 +509,151 @@
     selectedBoxId = null;
     overlay.querySelectorAll(".context-text-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
+
+  /* Fonts for text boxes. Arial/Times/Courier use the PDF's own standard fonts
+     (nothing to download); the rest are open-licence fonts shipped in
+     vendor/fonts/context and loaded only when chosen. Preview and download
+     use the same files, so what you see is what the PDF gets. */
+  const FONT_DIR = "/vendor/fonts/context/";
+  const CTX_FONTS = {
+    arial: { label: "Arial", css: "Helvetica, Arial, sans-serif", std: ["Helvetica", "HelveticaBold", "HelveticaOblique", "HelveticaBoldOblique"] },
+    times: { label: "Times", css: "'Times New Roman', Times, serif", std: ["TimesRoman", "TimesRomanBold", "TimesRomanItalic", "TimesRomanBoldItalic"] },
+    courier: { label: "Courier", css: "'Courier New', Courier, monospace", std: ["Courier", "CourierBold", "CourierOblique", "CourierBoldOblique"] },
+    roboto: { label: "Roboto", family: "BC Roboto", fallback: "sans-serif", files: { r: "Roboto_400Regular.ttf", b: "Roboto_700Bold.ttf", i: "Roboto_400Regular_Italic.ttf", bi: "Roboto_700Bold_Italic.ttf" } },
+    opensans: { label: "Open Sans", family: "BC Open Sans", fallback: "sans-serif", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
+    comicneue: { label: "Comic Neue", family: "BC Comic Neue", fallback: "cursive", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
+    anton: { label: "Anton", family: "BC Anton", fallback: "Impact, sans-serif", files: { r: "Anton_400Regular.ttf" } },
+    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    playfair: { label: "Playfair Display", family: "BC Playfair Display", fallback: "serif", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
+  };
+  const fontOf = id => CTX_FONTS[id] || CTX_FONTS.arial;
+  function fontCss(id){
+    const f = fontOf(id);
+    return f.css || '"' + f.family + '", ' + f.fallback;
+  }
+  /* Which file of a family matches the bold/italic combination — a missing
+     style (Anton has no bold, Caveat no italic) falls back to the closest
+     one, the same rule the browser applies, so preview and PDF agree. */
+  function fontFaceKey(font, bold, italic){
+    const want = (bold ? "b" : "") + (italic ? "i" : "") || "r";
+    if (font.files[want]) return want;
+    if (bold && italic) return font.files.b ? "b" : font.files.i ? "i" : "r";
+    return "r";
+  }
+  const fontLoads = new Map();
+  function ensureFont(id, onlyRegular){
+    const f = fontOf(id);
+    if (!f.files) return Promise.resolve();
+    const key = id + (onlyRegular ? ":r" : ":all");
+    if (fontLoads.has(key)) return fontLoads.get(key);
+    const specs = { r: ["400", "normal"], b: ["700", "normal"], i: ["400", "italic"], bi: ["700", "italic"] };
+    const entries = Object.entries(f.files).filter(([k]) => !onlyRegular || k === "r");
+    const p = Promise.all(entries.map(([k, file]) => {
+      const face = new FontFace(f.family, "url(" + FONT_DIR + file + ")", { weight: specs[k][0], style: specs[k][1] });
+      document.fonts.add(face);
+      return face.load().catch(() => {});
+    }));
+    fontLoads.set(key, p);
+    return p;
+  }
+  function applyBoxFont(inner, box){
+    inner.style.fontFamily = fontCss(box.font);
+    inner.style.fontSynthesis = fontOf(box.font).files ? "none" : "";
+  }
+
+  fontMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    opt.style.fontFamily = fontCss(opt.dataset.font);
+  });
+  function renderFontBtn(){
+    fontBtn.style.fontFamily = fontCss(activeFont);
+    fontBtn.title = bcT("Font") + " — " + fontOf(activeFont).label;
+    bcSetDropdownActive(fontMenu, fontMenu.querySelector('[data-font="' + activeFont + '"]'));
+  }
+  fontBtn.addEventListener("click", () => {
+    Object.keys(CTX_FONTS).forEach(id => ensureFont(id, true));
+  });
+  bcRegisterDropdown(fontBtn, fontMenu, (opt) => {
+    activeFont = opt.dataset.font;
+    ensureFont(activeFont);
+    renderFontBtn();
+    const box = selectedBoxId ? findBoxById(selectedBoxId) : null;
+    if (box && box.page === currentPage){
+      box.font = activeFont;
+      const innerEl = overlay.querySelector('.context-text-box[data-box-id="' + box.id + '"] .context-text-inner');
+      if (innerEl) applyBoxFont(innerEl, box);
+      schedulePersist();
+    }
+  });
+  renderFontBtn();
+
+  /* Double-click a text box to open a small popup that can replace its text
+     with today's date; the chip beside it flips the order (day first or
+     month first), remembered between visits. */
+  const DATE_FORMATS = ["DD-MM-YYYY", "MM-DD-YYYY"];
+  const DATE_FORMAT_KEY = "context-date-format";
+  let dateFormat = DATE_FORMATS[0];
+  try {
+    const savedFmt = localStorage.getItem(DATE_FORMAT_KEY);
+    if (DATE_FORMATS.includes(savedFmt)) dateFormat = savedFmt;
+  } catch (err) { /* storage unavailable */ }
+
+  function todayString(){
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    return (dateFormat === "DD-MM-YYYY" ? dd + "-" + mm : mm + "-" + dd) + "-" + now.getFullYear();
+  }
+
+  const datePopup = document.createElement("div");
+  datePopup.className = "context-date-popup";
+  datePopup.hidden = true;
+  datePopup.setAttribute("role", "dialog");
+  datePopup.setAttribute("aria-label", bcT("Today's date"));
+  datePopup.innerHTML =
+    '<button type="button" class="dp-main" data-act="apply"></button>' +
+    '<button type="button" class="dp-chip" data-act="format" title="' + bcT("Change date format") + '"></button>';
+  document.body.appendChild(datePopup);
+  const dpApply = datePopup.querySelector('[data-act="apply"]');
+  const dpFormat = datePopup.querySelector('[data-act="format"]');
+  let datePopupTarget = null;
+
+  function renderDatePopup(){
+    dpApply.textContent = bcT("Today's date") + ": " + todayString();
+    dpFormat.textContent = dateFormat;
+  }
+  function closeDatePopup(){
+    datePopup.hidden = true;
+    datePopupTarget = null;
+  }
+  function openDatePopup(box, boxEl, innerEl){
+    datePopupTarget = { box, innerEl };
+    renderDatePopup();
+    datePopup.hidden = false;
+    const r = boxEl.getBoundingClientRect();
+    const w = datePopup.offsetWidth;
+    datePopup.style.top = Math.round(r.bottom + 8) + "px";
+    datePopup.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - w - 8))) + "px";
+  }
+  datePopup.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    if (btn.dataset.act === "format"){
+      dateFormat = DATE_FORMATS[(DATE_FORMATS.indexOf(dateFormat) + 1) % DATE_FORMATS.length];
+      try { localStorage.setItem(DATE_FORMAT_KEY, dateFormat); } catch (err) { /* skip */ }
+      renderDatePopup();
+    } else if (datePopupTarget){
+      const { box, innerEl } = datePopupTarget;
+      box.text = todayString();
+      innerEl.textContent = box.text;
+      closeDatePopup();
+      schedulePersist();
+    }
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (datePopup.hidden || datePopup.contains(e.target)) return;
+    closeDatePopup();
+  }, true);
+  bcRegisterEscapable(() => !datePopup.hidden, closeDatePopup, 95);
 
   function buildBoxEl(box){
     const el = document.createElement("div");
@@ -522,6 +672,8 @@
     inner.contentEditable = "true";
     inner.spellcheck = false;
     inner.style.fontSize = (box.sizePt * scale) + "px";
+    applyBoxFont(inner, box);
+    ensureFont(box.font);
     inner.style.color = box.color;
     inner.style.fontWeight = box.bold ? "bold" : "normal";
     inner.style.fontStyle = box.italic ? "italic" : "normal";
@@ -538,6 +690,7 @@
       }
     });
     inner.addEventListener("focus", () => selectBox(box.id));
+    inner.addEventListener("dblclick", () => openDatePopup(box, el, inner));
     el.appendChild(inner);
 
     const removeBtn = document.createElement("button");
@@ -760,14 +913,28 @@
      an SVG scales with its box's own width/height for free the same way
      the signature's <img> already does, so resizing needs no extra math
      here beyond what startDrag below already computes. */
-  function shapeSvg(kind, color){
+  /* The two form marks come in a thin and a bold weight (the B button). */
+  const MARK_POINTS = {
+    check: {
+      thin: "7.6,56.6 38.3,85.1 94.7,18.3 89.3,13.7 37.7,74.9 12.4,51.4",
+      bold: "4.2,60.2 38.7,92.3 98.5,21.5 85.5,10.5 37.3,67.7 15.8,47.8"
+    },
+    xmark: {
+      thin: "14,6 50,42 86,6 94,14 58,50 94,86 86,94 50,58 14,94 6,86 42,50 6,14",
+      bold: "20,4 50,34 80,4 96,20 66,50 96,80 80,96 50,66 20,96 4,80 34,50 4,20"
+    }
+  };
+  const isMarkKind = kind => kind === "check" || kind === "xmark";
+  function shapeSvg(kind, color, bold){
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
       triangle: '<polygon points="50,4 96,96 4,96" />',
       /* Plus-shaped 12-point polygon — same 2-unit margin/96-unit span
          as square/circle above, 30-unit-wide arms (center ±15). */
-      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />'
+      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />',
+      check: '<polygon points="' + MARK_POINTS.check[bold ? "bold" : "thin"] + '" />',
+      xmark: '<polygon points="' + MARK_POINTS.xmark[bold ? "bold" : "thin"] + '" />'
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
@@ -776,7 +943,8 @@
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
     shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    shapeBtn.title = bcT("Add shape (H) — {0}", [bcT(activeShapeKind)]);
+    const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
+    shapeBtn.title = bcT("Add shape (H) — {0}", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -784,6 +952,16 @@
      non-uniformly stretched triangle/cross, since drawSvgPath's own
      `scale` option only takes one uniform number. Only handles the M/L/Z
      commands this file's own shapeSvg() paths actually use. */
+  const SHAPE_PATHS = {
+    triangle: "M50 4 L96 96 L4 96 Z",
+    cross: "M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z"
+  };
+  function shapePathFor(box){
+    if (isMarkKind(box.kind)){
+      return "M" + MARK_POINTS[box.kind][box.bold ? "bold" : "thin"].split(" ").map(pt => pt.replace(",", " ")).join(" L") + " Z";
+    }
+    return SHAPE_PATHS[box.kind];
+  }
   function scaleSvgPath(path, sx, sy){
     return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
       return cmd + " " + (parseFloat(x) * sx) + " " + (parseFloat(y) * sy);
@@ -806,7 +984,7 @@
     el.style.top = (box.topPt * scale) + "px";
     el.style.width = (box.widthPt * scale) + "px";
     el.style.height = (box.heightPt * scale) + "px";
-    el.innerHTML = shapeSvg(box.kind, box.color);
+    el.innerHTML = shapeSvg(box.kind, box.color, box.bold);
 
     const handle = document.createElement("span");
     handle.className = "context-text-drag-handle bc-obj-drag-handle";
@@ -857,6 +1035,10 @@
       bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
       activeShapeKind = box.kind;
       renderShapeBtnIcon();
+      if (isMarkKind(box.kind)){
+        activeBold = !!box.bold;
+        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      }
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
       bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
@@ -888,14 +1070,15 @@
 
     startDrag(resizeHandle, (dx, dy, start, shiftKey) => {
       const zoom = isFullscreen ? fsZoom : 1;
+      const minPt = isMarkKind(box.kind) ? 8 : 20;
       if (shiftKey){
         const ratio = start.widthPt / start.heightPt;
         const growth = (dx + dy) / 2 / zoom / scale;
-        box.widthPt = Math.max(20, start.widthPt + growth);
+        box.widthPt = Math.max(minPt, start.widthPt + growth);
         box.heightPt = box.widthPt / ratio;
       } else {
-        box.widthPt = Math.max(20, start.widthPt + dx / zoom / scale);
-        box.heightPt = Math.max(20, start.heightPt + dy / zoom / scale);
+        box.widthPt = Math.max(minPt, start.widthPt + dx / zoom / scale);
+        box.heightPt = Math.max(minPt, start.heightPt + dy / zoom / scale);
       }
       el.style.width = (box.widthPt * scale) + "px";
       el.style.height = (box.heightPt * scale) + "px";
@@ -905,8 +1088,10 @@
   }
 
   function addShapeBox(){
-    const widthPt = 100;
-    const heightPt = 100;
+    /* The two form marks land small, sized for ticking a checkbox. */
+    const mark = isMarkKind(activeShapeKind);
+    const widthPt = mark ? 16 : 100;
+    const heightPt = widthPt;
     const box = {
       id: ++shapeBoxIdSeq,
       page: currentPage,
@@ -915,7 +1100,8 @@
       widthPt,
       heightPt,
       kind: activeShapeKind,
-      color: activeColor
+      color: activeColor,
+      bold: mark && activeBold
     };
     shapeBoxes.push(box);
     renderTextBoxes();
@@ -1001,6 +1187,7 @@
     const texts = textBoxes.filter(b => b.text);
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
     total += shapeBoxes.length * 130;
+    total += new Set(texts.filter(b => fontOf(b.font).files).map(b => (b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic))).size * 4000;
     if (signatureBoxes.length){
       for (const [dataUrl, w] of signatureTargetWidths()) total += await signatureEmbeddedSize(dataUrl, w);
       if (token !== sizeToken) return;
@@ -1010,10 +1197,10 @@
   }
 
   function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
-    /* Land it at a sensible fixed width (144pt ≈ 2in on a US Letter
-       page) instead of the image's raw pixel size, which could be
-       anywhere from tiny to huge depending on the source photo. */
-    const widthPt = 144;
+    /* Land it at a small fixed width (100pt) instead of the image's raw
+       pixel size, which could be anywhere from tiny to huge depending on
+       the source photo. */
+    const widthPt = 100;
     const heightPt = widthPt * (naturalHeight / naturalWidth);
     const box = {
       id: ++sigBoxIdSeq,
@@ -1036,6 +1223,7 @@
       xPt: (overlay.clientWidth / scale / 2) - 40,
       topPt: (overlay.clientHeight / scale / 2) - (sizePt / 2),
       sizePt,
+      font: activeFont,
       color: activeColor,
       bold: activeBold,
       italic: activeItalic,
@@ -1082,6 +1270,16 @@
   });
 
   addTextBtn.addEventListener("click", addTextBox);
+  /* The shape menu shows the shapes themselves, not their names — the name
+     (already in the markup, translated on the language pages) stays as the
+     tooltip and accessible label. */
+  shapeKindMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    const label = opt.textContent.trim();
+    opt.title = label;
+    opt.setAttribute("aria-label", label);
+    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+  });
+  bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
   bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
 
@@ -1110,7 +1308,7 @@
          separate elements right alongside it and keep their own JS
          listeners untouched this way, unlike a full innerHTML rebuild
          which would silently drop all three. */
-      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color);
+      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
     }
     schedulePersist();
   });
@@ -1509,6 +1707,17 @@
         }
       }
 
+      if (propName === "bold" && selectedShapeId){
+        const shape = findShapeBoxById(selectedShapeId);
+        if (shape && shape.page === currentPage && isMarkKind(shape.kind)){
+          shape.bold = nowActive;
+          const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + shape.id + '"]');
+          const svgEl = shapeEl && shapeEl.querySelector("svg");
+          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+          schedulePersist();
+        }
+      }
+
       if (propName === "bold") activeBold = nowActive;
       if (propName === "italic") activeItalic = nowActive;
       if (propName === "underline") activeUnderline = nowActive;
@@ -1690,7 +1899,7 @@
         return { u: box.xPt + o.du / scale, v: box.topPt + o.dv / scale };
       }
     }
-    const key = box.sizePt + "|" + pageScale;
+    const key = box.sizePt + "|" + pageScale + "|" + (box.font || "arial");
     let o = textOriginCache.get(key);
     if (!o){
       const savedScale = scale;
@@ -1733,10 +1942,39 @@
       /* Bold/italic aren't a style flag on Helvetica — pdf-lib's base 14
          fonts include separate bold/oblique/bold-oblique variants, so
          pick the matching embedded font per box instead. */
-      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-      const fontBoldItalic = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      /* Fonts are embedded per use: the PDF's own standard fonts for
+         Arial/Times/Courier, the shipped open fonts (through fontkit,
+         loaded only now) for the rest. */
+      const embeddedFonts = new Map();
+      let fontkitReady = false;
+      async function embedFontFor(fontId, bold, italic){
+        const f = fontOf(fontId);
+        if (f.std){
+          const name = f.std[bold && italic ? 3 : bold ? 1 : italic ? 2 : 0];
+          if (!embeddedFonts.has(name)) embeddedFonts.set(name, await pdfDoc.embedFont(StandardFonts[name]));
+          return embeddedFonts.get(name);
+        }
+        const faceKey = fontId + ":" + fontFaceKey(f, bold, italic);
+        if (embeddedFonts.has(faceKey)) return embeddedFonts.get(faceKey);
+        if (!fontkitReady){
+          if (!window.fontkit){
+            await new Promise((resolve, reject) => {
+              const sc = document.createElement("script");
+              sc.src = "/vendor/fontkit.umd.min.js";
+              sc.onload = resolve;
+              sc.onerror = () => reject(new Error("Couldn't load the font library."));
+              document.head.appendChild(sc);
+            });
+          }
+          pdfDoc.registerFontkit(window.fontkit);
+          fontkitReady = true;
+        }
+        const res = await fetch(FONT_DIR + f.files[fontFaceKey(f, bold, italic)]);
+        const font = await pdfDoc.embedFont(await res.arrayBuffer(), { subset: true });
+        embeddedFonts.set(faceKey, font);
+        return font;
+      }
+      await Promise.all([...new Set(textBoxes.filter(b => b.text).map(b => b.font || "arial"))].map(id => ensureFont(id)));
       const pages = pdfDoc.getPages();
 
       /* Box coordinates are measured on the page as displayed (pdf.js applies
@@ -1753,18 +1991,15 @@
         return { rot, toPdf };
       };
 
-      textBoxes.forEach(box => {
+      for (const box of textBoxes){
         const page = pages[box.page - 1];
-        if (!page || !box.text) return;
+        if (!page || !box.text) continue;
         const { rot, toPdf } = pageFrame(page);
         const r = parseInt(box.color.slice(1, 3), 16) / 255;
         const g = parseInt(box.color.slice(3, 5), 16) / 255;
         const b = parseInt(box.color.slice(5, 7), 16) / 255;
         const color = rgb(r, g, b);
-        const font = box.bold && box.italic ? fontBoldItalic
-          : box.bold ? fontBold
-          : box.italic ? fontItalic
-          : fontRegular;
+        const font = await embedFontFor(box.font || "arial", !!box.bold, !!box.italic);
         const dispW = (pg) => (pg.getRotation().angle % 180 ? pg.getHeight() : pg.getWidth());
         const pageScale = Math.min(scale * dispW(pages[currentPage - 1] || page) / dispW(page), 1.4);
         const origin = measureTextOrigin(box, pageScale) || { u: box.xPt + 31 / pageScale, v: box.topPt + 2 / pageScale + box.sizePt * 0.95 };
@@ -1782,7 +2017,7 @@
             color
           });
         }
-      });
+      }
 
       /* A signature placed several times shares one embedded image. */
       const sigImages = new Map();
@@ -1818,28 +2053,14 @@
         const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
         if (box.kind === "square"){
           page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate });
-        } else if (box.kind === "triangle"){
-          /* Same "M50 4 L96 96 L4 96 Z" path as the on-screen <svg> (0-100
-             viewBox), anchored at its bottom-left corner — drawSvgPath
-             flips the path's own y-axis internally to match its (x,y)
-             anchor sitting at the bottom, the same way
-             drawRectangle/drawImage above already do. drawSvgPath's own
-             `scale` option is a single uniform number, which can't
-             reproduce a non-uniformly stretched box (deforming the shape
-             with the resize handle's non-Shift drag, see buildShapeBoxEl)
-             — so the path's own coordinates are pre-scaled by width/height
-             independently instead, and `scale` stays 1. */
-          page.drawSvgPath(scaleSvgPath("M50 4 L96 96 L4 96 Z", box.widthPt / 100, box.heightPt / 100), {
-            x,
-            y,
-            color,
-            rotate
-          });
-        } else if (box.kind === "cross"){
-          /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
-             written as a path string — same pre-scaled-coordinates
-             convention as the triangle above. */
-          page.drawSvgPath(scaleSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", box.widthPt / 100, box.heightPt / 100), {
+        } else if (shapePathFor(box)){
+          /* Triangle, cross and the two marks are the same polygons as
+             shapeSvg()'s (0-100 viewBox), written as path strings and
+             pre-scaled by width/height independently — drawSvgPath's own
+             `scale` option takes one uniform number, which can't
+             reproduce a non-uniformly stretched box. Anchored at the
+             bottom-left corner like drawRectangle/drawImage above. */
+          page.drawSvgPath(scaleSvgPath(shapePathFor(box), box.widthPt / 100, box.heightPt / 100), {
             x,
             y,
             color,
