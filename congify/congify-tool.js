@@ -552,9 +552,40 @@
       : Math.min(maxYFrac - halfHFrac, Math.max(minYFrac + halfHFrac, cap.y));
     updateCaptionElPosition(cap, boxEl);
   }
+  /* Caption fonts: Arial/Times/Courier come from the system; the rest are
+     the same open-licence font files the Context tool uses, loaded only when
+     a caption (or the menu) needs them — and always before the GIF is drawn,
+     since a canvas silently falls back to another font until the file has
+     loaded. Keys are the exact font strings stored on a caption. */
+  const CAPTION_FONT_DIR = "/vendor/fonts/context/";
+  const CAPTION_FONTS = {
+    "'BC Roboto', sans-serif": { family: "BC Roboto", files: { r: "Roboto_400Regular.ttf", b: "Roboto_700Bold.ttf", i: "Roboto_400Regular_Italic.ttf", bi: "Roboto_700Bold_Italic.ttf" } },
+    "'BC Open Sans', sans-serif": { family: "BC Open Sans", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
+    "'BC Comic Neue', cursive": { family: "BC Comic Neue", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
+    "'BC Anton', Impact, sans-serif": { family: "BC Anton", files: { r: "Anton_400Regular.ttf" } },
+    "'BC Caveat', cursive": { family: "BC Caveat", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    "'BC Playfair Display', serif": { family: "BC Playfair Display", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
+  };
+  const captionFontLoads = new Map();
+  function ensureCaptionFont(css, onlyRegular){
+    const f = CAPTION_FONTS[css];
+    if (!f) return Promise.resolve();
+    const key = css + (onlyRegular ? "|r" : "|all");
+    if (captionFontLoads.has(key)) return captionFontLoads.get(key);
+    const specs = { r: ["400", "normal"], b: ["700", "normal"], i: ["400", "italic"], bi: ["700", "italic"] };
+    const p = Promise.all(Object.entries(f.files).filter(([k]) => !onlyRegular || k === "r").map(([k, file]) => {
+      const face = new FontFace(f.family, "url(" + CAPTION_FONT_DIR + file + ")", { weight: specs[k][0], style: specs[k][1] });
+      document.fonts.add(face);
+      return face.load().catch(() => {});
+    }));
+    captionFontLoads.set(key, p);
+    return p;
+  }
+
   function applyCaptionElStyle(cap, innerEl){
     const fontSize = Math.max(10, Math.round(cap.size));
     innerEl.style.fontFamily = cap.font;
+    if (CAPTION_FONTS[cap.font]) ensureCaptionFont(cap.font).then(() => renderPreview());
     innerEl.style.fontSize = fontSize + "px";
     innerEl.style.fontWeight = cap.bold ? "700" : "400";
     innerEl.style.fontStyle = cap.italic ? "italic" : "normal";
@@ -1185,6 +1216,12 @@
     }
   }
 
+  captionFontMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    opt.style.fontFamily = opt.dataset.font;
+  });
+  captionFontTrigger.addEventListener("click", () => {
+    Object.keys(CAPTION_FONTS).forEach(css => ensureCaptionFont(css, true));
+  });
   registerDropdown(captionFontTrigger, captionFontMenu, (opt) => {
     const cap = findCaptionById(selectedCaptionId);
     captionFontTriggerLabel.textContent = opt.dataset.label;
@@ -1674,6 +1711,8 @@
       } else if (orderMode === "boomerang"){
         orderedTimes = times.concat(times.slice().reverse().slice(1));
       }
+
+      await Promise.all(captions.map(c => ensureCaptionFont(c.font)));
 
       for (let i = 0; i < orderedTimes.length; i++){
         statusEl.textContent = bcT("Extracting frame {0} of {1}...", [i + 1, orderedTimes.length]);
