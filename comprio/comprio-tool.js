@@ -107,7 +107,7 @@
   function renderStatus(){
     if (!entries.length){ status.textContent = ""; return; }
     const n = entries.length;
-    status.textContent = bcT("{0} {1} loaded", [n, n === 1 ? "video" : "videos"]);
+    status.textContent = bcT("{0} {1} loaded", [n, n === 1 ? "file" : "files"]);
   }
 
   function updateButtonState(){
