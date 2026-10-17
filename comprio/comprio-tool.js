@@ -89,7 +89,7 @@
       size.innerHTML = `${original} &gt; ${approx ? "~" : ""}${bcFormatFileSize(bytes)}<br>(-${pct}%)`;
     };
     if (entry.result && entry.result.key === settingsKey()){
-      line(entry.result.blob.size, false);
+      line(entry.result.size, false);
       return;
     }
     const p = plan(entry);
@@ -316,7 +316,7 @@
   async function compressEntry(entry){
     const p = plan(entry);
     const key = settingsKey();
-    if (entry.result && entry.result.key === key){
+    if (entry.result && entry.result.key === key && entry.result.blob){
       downloadBlob(entry.result.blob, entry.result.name);
       return true;
     }
@@ -348,7 +348,9 @@
       const ext = useAvc ? "mp4" : "webm";
       const base = entry.file.name.replace(/\.[^.]+$/, "") || "video";
       const blob = new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
-      entry.result = { key, blob, name: `${base}-compressed.${ext}` };
+      if (lastResultEntry && lastResultEntry !== entry && lastResultEntry.result) lastResultEntry.result.blob = null;
+      lastResultEntry = entry;
+      entry.result = { key, blob, size: blob.size, name: `${base}-compressed.${ext}` };
       barFill.style.width = "100%";
       downloadBlob(blob, entry.result.name);
       return true;
@@ -360,6 +362,7 @@
   }
 
   let cancelRequested = false;
+  let lastResultEntry = null;
   function requestCancel(){
     cancelRequested = true;
     if (currentEntry && currentEntry.conversion) currentEntry.conversion.cancel().catch(() => {});
