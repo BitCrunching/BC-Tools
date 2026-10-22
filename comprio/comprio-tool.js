@@ -24,9 +24,9 @@
 
   /* bits per pixel per frame — what H.264 needs to look right at each level */
   const LEVELS = {
-    low:    { bpp: .11,  audio: 160000 },
-    medium: { bpp: .065, audio: 128000 },
-    high:   { bpp: .035, audio: 96000 }
+    low:    { bpp: .11,  keep: .8,  audio: 160000 },
+    medium: { bpp: .065, keep: .55, audio: 128000 },
+    high:   { bpp: .035, keep: .35, audio: 96000 }
   };
   const MIN_VIDEO_BITRATE = 150000;
 
@@ -64,9 +64,12 @@
     const lvl = LEVELS[levelKey];
     const fps = Math.min(info.fps || 30, 60);
     let vbr = w * h * fps * lvl.bpp;
-    if (info.videoBitrate) vbr = Math.min(vbr, info.videoBitrate * .9);
+    if (info.videoBitrate){
+      const pixelRatio = Math.min(1, (w * h) / (info.width * info.height));
+      vbr = Math.min(vbr, info.videoBitrate * lvl.keep * pixelRatio);
+    }
     vbr = Math.max(MIN_VIDEO_BITRATE, Math.round(vbr));
-    const abr = info.hasAudio ? lvl.audio : 0;
+    const abr = info.hasAudio ? Math.round(Math.min(lvl.audio, info.audioBitrate || lvl.audio)) : 0;
     const bytes = Math.round((vbr + abr) * info.duration / 8);
     return { width: w, height: h, resized: w !== even(info.width) || h !== even(info.height), videoBitrate: vbr, audioBitrate: abr, bytes };
   }
@@ -201,12 +204,19 @@
         track.computePacketStats(150),
         inp.getPrimaryAudioTrack()
       ]);
+      let audioBitrate = 0;
+      if (audio){
+        try { audioBitrate = (await audio.computePacketStats(150)).averageBitrate || 0; } catch (e){}
+      }
+      const totalBitrate = duration > 0 ? file.size * 8 / duration : 0;
+      const videoBitrate = totalBitrate ? Math.max(totalBitrate - audioBitrate, totalBitrate * .5) : (stats.averageBitrate || 0);
       return {
         width: track.displayWidth,
         height: track.displayHeight,
         duration,
         fps: stats.averagePacketRate || 30,
-        videoBitrate: stats.averageBitrate || 0,
+        videoBitrate,
+        audioBitrate,
         hasAudio: !!audio
       };
     } finally {
