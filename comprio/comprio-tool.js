@@ -32,7 +32,6 @@
 
   let entries = [];
   let levelKey = "medium";
-  let targetHeight = 0;
   let running = false;
   let currentEntry = null;
 
@@ -56,6 +55,7 @@
     if (!info) return null;
     let w = info.width, h = info.height;
     const short = Math.min(w, h);
+    const targetHeight = entry.targetHeight;
     if (targetHeight && short > targetHeight){
       const k = targetHeight / short;
       w = even(w * k);
@@ -91,7 +91,7 @@
       const pct = Math.max(0, Math.round((1 - bytes / entry.file.size) * 100));
       size.innerHTML = `${original} &gt; ${approx ? "~" : ""}${bcFormatFileSize(bytes)}<br>(-${pct}%)`;
     };
-    if (entry.result && entry.result.key === settingsKey()){
+    if (entry.result && entry.result.key === settingsKey(entry)){
       line(entry.result.size, false);
       return;
     }
@@ -102,7 +102,7 @@
 
   function renderAll(){ entries.forEach(renderEntry); }
 
-  function settingsKey(){ return levelKey + "|" + targetHeight; }
+  function settingsKey(entry){ return levelKey + "|" + entry.targetHeight; }
 
   function renderStatus(){
     if (!entries.length){ status.textContent = ""; return; }
@@ -136,16 +136,12 @@
       }, 1)
     : null;
 
-  const sizeTrigger = document.getElementById("crSizeTrigger");
-  const sizeTriggerLabel = document.getElementById("crSizeTriggerLabel");
-  const sizeMenu = document.getElementById("crSizeMenu");
-  bcRegisterDropdown(sizeTrigger, sizeMenu, opt => {
-    targetHeight = parseInt(opt.dataset.height, 10) || 0;
-    sizeTriggerLabel.textContent = bcT(opt.dataset.label);
-    renderAll();
-    schedulePersist();
-  });
-  bcSetDropdownActive(sizeMenu, sizeMenu.querySelector('[data-height="0"]'));
+  const SIZE_OPTIONS = [
+    { height: 0, label: "Original size" },
+    { height: 1080, label: "1080p" },
+    { height: 720, label: "720p" },
+    { height: 480, label: "480p" }
+  ];
 
   function revealAfterDropUI(){
     afterDrop.hidden = false;
@@ -231,11 +227,20 @@
       <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div></div>
       <div class="result-name"></div>
       <div class="result-size"></div>
+      <button type="button" class="option-change-btn cr-size-btn" title="Video size">
+        <span class="option-change-btn-label"></span>
+        <span class="option-change-btn-icon" aria-hidden="true"></span>
+      </button>
     `;
     card.querySelector(".result-name").textContent = entry.file.name;
     card.querySelector(".result-name").title = entry.file.name;
     const video = card.querySelector("video");
     video.src = entry.objectUrl + "#t=0.1";
+    entry.sizeControl = bcRegisterOptionChangeBtn(card.querySelector(".cr-size-btn"), SIZE_OPTIONS, opt => {
+      entry.targetHeight = opt.height;
+      renderEntry(entry);
+      schedulePersist();
+    }, 0, (opt, btn) => { btn.querySelector(".option-change-btn-label").textContent = bcT(opt.label); });
     const rm = document.createElement("button");
     rm.type = "button";
     rm.className = "cr-file-remove-btn bc-file-remove-btn";
@@ -257,7 +262,7 @@
       return;
     }
     const added = videos.map(file => {
-      const entry = { file, objectUrl: URL.createObjectURL(file), info: null, failed: false, result: null, probing: true };
+      const entry = { file, objectUrl: URL.createObjectURL(file), info: null, failed: false, result: null, probing: true, targetHeight: 0 };
       entry.card = buildCard(entry);
       results.appendChild(entry.card);
       entries.push(entry);
@@ -325,7 +330,7 @@
 
   async function compressEntry(entry){
     const p = plan(entry);
-    const key = settingsKey();
+    const key = settingsKey(entry);
     if (entry.result && entry.result.key === key && entry.result.blob){
       downloadBlob(entry.result.blob, entry.result.name);
       return true;
@@ -437,9 +442,9 @@
     persistBusy = true;
     try {
       const files = await Promise.all(entries.map(async e => ({
-        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer()
+        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer(), targetHeight: e.targetHeight
       })));
-      await bcDbPut(CR_DB_NAME, CR_DB_STORE, { files, levelKey, targetHeight });
+      await bcDbPut(CR_DB_NAME, CR_DB_STORE, { files, levelKey });
     } catch (err){
     } finally { persistBusy = false; }
   }
@@ -457,15 +462,15 @@
           if (levelOptionChangeControl && i !== -1) levelOptionChangeControl.setIndex(i);
           levelKey = saved.levelKey;
         }
-        if (saved.targetHeight){
-          const opt = sizeMenu.querySelector(`[data-height="${saved.targetHeight}"]`);
-          if (opt){
-            targetHeight = saved.targetHeight;
-            sizeTriggerLabel.textContent = opt.dataset.label;
-            bcSetDropdownActive(sizeMenu, opt);
-          }
-        }
         addFiles(saved.files.map(f => new File([f.bytes], f.name, { type: f.type })));
+        saved.files.forEach((f, i) => {
+          const idx = SIZE_OPTIONS.findIndex(o => o.height === f.targetHeight);
+          if (entries[i] && idx > 0){
+            entries[i].targetHeight = f.targetHeight;
+            entries[i].sizeControl.setIndex(idx);
+          }
+        });
+        renderAll();
       } catch (err){
         continueBtn.hidden = false;
       }
