@@ -69,7 +69,7 @@
       vbr = Math.min(vbr, info.videoBitrate * lvl.keep * pixelRatio);
     }
     vbr = Math.max(MIN_VIDEO_BITRATE, Math.round(vbr));
-    const abr = info.hasAudio ? Math.round(Math.min(lvl.audio, info.audioBitrate || lvl.audio)) : 0;
+    const abr = info.hasAudio ? lvl.audio : 0;
     const bytes = Math.round((vbr + abr) * info.duration / 8);
     return { width: w, height: h, resized: w !== even(info.width) || h !== even(info.height), videoBitrate: vbr, audioBitrate: abr, bytes };
   }
@@ -228,7 +228,7 @@
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
-      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div><div class="cr-progress"><div class="cr-progress-bar"></div></div></div>
+      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div></div>
       <div class="result-name"></div>
       <div class="result-size"></div>
     `;
@@ -331,10 +331,6 @@
       return true;
     }
     const mb = await loadMediabunny();
-    const bar = entry.card.querySelector(".cr-progress");
-    const barFill = entry.card.querySelector(".cr-progress-bar");
-    bar.classList.add("on");
-    barFill.style.width = "0%";
     entry.card.classList.remove("cr-file-card-error");
     entry.card.removeAttribute("title");
 
@@ -353,7 +349,6 @@
       const conversion = await mb.Conversion.init({ input: inp, output, video: videoOpts, audio: audioOpts, showWarnings: false });
       entry.conversion = conversion;
       if (!conversion.isValid) throw new Error("This video can't be compressed in your browser.");
-      conversion.onProgress = pr => { barFill.style.width = Math.round(pr * 100) + "%"; };
       await conversion.execute();
       const ext = useAvc ? "mp4" : "webm";
       const base = entry.file.name.replace(/\.[^.]+$/, "") || "video";
@@ -361,13 +356,11 @@
       if (lastResultEntry && lastResultEntry !== entry && lastResultEntry.result) lastResultEntry.result.blob = null;
       lastResultEntry = entry;
       entry.result = { key, blob, size: blob.size, name: `${base}-compressed.${ext}` };
-      barFill.style.width = "100%";
       downloadBlob(blob, entry.result.name);
       return true;
     } finally {
       entry.conversion = null;
       inp.dispose();
-      setTimeout(() => bar.classList.remove("on"), 600);
     }
   }
 
