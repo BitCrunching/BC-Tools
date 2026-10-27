@@ -86,7 +86,9 @@
       return;
     }
     const dims = plan(entry);
-    meta.textContent = entry.targetHeight ? `${dims.width}×${dims.height}` : `${entry.info.width}×${entry.info.height} ${bcT("(Original)")}`;
+    meta.textContent = entry.targetHeight
+      ? `${dims.width}×${dims.height} (${scaleFraction(dims.width / entry.info.width)})`
+      : `${entry.info.width}×${entry.info.height}`;
     const canChange = entry.sizeOptions && entry.sizeOptions.length > 1;
     meta.disabled = !canChange;
     meta.title = canChange ? bcT("Click to change the video size") : "";
@@ -145,6 +147,14 @@
   function sizeOptionsFor(info){
     const short = Math.min(info.width, info.height);
     return [0, ...SIZE_STEPS.filter(h => h < short)];
+  }
+
+  function scaleFraction(k){
+    for (let q = 2; q <= 12; q++){
+      const n = Math.round(k * q);
+      if (n > 0 && n < q && Math.abs(n / q - k) < .02) return `${n}/${q}`;
+    }
+    return Math.round(k * 100) + "%";
   }
 
   function cycleSize(entry){
