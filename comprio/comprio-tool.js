@@ -85,7 +85,11 @@
         : `${bcFormatFileSize(entry.file.size)}<br>${bcT("Waiting...")}`;
       return;
     }
-    meta.textContent = `${entry.info.width}×${entry.info.height}`;
+    const dims = plan(entry);
+    meta.textContent = entry.targetHeight ? `${dims.width}×${dims.height}` : `${entry.info.width}×${entry.info.height} ${bcT("(Original)")}`;
+    const canChange = entry.sizeOptions && entry.sizeOptions.length > 1;
+    meta.disabled = !canChange;
+    meta.title = canChange ? bcT("Click to change the video size") : "";
     const original = bcFormatFileSize(entry.file.size);
     const line = (bytes, approx) => {
       const pct = Math.max(0, Math.round((1 - bytes / entry.file.size) * 100));
@@ -136,12 +140,20 @@
       }, 1)
     : null;
 
-  const SIZE_OPTIONS = [
-    { height: 0, label: "Original size" },
-    { height: 1080, label: "1080p" },
-    { height: 720, label: "720p" },
-    { height: 480, label: "480p" }
-  ];
+  const SIZE_STEPS = [1080, 720, 480];
+
+  function sizeOptionsFor(info){
+    const short = Math.min(info.width, info.height);
+    return [0, ...SIZE_STEPS.filter(h => h < short)];
+  }
+
+  function cycleSize(entry){
+    const opts = entry.sizeOptions;
+    if (!opts || opts.length < 2) return;
+    entry.targetHeight = opts[(opts.indexOf(entry.targetHeight) + 1) % opts.length];
+    renderEntry(entry);
+    schedulePersist();
+  }
 
   function revealAfterDropUI(){
     afterDrop.hidden = false;
@@ -224,23 +236,15 @@
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
-      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><div class="cr-card-meta"></div></div>
+      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><button type="button" class="cr-card-meta"></button></div>
       <div class="result-name"></div>
       <div class="result-size"></div>
-      <button type="button" class="option-change-btn cr-size-btn" title="Video size">
-        <span class="option-change-btn-label"></span>
-        <span class="option-change-btn-icon" aria-hidden="true"></span>
-      </button>
     `;
     card.querySelector(".result-name").textContent = entry.file.name;
     card.querySelector(".result-name").title = entry.file.name;
     const video = card.querySelector("video");
     video.src = entry.objectUrl + "#t=0.1";
-    entry.sizeControl = bcRegisterOptionChangeBtn(card.querySelector(".cr-size-btn"), SIZE_OPTIONS, opt => {
-      entry.targetHeight = opt.height;
-      renderEntry(entry);
-      schedulePersist();
-    }, 0, (opt, btn) => { btn.querySelector(".option-change-btn-label").textContent = bcT(opt.label); });
+    card.querySelector(".cr-card-meta").addEventListener("click", () => cycleSize(entry));
     const rm = document.createElement("button");
     rm.type = "button";
     rm.className = "cr-file-remove-btn bc-file-remove-btn";
@@ -279,6 +283,8 @@
     await runWithConcurrencyLimit(added, PROBE_CONCURRENCY, async entry => {
       try {
         entry.info = await probe(entry.file);
+        entry.sizeOptions = sizeOptionsFor(entry.info);
+        if (!entry.sizeOptions.includes(entry.targetHeight)) entry.targetHeight = 0;
       } catch (err){
         console.error(err);
         entry.failed = true;
@@ -463,14 +469,7 @@
           levelKey = saved.levelKey;
         }
         addFiles(saved.files.map(f => new File([f.bytes], f.name, { type: f.type })));
-        saved.files.forEach((f, i) => {
-          const idx = SIZE_OPTIONS.findIndex(o => o.height === f.targetHeight);
-          if (entries[i] && idx > 0){
-            entries[i].targetHeight = f.targetHeight;
-            entries[i].sizeControl.setIndex(idx);
-          }
-        });
-        renderAll();
+        saved.files.forEach((f, i) => { if (entries[i] && f.targetHeight) entries[i].targetHeight = f.targetHeight; });
       } catch (err){
         continueBtn.hidden = false;
       }
