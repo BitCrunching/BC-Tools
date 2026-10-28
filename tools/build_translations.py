@@ -39,6 +39,7 @@ PAGES = [
     "coudio/index.html",
     "codify/index.html",
     "colorfy/index.html",
+    "comprio/index.html",
     "faq/index.html",
     "golden-rules/index.html",
     "about/index.html",
