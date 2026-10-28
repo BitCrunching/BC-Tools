@@ -129,16 +129,16 @@
     meta.disabled = !canChange;
     meta.title = canChange ? bcT("Click to change the video size") : "";
     const original = bcFormatFileSize(entry.file.size);
-    const line = (bytes, approx) => {
+    const line = bytes => {
       const pct = Math.max(0, Math.round((1 - bytes / entry.file.size) * 100));
-      size.innerHTML = `${original} &gt; ${approx ? "~" : ""}${bcFormatFileSize(bytes)}<br>(-${pct}%)`;
+      size.innerHTML = `${original} &gt; ${bcFormatFileSize(bytes)}<br>(-${pct}%)`;
     };
     if (entry.result && entry.result.key === settingsKey(entry)){
-      line(entry.result.size, false);
+      line(entry.result.size);
       return;
     }
     const p = plan(entry);
-    if (p) line(Math.min(p.bytes, entry.file.size), true);
+    if (p) line(Math.min(p.bytes, entry.file.size));
     else size.textContent = original;
   }
 
