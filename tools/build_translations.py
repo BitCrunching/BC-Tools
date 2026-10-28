@@ -39,6 +39,7 @@ PAGES = [
     "coudio/index.html",
     "codify/index.html",
     "colorfy/index.html",
+    "comprio/index.html",
     "faq/index.html",
     "golden-rules/index.html",
     "about/index.html",
@@ -176,7 +177,7 @@ def build_page(rel, tr, lang, built_pages, missing):
     result = re.sub(r'[ \t]*<link rel="alternate" hreflang="[^"]*" href="[^"]*">\n?', "", result)
 
     # <head> additions: alternate links + the language dictionary for bcT()
-    alternates = alternate_block(rel) + f'<script src="/shared/i18n/{lang}.js?v=6"></script>\n'
+    alternates = alternate_block(rel) + f'<script src="/shared/i18n/{lang}.js?v=7"></script>\n'
     result = re.sub(r"(<link rel=\"canonical\"[^>]*>\s*)", lambda mm: mm.group(1) + alternates, result, count=1)
     if alternates not in result:  # no canonical tag on the page
         result = result.replace("</head>", alternates + "</head>", 1)
