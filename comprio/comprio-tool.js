@@ -17,7 +17,7 @@
 
   bcSetupHelpBanner("comprio", "cr", [
     ["WELCOME_TO_COMPRESSION", "Comprio shrinks your videos' file size — MP4, MOV, WebM and more, entirely in your browser. Click, drop, or press (A) to add a video to get started."],
-    ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows an estimate of the resulting file size before you commit. Optionally scale the video down to 1080p, 720p or 480p for an even smaller file."],
+    ["PICK_A_LEVEL", "Choose Low, Medium, or High — each shows an estimate of the resulting file size before you commit. Optionally click the size shown on a video's preview to scale it down to a smaller size for an even smaller file."],
     ["CHECK_BEFORE_COMPRESSING", "Your videos show up below once picked — check them before compressing, and remove any you don't need."],
     ["YOU_ARE_SET", "Hit the Download button (D) and each video is compressed and saved as an MP4. Keep this tab open while it works — a long video takes a while. Close this with the red dot and we won't show it again."]
   ]);
@@ -61,6 +61,7 @@
       w = even(w * k);
       h = even(h * k);
     }
+    const resized = w !== info.width || h !== info.height;
     const lvl = LEVELS[levelKey];
     const fps = Math.min(info.fps || 30, 60);
     let vbr = w * h * fps * lvl.bpp;
@@ -71,7 +72,28 @@
     vbr = Math.max(MIN_VIDEO_BITRATE, Math.round(vbr));
     const abr = info.hasAudio ? lvl.audio : 0;
     const bytes = Math.round((vbr + abr) * info.duration / 8);
-    return { width: w, height: h, resized: w !== even(info.width) || h !== even(info.height), videoBitrate: vbr, audioBitrate: abr, bytes };
+    return { width: w, height: h, resized, videoBitrate: vbr, audioBitrate: abr, bytes };
+  }
+
+  const LOW_BPP = .1;
+  function isLowBitrate(info){
+    return info.videoBitrate > 0 && info.videoBitrate / (info.width * info.height * Math.min(info.fps || 30, 60)) < LOW_BPP;
+  }
+
+  function webmReason(entry){
+    if (!entry.noMp4 || entry.targetHeight) return null;
+    const { width, height } = entry.info;
+    if (Math.max(width, height) >= 7000) return [bcT("This is an 8K video."), bcT("Browsers can't save 8K as MP4, so it will be saved as a WebM file. Choose a smaller size for MP4.")];
+    if (width % 2 || height % 2) return [bcT("This video has an odd size ({0}×{1}).", [width, height]), bcT("MP4 can't keep that in your browser, so it will be saved as a WebM file at the exact same size. Choose a smaller size for MP4.")];
+    return null;
+  }
+
+  function entryNotes(entry){
+    const notes = [];
+    const webm = webmReason(entry);
+    if (webm) notes.push(webm);
+    if (isLowBitrate(entry.info)) notes.push([bcT("Already low bitrate:"), bcT("this video is already compressed tightly, so the real result can come out larger than estimated and save less.")]);
+    return notes;
   }
 
   function renderEntry(entry){
@@ -86,6 +108,20 @@
       return;
     }
     const dims = plan(entry);
+    const infoBtn = card.querySelector(".cr-info-btn");
+    const notes = entryNotes(entry);
+    infoBtn.hidden = !notes.length;
+    const tip = card.querySelector(".cr-info-tooltip");
+    tip.innerHTML = "";
+    notes.forEach(([head, body]) => {
+      const p = document.createElement("p");
+      const b = document.createElement("strong");
+      b.textContent = head;
+      p.append(b, " " + body);
+      tip.appendChild(p);
+    });
+    infoBtn.setAttribute("aria-label", notes.map(n => n.join(" ")).join(" "));
+    if (!notes.length){ tip.hidden = true; infoBtn.setAttribute("aria-expanded", "false"); }
     meta.textContent = entry.targetHeight
       ? `${dims.width}×${dims.height}`
       : `${entry.info.width}×${entry.info.height}*`;
@@ -238,7 +274,8 @@
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
-      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><button type="button" class="cr-card-meta"></button></div>
+      <div class="cr-thumb"><video muted playsinline preload="metadata"></video><button type="button" class="cr-card-meta"></button><button type="button" class="bc-info-btn cr-info-btn" aria-expanded="false" hidden>i</button></div>
+      <div class="bc-info-tooltip cr-info-tooltip" hidden></div>
       <div class="result-name"></div>
       <div class="result-size"></div>
     `;
@@ -247,6 +284,7 @@
     const video = card.querySelector("video");
     video.src = entry.objectUrl + "#t=0.1";
     card.querySelector(".cr-card-meta").addEventListener("click", () => cycleSize(entry));
+    bcRegisterInfoTooltip(card.querySelector(".cr-info-btn"), card.querySelector(".cr-info-tooltip"));
     const rm = document.createElement("button");
     rm.type = "button";
     rm.className = "cr-file-remove-btn bc-file-remove-btn";
@@ -286,6 +324,11 @@
       try {
         entry.info = await probe(entry.file);
         entry.sizeOptions = sizeOptionsFor(entry.info);
+        try {
+          const mb = await loadMediabunny();
+          const p0 = plan(entry);
+          entry.noMp4 = !(await mb.canEncodeVideo("avc", { width: p0.width, height: p0.height, bitrate: p0.videoBitrate }));
+        } catch (e){}
         if (!entry.sizeOptions.includes(entry.targetHeight)) entry.targetHeight = 0;
       } catch (err){
         console.error(err);
