@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "Křížek",
  "Custom hex color": "Vlastní barva (hex)",
  "DEV_TOOLS_COOKIES:": "DEV_TOOLS_COOKIES:",
+ "Dark mode only during Halloween": "Během Halloweenu pouze tmavý režim",
  "Dark mode set": "Tmavý režim zapnut",
  "Date metadata found!": "Nalezena časová metadata!",
  "Debounce": "Debounce",

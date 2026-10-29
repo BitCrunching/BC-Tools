@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "엑스 표시",
  "Custom hex color": "사용자 지정 HEX 색",
  "DEV_TOOLS_COOKIES:": "개발_도구_쿠키:",
+ "Dark mode only during Halloween": "할로윈 기간에는 다크 모드만 사용할 수 있어요",
  "Dark mode set": "다크 모드로 설정됨",
  "Date metadata found!": "날짜 메타데이터가 발견되었습니다!",
  "Debounce": "Debounce",

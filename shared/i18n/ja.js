@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "バツ印",
  "Custom hex color": "カスタムHEXカラー",
  "DEV_TOOLS_COOKIES:": "開発ツール_COOKIE：",
+ "Dark mode only during Halloween": "ハロウィーン期間中はダークモードのみ",
  "Dark mode set": "ダークモードを設定しました",
  "Date metadata found!": "日付のメタデータが見つかりました！",
  "Debounce": "デバウンス",
