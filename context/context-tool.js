@@ -14,10 +14,12 @@
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
     ["WELCOME_TO_CONTEXT", "Context lets you type text, sign, or drop shapes anywhere on a PDF, no account or upload required. Click, drop, or press (A) to add a PDF to get started."],
-    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to pick a circle, square, triangle, or cross."],
-    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — drag a box's handles to move or resize it, and use its red × to remove it."],
+    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to place a shape. Hover over the shape button for a moment to pick a circle, square, triangle, cross, checkmark, or crossmark."],
+    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
+    ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
-    ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — everything stays exactly where you placed it."],
+    ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
+    ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
   ]);
 
