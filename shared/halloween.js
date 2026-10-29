@@ -46,7 +46,7 @@
     countdown.setAttribute("aria-hidden", "true");
     countdown.innerHTML = '<span class="hw-cd-prompt">&gt;</span> <span class="hw-cd-long"></span><span class="hw-cd-time"></span><span class="hw-cd-cursor">_</span>';
     nav.appendChild(countdown);
-    const label = (window.BC_I18N && window.BC_I18N["Halloween ends in"]) || "Halloween ends in";
+    const label = (window.BC_I18N && window.BC_I18N["Halloween event ends in"]) || "Halloween event ends in";
     countdown.querySelector(".hw-cd-long").textContent = label + " ";
     const END = new Date(2026, 10, 3).getTime();
     const pad = n => String(n).padStart(2, "0");
