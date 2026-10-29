@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "Kreuz",
  "Custom hex color": "Eigene Hex-Farbe",
  "DEV_TOOLS_COOKIES:": "DEV_TOOLS_COOKIES:",
+ "Dark mode only during Halloween": "Während Halloween nur Dunkelmodus",
  "Dark mode set": "Dunkler Modus aktiviert",
  "Date metadata found!": "Datums-Metadaten gefunden!",
  "Debounce": "Debounce",

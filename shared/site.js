@@ -812,7 +812,7 @@ function showNavTerminal(text){
 
   themeBtns.forEach(themeBtn => {
     themeBtn.disabled = true;
-    themeBtn.title = "Dark mode only during Halloween";
+    themeBtn.title = bcT("Dark mode only during Halloween");
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";

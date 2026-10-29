@@ -92,7 +92,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/">
-<script src="/shared/i18n/cs.js?v=7"></script>
+<script src="/shared/i18n/cs.js?v=8"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="BC Tools - NEW STANDARD">
@@ -144,6 +144,7 @@
      duplicating the block inline, since this page otherwise keeps all
      its own CSS inline and doesn't load the rest of shared/site.css. -->
 <link rel="stylesheet" href="/shared/icons.css?v=13">
+<link rel="stylesheet" href="/shared/halloween.css?v=45">
 <link rel="stylesheet" href="/shared/nav.css?v=1">
 <!-- Same reasoning, same pattern: the 4 category texture recipes
      (image/video/sound/code) live in shared/textures.css so a tool's
@@ -3404,9 +3405,11 @@ if (VALID_PAGES.includes(startPage)) {
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  applyTheme(saved === "dark" ? "dark" : "light");
+  applyTheme("dark");
 
   if (themeBtn){
+    themeBtn.disabled = true;
+    themeBtn.title = (window.BC_I18N && window.BC_I18N["Dark mode only during Halloween"]) || "Dark mode only during Halloween";
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
@@ -3639,5 +3642,6 @@ if (VALID_PAGES.includes(startPage)) {
 
 </div>
 <script src="/shared/report.js?v=31" defer></script>
+<script src="/shared/halloween.js?v=19" defer></script>
 </body>
 </html>
