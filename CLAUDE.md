@@ -1269,7 +1269,7 @@ The dev server sends no `Cache-Control` header, so `<script src>` /
 **Every time you edit the *content* of `shared/site.css`, `shared/site.js`,
 or any `<tool>/<tool>-tool.js`, bump its `?v=N` query param by 1** — on every
 page that references it. For `shared/site.css`/`shared/site.js` that's all
-~31 pages (`grep -rl "shared/site.css?v=1N"` → sed-replace).
+~31 pages (`grep -rl "shared/site.css?v=N"` → sed-replace).
 
 **For a tool's own `-tool.js`, check for static SEO route siblings first —
 don't assume it's just that tool's `index.html`.** Convert has 16 of these
@@ -1289,7 +1289,7 @@ bump alone makes them current.
 own `?v=N` on the `@import url(...)` line itself, not just on
 `shared/site.css`'s own `<link>`.** A browser caches each sub-resource an
 `@import` pulls in by *its own* URL, independent of the parent
-stylesheet's — bumping `shared/site.css?v=1N` forces a fresh fetch of
+stylesheet's — bumping `shared/site.css?v=N` forces a fresh fetch of
 `site.css` itself, but if the `@import url("icons.css")` line inside it
 has no version param, a page that already had `icons.css` cached from an
 earlier visit keeps rendering the old icon set even after `site.css`'s
