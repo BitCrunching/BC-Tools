@@ -1,5 +1,6 @@
 /* Halloween skin — temporary. Remove with halloween.css; the loader line sits at the top of shared/site.js. */
 (function(){
+  if (!document.documentElement.classList.contains("hw")) return;
   const SPIDER = '<svg viewBox="0 0 24 24" aria-hidden="true"><g class="hw-legs hw-legs-a" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 8.3 L6.1 6.1 L10.7 1.6M9.8 10.3 L4.7 11.5 L3 17.6M14.4 8.8 L19.8 7.9 L21.7 1.8M13.7 11.2 L17.9 15.5 L15.4 22.3"/></g><g class="hw-legs hw-legs-b" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 8.8 L4.2 7.9 L2.3 1.8M10.3 11.2 L6.1 15.5 L8.6 22.3M14.4 8.3 L17.9 6.1 L13.3 1.6M14.2 10.3 L19.3 11.5 L21 17.6"/></g><circle cx="12.2" cy="13.5" r="3.7" fill="currentColor"/><circle cx="12.1" cy="8.1" r="2.9" fill="currentColor"/><path d="M11.4 5.6Q11 4.9 11.3 4.4M12.9 5.6Q13.3 4.9 13 4.4" fill="none" stroke="currentColor" stroke-width=".6" stroke-linecap="round"/></svg>';
 
   function spider(cls){

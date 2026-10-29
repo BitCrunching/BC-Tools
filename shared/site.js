@@ -781,7 +781,7 @@ function showNavTerminal(text){
 }
 
 /* Halloween skin loader — remove with shared/halloween.*. */
-(function(){ const s = document.createElement("script"); s.src = "/shared/halloween.js?v=19"; document.head.appendChild(s); })();
+(function(){ if (!document.documentElement.classList.contains("hw")) return; const s = document.createElement("script"); s.src = "/shared/halloween.js?v=20"; document.head.appendChild(s); })();
 
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){
@@ -808,11 +808,14 @@ function showNavTerminal(text){
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  applyTheme("dark");
+  const hw = root.classList.contains("hw");
+  applyTheme(hw || saved === "dark" ? "dark" : "light");
 
   themeBtns.forEach(themeBtn => {
-    themeBtn.disabled = true;
-    themeBtn.title = bcT("Dark mode only during Halloween");
+    if (hw){
+      themeBtn.disabled = true;
+      themeBtn.title = bcT("Dark mode only during Halloween");
+    }
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";

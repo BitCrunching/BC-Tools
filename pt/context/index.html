@@ -13,10 +13,12 @@
      light/dark default logic if that ever changes. -->
 <script>
 (function(){
+  var hw = !/[?&]hw=off\b/.test(location.search) && (/[?&]hw=on\b/.test(location.search) || Date.now() < new Date(2026, 10, 3).getTime());
+  if (hw) document.documentElement.classList.add("hw");
   try {
     var t = localStorage.getItem("bc-theme");
-    document.documentElement.setAttribute("data-theme", "dark");
-  } catch(e){}
+    document.documentElement.setAttribute("data-theme", hw || t === "dark" ? "dark" : "light");
+  } catch(e){ if (hw) document.documentElement.setAttribute("data-theme", "dark"); }
   /* Moved up from shared/site.js (deferred, so it only ran after full
      HTML parsing) — set here instead so the browser's own native scroll
      restoration is disabled from the very first possible moment, not
@@ -76,7 +78,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=294">
+<link rel="stylesheet" href="/shared/site.css?v=295">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -2115,7 +2117,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=119" defer></script>
+<script src="/shared/site.js?v=120" defer></script>
 <script src="/shared/report.js?v=31" defer></script>
 <script src="/context/context-tool.js?v=111" defer></script>
 </body>

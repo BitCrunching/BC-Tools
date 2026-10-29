@@ -58,8 +58,8 @@
       inline `<style>` (both need it — the SPA doesn't load
       shared/site.css).
    6. Bump shared/site.js's and shared/site.css's own `?v=`, and every
-      page's `<script src=".../shared/site.js?v=N">` /
-      `<link href=".../shared/site.css?v=N">` reference to match (see
+      page's `<script src=".../shared/site.js?v=1N">` /
+      `<link href=".../shared/site.css?v=1N">` reference to match (see
       CLAUDE.md's cache-busting rule) — both changed, so all ~32 pages
       that reference them need the bump.
    7. Delete this file once steps 1-6 are done and confirmed working
