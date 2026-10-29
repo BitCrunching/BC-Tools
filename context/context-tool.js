@@ -55,7 +55,6 @@
   const fontMenu = document.getElementById("ctFontMenu");
   const shapeKindMenu = document.getElementById("ctShapeKindMenu");
   const pageNav = document.getElementById("ctPageNav");
-  const pageNavDesktopSlot = document.getElementById("ctPageNavDesktopSlot");
   const prevPageBtn = document.getElementById("ctPrevPage");
   const nextPageBtn = document.getElementById("ctNextPage");
   const pageLabel = document.getElementById("ctPageLabel");
@@ -90,6 +89,9 @@
   let pageCount = 1;
   let currentPage = 1;
   let currentRenderTask = null;
+  let renderGen = 0;
+  let pageCache = new Map();
+  let prefetchTimer = null;
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
@@ -124,6 +126,13 @@
   let shapeBoxes = [];
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
+  let selectedSigId = null;
+  const HISTORY_MAX = 100;
+  let undoStack = [];
+  let redoStack = [];
+  let historyCurrent = null;
+  let historyTimer = null;
+  let applyingHistory = false;
   let activeShapeKind = "triangle";
   let currentFileBytes = null;
 
@@ -203,6 +212,7 @@
 
   let persistTimer = null;
   function schedulePersist(){
+    noteHistory();
     scheduleSizeUpdate();
     if (!currentFileBytes) return;
     clearTimeout(persistTimer);
@@ -279,6 +289,7 @@
     boxIdSeq = restoreState ? (restoreState.boxIdSeq || 0) : 0;
     sigBoxIdSeq = restoreState ? (restoreState.sigBoxIdSeq || 0) : 0;
     shapeBoxIdSeq = restoreState ? (restoreState.shapeBoxIdSeq || 0) : 0;
+    resetHistory();
 
     /* Reading/parsing a large PDF blocks the main thread hard enough
        that the browser can skip painting the status text above unless
@@ -299,6 +310,7 @@
       status.textContent = bcT("Couldn't read that PDF — it may be corrupted or password-protected.");
       return;
     }
+    clearPageCache();
     pdfjsDoc = doc;
     pageCount = pdfjsDoc.numPages;
     currentPage = restoreState ? Math.min(Math.max(1, restoreState.currentPage || 1), pageCount) : 1;
@@ -325,6 +337,87 @@
        "too long, hard to manipulate" complaint this replaces. */
     if (mobileMql.matches) await openFullscreen();
     persistNow();
+  }
+
+  const PAGE_CACHE_MAX = 5;
+
+  function pageCacheKey(pageNum, w, h){
+    return pageNum + "|" + w + "x" + h;
+  }
+
+  function clearPageCache(){
+    clearTimeout(prefetchTimer);
+    pageCache.forEach(e => { if (e.task) e.task.cancel(); });
+    pageCache.clear();
+  }
+
+  function cancelStalePrefetches(keepPage){
+    pageCache.forEach((e, k) => {
+      if (e.pending && e.pageNum !== keepPage){
+        if (e.task) e.task.cancel();
+        pageCache.delete(k);
+      }
+    });
+  }
+
+  function evictFarPages(){
+    while (pageCache.size > PAGE_CACHE_MAX){
+      let farKey = null, farDist = -1;
+      pageCache.forEach((e, k) => {
+        const d = Math.abs(e.pageNum - currentPage);
+        if (d > farDist){ farDist = d; farKey = k; }
+      });
+      const e = pageCache.get(farKey);
+      if (e && e.task) e.task.cancel();
+      pageCache.delete(farKey);
+    }
+  }
+
+  function dropOtherSizes(w, h){
+    pageCache.forEach((e, k) => {
+      if (e.w !== w || e.h !== h){
+        if (e.task) e.task.cancel();
+        pageCache.delete(k);
+      }
+    });
+  }
+
+  function rememberRaster(key, source){
+    dropOtherSizes(source.width, source.height);
+    const copy = document.createElement("canvas");
+    copy.width = source.width;
+    copy.height = source.height;
+    copy.getContext("2d").drawImage(source, 0, 0);
+    pageCache.set(key, { pageNum: currentPage, w: source.width, h: source.height, canvas: copy, promise: Promise.resolve(), pending: false });
+    evictFarPages();
+  }
+
+  function schedulePrefetch(renderViewport){
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(() => {
+      const doc = pdfjsDoc;
+      [currentPage + 1, currentPage - 1].forEach(n => {
+        if (!doc || n < 1 || n > pageCount) return;
+        const w = canvas.width, h = canvas.height;
+        const key = pageCacheKey(n, w, h);
+        if (pageCache.has(key)) return;
+        const entry = { pageNum: n, w, h, canvas: document.createElement("canvas"), pending: true, task: null, promise: null };
+        entry.canvas.width = w;
+        entry.canvas.height = h;
+        pageCache.set(key, entry);
+        entry.promise = (async () => {
+          const pg = await doc.getPage(n);
+          if (!pageCache.has(key)) return;
+          const vp = pg.getViewport({ scale: renderViewport.scale });
+          entry.task = pg.render({ canvasContext: entry.canvas.getContext("2d"), viewport: vp });
+          await entry.task.promise;
+          entry.pending = false;
+          entry.task = null;
+        })();
+        entry.promise.catch(() => { pageCache.delete(key); });
+        evictFarPages();
+      });
+    }, 150);
   }
 
   async function renderPage(){
@@ -408,15 +501,34 @@
     overlay.style.width = viewport.width + "px";
     overlay.style.height = viewport.height + "px";
 
-    const renderTask = page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport });
-    currentRenderTask = renderTask;
-    try {
-      await renderTask.promise;
-    } catch (err){
-      if (err && err.name === "RenderingCancelledException") return;
-      throw err;
+    const gen = ++renderGen;
+    const cacheKey = pageCacheKey(currentPage, canvas.width, canvas.height);
+    cancelStalePrefetches(currentPage);
+    const cached = pageCache.get(cacheKey);
+    let drawn = false;
+    if (cached){
+      try {
+        await cached.promise;
+        if (gen !== renderGen) return;
+        canvas.getContext("2d").drawImage(cached.canvas, 0, 0);
+        drawn = true;
+      } catch (err){
+        pageCache.delete(cacheKey);
+      }
     }
-    if (currentRenderTask === renderTask) currentRenderTask = null;
+    if (!drawn){
+      const renderTask = page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport });
+      currentRenderTask = renderTask;
+      try {
+        await renderTask.promise;
+      } catch (err){
+        if (err && err.name === "RenderingCancelledException") return;
+        throw err;
+      }
+      if (currentRenderTask === renderTask) currentRenderTask = null;
+      if (gen === renderGen) rememberRaster(cacheKey, canvas);
+    }
+    if (gen === renderGen) schedulePrefetch(renderViewport);
 
     pageLabel.textContent = currentPage + " / " + pageCount;
     prevPageBtn.disabled = currentPage <= 1;
@@ -658,6 +770,7 @@
   function buildBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-text-box";
+    if (box.id === selectedBoxId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -701,6 +814,7 @@
       e.stopPropagation();
       textBoxes = textBoxes.filter(b => b.id !== box.id);
       if (selectedBoxId === box.id) selectedBoxId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
@@ -791,6 +905,7 @@
   }
 
   function deselectSignatureBox(){
+    selectedSigId = null;
     overlay.querySelectorAll(".context-signature-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
@@ -801,6 +916,7 @@
   function buildSignatureBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-signature-box";
+    if (box.id === selectedSigId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -812,11 +928,6 @@
     img.alt = bcT("Signature");
     el.appendChild(img);
 
-    const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle bc-obj-drag-handle";
-    handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
-    el.appendChild(handle);
-
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "context-text-remove bc-obj-remove-btn";
@@ -824,6 +935,8 @@
     removeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       signatureBoxes = signatureBoxes.filter(b => b.id !== box.id);
+      if (selectedSigId === box.id) selectedSigId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
@@ -837,8 +950,13 @@
 
     function startDrag(handleEl, onMove){
       handleEl.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e.button !== 0) return;
+        if (handleEl === el){
+          if (e.target.closest(".bc-obj-remove-btn, .bc-obj-resize-handle")) return;
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
         const startX = e.clientX;
         const startY = e.clientY;
@@ -862,10 +980,11 @@
       deselectBox();
       deselectSignatureBox();
       deselectShapeBox();
+      selectedSigId = box.id;
       el.classList.add("selected");
     });
 
-    startDrag(handle, (dx, dy, start) => {
+    startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
       /* Same workspace-panel clamp as text boxes — see the comment on
          getDragBoundsPt(). */
@@ -944,7 +1063,7 @@
   function renderShapeBtnIcon(){
     shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
     const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
-    shapeBtn.title = bcT("Add shape (H) — {0}", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
+    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -976,20 +1095,22 @@
      but a signature is never recolored/re-kinded the way a shape is, so
      folding them into one function would mean branching on "is this a
      shape" throughout rather than two straightforward reads. */
+  function applyShapeRotation(el, deg){
+    el.style.transform = deg ? "rotate(" + deg + "deg)" : "";
+    el.style.setProperty("--ct-rot", deg + "deg");
+  }
+
   function buildShapeBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-shape-box";
+    if (box.id === selectedShapeId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
     el.style.width = (box.widthPt * scale) + "px";
     el.style.height = (box.heightPt * scale) + "px";
+    applyShapeRotation(el, box.rotation || 0);
     el.innerHTML = shapeSvg(box.kind, box.color, box.bold);
-
-    const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle bc-obj-drag-handle";
-    handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
-    el.appendChild(handle);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -999,18 +1120,24 @@
       e.stopPropagation();
       shapeBoxes = shapeBoxes.filter(b => b.id !== box.id);
       if (selectedShapeId === box.id) selectedShapeId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
 
     function startDrag(handleEl, onMove){
       handleEl.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e.button !== 0) return;
+        if (handleEl === el){
+          if (e.target.closest(".bc-obj-remove-btn, .bc-obj-resize-handle")) return;
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
         const startX = e.clientX;
         const startY = e.clientY;
-        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
+        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt, clientX: startX, clientY: startY, rotation: box.rotation || 0 };
         function onPointerMove(ev){
           onMove(ev.clientX - startX, ev.clientY - startY, start, ev.shiftKey);
         }
@@ -1048,7 +1175,7 @@
       });
     });
 
-    startDrag(handle, (dx, dy, start) => {
+    startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
       const bounds = getDragBoundsPt(zoom, el);
       box.xPt = bounds.maxXPt < bounds.minXPt
@@ -1068,9 +1195,12 @@
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);
 
-    startDrag(resizeHandle, (dx, dy, start, shiftKey) => {
+    startDrag(resizeHandle, (screenDx, screenDy, start, shiftKey) => {
       const zoom = isFullscreen ? fsZoom : 1;
-      const minPt = isMarkKind(box.kind) ? 8 : 20;
+      const turn = (box.rotation || 0) * Math.PI / 180;
+      const dx = screenDx * Math.cos(turn) + screenDy * Math.sin(turn);
+      const dy = -screenDx * Math.sin(turn) + screenDy * Math.cos(turn);
+      const minPt = isMarkKind(box.kind) ? 4 : 10;
       if (shiftKey){
         const ratio = start.widthPt / start.heightPt;
         const growth = (dx + dy) / 2 / zoom / scale;
@@ -1084,8 +1214,71 @@
       el.style.height = (box.heightPt * scale) + "px";
     });
 
+    const rotateHandle = document.createElement("span");
+    rotateHandle.className = "context-shape-rotate-handle bc-obj-drag-handle";
+    rotateHandle.setAttribute("aria-hidden", "true");
+    rotateHandle.setAttribute("title", bcT("Drag to rotate — hold Shift to snap to 15°"));
+    rotateHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 1 0 18.4 16"/><path d="M20 4v7h-7"/></svg>';
+    el.appendChild(rotateHandle);
+
+    startDrag(rotateHandle, (dx, dy, start, shiftKey) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const a0 = Math.atan2(start.clientY - cy, start.clientX - cx);
+      const a1 = Math.atan2(start.clientY + dy - cy, start.clientX + dx - cx);
+      let deg = start.rotation + (a1 - a0) * 180 / Math.PI;
+      deg = ((deg % 360) + 360) % 360;
+      if (shiftKey) deg = (Math.round(deg / 15) * 15) % 360;
+      box.rotation = Math.round(deg * 10) / 10;
+      applyShapeRotation(el, box.rotation);
+    });
+
     return el;
   }
+
+  const BURST_COUNT = 5;
+  const BURST_WINDOW_MS = 600;
+  const burstOverlay = document.getElementById("ctBurstOverlay");
+  let recentCreated = [];
+  let createdOrder = [];
+
+  function selectLastCreated(){
+    const exists = { text: textBoxes, shape: shapeBoxes, sig: signatureBoxes };
+    for (let i = createdOrder.length - 1; i >= 0; i--){
+      const { type, id } = createdOrder[i];
+      if (!exists[type].some(b => b.id === id)) continue;
+      if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
+      if (type === "text") selectedBoxId = id;
+      else if (type === "shape") selectedShapeId = id;
+      else selectedSigId = id;
+      return;
+    }
+  }
+
+  function noteCreated(type, id){
+    createdOrder.push({ type, id });
+    const now = performance.now();
+    recentCreated.push({ type, id, at: now });
+    recentCreated = recentCreated.filter(c => now - c.at <= BURST_WINDOW_MS);
+    if (recentCreated.length >= BURST_COUNT) burstOverlay.hidden = false;
+  }
+
+  document.getElementById("ctBurstKeep").addEventListener("click", () => {
+    burstOverlay.hidden = true;
+    recentCreated = [];
+  });
+  document.getElementById("ctBurstUndo").addEventListener("click", () => {
+    const gone = (type) => new Set(recentCreated.filter(c => c.type === type).map(c => c.id));
+    const t = gone("text"), sh = gone("shape"), sg = gone("sig");
+    textBoxes = textBoxes.filter(b => !t.has(b.id));
+    shapeBoxes = shapeBoxes.filter(b => !sh.has(b.id));
+    signatureBoxes = signatureBoxes.filter(b => !sg.has(b.id));
+    selectedBoxId = selectedShapeId = selectedSigId = null;
+    recentCreated = [];
+    burstOverlay.hidden = true;
+    renderTextBoxes();
+  });
 
   function addShapeBox(){
     /* The two form marks land small, sized for ticking a checkbox. */
@@ -1104,7 +1297,12 @@
       bold: mark && activeBold
     };
     shapeBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = box.id;
     renderTextBoxes();
+    noteCreated("shape", box.id);
   }
 
   function dataUrlToBytes(dataUrl){
@@ -1212,7 +1410,12 @@
       dataUrl
     };
     signatureBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedSigId = box.id;
     renderTextBoxes();
+    noteCreated("sig", box.id);
   }
 
   function addTextBox(){
@@ -1231,7 +1434,11 @@
       text: "Lorem Ipsum"
     };
     textBoxes.push(box);
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedBoxId = box.id;
     renderTextBoxes();
+    noteCreated("text", box.id);
     const el = overlay.lastChild;
     const inner = el && el.querySelector(".context-text-inner");
     if (inner){
@@ -1283,11 +1490,79 @@
   renderShapeBtnIcon();
   bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
 
-  /* "H" is now the dropdown's own trigger, not an immediate-add button —
-     clicking it just opens the Circle/Square/Triangle/Cross menu
-     (shared bcRegisterDropdown, CLAUDE.md's "pick one of several" rule),
-     and picking a kind is what actually places the shape. Re-kinds the
-     currently selected shape in place instead, if there is one. */
+  /* A tap adds the preselected shape; holding the button for 250 ms opens
+     the Circle/Square/Triangle/... menu instead, and picking a kind there
+     places it (or re-kinds the currently selected shape in place). The
+     click listener goes first so stopImmediatePropagation keeps
+     bcRegisterDropdown's own click-toggles-the-menu handler off this
+     trigger — it's only used here for the menu's option handling. */
+  const SHAPE_HOVER_MS = 100;
+  const SHAPE_LEAVE_MS = 200;
+  const SHAPE_HOLD_MS = 250;
+  const shapeDropdown = document.getElementById("ctShapeKindDropdown");
+  const shapeArrow = document.getElementById("ctShapeArrow");
+  let shapeHoverTimer = null;
+  let shapeLeaveTimer = null;
+  let shapeHoldTimer = null;
+  let shapeHoldFired = false;
+  function openShapeMenu(){
+    bcCloseAllPopups();
+    shapeKindMenu.hidden = false;
+    shapeBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeShapeHover(){
+    clearTimeout(shapeHoverTimer);
+    shapeArrow.classList.remove("shown");
+    shapeKindMenu.hidden = true;
+    shapeBtn.setAttribute("aria-expanded", "false");
+  }
+  shapeBtn.addEventListener("pointerenter", e => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(shapeLeaveTimer);
+    clearTimeout(shapeHoverTimer);
+    shapeHoverTimer = setTimeout(() => shapeArrow.classList.add("shown"), SHAPE_HOVER_MS);
+  });
+  shapeDropdown.addEventListener("pointerleave", e => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(shapeHoverTimer);
+    clearTimeout(shapeLeaveTimer);
+    shapeLeaveTimer = setTimeout(closeShapeHover, SHAPE_LEAVE_MS);
+  });
+  shapeArrow.addEventListener("pointerenter", () => {
+    clearTimeout(shapeLeaveTimer);
+    openShapeMenu();
+  });
+  shapeArrow.addEventListener("click", openShapeMenu);
+  shapeKindMenu.addEventListener("pointerenter", () => clearTimeout(shapeLeaveTimer));
+  shapeBtn.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.pointerType === "mouse") return;
+    shapeHoldFired = false;
+    clearTimeout(shapeHoldTimer);
+    shapeHoldTimer = setTimeout(() => {
+      shapeHoldFired = true;
+      openShapeMenu();
+    }, SHAPE_HOLD_MS);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+    shapeBtn.addEventListener(type, () => {
+      clearTimeout(shapeHoldTimer);
+      setTimeout(() => { shapeHoldFired = false; }, 0);
+    });
+  });
+  shapeBtn.addEventListener("click", e => {
+    e.stopImmediatePropagation();
+    if (shapeHoldFired){
+      e.stopPropagation();
+      return;
+    }
+    addShapeBox();
+  });
+  shapeBtn.addEventListener("keydown", e => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    openShapeMenu();
+  });
+  shapeBtn.addEventListener("contextmenu", e => e.preventDefault());
   bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
     renderShapeBtnIcon();
@@ -1321,12 +1596,15 @@
   function resetEditor(){
     currentFile = null;
     currentFileBytes = null;
+    clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
     signatureBoxes = [];
     shapeBoxes = [];
     selectedBoxId = null;
     selectedShapeId = null;
+    selectedSigId = null;
+    resetHistory();
     updateSizeStatus();
     drop.hidden = false;
     editor.hidden = true;
@@ -1360,20 +1638,7 @@
     canvasWrap.style.transform = "";
   }
 
-  /* Desktop keeps page-nav in the toolbar (its original spot, before
-     ctFilenameDropdown); mobile moves the same element below the canvas
-     instead, where it's easier to reach and doesn't crowd the single-row
-     toolbar. One element, relocated by viewport rather than duplicated. */
   const mobileMql = window.matchMedia("(max-width:768px)");
-  function positionPageNav(){
-    if (mobileMql.matches){
-      previewPanel.appendChild(pageNav);
-    } else {
-      pageNavDesktopSlot.parentNode.insertBefore(pageNav, pageNavDesktopSlot);
-    }
-  }
-  positionPageNav();
-  mobileMql.addEventListener("change", positionPageNav);
 
   async function openFullscreen(){
     if (isFullscreen) return;
@@ -1737,9 +2002,203 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
+
+  document.addEventListener("pointerdown", e => {
+    if (!e.target.closest) return;
+    if (e.target.closest(".context-text-box, .context-signature-box, .context-shape-box, .context-panel-bar")) return;
+    if (!e.target.closest("#ctPreviewPanel, .context-fullscreen-canvas-area")) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+  });
+
+  const undoBtn = document.getElementById("ctUndoBtn");
+  const redoBtn = document.getElementById("ctRedoBtn");
+  const isMacLike = /Mac|iPhone|iPad/.test(navigator.platform || "");
+  const modKey = isMacLike ? "⌘" : "Ctrl+";
+  undoBtn.title = bcT("Undo") + " (" + modKey + "Z)";
+  redoBtn.title = bcT("Redo") + " (" + modKey + (isMacLike ? "⇧Z" : "Shift+Z") + ")";
+
+  function takeSnapshot(){
+    return {
+      t: textBoxes.map(b => ({ ...b })),
+      s: signatureBoxes.map(b => ({ ...b })),
+      h: shapeBoxes.map(b => ({ ...b }))
+    };
+  }
+  function sameBoxes(a, b){
+    if (a.length !== b.length) return false;
+    return a.every((x, i) => {
+      const y = b[i];
+      const keys = Object.keys(x);
+      return keys.length === Object.keys(y).length && keys.every(k => x[k] === y[k]);
+    });
+  }
+  function sameSnapshot(a, b){
+    return sameBoxes(a.t, b.t) && sameBoxes(a.s, b.s) && sameBoxes(a.h, b.h);
+  }
+  function changedPage(a, b){
+    for (const key of ["t", "s", "h"]){
+      const byId = new Map(a[key].map(x => [x.id, x]));
+      for (const y of b[key]){
+        const x = byId.get(y.id);
+        if (!x || Object.keys(y).some(k => x[k] !== y[k])) return y.page;
+        byId.delete(y.id);
+      }
+      for (const x of byId.values()) return x.page;
+    }
+    return null;
+  }
+  function updateHistoryButtons(){
+    undoBtn.disabled = !undoStack.length && !historyTimer;
+    redoBtn.disabled = !redoStack.length;
+  }
+  function resetHistory(){
+    clearTimeout(historyTimer);
+    historyTimer = null;
+    undoStack = [];
+    redoStack = [];
+    historyCurrent = takeSnapshot();
+    updateHistoryButtons();
+  }
+  function commitHistory(){
+    clearTimeout(historyTimer);
+    historyTimer = null;
+    if (!historyCurrent) return;
+    const cur = takeSnapshot();
+    if (!sameSnapshot(cur, historyCurrent)){
+      undoStack.push(historyCurrent);
+      if (undoStack.length > HISTORY_MAX) undoStack.shift();
+      historyCurrent = cur;
+      redoStack = [];
+    }
+    updateHistoryButtons();
+  }
+  function noteHistory(){
+    if (applyingHistory || !historyCurrent) return;
+    clearTimeout(historyTimer);
+    historyTimer = setTimeout(commitHistory, 350);
+  }
+  async function restoreSnapshot(snap){
+    const page = changedPage(historyCurrent, snap);
+    applyingHistory = true;
+    historyCurrent = snap;
+    textBoxes = snap.t.map(b => ({ ...b }));
+    signatureBoxes = snap.s.map(b => ({ ...b }));
+    shapeBoxes = snap.h.map(b => ({ ...b }));
+    selectedBoxId = null;
+    selectedShapeId = null;
+    selectedSigId = null;
+    try {
+      if (page && page !== currentPage){
+        currentPage = page;
+        await renderPage();
+      } else {
+        renderTextBoxes();
+      }
+    } finally {
+      applyingHistory = false;
+    }
+    updateHistoryButtons();
+  }
+  async function undoHistory(){
+    commitHistory();
+    if (!undoStack.length || applyingHistory) return;
+    redoStack.push(historyCurrent);
+    await restoreSnapshot(undoStack.pop());
+  }
+  async function redoHistory(){
+    commitHistory();
+    if (!redoStack.length || applyingHistory) return;
+    undoStack.push(historyCurrent);
+    await restoreSnapshot(redoStack.pop());
+  }
+  undoBtn.addEventListener("click", undoHistory);
+  redoBtn.addEventListener("click", redoHistory);
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const isUndo = k === "z" && !e.shiftKey;
+    const isRedo = (k === "z" && e.shiftKey) || (k === "y" && !e.shiftKey);
+    if (!isUndo && !isRedo) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    e.preventDefault();
+    if (isUndo) undoHistory(); else redoHistory();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Backspace" && e.key !== "Delete") return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    const btn = overlay.querySelector(".context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
+    if (!btn) return;
+    e.preventDefault();
+    btn.click();
+  });
+
+  let copiedObject = null;
+  let pasteCount = 0;
+
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    const k = e.key.toLowerCase();
+    if (k !== "c" && k !== "v") return;
+    const active = document.activeElement;
+    const inText = active && active.classList && active.classList.contains("context-text-inner");
+    const sel = window.getSelection();
+    const bareCaret = inText && (sel.isCollapsed || sel.toString().trim() === active.textContent.replace("×", "").trim());
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable) && !bareCaret) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    if (k === "c"){
+      const text = findBoxById(selectedBoxId);
+      const shape = shapeBoxes.find(b => b.id === selectedShapeId);
+      const sig = signatureBoxes.find(b => b.id === selectedSigId);
+      const src = text || shape || sig;
+      if (!src) return;
+      e.preventDefault();
+      copiedObject = { type: text ? "text" : shape ? "shape" : "sig", data: { ...src } };
+      pasteCount = 0;
+      if (inText) active.blur();
+      return;
+    }
+    if (bareCaret) return;
+    if (!copiedObject) return;
+    e.preventDefault();
+    const { type, data } = copiedObject;
+    const step = 20 * ++pasteCount;
+    const pageW = overlay.clientWidth / scale;
+    const pageH = overlay.clientHeight / scale;
+    const base = { ...data, page: currentPage };
+    const w = data.widthPt || 80;
+    const h = data.heightPt || data.sizePt * 1.2;
+    base.xPt = Math.max(0, Math.min(data.xPt + step, pageW - w));
+    base.topPt = Math.max(0, Math.min(data.topPt + step, pageH - h));
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    if (type === "text"){
+      base.id = ++boxIdSeq;
+      textBoxes.push(base);
+      selectedBoxId = base.id;
+    } else if (type === "shape"){
+      base.id = ++shapeBoxIdSeq;
+      shapeBoxes.push(base);
+      selectedShapeId = base.id;
+    } else {
+      base.id = ++sigBoxIdSeq;
+      signatureBoxes.push(base);
+      selectedSigId = base.id;
+    }
+    renderTextBoxes();
+    noteCreated(type, base.id);
+  });
 
   bcRegisterEscapable(() => isFullscreen, () => closeFullscreen(), 90);
   bcRegisterEscapable(
@@ -1840,6 +2299,8 @@
     if (currentPage > 1){
       currentPage--;
       selectedBoxId = null;
+      selectedSigId = null;
+      selectedShapeId = null;
       renderPage();
     }
   });
@@ -1847,6 +2308,8 @@
     if (currentPage < pageCount){
       currentPage++;
       selectedBoxId = null;
+      selectedSigId = null;
+      selectedShapeId = null;
       renderPage();
     }
   });
@@ -2050,9 +2513,16 @@
         /* Bottom-left anchor, same convention as the signature image
            above — pageHeight - topPt - heightPt converts this box's
            top-down on-screen position into pdf-lib's bottom-up one. */
-        const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
+        const phi = -(box.rotation || 0) * Math.PI / 180;
+        const turn = degrees(rot - (box.rotation || 0));
+        const mid = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
+        const around = (p) => ({
+          x: mid.x + (p.x - mid.x) * Math.cos(phi) - (p.y - mid.y) * Math.sin(phi),
+          y: mid.y + (p.x - mid.x) * Math.sin(phi) + (p.y - mid.y) * Math.cos(phi)
+        });
+        const { x, y } = around(toPdf(box.xPt, box.topPt + box.heightPt));
         if (box.kind === "square"){
-          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate });
+          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate: turn });
         } else if (shapePathFor(box)){
           /* Triangle, cross and the two marks are the same polygons as
              shapeSvg()'s (0-100 viewBox), written as path strings and
@@ -2060,11 +2530,12 @@
              `scale` option takes one uniform number, which can't
              reproduce a non-uniformly stretched box. Anchored at the
              bottom-left corner like drawRectangle/drawImage above. */
+          const top = around(toPdf(box.xPt, box.topPt));
           page.drawSvgPath(scaleSvgPath(shapePathFor(box), box.widthPt / 100, box.heightPt / 100), {
-            x,
-            y,
+            x: top.x,
+            y: top.y,
             color,
-            rotate
+            rotate: turn
           });
         } else {
           const center = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
@@ -2074,7 +2545,7 @@
             xScale: box.widthPt / 2,
             yScale: box.heightPt / 2,
             color,
-            rotate
+            rotate: turn
           });
         }
       });
