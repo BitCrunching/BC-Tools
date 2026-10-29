@@ -1392,7 +1392,220 @@
     }
     if (token !== sizeToken) return;
     sizeStatus.textContent = "File size: ~" + bcFormatFileSize(total);
+    compressWrap.hidden = total <= COMPRESS_THRESHOLD || compressBusy;
+    if (!compressWrap.hidden) explainSize();
   }
+
+  let explainedKey = null;
+  async function explainSize(){
+    const file = currentFile;
+    const key = file.name + "|" + file.size;
+    if (key === explainedKey) return;
+    explainedKey = key;
+    const list = document.getElementById("ctCompressWhy");
+    list.innerHTML = "";
+    try {
+      const { PDFDocument, PDFName, PDFRawStream } = PDFLib;
+      const pdf = await PDFDocument.load(new Uint8Array(currentFileBytes), { ignoreEncryption: true });
+      let imageBytes = 0;
+      let imageCount = 0;
+      let maxWidth = 0;
+      for (const [, obj] of pdf.context.enumerateIndirectObjects()){
+        if (!(obj instanceof PDFRawStream) || obj.dict.get(PDFName.of("Subtype")) !== PDFName.of("Image")) continue;
+        imageBytes += obj.contents.length;
+        imageCount++;
+        const w = obj.dict.get(PDFName.of("Width"));
+        maxWidth = Math.max(maxWidth, w && w.asNumber ? w.asNumber() : 0);
+      }
+      if (file !== currentFile) return;
+      const items = [];
+      if (!imageCount){
+        items.push(bcT("There are no photos or scans in this PDF, so its size comes from fonts and embedded data. Compressing won't help much."));
+      } else {
+        const share = Math.round(imageBytes / file.size * 100);
+        items.push(bcT("{0} images take up {1} of the {2} ({3}%).", [imageCount, bcFormatFileSize(imageBytes), bcFormatFileSize(file.size), share]));
+        const pageWidthIn = pdf.getPage(0).getWidth() / 72;
+        const dpi = Math.round(maxWidth / pageWidthIn / 10) * 10;
+        if (dpi > 200) items.push(bcT("The biggest image is about {0} dpi. 150 dpi is plenty for email and screens.", [dpi]));
+        items.push(bcT("Text, fonts and structure add only {0}.", [bcFormatFileSize(Math.max(0, file.size - imageBytes))]));
+      }
+      items.forEach(t => {
+        const li = document.createElement("li");
+        li.textContent = t;
+        list.appendChild(li);
+      });
+    } catch (err){
+      console.error(err);
+    }
+  }
+
+  const COMPRESS_THRESHOLD = 10 * 1024 * 1024;
+  const COMPRESS_TARGET = 9 * 1024 * 1024;
+  const COMPRESS_STEPS = Array.from({ length: 16 }, (_, i) => ({
+    maxDim: Math.round(4000 - (i / 15) * 2800),
+    quality: +(0.92 - (i / 15) * 0.38).toFixed(2)
+  }));
+  const compressWrap = document.getElementById("ctCompressWrap");
+  const compressBtn = document.getElementById("ctCompressBtn");
+  let compressBusy = false;
+  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), document.getElementById("ctCompressInfoTip"));
+
+  function eligibleImages(pdf){
+    const { PDFName, PDFRawStream, PDFArray, PDFNumber } = PDFLib;
+    const ctx = pdf.context;
+    const name = n => PDFName.of(n);
+    const isJpeg = dict => {
+      const f = ctx.lookup(dict.get(name("Filter")));
+      if (f instanceof PDFArray) return f.size() === 1 && ctx.lookup(f.get(0)) === name("DCTDecode");
+      return f === name("DCTDecode");
+    };
+    const colorOk = dict => {
+      const cs = ctx.lookup(dict.get(name("ColorSpace")));
+      if (cs === name("DeviceRGB") || cs === name("DeviceGray")) return true;
+      if (cs instanceof PDFArray && ctx.lookup(cs.get(0)) === name("ICCBased")){
+        const n = ctx.lookup(ctx.lookup(cs.get(1)).dict.get(name("N")));
+        return n instanceof PDFNumber && (n.asNumber() === 3 || n.asNumber() === 1);
+      }
+      return false;
+    };
+    /* An image tied to a soft mask (SMask/Mask, often with /Matte) must keep
+       the mask's exact pixel dimensions — Adobe rejects the page otherwise. */
+    const masks = new Set();
+    for (const [, obj] of ctx.enumerateIndirectObjects()){
+      if (!(obj instanceof PDFRawStream)) continue;
+      for (const key of ["SMask", "Mask"]){
+        const m = obj.dict.get(name(key));
+        if (m) masks.add(String(m));
+      }
+    }
+    const list = [];
+    for (const [ref, obj] of ctx.enumerateIndirectObjects()){
+      if (!(obj instanceof PDFRawStream)) continue;
+      const dict = obj.dict;
+      if (dict.get(name("Subtype")) !== name("Image") || !isJpeg(dict)) continue;
+      if (dict.get(name("ImageMask")) || dict.get(name("Decode"))) continue;
+      if (dict.get(name("SMask")) || dict.get(name("Mask")) || masks.has(String(ref))) continue;
+      if (!colorOk(dict)) continue;
+      list.push({ ref, obj });
+    }
+    return list;
+  }
+
+  async function encodeJpeg(bmp, step){
+    const ratio = Math.min(1, step.maxDim / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * ratio));
+    const h = Math.max(1, Math.round(bmp.height * ratio));
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    c.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", step.quality));
+    return { w, h, bytes: new Uint8Array(await blob.arrayBuffer()) };
+  }
+
+  /* Re-encoding every image once per candidate setting took minutes on a
+     60-image scan, so a handful of the biggest images are encoded at each
+     setting instead and the ratio extrapolated; only the winner runs in full. */
+  async function pickCompressStep(bytes){
+    const pdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+    const images = eligibleImages(pdf);
+    const total = images.reduce((n, i) => n + i.obj.contents.length, 0);
+    if (!total) return COMPRESS_STEPS.length - 1;
+    const sample = images.slice().sort((a, b) => b.obj.contents.length - a.obj.contents.length).slice(0, 4);
+    const bitmaps = [];
+    for (const { obj } of sample){
+      try { bitmaps.push({ bmp: await createImageBitmap(new Blob([obj.contents], { type: "image/jpeg" })), size: obj.contents.length }); } catch (err){ console.error(err); }
+    }
+    const sampleBytes = bitmaps.reduce((n, b) => n + b.size, 0);
+    const needed = bytes.length - COMPRESS_TARGET * 0.97;
+    let lo = 0;
+    let hi = COMPRESS_STEPS.length - 1;
+    let pick = hi;
+    while (lo <= hi && sampleBytes){
+      const mid = (lo + hi) >> 1;
+      let after = 0;
+      for (const { bmp, size } of bitmaps) after += Math.min(size, (await encodeJpeg(bmp, COMPRESS_STEPS[mid])).bytes.length);
+      const saved = total * (1 - after / sampleBytes);
+      if (saved >= needed){ pick = mid; hi = mid - 1; } else lo = mid + 1;
+    }
+    bitmaps.forEach(b => b.bmp.close());
+    return pick;
+  }
+
+  async function recompressImages(bytes, step, onProgress){
+    const { PDFDocument, PDFRawStream } = PDFLib;
+    const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const ctx = pdf.context;
+    const images = eligibleImages(pdf);
+    let done = 0;
+    for (const { ref, obj } of images){
+      onProgress(++done, images.length);
+      try {
+        const bmp = await createImageBitmap(new Blob([obj.contents], { type: "image/jpeg" }));
+        const enc = await encodeJpeg(bmp, step);
+        bmp.close();
+        if (enc.bytes.length >= obj.contents.length) continue;
+        const next = {
+          Type: "XObject", Subtype: "Image", Width: enc.w, Height: enc.h,
+          ColorSpace: "DeviceRGB", BitsPerComponent: 8, Filter: "DCTDecode"
+        };
+        ctx.assign(ref, PDFRawStream.of(ctx.obj(next), enc.bytes));
+      } catch (err){
+        console.error(err);
+      }
+    }
+    return await pdf.save();
+  }
+
+  compressBtn.addEventListener("click", async () => {
+    if (compressBusy || !currentFile) return;
+    compressBusy = true;
+    compressWrap.hidden = true;
+    downloadBtn.disabled = true;
+    const original = new Uint8Array(await currentFile.arrayBuffer());
+    const before = original.length;
+    let best = null;
+    try {
+      status.textContent = bcT("Compressing...");
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      let idx = await pickCompressStep(original);
+      for (let attempt = 0; attempt < 3; attempt++){
+        const out = await recompressImages(original, COMPRESS_STEPS[idx], (n, total) => {
+          status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
+        });
+        if (!best || out.length < best.length) best = out;
+        if (out.length <= COMPRESS_TARGET || idx >= COMPRESS_STEPS.length - 1) break;
+        idx = Math.min(COMPRESS_STEPS.length - 1, idx + 2);
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = bcT("Couldn't compress this PDF.");
+      compressBusy = false;
+      downloadBtn.disabled = false;
+      compressWrap.hidden = false;
+      return;
+    }
+    if (!best || best.length >= before){
+      status.textContent = bcT("This PDF can't be compressed any further.");
+    } else {
+      const file = new File([best], currentFile.name, { type: "application/pdf" });
+      currentFile = file;
+      currentFileBytes = best.slice().buffer;
+      try {
+        const doc = await pdfjsLib.getDocument({ data: best.slice() }).promise;
+        clearPageCache();
+        pdfjsDoc = doc;
+        await renderPage();
+      } catch (err){
+        console.error(err);
+      }
+      status.textContent = bcT("Compressed: {0} → {1}", [bcFormatFileSize(before), bcFormatFileSize(best.length)]);
+      schedulePersist();
+    }
+    compressBusy = false;
+    downloadBtn.disabled = false;
+    updateSizeStatus();
+  });
 
   function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
     /* Land it at a small fixed width (100pt) instead of the image's raw
