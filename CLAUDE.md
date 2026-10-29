@@ -663,14 +663,29 @@ formatter of their own — if you're about to write `Math.round(bytes /
 
 ## Tool banner color + category texture
 
-- Every tool has one fixed, saturated brand color, no two tools share a
-  hue: Convert `#B84CFF` Purple, Compress `#3FBFE8` Sky Blue, Combine
-  `#FF6961` Coral Red, Cleanly `#7ED321` Lime Green, Context `#F6D44A`
-  Yellow (`var(--context-yellow)`), Colorfy `#FF8A4C` Orange (Image);
-  Congify `#22D3D0` Teal (Video); Coudio `#18C98A` Emerald Green (Sound);
-  Codify `#C81C86` Pink (Code — a deep raspberry, deliberately pulled back
-  from the original near-neon `#FF4FD8` magenta, which read as a kids/toy
-  tool at full brightness).
+- **The palette is exactly 10 colors, used in a fixed order, and a color
+  repeats across categories — never within one.** Each tool has one fixed,
+  saturated brand color from this list, and the same hex is used everywhere
+  for that tool (tool banner, homepage card, Golden Rules tab, drag
+  highlight, `.cs-shape`). The category texture (below) is what tells two
+  tools with the same color apart — the colors themselves are not shifted per
+  category (a per-category brightness offset was tried and removed).
+  Convert `#B84CFF` Purple, Compress `#3FBFE8` Sky Blue, Combine `#FF6961`
+  Coral Red, Cleanly `#7ED321` Lime Green, Context `#F6D44A` Yellow
+  (`var(--context-yellow)`), Colorfy `#FF8A4C` Orange (Image); Congify
+  `#22D3D0` Teal (Video); Coudio `#18C98A` Emerald Green (Sound); Codify
+  `#C81C86` Pink (Code — a deep raspberry, deliberately pulled back from the
+  original near-neon `#FF4FD8` magenta, which read as a kids/toy tool at full
+  brightness); Comprio `#3B6CF6` Cobalt Blue (Video — replaced the original
+  Indigo `#5B6CFF`); Convido `#B84CFF` Purple (Video — the first reuse, the
+  same color as Convert on purpose: it is the video version of it).
+- **Choosing a color for a new tool:** use every one of the 10 colors once
+  before any is reused. From the 11th tool on, take the first color in the
+  order above that no tool in the same category already uses (that is why
+  Convido is Purple). Never invent an 11th color — 40–50 tools with unique
+  hues would sit ~9° apart on the wheel and be indistinguishable; 10 colors
+  ~36° apart are easy to tell apart. Indigo and Crimson (`#D7263D`, tried for
+  Convido) were dropped for being unlikeable.
 - Set via a `::before` background fill in the tool's own page, and the
   matching `#page-mainpage .card.<tool>::before` rule on the homepage.
   **Two different selector forms are in live use for the tool-page half —
