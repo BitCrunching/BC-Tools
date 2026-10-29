@@ -17,7 +17,7 @@
 (function(){
   try {
     var t = localStorage.getItem("bc-theme");
-    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", "dark");
   } catch(e){}
 })();
 </script>
@@ -143,6 +143,7 @@
      duplicating the block inline, since this page otherwise keeps all
      its own CSS inline and doesn't load the rest of shared/site.css. -->
 <link rel="stylesheet" href="/shared/icons.css?v=13">
+<link rel="stylesheet" href="/shared/halloween.css?v=23">
 <link rel="stylesheet" href="/shared/nav.css?v=1">
 <!-- Same reasoning, same pattern: the 4 category texture recipes
      (image/video/sound/code) live in shared/textures.css so a tool's
@@ -3403,9 +3404,11 @@ if (VALID_PAGES.includes(startPage)) {
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  applyTheme(saved === "dark" ? "dark" : "light");
+  applyTheme("dark");
 
   if (themeBtn){
+    themeBtn.disabled = true;
+    themeBtn.title = "Dark mode only during Halloween";
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
@@ -3637,6 +3640,7 @@ if (VALID_PAGES.includes(startPage)) {
 </script>
 
 </div>
-<script src="/shared/report.js?v=30" defer></script>
+<script src="/shared/report.js?v=31" defer></script>
+<script src="/shared/halloween.js?v=8" defer></script>
 </body>
 </html>

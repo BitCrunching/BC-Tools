@@ -780,6 +780,9 @@ function showNavTerminal(text){
   el._hideTimer = setTimeout(() => el.classList.remove("show"), 2200);
 }
 
+/* Halloween skin loader — remove with shared/halloween.*. */
+(function(){ const s = document.createElement("script"); s.src = "/shared/halloween.js?v=8"; document.head.appendChild(s); })();
+
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){
   /* The nav button, plus any other control marked data-theme-toggle (e.g.
@@ -805,9 +808,11 @@ function showNavTerminal(text){
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  applyTheme(saved === "dark" ? "dark" : "light");
+  applyTheme("dark");
 
   themeBtns.forEach(themeBtn => {
+    themeBtn.disabled = true;
+    themeBtn.title = "Dark mode only during Halloween";
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
