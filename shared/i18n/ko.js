@@ -737,6 +737,7 @@ window.BC_I18N = {
  "HSL": "HSL",
  "HSL (": "HSL (",
  "HTML": "HTML",
+ "Halloween ends in": "할로윈 종료까지",
  "He also brought the BC Tools logo, but he would not tell us what it means. He told us, \"Human civilization is not prepared for it yet.\" He did not want to reveal his identity here, so we will only tell you that he likes the color sky blue.": "그는 BC Tools 로고도 가져왔지만 그것이 무슨 뜻인지는 알려 주지 않았습니다. 그는 “인류 문명은 아직 그것을 받아들일 준비가 되지 않았다”고 말했습니다. 여기서 정체를 밝히고 싶지 않아 했으므로, 그가 하늘색을 좋아한다는 것만 알려 드리겠습니다.",
  "Hello world": "Hello world",
  "Here's what each format is actually for. Pick format you already have and which format you need.": "각 형식이 실제로 무엇에 쓰이는지 알아봅니다. 이미 가진 형식과 필요한 형식을 고르세요.",
