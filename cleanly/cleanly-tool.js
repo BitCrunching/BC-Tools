@@ -403,6 +403,7 @@
           return;
         }
         renderList();
+        showLoadedStatus();
       });
 
       const downloadBtn = el.querySelector(".ex-row-download-btn");
@@ -431,6 +432,12 @@
     if (mobileDownloadBtn) mobileDownloadBtn.disabled = files.length === 0 || mobileDownloadRunning;
     if (files.length === 0) bcDbClear(EX_DB_NAME, EX_DB_STORE);
     else schedulePersist();
+  }
+
+  function showLoadedStatus(){
+    status.textContent = files.length
+      ? bcT("{0} {1} loaded", [files.length, files.length === 1 ? "file" : "files"])
+      : "";
   }
 
   async function addFiles(newFiles){
@@ -467,6 +474,7 @@
     }
     revealAfterDropUI();
     renderList();
+    showLoadedStatus();
     /* Same partial-rejection gap Convert's applyPickedFiles() closed —
        the picked.length === 0 branch above only covers a wholly-
        unsupported batch; a mixed batch (e.g. 2 valid images + 1 .nef)

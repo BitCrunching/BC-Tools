@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/id.js?v=4"></script>
+<script src="/shared/i18n/id.js?v=7"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Tambahkan Teks ke PDF Gratis – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=240">
+<link rel="stylesheet" href="/shared/site.css?v=249">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -272,6 +272,13 @@
 
 .context-download-btn{
   position:relative;
+}
+
+#ctShapeBtn{
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
 
 .context-download-btn:hover{
@@ -497,7 +504,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   flex-wrap:wrap;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:8px 6px;
   margin-bottom:16px;
 }
 
@@ -507,6 +514,60 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
    34px. Widen it and anchor its right edge to the trigger instead of
    its left, so it doesn't overflow the toolbar's edge on narrow
    layouts. */
+#ctFontDropdown .bc-dropdown-menu{
+  width:180px;
+  left:0;
+  right:auto;
+}
+#ctFontDropdown .bc-dropdown-option{
+  font-size:15px;
+}
+@media (max-width:768px){
+  #ctFontDropdown .bc-dropdown-menu{
+    top:auto;
+    bottom:calc(100% + 6px);
+    margin-top:0;
+    margin-bottom:16px;
+  }
+}
+.context-shape-kind-dropdown{ position:relative; }
+.ct-shape-arrow{
+  position:absolute;
+  top:100%;
+  left:0;
+  width:100%;
+  height:16px;
+  padding:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--btn-fill);
+  border-top:0;
+  border-radius:0 0 12px 12px;
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+  cursor:pointer;
+  z-index:5;
+  transform:scaleY(0);
+  transform-origin:top center;
+  transition:transform .15s cubic-bezier(.22,1,.36,1);
+}
+.ct-shape-arrow.shown{
+  display:flex;
+  transform:scaleY(1);
+}
+@starting-style{
+  .ct-shape-arrow.shown{ transform:scaleY(0); }
+}
+#ctShapeKindDropdown:has(.ct-shape-arrow.shown) #ctShapeBtn{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+  border-bottom-left-radius:0;
+  border-bottom-right-radius:0;
+}
+.ct-shape-arrow svg{ width:12px; height:12px; display:block; }
+#ctShapeKindDropdown .bc-dropdown-menu{ margin-top:16px; }
 .ct-shape-btn-icon{
   width:16px;
   height:16px;
@@ -514,9 +575,27 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   margin:auto;
 }
 #ctShapeKindDropdown .bc-dropdown-menu{
-  width:140px;
+  width:auto;
   left:auto;
   right:0;
+}
+#ctShapeKindDropdown .bc-dropdown-menu:not([hidden]){
+  display:grid;
+  grid-template-columns:repeat(3, 44px);
+  gap:4px;
+}
+#ctShapeKindDropdown .bc-dropdown-option{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:40px;
+  padding:0;
+}
+.ct-shape-opt-icon{
+  width:20px;
+  height:20px;
+  display:block;
+  pointer-events:none;
 }
 /* On mobile the toolbar sits at the bottom of the screen, so the menu
    opens upward — below it would be off-screen. */
@@ -625,7 +704,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
     border-radius:7px;
     font-size:14px;
   }
-  :is(#page-context, .context-fullscreen-overlay) .context-page-nav{
+  :is(#page-context, .context-fullscreen-overlay) .context-panel-bar{
     margin-top:12px;
   }
   :is(#page-context, .context-fullscreen-overlay) #ctColorTrigger{
@@ -730,7 +809,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 /* .context-page-nav itself is just the "1/2" text + layout, no
    border/background of its own to force dark — only its text color
    needs pinning here, same reasoning as the buttons above. */
-.context-fullscreen-overlay .context-page-nav{
+.context-fullscreen-overlay .context-panel-bar{
   color:#fff;
 }
 
@@ -803,6 +882,61 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   display:none;
 }
 
+.context-panel-bar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+#page-context .context-panel-bar .context-page-nav{
+  order:1;
+}
+.context-history-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.context-history-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+#page-context .context-panel-bar{
+  --btn-fill:#F1F5F9;
+  --btn-fill-text:#1C2436;
+  color:#fff;
+}
+#page-context .context-panel-bar .context-page-btn{
+  color:#fff;
+  font-family:var(--bc-mono);
+  font-weight:700;
+}
+#page-context .context-panel-bar .context-page-btn:hover:not(:disabled){
+  color:var(--btn-fill-text);
+}
+@media (min-width:769px){
+  #page-context .context-panel-bar{
+    display:contents;
+  }
+  #page-context .context-panel-bar .context-history-nav{
+    position:absolute;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:4;
+  }
+  #page-context .context-panel-bar .context-page-nav{
+    position:absolute;
+    top:8px;
+    left:10px;
+    z-index:4;
+  }
+  #page-context .context-preview-panel{
+    padding-top:52px;
+  }
+}
+
 /* Flip light/dark same as every other on-banner control — see
    "On-banner controls flip with theme" in shared/site.css's header
    comment. Was a fixed dark tint (border:rgba(0,0,0,.4)/
@@ -817,15 +951,12 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   cursor:pointer;
 }
 
-.context-page-btn:disabled{
-  opacity:.35;
-  cursor:default;
-}
-.context-page-btn:disabled:hover{
-  background:rgba(255,255,255,.35);
-}
+.context-page-btn:disabled,
+.context-page-btn:disabled:hover,
 html[data-theme="dark"] .context-page-btn:disabled:hover{
-  background:rgba(0,0,0,.25);
+  background:transparent;
+  border-style:dashed;
+  cursor:default;
 }
 
 /* Same background as .site-nav — gives the PDF preview its own visible
@@ -911,6 +1042,18 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   flex-shrink:0;
 }
 
+.context-text-box:not(.selected) .context-text-drag-handle,
+.context-text-box:not(.selected) .context-text-remove,
+.context-signature-box:not(.selected) .context-text-drag-handle,
+.context-signature-box:not(.selected) .context-text-remove,
+.context-signature-box:not(.selected) .context-text-resize-handle,
+.context-shape-box:not(.selected) .context-text-drag-handle,
+.context-shape-box:not(.selected) .context-text-remove,
+.context-shape-box:not(.selected) .context-text-resize-handle,
+.context-shape-box:not(.selected) .context-shape-rotate-handle{
+  visibility:hidden;
+}
+
 /* Circle geometry/color/border/touch-action is the shared
    .bc-obj-resize-handle (shared/site.css) — split from the canvas-level
    .bc-resize-handle since this one resizes an object placed ON the
@@ -941,7 +1084,65 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   outline:1px solid rgba(37,99,235,.7);
 }
 
+.context-date-popup{
+  position:fixed;
+  z-index:2200;
+  display:flex;
+  gap:8px;
+  padding:10px;
+  border-radius:16px;
+  background:var(--btn-fill-text);
+  border:var(--border-bold) solid var(--btn-fill);
+  color:var(--btn-fill);
+}
+.context-date-popup[hidden]{ display:none; }
+.dp-main,
+.dp-chip{
+  height:40px;
+  border-radius:12px;
+  border:var(--border-bold) solid var(--btn-fill);
+  background:transparent;
+  color:var(--btn-fill);
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background-color .3s ease-in-out, color .3s ease-in-out;
+}
+.dp-main{ padding:0 14px; }
+.dp-chip{ padding:0 10px; }
+.dp-main:hover,
+.dp-chip:hover{ background:var(--btn-fill); color:var(--btn-fill-text); }
 #ctSizeStatus{ margin-top:0; min-height:0; }
+.context-size-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px 16px;
+}
+.context-size-row .tool-status{ margin:0; }
+.context-compress-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.context-compress-wrap[hidden]{ display:none; }
+#ctCompressInfoTip{ width:290px; }
+.context-compress-why{
+  margin:8px 0;
+  padding-left:18px;
+  font-size:12px;
+  line-height:1.45;
+}
+.context-compress-why:empty{ display:none; }
+.context-compress-better{ display:block; font-size:12px; line-height:1.45; }
+.context-compress-btn{
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
 #ctSizeStatus:empty{ display:none; }
 
 .context-text-remove{
@@ -959,7 +1160,9 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    .context-text-box, just an <img> instead of editable text. */
 .context-signature-box{
   position:absolute;
-  cursor:default;
+  cursor:move;
+  touch-action:none;
+  user-select:none;
   -webkit-touch-callout:none;
   outline:1px dashed rgba(0,0,0,.35);
 }
@@ -1009,7 +1212,9 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    unwanted stroke. */
 .context-shape-box{
   position:absolute;
-  cursor:default;
+  cursor:move;
+  touch-action:none;
+  user-select:none;
   -webkit-touch-callout:none;
 }
 .context-shape-box.selected{
@@ -1030,12 +1235,31 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   left:-22px;
   transform:translateY(-50%);
 }
+/* Handles sit well clear of the shape so they never cover it — matters most
+   for the small checkmark/crossmark. */
+.context-shape-box .context-text-drag-handle{
+  left:-40px;
+}
+.context-shape-box .context-text-remove{
+  top:-34px;
+  right:-34px;
+}
 .context-shape-box .context-text-resize-handle{
   display:flex;
-  /* Mirrors the remove button's -10px/-10px at the opposite corner so the
-     two handles line up vertically on the box's right edge. */
-  right:-10px;
-  bottom:-10px;
+  right:-34px;
+  bottom:-34px;
+}
+.context-shape-box .context-shape-rotate-handle{
+  display:flex;
+  position:absolute;
+  top:calc(50% - 12px);
+  left:-40px;
+  cursor:grab;
+}
+.context-shape-box .context-text-remove,
+.context-shape-box .context-text-resize-handle,
+.context-shape-box .context-shape-rotate-handle{
+  transform:rotate(calc(-1 * var(--ct-rot, 0deg)));
 }
 
 /* ===== Signature capture modal ===== */
@@ -1555,16 +1779,33 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Tanda tangan (S)"><span class="ct-desktop-only">Tanda tangan</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
+          <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctFontBtn" title="Font" aria-label="Font" aria-haspopup="listbox" aria-expanded="false">F</button>
+            <div class="bc-dropdown-menu" id="ctFontMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-font="arial" data-label="Arial" role="option" aria-selected="false">Arial</button>
+              <button type="button" class="bc-dropdown-option" data-font="times" data-label="Times" role="option" aria-selected="false">Times</button>
+              <button type="button" class="bc-dropdown-option" data-font="courier" data-label="Courier" role="option" aria-selected="false">Courier</button>
+              <button type="button" class="bc-dropdown-option" data-font="roboto" data-label="Roboto" role="option" aria-selected="false">Roboto</button>
+              <button type="button" class="bc-dropdown-option" data-font="opensans" data-label="Open Sans" role="option" aria-selected="false">Open Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="comicneue" data-label="Comic Neue" role="option" aria-selected="false">Comic Neue</button>
+              <button type="button" class="bc-dropdown-option" data-font="anton" data-label="Anton" role="option" aria-selected="false">Anton</button>
+              <button type="button" class="bc-dropdown-option" data-font="caveat" data-label="Caveat" role="option" aria-selected="false">Caveat</button>
+              <button type="button" class="bc-dropdown-option" data-font="playfair" data-label="Playfair Display" role="option" aria-selected="false">Playfair Display</button>
+            </div>
+          </div>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Garis bawah (U)" aria-label="Garis bawah" aria-pressed="false"><u>U</u></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Miring (I)" aria-label="Miring" aria-pressed="false"><i>I</i></button>
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Tebal (B)" aria-label="Tebal" aria-pressed="false"><b>B</b></button>
           <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
             <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Tambah bentuk (H)" aria-label="Tambah bentuk" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
+            <button type="button" class="ct-shape-arrow" id="ctShapeArrow" tabindex="-1" aria-label="Choose shape" title="Choose shape"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-kind="circle" data-label="Lingkaran" role="option" aria-selected="false">Lingkaran</button>
               <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Persegi" role="option" aria-selected="false">Persegi</button>
               <button type="button" class="bc-dropdown-option" data-kind="triangle" data-label="Segitiga" role="option" aria-selected="false">Segitiga</button>
               <button type="button" class="bc-dropdown-option" data-kind="cross" data-label="Silang" role="option" aria-selected="false">Silang</button>
+              <button type="button" class="bc-dropdown-option" data-kind="check" data-label="Tanda centang" role="option" aria-selected="false">Tanda centang</button>
+              <button type="button" class="bc-dropdown-option" data-kind="xmark" data-label="Tanda silang" role="option" aria-selected="false">Tanda silang</button>
             </div>
           </div>
         </div>
@@ -1621,8 +1862,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
 
-        <span id="ctPageNavDesktopSlot"></span>
-
         <div class="context-filename-dropdown context-toolbar-gap" id="ctFilenameDropdown">
           <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctFilenameTrigger" aria-haspopup="true" aria-expanded="false" title="Ganti nama file (R)">
             <span id="ctFilenameTriggerLabel">Ganti nama file</span>
@@ -1655,10 +1894,20 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           <div class="context-overlay" id="ctOverlay"></div>
         </div>
 
-        <div class="context-page-nav" id="ctPageNav" hidden>
-          <button type="button" class="context-page-btn" id="ctPrevPage">‹</button>
-          <span class="context-page-label" id="ctPageLabel">1 / 1</span>
-          <button type="button" class="context-page-btn" id="ctNextPage">›</button>
+        <div class="context-panel-bar">
+          <div class="context-history-nav">
+            <button type="button" class="context-page-btn context-history-btn" id="ctUndoBtn" title="Urungkan (Ctrl+Z)" aria-label="Urungkan" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
+            <button type="button" class="context-page-btn context-history-btn" id="ctRedoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Ulangi" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+            </button>
+          </div>
+          <div class="context-page-nav" id="ctPageNav" hidden>
+            <button type="button" class="context-page-btn" id="ctPrevPage">&lt;</button>
+            <span class="context-page-label" id="ctPageLabel">1 / 1</span>
+            <button type="button" class="context-page-btn" id="ctNextPage">&gt;</button>
+          </div>
         </div>
       </div>
 
@@ -1688,7 +1937,25 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     </div>
 
     <div class="tool-status" id="ctStatus"></div>
-    <div class="tool-status" id="ctSizeStatus"></div>
+    <div class="context-size-row">
+      <div class="tool-status" id="ctSizeStatus"></div>
+      <div class="context-compress-wrap" id="ctCompressWrap" hidden>
+        <button type="button" class="tool-primary-btn context-compress-btn" id="ctCompressBtn">Compress file</button>
+        <button type="button" class="bc-info-btn" id="ctCompressInfoBtn" aria-expanded="false" aria-label="About Compress file">i</button>
+        <div class="bc-info-tooltip" id="ctCompressInfoTip" hidden><b>Recommended</b> — this PDF is over 10 MB, which many email servers, upload portals and galleries reject. Compress file shrinks the images inside it just enough to get under 10 MB. Text stays sharp, nothing leaves your device.<ul class="context-compress-why" id="ctCompressWhy"></ul><span class="context-compress-better"><b>Better still:</b> if you still have the original (Word, a scanner app, a photo editor), export it again at 150 dpi or with a “reduce file size” option. That usually looks cleaner than compressing afterwards.</span></div>
+      </div>
+    </div>
+
+    <div class="context-signature-overlay" id="ctBurstOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header"><span>Everything okay?</span></div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">Five items were just added in a fraction of a second. Do you want to keep them and continue?</p>
+          <button type="button" class="context-signature-action-btn" id="ctBurstKeep">Yes, continue</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctBurstUndo">Remove those 5</button>
+        </div>
+      </div>
+    </div>
 
     <div class="context-signature-overlay" id="ctSigOverlay" hidden>
       <div class="context-signature-modal">
@@ -1830,6 +2097,8 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
         </div>
       </div>
     </div>
@@ -1846,8 +2115,8 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=95" defer></script>
-<script src="/shared/report.js?v=27" defer></script>
-<script src="/context/context-tool.js?v=68" defer></script>
+<script src="/shared/site.js?v=98" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/context/context-tool.js?v=111" defer></script>
 </body>
 </html>

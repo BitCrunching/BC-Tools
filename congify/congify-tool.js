@@ -21,6 +21,24 @@
   const scrubberLabel = document.getElementById("gifScrubberLabel");
   const scrubberLabelToggle = document.getElementById("gifScrubberLabelToggle");
   const scrubberFileName = document.getElementById("gifScrubberFileName");
+  const doneFileName = document.getElementById("gifDoneFileName");
+  const resultNameRow = document.getElementById("gifResultNameRow");
+  function updateResultNameRow(){ resultNameRow.hidden = !lastResultBytes; }
+  /* The name field sits next to the Download button whenever the Result row
+     is showing, and above the Continue/Download buttons on the done screen. */
+  const resultNameHome = { parent: resultNameRow.parentNode, next: resultNameRow.nextSibling };
+  const wideScreen = window.matchMedia("(min-width:769px)");
+  function placeResultName(){
+    const hdr = document.getElementById("gifResultsHeader");
+    const btns = hdr.querySelector(".gif-results-header-btns");
+    if (!hdr.hidden && wideScreen.matches){
+      if (resultNameRow.parentNode !== btns) btns.insertBefore(resultNameRow, document.getElementById("gifResultsDownloadBtn"));
+    } else if (resultNameRow.parentNode !== resultNameHome.parent){
+      resultNameHome.parent.insertBefore(resultNameRow, resultNameHome.next);
+    }
+  }
+  wideScreen.addEventListener("change", placeResultName);
+  new MutationObserver(placeResultName).observe(document.getElementById("gifResultsHeader"), { attributes: true, attributeFilter: ["hidden"] });
   const fpsBtn = document.getElementById("gifFpsBtn");
   const fpsInfoBtn = document.getElementById("gifFpsInfoBtn");
   const fpsInfoTooltip = document.getElementById("gifFpsInfoTooltip");
@@ -75,8 +93,34 @@
   modeBasicBtn.addEventListener("click", () => setGifMode("basic"));
   modeAdvancedBtn.addEventListener("click", () => setGifMode("advanced"));
   const statusEl = document.getElementById("gifStatus");
+  const sizeEl = document.getElementById("gifSizeStatus");
+  const statusHome = { parent: statusEl.parentNode, next: sizeEl.nextSibling };
+  function placeStatus(){
+    if (videoWrap.classList.contains("active")){
+      if (statusEl.parentNode !== videoWrap){
+        const results = document.getElementById("gifResults");
+        videoWrap.insertBefore(statusEl, results);
+        videoWrap.insertBefore(sizeEl, results);
+      }
+    } else if (statusEl.parentNode !== statusHome.parent){
+      statusHome.parent.insertBefore(statusEl, statusHome.next);
+      statusHome.parent.insertBefore(sizeEl, statusHome.next);
+    }
+  }
+  /* Terminal line under the Convert button: the size of the loaded video;
+     hidden once the result view takes over. */
+  function updateSizeLine(){
+    sizeEl.textContent = currentFile && !editorControls.hidden ? "Original size: ~" + bcFormatFileSize(currentFile.size) : "";
+  }
   const resultsEl = document.getElementById("gifResults");
   const resultsHeader = document.getElementById("gifResultsHeader");
+  const resultsLabel = document.getElementById("gifResultsLabel");
+  const resultsLabelDefault = resultsLabel.textContent;
+  /* The "> Result GIF size: …" readout hides while the result is minimized
+     (visibility, not display, so Download and the toggle keep their place). */
+  function syncResultsLabel(){
+    resultsLabel.parentElement.style.visibility = resultsEl.hidden ? "hidden" : "";
+  }
   const resultsToggle = document.getElementById("gifResultsToggle");
   const resultsDownloadBtn = document.getElementById("gifResultsDownloadBtn");
   const previewCanvas = document.getElementById("gifPreviewCanvas");
@@ -217,6 +261,7 @@
      button since it's secondary once you're restyling. */
   function showDoneView(){
     editorControls.hidden = true;
+    updateSizeLine();
     doneActions.hidden = false;
     /* Also doubles as the start of a new project: the drop zone comes
        back so dropping/picking a different video works right from this
@@ -229,6 +274,7 @@
   }
   function hideDoneView(){
     editorControls.hidden = false;
+    updateSizeLine();
     doneActions.hidden = true;
     drop.hidden = true;
     resultsHeader.hidden = false;
@@ -247,7 +293,7 @@
        report whichever step just actually happened rather than always
        saying "download" the moment conversion alone finishes. */
     startPrivacyCheck();
-    const outName = (scrubberFileName.value.trim() || "converted") + ".gif";
+    const outName = (doneFileName.value.trim() || scrubberFileName.value.trim() || "converted") + ".gif";
     downloadBlob(new Blob([lastResultBytes], { type: lastResultType || "image/gif" }), outName);
     finishPrivacyCheck(document.getElementById("gifPrivacyBadge"));
   }
@@ -260,6 +306,7 @@
 
   resultsToggle.addEventListener("click", () => {
     const collapsed = resultsEl.hidden = !resultsEl.hidden;
+    syncResultsLabel();
     resultsToggle.textContent = collapsed ? "+" : "−";
     resultsToggle.setAttribute("aria-expanded", String(!collapsed));
     resultsToggle.setAttribute("aria-label", bcT(collapsed ? "Expand result" : "Minimize result"));
@@ -274,6 +321,7 @@
      those two views this render is happening into (see their own
      comments), not on the render itself. */
   function renderResult(blob){
+    resultsLabel.textContent = resultsLabelDefault + " " + bcT("GIF size: {0}", [bcFormatFileSize(blob.size)]);
     const url = URL.createObjectURL(blob);
     const result = document.createElement("div");
     result.className = "result";
@@ -283,6 +331,7 @@
     resultsEl.innerHTML = "";
     resultsEl.appendChild(result);
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsToggle.textContent = "−";
     resultsToggle.setAttribute("aria-expanded", "true");
     resultsToggle.setAttribute("aria-label", bcT("Minimize result"));
@@ -310,12 +359,15 @@
       statusEl.textContent = bcT("Couldn't read that video — it may be corrupted or in an unsupported format.");
     }, 8000);
     videoWrap.classList.remove("active");
+    placeStatus();
     scrubberFileName.value = file.name.replace(/\.[^.]+$/, "");
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsHeader.hidden = true;
     lastResultBytes = null;
+    updateResultNameRow();
     lastResultType = null;
     statusEl.textContent = "";
     previewCanvas.width = previewCanvas.width; // clears the old clip's frame
@@ -500,9 +552,40 @@
       : Math.min(maxYFrac - halfHFrac, Math.max(minYFrac + halfHFrac, cap.y));
     updateCaptionElPosition(cap, boxEl);
   }
+  /* Caption fonts: Arial/Times/Courier come from the system; the rest are
+     the same open-licence font files the Context tool uses, loaded only when
+     a caption (or the menu) needs them — and always before the GIF is drawn,
+     since a canvas silently falls back to another font until the file has
+     loaded. Keys are the exact font strings stored on a caption. */
+  const CAPTION_FONT_DIR = "/vendor/fonts/context/";
+  const CAPTION_FONTS = {
+    "'BC Roboto', sans-serif": { family: "BC Roboto", files: { r: "Roboto_400Regular.ttf", b: "Roboto_700Bold.ttf", i: "Roboto_400Regular_Italic.ttf", bi: "Roboto_700Bold_Italic.ttf" } },
+    "'BC Open Sans', sans-serif": { family: "BC Open Sans", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
+    "'BC Comic Neue', cursive": { family: "BC Comic Neue", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
+    "'BC Anton', Impact, sans-serif": { family: "BC Anton", files: { r: "Anton_400Regular.ttf" } },
+    "'BC Caveat', cursive": { family: "BC Caveat", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    "'BC Playfair Display', serif": { family: "BC Playfair Display", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
+  };
+  const captionFontLoads = new Map();
+  function ensureCaptionFont(css, onlyRegular){
+    const f = CAPTION_FONTS[css];
+    if (!f) return Promise.resolve();
+    const key = css + (onlyRegular ? "|r" : "|all");
+    if (captionFontLoads.has(key)) return captionFontLoads.get(key);
+    const specs = { r: ["400", "normal"], b: ["700", "normal"], i: ["400", "italic"], bi: ["700", "italic"] };
+    const p = Promise.all(Object.entries(f.files).filter(([k]) => !onlyRegular || k === "r").map(([k, file]) => {
+      const face = new FontFace(f.family, "url(" + CAPTION_FONT_DIR + file + ")", { weight: specs[k][0], style: specs[k][1] });
+      document.fonts.add(face);
+      return face.load().catch(() => {});
+    }));
+    captionFontLoads.set(key, p);
+    return p;
+  }
+
   function applyCaptionElStyle(cap, innerEl){
     const fontSize = Math.max(10, Math.round(cap.size));
     innerEl.style.fontFamily = cap.font;
+    if (CAPTION_FONTS[cap.font]) ensureCaptionFont(cap.font).then(() => renderPreview());
     innerEl.style.fontSize = fontSize + "px";
     innerEl.style.fontWeight = cap.bold ? "700" : "400";
     innerEl.style.fontStyle = cap.italic ? "italic" : "normal";
@@ -1133,6 +1216,12 @@
     }
   }
 
+  captionFontMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    opt.style.fontFamily = opt.dataset.font;
+  });
+  captionFontTrigger.addEventListener("click", () => {
+    Object.keys(CAPTION_FONTS).forEach(css => ensureCaptionFont(css, true));
+  });
   registerDropdown(captionFontTrigger, captionFontMenu, (opt) => {
     const cap = findCaptionById(selectedCaptionId);
     captionFontTriggerLabel.textContent = opt.dataset.label;
@@ -1277,6 +1366,8 @@
     duration = video.duration;
     drop.hidden = true;
     videoWrap.classList.add("active");
+    placeStatus();
+    updateSizeLine();
     convertBtn.disabled = false;
     if (isRestoringSession) return;
     trimStart = 0;
@@ -1322,12 +1413,16 @@
     trimStart = 0;
     trimEnd = 0;
     videoWrap.classList.remove("active");
+    placeStatus();
     scrubberFileName.value = "";
     convertBtn.disabled = true;
     resultsEl.innerHTML = "";
     resultsEl.hidden = false;
+    syncResultsLabel();
     resultsHeader.hidden = true;
+    resultsLabel.textContent = resultsLabelDefault;
     lastResultBytes = null;
+    updateResultNameRow();
     lastResultType = null;
     statusEl.textContent = "";
     previewCanvas.width = previewCanvas.width;
@@ -1494,10 +1589,56 @@
   startDrag(handleStart, "start");
   startDrag(handleEnd, "end");
 
+  /* Dragging the selected zone itself (between the handles) slides the
+     whole trim range, keeping its length. */
+  let regionDrag = false;
+  scrubber.addEventListener("pointermove", (e) => {
+    if (regionDrag) return;
+    if (e.target.closest(".gif-scrubber-handle")){ scrubber.style.cursor = ""; return; }
+    const t = clientXToTime(e.clientX);
+    scrubber.style.cursor = (duration > 0 && trimEnd - trimStart < duration - 0.001 && t >= trimStart && t <= trimEnd) ? "grab" : "";
+  });
+  scrubber.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".gif-scrubber-handle")) return;
+    const len = trimEnd - trimStart;
+    const t = clientXToTime(e.clientX);
+    if (!(duration > 0) || len >= duration - 0.001 || t < trimStart || t > trimEnd) return;
+    e.preventDefault();
+    stopPreviewPlayback();
+    regionDrag = true;
+    const offset = t - trimStart;
+    scrubber.setPointerCapture(e.pointerId);
+    scrubber.style.cursor = "grabbing";
+    function onMove(ev){
+      const start = Math.min(Math.max(0, clientXToTime(ev.clientX) - offset), duration - len);
+      trimStart = start;
+      trimEnd = start + len;
+      layoutScrubber();
+      scheduleDragPreview(trimStart);
+    }
+    function onUp(){
+      regionDrag = false;
+      try { scrubber.releasePointerCapture(e.pointerId); } catch (err) { /* skip */ }
+      scrubber.removeEventListener("pointermove", onMove);
+      scrubber.removeEventListener("pointerup", onUp);
+      scrubber.removeEventListener("pointercancel", onUp);
+      scrubber.style.cursor = "grab";
+      scheduleDragPreview(trimStart);
+      schedulePersist();
+    }
+    scrubber.addEventListener("pointermove", onMove);
+    scrubber.addEventListener("pointerup", onUp);
+    scrubber.addEventListener("pointercancel", onUp);
+  });
+
   /* Output file name — defaults to the source clip's name (minus
      extension) in setFile(), editable right there next to the trim
      range so renaming doesn't need a separate control. */
   scrubberFileName.addEventListener("input", schedulePersist);
+  /* The result has its own name field (copied from the project name when
+     the GIF is made) so the finished file can be renamed before
+     downloading, independent of the next conversion's name. */
+  doneFileName.addEventListener("input", schedulePersist);
 
   /* ===== conversion ===== */
   convertBtn.addEventListener("click", async () => {
@@ -1571,6 +1712,8 @@
         orderedTimes = times.concat(times.slice().reverse().slice(1));
       }
 
+      await Promise.all(captions.map(c => ensureCaptionFont(c.font)));
+
       for (let i = 0; i < orderedTimes.length; i++){
         statusEl.textContent = bcT("Extracting frame {0} of {1}...", [i + 1, orderedTimes.length]);
         await seekTo(orderedTimes[i]);
@@ -1584,7 +1727,7 @@
       });
 
       gif.on("finished", async (blob) => {
-        statusEl.textContent = bcT("Done. GIF size: {0}", [bcFormatFileSize(blob.size)]);
+        statusEl.textContent = "";
 
         recentWidth = outputWidth;
         try { localStorage.setItem(RECENT_WIDTH_KEY, String(outputWidth)); } catch (err) { /* skip */ }
@@ -1592,6 +1735,8 @@
         renderResult(blob);
         lastResultType = blob.type || "image/gif";
         lastResultBytes = await blob.arrayBuffer();
+        doneFileName.value = scrubberFileName.value;
+        updateResultNameRow();
         schedulePersist();
 
         convertBtn.disabled = false;
@@ -1633,6 +1778,7 @@
         file: { name: currentFile.name, type: currentFile.type, bytes },
         result: lastResultBytes ? { type: lastResultType, bytes: lastResultBytes } : null,
         outputName: scrubberFileName.value,
+        resultName: doneFileName.value,
         trimStart,
         trimEnd,
         fps,
@@ -1747,6 +1893,8 @@
         if (saved.result && saved.result.bytes){
           lastResultType = saved.result.type || "image/gif";
           lastResultBytes = saved.result.bytes;
+          doneFileName.value = typeof saved.resultName === "string" ? saved.resultName : scrubberFileName.value;
+          updateResultNameRow();
           renderResult(new Blob([lastResultBytes], { type: lastResultType }));
           /* Restores straight into the editor (no showDoneView() call in
              this path), so minimize is meaningful here — same as after

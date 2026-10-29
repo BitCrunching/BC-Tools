@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
-<script src="/shared/i18n/ja.js?v=4"></script>
+<script src="/shared/i18n/ja.js?v=7"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="ゴールデンルール – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=240">
+<link rel="stylesheet" href="/shared/site.css?v=249">
 <style>
 /* ===== GOLDEN RULES ===== */
 /* Wheel-picker switcher: the "active" slot is a fixed position — dead
@@ -176,6 +176,8 @@ html[data-theme="dark"] .golden-rules-switcher{
 .golden-rules-tool-btn[data-tool="gif"].active{ background:#22D3D0; border-color:#22D3D0; }
 .golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 .golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
+.golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
+.golden-rules-tool-btn[data-tool="comprio"].active{ background:#5B6CFF; border-color:#5B6CFF; color:#fff; }
 
 .ad-slot-incontent{
   margin:32px auto;
@@ -385,6 +387,8 @@ html[data-theme="dark"] .golden-rules-switcher{
       <button type="button" class="golden-rules-tool-btn" data-tool="gif">Congify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="coudio">Coudio</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="comprio">Comprio</button>
       <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
@@ -1327,6 +1331,196 @@ html[data-theme="dark"] .golden-rules-switcher{
     </div>
 
 
+    <div class="golden-rules-articles" data-tool="colorfy">
+      <details class="golden-rules-article">
+        <summary>1. HEX・RGB・HSB・HSL：各カラーコードの本当の意味</summary>
+        <div class="golden-rules-body">
+          <p>画面上のすべての色は、同じ赤・緑・青の光の値に帰着します。HEX、RGB、HSB、HSLは、同じ色を書き表す4つの異なる方法にすぎず、それぞれ別の種類の作業に向いています。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>形式</th><th>最適な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="形式">HEX (<code>#FF8A4C</code>)</td><td data-label="最適な用途">CSS、デザインツールなど、コンパクトな単一コードが求められるあらゆる場所</td></tr>
+              <tr><td data-label="形式">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="最適な用途">別々の数値から色を作るコード、またはチャンネルの合成・演算を行うコード</td></tr>
+              <tr><td data-label="形式">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="最適な用途">同じ色相のまま、色の明るさや彩度を調整する</td></tr>
+              <tr><td data-label="形式">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="最適な用途">ホバー・アクティブ状態のために、色を予測どおりに明るく、または暗くする</td></tr>
+            </tbody>
+          </table>
+
+          <h3>HEX：コンパクトで、どこでも使える標準</h3>
+          <p>HEXコードは赤・緑・青を6桁の文字列にまとめたもので、ほとんどすべてのデザインツール、CSS、画像エディタが標準で期待する形式です。コンパクトで貼り付けやすい反面、中身の数値（16進数のペア）は、普通の10進数のようには一目で読み取れません。</p>
+
+          <h3>RGB：同じ値を、そのまま書き出したもの</h3>
+          <p>RGBは、HEXがエンコードするのと同じ3つのチャンネルを、16進数のペアにまとめるのではなく、0〜255の3つの普通の数値として書き出したものです。1つのチャンネルを手で調整する場合や、別々の赤・緑・青の入力から色を作るコードを書く場合に、考えやすくなります。</p>
+
+          <h3>HSBとHSL：色の実際の感じ方を軸に設計</h3>
+          <p>どちらも色を色相（色そのもの、色相環上の位置）と、鮮やかさや明るさを表す他の2つの要素に分けます。HSBは彩度と明度、HSLは彩度と輝度を使います。「同じ色でもっと暗く」「同じ色でもっとくすんだ」にしたいとき、どちらもずっと考えやすいです。3つのRGBチャンネルを手計算し直す代わりに、色相はそのままにして、もう一方の数値だけを調整すればよいからです。</p>
+
+          <h3>Colorfyでの形式の選び方</h3>
+          <p>Colorfyの形式ドロップダウンは、すべてのピッカーと保存した色の表示に一度に適用されます。貼り付け先に合うもの（CSSならHEX、色合いを手で微調整するならHSB/HSL）に切り替えるだけで、コピーしたコードを後から自分で変換する必要がありません。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. スクリーンショット、写真、デザイン資料から色を取る</summary>
+        <div class="golden-rules-body">
+          <p>目分量で色を合わせようとする（ブランドの正確な青、ムードボード写真の色合い、競合サイトの色）ことは、記憶から、あるいはHEXコードを当てずっぽうで入れても、正確に合うことはまずありません。実際のピクセルをサンプリングすることが、正確な値を得る唯一の方法です。</p>
+
+          <h3>「ほぼ合っている」では足りないことが多い理由</h3>
+          <p>並べて見るとほぼ同じに見える2つの色でも、実際のコードを比べると測定できるほど違っていることがあります。RGBの1つのチャンネルだけがわずかに違う色合いは、単独では目に見えないことが多いですが、本物の参照色のすぐ隣に置かれた瞬間にはっきり分かります。サンプリングは推測を完全に取り除きます。ピッカーは近似値ではなく、ファイルにあるものを正確に読み返します。</p>
+
+          <h3>スクリーンショットから作業する</h3>
+          <p>Webページ、アプリ、他人のデザインのスクリーンショットは、他の画像とまったく同じように扱われます。ドロップして、合わせたい正確なピクセルまでピッカーをドラッグし、コードをコピーするだけです。元のソースファイルを持っていない参照物から、ブランドカラーやUIカラーを取り出す最も確実な方法です。</p>
+
+          <h3>圧縮や照明によるアーティファクトに注意</h3>
+          <p>強く圧縮されたJPEGや、色のついた・暖色の照明で撮った写真は、色の実際のピクセル値が本来の色から外れることがあります。黄色い屋内照明の下で撮影したロゴの本当のHEXコードは、実際のロゴより少し暖かく読み取られます。正確さが重要な場合（公式ブランドカラーに合わせるときなど）は、写真ではなく、きれいなスクリーンショットや非圧縮のソースから色を取るのが望ましいです。</p>
+
+          <h3>複数の箇所をサンプリングして一貫性を確認する</h3>
+          <p>1枚の写真でも、一見「均一」に見える領域に、見た目以上の色の変化があることがよくあります。JPEG圧縮、微妙なグラデーション、照明が、ピクセル間に小さな違いを生みます。1つのサンプルを信じるのではなく、同じ領域の異なる点に2〜3個のピッカーを使うと、本当の色の変化なのか、単なるノイズなのかをつかみやすくなります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 作業しながら再利用できるパレットを作る</summary>
+        <div class="golden-rules-body">
+          <p>Colorfyの保存色パレットは、1つの画像から複数の色を取り出し、後でそのすべてに戻りたいときのためにあります。ファイルを開き直して、1色ずつ最初から選び直す必要がありません。</p>
+
+          <h3>作業しながら保存する</h3>
+          <p>サンプリングした色の横にある「保存」をクリックすると、その色がブラウザに保持されるパレットに追加されます。画像とは別に保存されるので、次にColorfyを開いたときも、別の画像を読み込んでいても、画像を読み込んでいなくても残っています。一度に最大20色まで保持でき、複数の参照画像から集めた完全なパレットを、先にコードをどこかへコピーしなくても作れます。</p>
+
+          <h3>保存した色に名前を付ける</h3>
+          <p>保存した色をダブルクリックすると、短い名前（最大25文字）を付けられます。パレットのエントリが数個を超えると、「3つ目のオレンジ」では見分けにくくなるので便利です。名前はホバー時のツールチップとして表示されるため、スウォッチ自体は見た目をすっきり保ったまま、必要なときに名前ですぐ見分けられます。</p>
+
+          <h3>パレットを空にする</h3>
+          <p>保存した色を1つずつ削除するには、このサイトのすべてのファイルリストで使われているものと同じ「×」ボタンを使います。そのボタンをクリックするときにShiftキーを押したままにすると、クリックした色を含め、保存したすべての色を一度に消去します。完了したプロジェクトのパレットが不要になり、各エントリを個別に削除するより次のパレットを空から始めたい場合の、より速い方法です。</p>
+
+          <h3>パレットを開いたままにしておく価値があるとき</h3>
+          <p>保存したパレットが最も役立つのは、一度きりの色の調べ物ではなく、複数のセッションにわたってブランドカラーやUIカラーの一貫したセットを作り上げる継続的なプロジェクトです。一度きりなら、コードを直接コピーして先に進むほうが保存するより簡単です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 複数のカラーピッカーで色を並べて比較する</summary>
+        <div class="golden-rules-body">
+          <p>1色を取るだけなら1つのピッカーで十分ですが、同じ画像から2色以上を比較する場合（コントラストの確認、グラデーションの両端の一致、1枚の写真に散らばったパレットのサンプリング）は、複数のピッカーを同時に有効にしたほうがはるかに簡単です。</p>
+
+          <h3>2つ目（3つ目、4つ目）のピッカーを追加する</h3>
+          <p>同じ画像で最大4つのピッカーを同時に有効にでき、それぞれに番号が付くため、下の結果行を画像上のリングに簡単に対応づけられます。ピッカーリストの下の「+」ボタンで追加するか、Shiftキーを押しながら画像上の任意の場所をクリックすると、その位置に番号付きの新しいピッカーを直接置けます。サンプリングしたい大まかな場所がすでに分かっている場合は、後者のほうが速い方法です。</p>
+
+          <h3>結果をまとめて読む</h3>
+          <p>有効なピッカーにはそれぞれ専用の行があり、独自のコードと保存ボタンが同時に表示されます。画像上では同じ色に見える2つの領域が実際に同じコードを共有しているか確認したり、1つずつサンプリング、保存、再サンプリングを繰り返すのではなく、1枚の画像から小さな複数色のパレットを一度に作ったりするのに便利です。</p>
+
+          <h3>追加せずに位置を変える</h3>
+          <p>通常のクリック（Shiftなし）は、新しいピッカーを追加せず、直前に操作したピッカーを動かします。ピッカーを削除して追加し直さなくても、サンプル位置を微調整するのに便利です。ピッカーを直接ドラッグしたり、フォーカスしてから矢印キーを使ったりしても、同じようにピクセル単位の細かな調整ができます。</p>
+
+          <h3>1つのピッカーで十分なとき</h3>
+          <p>1色をさっと取るだけなら、ピッカーを増やすのは余計な手間です。ピッカーが役に立つのは、同じ画像から1回のセッションで2色以上を比較、対比、収集する必要があるときです。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. 色選びでよくある間違い（と回避方法）</summary>
+        <div class="golden-rules-body">
+          <p>不正確な色の選択のほとんどは、ツールそのものに問題があるのではなく、ピッカーが正確にどこに着地するかについての、避けられる習慣に起因します。</p>
+
+          <h3>エッジの真上でサンプリングする</h3>
+          <p>二つの色の境界にあるピクセルは、どちらの側のきれいなサンプルでもなく、アンチエイリアスで混ざった中間色であることがよくあります。縮小表示のままシェイプの輪郭付近をクリックすると特に起きやすいです。ズームして（プレビューを大きくして）、縁から十分離れた、取りたい領域の均一な内部を狙ってください。</p>
+
+          <h3>強く圧縮された画像を信用する</h3>
+          <p>JPEG圧縮は、特に写真の複雑なエリアやディテールの多いエリアで、個々のピクセル値を元の色から少しずらすことがあります。「ベタ」の色の領域でも、元のシーンにはなかったピクセルごとの小さなノイズが含まれることがあります。正確さが重要な場合は、可能であれば圧縮されたJPEGより、PNGなどの可逆ソースを選んでください。</p>
+
+          <h3>自分の画面を考慮しない</h3>
+          <p>Colorfyが読み返すコードは、画像ファイルに保存されている正確な値ですが、その色が実際にどう見えるかは、表示する画面に依存し、ディスプレイごとにキャリブレーションが異なります。サンプリングした色を物理的な参照物（印刷物、物理的な製品）に正確に合わせる必要がある場合は、サンプリングしたコードを正確な出発点として扱い、モニター上での見え方だけでなく、物理的な参照物そのものと照らして最終結果を確認することを想定してください。</p>
+
+          <h3>保存した色が画像をまたいで残ることを忘れる</h3>
+          <p>保存したパレットは読み込んだ画像に紐づかないため、ときどき空にしないと、無関係な複数のプロジェクトの色が同じパレットに混ざりがちです。無関係な新しいプロジェクトを始めるときは、保存した色の削除ボタンをShift+クリックするとパレット全体を一度に消去でき、新旧の色が一緒に溜まるのを防げます。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="golden-rules-articles" data-tool="comprio">
+      <details class="golden-rules-article">
+        <summary>1. 動画圧縮の本当の仕組み</summary>
+        <div class="golden-rules-body">
+          <p>動画は何千枚もの静止画フレームでできていますが、各フレームのほとんどは直前のフレームとほぼ同じに見えます。動画エンコーダーはフレーム間で変化する部分を残し、残りをはるかに少ないデータで保存します。だから同じクリップが80%小さくなっても十分きれいに見えるのです。エンコーダーが主に調整するのがビットレート、つまり動画1秒あたりに使うビット数です。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>レベル</th><th>最適な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="レベル">低</td><td data-label="最適な用途">アーカイブ、編集、大画面での視聴</td></tr>
+              <tr><td data-label="レベル">中</td><td data-label="最適な用途">メッセージアプリ、メール、ウェブサイトへのアップロード</td></tr>
+              <tr><td data-label="レベル">高</td><td data-label="最適な用途">手早いプレビュー、下書き、厳しいアップロード制限</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Comprioが最初に目安を表示する理由</h3>
+          <p>各レベルは、動画自体のサイズとフレームレートから目標ビットレートを決めるため、各動画の下に表示される目安は、そのビットレートに動画の長さを掛けた単純な計算です。通常は最終的なファイルに近い値になりますが、動きの多い映像は少し上回り、静かな映像は少し下回ることがあります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. レベルとサイズ：動画を最も小さくするのはどちらか</summary>
+        <div class="golden-rules-body">
+          <p>レベルも動画のサイズもファイルを小さくしますが、方法が異なります。レベルは画像の寸法を保ったままビットレートを下げます。動画を縮小する（プレビューのサイズをクリック）と画素数も減るため、同じビットレートをより少ない画素に割り当てることになり、一つひとつがよりきれいに見えます。</p>
+
+          <h3>縮小するタイミング</h3>
+          <p>スマートフォンやチャットの画面で見る動画は、4Kの画素数の恩恵をほとんど受けません。4Kや8Kのクリップをより小さいサイズに縮小すると、レベルを変えるだけよりも多くの容量を節約できることが多く、その画面サイズでは見た目の違いもわずかです。大きなディスプレイで全画面表示する場合や、さらに編集する場合は、元のサイズのままにしてください。</p>
+
+          <h3>縦向き動画</h3>
+          <p>小さいサイズはいずれも画像の短い辺を基準に設定されます。そのため、縦向きのスマートフォン動画を720に縮小すると、高さではなく幅が720ピクセルになります。向きと縦横比は撮影したままで、長い辺はそれに合わせて決まるため、4K、8K、ウルトラワイドの動画もそれぞれ正確な寸法になります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. スマートフォンの動画が大きい理由</summary>
+        <div class="golden-rules-body">
+          <p>スマートフォンはファイルサイズよりも速度とバッテリーを優先するため、非常に高いビットレートで、しばしば4Kや毎秒60フレームで録画します。そのため1分のクリップが数百メガバイトになることもあります。見た目を変えずに小さくできる余地は大きく、特に編集せず視聴するだけの動画ではそうです。</p>
+
+          <h3>MOV、MP4、そして出力されるもの</h3>
+          <p>MOVとMP4はコンテナ、つまり動画と音声を詰める箱であり、圧縮そのものではありません。ComprioはMOV、MP4、WebMなど一般的なコンテナを読み込み、常に標準のH.264 MP4（ブラウザがH.264をエンコードできない場合はWebM）を書き出します。スマートフォン、パソコン、ブラウザ、メッセージアプリなど、ほぼどこでも再生できます。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. 圧縮しても画質を保つには</summary>
+        <div class="golden-rules-body">
+          <p>圧縮は一方通行のトレードオフです。容量を節約するために取り除いたディテールは元に戻せません。いくつかの習慣で、そのトレードオフを有利に保てます。</p>
+
+          <h3>元のファイルを残す</h3>
+          <p>Comprioは常に新しいファイルを保存し、元のファイルには一切触れません。圧縮したコピーが期待どおりに再生できることを確認するまで、元のファイルを残しておいてください。特にスマートフォンから何かを削除する前には必ず確認しましょう。</p>
+
+          <h3>二重に圧縮しない</h3>
+          <p>すでに圧縮した動画を再圧縮すると、わずかな追加削減のために再び画質が落ちます。結果がまだ大きすぎる場合は、元のファイルに戻って、より高いレベルかより小さいサイズを選んでください。</p>
+
+          <h3>わずかな削減に注意</h3>
+          <p>すでに強く圧縮された動画（画面録画やSNSアプリから保存したクリップなど）は、ほとんど小さくならないことがあります。Comprioは各動画の前後のサイズを表示するので、結果が保存する価値のあるものかどうかがすぐに分かります。</p>
+
+          <h3>動画の小さな「i」</h3>
+          <p>動画のビットレートがすでに低い場合、そのプレビューに小さな「i」が表示されます。ビットレートは動画1秒あたりに使うデータ量で、すでに非常に少ないクリップには削れる部分がほとんどありません。目安はエンコーダーがより低いビットレートに到達できる前提ですが、動きの多い映像では、そこまで下げられないことがよくあります。そのため実際のファイルは目安より大きくなり、削減量がはるかに小さくなることがあり &mdash; まれにほとんど減らないこともあります。画面録画、SNSアプリから保存したクリップ、すでに一度圧縮された動画がよくある例です。削減が小さい場合は、元のファイルを残してください。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. ブラウザで圧縮する：知っておきたいこと</summary>
+        <div class="golden-rules-body">
+          <p>Comprioは、ブラウザ内蔵の動画エンコーダーを使ってお使いのデバイス上で動画を再エンコードするため、何もアップロードされず、サーバーも関与しません。速度はお使いのコンピューター次第です。ハードウェアエンコーダーを備えた最近のノートPCなら、通常はクリップの再生時間より速く処理できますが、古いコンピューターや負荷の高いコンピューターでは時間がかかることがあります。</p>
+
+          <h3>タブを開いたままにする</h3>
+          <p>ブラウザはバックグラウンドのタブを遅くしたり一時停止したりするため、進行状況バーが終わるまでComprioのタブを表示したままにしてください。処理中にもう一度ボタンを押すと、ジョブがキャンセルされます。</p>
+
+          <h3>非常に大きなファイル</h3>
+          <p>圧縮した動画は保存前にメモリ上で作られるため、非常に長い動画や大きな動画にはたっぷりの空きメモリが必要です。数ギガバイトの録画は、他に何も動かしていないタブで圧縮するか、先にトリミングしてください。</p>
+
+          <h3>8K動画と奇数サイズ</h3>
+          <p>ブラウザは8K動画をMP4として保存できず、画素数が奇数のサイズ（例：1281×721）もMP4では維持できません。その場合Comprioは代わりに同じサイズのWebMファイルを保存し、動画を追加したときにお知らせします。WebMはすべての最新ブラウザとほとんどのプレーヤーで再生できますが、一部のスマートフォンのギャラリーや編集ソフトはMP4を好みます。プレビューのサイズをクリックしてより小さいサイズを選ぶと、通常のMP4になります。</p>
+        </div>
+      </details>
+    </div>
+
     <div class="ad-slot ad-slot-bottom">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
     </div>
@@ -1357,6 +1551,8 @@ html[data-theme="dark"] .golden-rules-switcher{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
         </div>
       </div>
     </div>
@@ -1373,8 +1569,8 @@ html[data-theme="dark"] .golden-rules-switcher{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=95" defer></script>
-<script src="/shared/report.js?v=27" defer></script>
+<script src="/shared/site.js?v=98" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
 <script src="/golden-rules/golden-rules-tool.js?v=9" defer></script>
 </body>
 </html>

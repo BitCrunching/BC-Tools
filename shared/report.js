@@ -27,7 +27,7 @@
 
   const css = document.createElement("link");
   css.rel = "stylesheet";
-  css.href = "/shared/report.css?v=13";
+  css.href = "/shared/report.css?v=14";
   document.head.appendChild(css);
 
   const btn = document.createElement("button");
@@ -59,7 +59,7 @@
       '<div class="bc-report-thumbs"></div>' +
     '</div>' +
     '<label class="bc-report-consent"><input type="checkbox"><div><p>' + bcT("I understand that sending this report is {anon}, browser, device and other details will be shared. (read more in {privacy})", { anon: "<b>" + bcT("not anonymous") + "</b>", privacy: '<a href="' + (typeof bcLangPath === "function" ? bcLangPath("/privacy/") : "/privacy/") + '" target="_blank" rel="noopener">' + bcT("Privacy Policy") + '</a>' }) + '</p></div></label>' +
-    '<div class="bc-report-actions"><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
+    '<div class="bc-report-actions"><button type="button" class="bc-report-close">' + bcT("Close") + '</button><button type="button" class="bc-report-send" title="' + bcT("Send (Enter)") + '" disabled>' + bcT("Send") + '</button></div>' +
     '<div class="tool-status bc-report-status" role="status"></div>';
   document.body.appendChild(box);
 
@@ -94,11 +94,11 @@
   }
 
   function isOpen(){ return !box.hidden; }
-  function open(which){
+  function open(which, keepFocus){
     if (which && which !== tab) setTab(which);
     box.hidden = false;
     btn.setAttribute("aria-expanded", "true");
-    text.focus();
+    if (!keepFocus) text.focus();
   }
   function close(){
     box.hidden = true;
@@ -152,7 +152,18 @@
     renderShots();
   }
 
-  btn.addEventListener("click", () => { isOpen() ? close() : open(); });
+  const hoverOpens = () => window.matchMedia("(hover: hover)").matches && window.innerWidth > 768;
+  btn.addEventListener("click", (e) => {
+    if (e.detail > 0 && hoverOpens()){ open(); return; }
+    isOpen() ? close() : open();
+  });
+  if (window.matchMedia("(hover: hover)").matches){
+    let closeTimer;
+    const enter = () => { clearTimeout(closeTimer); if (window.innerWidth > 768 && !isOpen()){ open(null, true); document.dispatchEvent(new Event("bc-report-hover")); } };
+    const leave = () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => { if (isOpen()){ if (box.contains(document.activeElement)) document.activeElement.blur(); close(); } }, 150); };
+    document.addEventListener("bc-nav-hover", () => { clearTimeout(closeTimer); if (isOpen()){ if (box.contains(document.activeElement)) document.activeElement.blur(); close(); } });
+    [btn, box].forEach(el => { el.addEventListener("mouseenter", enter); el.addEventListener("mouseleave", leave); });
+  }
   tabBtns.forEach(b => b.addEventListener("click", () => { setTab(b.dataset.tab); text.focus(); }));
 
   const footerContact = document.getElementById("footerContactSection");
@@ -176,6 +187,7 @@
     e.preventDefault();
     if (!send.disabled) send.click();
   });
+  box.querySelector(".bc-report-close").addEventListener("click", close);
   attach.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => { addShots([...fileInput.files]); fileInput.value = ""; });
   box.addEventListener("paste", (e) => {

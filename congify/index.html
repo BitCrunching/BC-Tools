@@ -72,7 +72,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=240">
+<link rel="stylesheet" href="/shared/site.css?v=249">
 <style>
 #page-gif::before{
   background:#22D3D0;
@@ -417,6 +417,28 @@
   font:inherit;
   cursor:text;
 }
+.gif-done-filename[hidden]{ display:none; }
+@media (max-width:768px){
+  .gif-done-filename .gif-scrubber-filename-tag-text::before{ content:"GIF:"; }
+}
+.gif-results-header-btns .gif-done-filename{
+  margin-top:0;
+  min-width:0;
+}
+.gif-results-header-btns .gif-scrubber-filename{
+  max-width:150px;
+}
+.gif-done-filename{
+  margin-top:14px;
+  justify-content:flex-start;
+}
+.gif-done-filename .gif-scrubber-filename-group{
+  flex-wrap:nowrap;
+}
+.gif-scrubber-filename-ext{
+  flex-shrink:0;
+  opacity:.7;
+}
 .gif-scrubber-filename:hover{
   border-bottom-color:var(--border-strong);
 }
@@ -494,7 +516,8 @@
   margin-top:20px;
 }
 .gif-results-header span{
-  font-size:13px;
+  font-family:var(--bc-mono);
+  font-size:12px;
   font-weight:700;
   color:var(--text);
 }
@@ -539,6 +562,8 @@
   font-weight:700;
   white-space:nowrap;
 }
+#gifSizeStatus{ margin-top:0; min-height:0; }
+#gifSizeStatus:empty{ display:none; }
 #gifResults[hidden]{
   display:none;
 }
@@ -1446,9 +1471,14 @@
             </button>
             <div class="bc-dropdown-menu" id="gifCaptionFontMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-font="Arial, sans-serif" data-label="Arial" style="font-family:Arial, sans-serif;" role="option" aria-selected="false">Arial</button>
-              <button type="button" class="bc-dropdown-option" data-font="Impact, sans-serif" data-label="Impact" style="font-family:Impact, sans-serif;" role="option" aria-selected="false">Impact</button>
               <button type="button" class="bc-dropdown-option" data-font="'Times New Roman', serif" data-label="Times" style="font-family:'Times New Roman', serif;" role="option" aria-selected="false">Times</button>
-              <button type="button" class="bc-dropdown-option" data-font="'Comic Sans MS', cursive" data-label="Comic Sans" style="font-family:'Comic Sans MS', cursive;" role="option" aria-selected="false">Comic Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Courier New', monospace" data-label="Courier" style="font-family:'Courier New', monospace;" role="option" aria-selected="false">Courier</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Roboto', sans-serif" data-label="Roboto" style="font-family:'BC Roboto', sans-serif;" role="option" aria-selected="false">Roboto</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Open Sans', sans-serif" data-label="Open Sans" style="font-family:'BC Open Sans', sans-serif;" role="option" aria-selected="false">Open Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Comic Neue', cursive" data-label="Comic Neue" style="font-family:'BC Comic Neue', cursive;" role="option" aria-selected="false">Comic Neue</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Anton', Impact, sans-serif" data-label="Anton" style="font-family:'BC Anton', Impact, sans-serif;" role="option" aria-selected="false">Anton</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Caveat', cursive" data-label="Caveat" style="font-family:'BC Caveat', cursive;" role="option" aria-selected="false">Caveat</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Playfair Display', serif" data-label="Playfair" style="font-family:'BC Playfair Display', serif;" role="option" aria-selected="false">Playfair</button>
             </div>
           </div>
         </div>
@@ -1562,14 +1592,21 @@
       </div>
     </div>
 
+    <div class="tool-results" id="gifResults"></div>
     <div class="gif-results-header" id="gifResultsHeader" hidden>
-      <span><span class="nav-terminal-prompt">&gt;</span> Result</span>
+      <span><span class="nav-terminal-prompt">&gt;</span> <span id="gifResultsLabel">Result</span></span>
       <div class="gif-results-header-btns">
         <button type="button" class="gif-results-toggle gif-results-download" id="gifResultsDownloadBtn" aria-label="Download result" title="Download result">Download</button>
         <button type="button" class="gif-results-toggle" id="gifResultsToggle" aria-label="Minimize result" title="Minimize result" aria-expanded="true">&#8722;</button>
       </div>
     </div>
-    <div class="tool-results" id="gifResults"></div>
+    <div class="gif-scrubber-label gif-done-filename" id="gifResultNameRow" hidden>
+      <span class="gif-scrubber-filename-group">
+        <span class="gif-scrubber-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="gif-scrubber-filename-tag-text">GIF name:</span></span>
+        <input type="text" class="gif-scrubber-filename" id="gifDoneFileName" aria-label="Output file name" spellcheck="false">
+        <span class="gif-scrubber-filename-ext">.gif</span>
+      </span>
+    </div>
     <div class="gif-done-actions" id="gifDoneActions" hidden>
       <button type="button" class="tool-primary-btn tool-continue-btn" id="gifDoneContinueBtn">Continue working</button>
       <button type="button" class="tool-primary-btn" id="gifDownloadBtn" title="Download (D)">Download</button>
@@ -1583,6 +1620,7 @@
          happens once a video's already active, so moving it out here
          doesn't change anything about how those already look. -->
     <div class="tool-status" id="gifStatus"></div>
+    <div class="tool-status" id="gifSizeStatus"></div>
   </div>
 </div>
 
@@ -1626,6 +1664,8 @@
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
         </div>
       </div>
     </div>
@@ -1642,8 +1682,8 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=95" defer></script>
-<script src="/shared/report.js?v=27" defer></script>
-<script src="/congify/congify-tool.js?v=133" defer></script>
+<script src="/shared/site.js?v=98" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/congify/congify-tool.js?v=145" defer></script>
 </body>
 </html>

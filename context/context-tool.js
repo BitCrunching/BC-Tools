@@ -14,10 +14,12 @@
      content lives here now. */
   bcSetupHelpBanner("context", "ct", [
     ["WELCOME_TO_CONTEXT", "Context lets you type text, sign, or drop shapes anywhere on a PDF, no account or upload required. Click, drop, or press (A) to add a PDF to get started."],
-    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to pick a circle, square, triangle, or cross."],
-    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar — drag a box's handles to move or resize it, and use its red × to remove it."],
+    ["CLICK_TO_PLACE_TEXT", "Once a PDF's in, hit Add text (or press T) for a new text box, Signature (S) to add your signature, or Shape (H) to place a shape. Hover over the shape button for a moment to pick a circle, square, triangle, cross, checkmark, or crossmark."],
+    ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
+    ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
-    ["MULTI_PAGE_SUPPORT", "Use the page arrows to move between pages — everything stays exactly where you placed it."],
+    ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
+    ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
   ]);
 
@@ -51,9 +53,10 @@
   const italicBtn = document.getElementById("ctItalicBtn");
   const underlineBtn = document.getElementById("ctUnderlineBtn");
   const shapeBtn = document.getElementById("ctShapeBtn");
+  const fontBtn = document.getElementById("ctFontBtn");
+  const fontMenu = document.getElementById("ctFontMenu");
   const shapeKindMenu = document.getElementById("ctShapeKindMenu");
   const pageNav = document.getElementById("ctPageNav");
-  const pageNavDesktopSlot = document.getElementById("ctPageNavDesktopSlot");
   const prevPageBtn = document.getElementById("ctPrevPage");
   const nextPageBtn = document.getElementById("ctNextPage");
   const pageLabel = document.getElementById("ctPageLabel");
@@ -88,6 +91,9 @@
   let pageCount = 1;
   let currentPage = 1;
   let currentRenderTask = null;
+  let renderGen = 0;
+  let pageCache = new Map();
+  let prefetchTimer = null;
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
@@ -95,7 +101,8 @@
   let fsPanX = 0;
   let fsPanY = 0;
   let activeColor = "#000000";
-  let activeSize = 16;
+  let activeSize = 10;
+  let activeFont = "arial";
   let activeBold = false;
   let activeItalic = false;
   let activeUnderline = false;
@@ -121,6 +128,13 @@
   let shapeBoxes = [];
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
+  let selectedSigId = null;
+  const HISTORY_MAX = 100;
+  let undoStack = [];
+  let redoStack = [];
+  let historyCurrent = null;
+  let historyTimer = null;
+  let applyingHistory = false;
   let activeShapeKind = "triangle";
   let currentFileBytes = null;
 
@@ -200,6 +214,7 @@
 
   let persistTimer = null;
   function schedulePersist(){
+    noteHistory();
     scheduleSizeUpdate();
     if (!currentFileBytes) return;
     clearTimeout(persistTimer);
@@ -240,6 +255,7 @@
   async function loadFile(file, restoreState){
     if (loadFileBusy) return;
     loadFileBusy = true;
+    if (isPdfFile(file)) continueBtn.hidden = true;
     try {
       await loadFileInner(file, restoreState);
     } finally {
@@ -275,6 +291,7 @@
     boxIdSeq = restoreState ? (restoreState.boxIdSeq || 0) : 0;
     sigBoxIdSeq = restoreState ? (restoreState.sigBoxIdSeq || 0) : 0;
     shapeBoxIdSeq = restoreState ? (restoreState.shapeBoxIdSeq || 0) : 0;
+    resetHistory();
 
     /* Reading/parsing a large PDF blocks the main thread hard enough
        that the browser can skip painting the status text above unless
@@ -295,6 +312,7 @@
       status.textContent = bcT("Couldn't read that PDF — it may be corrupted or password-protected.");
       return;
     }
+    clearPageCache();
     pdfjsDoc = doc;
     pageCount = pdfjsDoc.numPages;
     currentPage = restoreState ? Math.min(Math.max(1, restoreState.currentPage || 1), pageCount) : 1;
@@ -321,6 +339,87 @@
        "too long, hard to manipulate" complaint this replaces. */
     if (mobileMql.matches) await openFullscreen();
     persistNow();
+  }
+
+  const PAGE_CACHE_MAX = 5;
+
+  function pageCacheKey(pageNum, w, h){
+    return pageNum + "|" + w + "x" + h;
+  }
+
+  function clearPageCache(){
+    clearTimeout(prefetchTimer);
+    pageCache.forEach(e => { if (e.task) e.task.cancel(); });
+    pageCache.clear();
+  }
+
+  function cancelStalePrefetches(keepPage){
+    pageCache.forEach((e, k) => {
+      if (e.pending && e.pageNum !== keepPage){
+        if (e.task) e.task.cancel();
+        pageCache.delete(k);
+      }
+    });
+  }
+
+  function evictFarPages(){
+    while (pageCache.size > PAGE_CACHE_MAX){
+      let farKey = null, farDist = -1;
+      pageCache.forEach((e, k) => {
+        const d = Math.abs(e.pageNum - currentPage);
+        if (d > farDist){ farDist = d; farKey = k; }
+      });
+      const e = pageCache.get(farKey);
+      if (e && e.task) e.task.cancel();
+      pageCache.delete(farKey);
+    }
+  }
+
+  function dropOtherSizes(w, h){
+    pageCache.forEach((e, k) => {
+      if (e.w !== w || e.h !== h){
+        if (e.task) e.task.cancel();
+        pageCache.delete(k);
+      }
+    });
+  }
+
+  function rememberRaster(key, source){
+    dropOtherSizes(source.width, source.height);
+    const copy = document.createElement("canvas");
+    copy.width = source.width;
+    copy.height = source.height;
+    copy.getContext("2d").drawImage(source, 0, 0);
+    pageCache.set(key, { pageNum: currentPage, w: source.width, h: source.height, canvas: copy, promise: Promise.resolve(), pending: false });
+    evictFarPages();
+  }
+
+  function schedulePrefetch(renderViewport){
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(() => {
+      const doc = pdfjsDoc;
+      [currentPage + 1, currentPage - 1].forEach(n => {
+        if (!doc || n < 1 || n > pageCount) return;
+        const w = canvas.width, h = canvas.height;
+        const key = pageCacheKey(n, w, h);
+        if (pageCache.has(key)) return;
+        const entry = { pageNum: n, w, h, canvas: document.createElement("canvas"), pending: true, task: null, promise: null };
+        entry.canvas.width = w;
+        entry.canvas.height = h;
+        pageCache.set(key, entry);
+        entry.promise = (async () => {
+          const pg = await doc.getPage(n);
+          if (!pageCache.has(key)) return;
+          const vp = pg.getViewport({ scale: renderViewport.scale });
+          entry.task = pg.render({ canvasContext: entry.canvas.getContext("2d"), viewport: vp });
+          await entry.task.promise;
+          entry.pending = false;
+          entry.task = null;
+        })();
+        entry.promise.catch(() => { pageCache.delete(key); });
+        evictFarPages();
+      });
+    }, 150);
   }
 
   async function renderPage(){
@@ -404,15 +503,34 @@
     overlay.style.width = viewport.width + "px";
     overlay.style.height = viewport.height + "px";
 
-    const renderTask = page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport });
-    currentRenderTask = renderTask;
-    try {
-      await renderTask.promise;
-    } catch (err){
-      if (err && err.name === "RenderingCancelledException") return;
-      throw err;
+    const gen = ++renderGen;
+    const cacheKey = pageCacheKey(currentPage, canvas.width, canvas.height);
+    cancelStalePrefetches(currentPage);
+    const cached = pageCache.get(cacheKey);
+    let drawn = false;
+    if (cached){
+      try {
+        await cached.promise;
+        if (gen !== renderGen) return;
+        canvas.getContext("2d").drawImage(cached.canvas, 0, 0);
+        drawn = true;
+      } catch (err){
+        pageCache.delete(cacheKey);
+      }
     }
-    if (currentRenderTask === renderTask) currentRenderTask = null;
+    if (!drawn){
+      const renderTask = page.render({ canvasContext: canvas.getContext("2d"), viewport: renderViewport });
+      currentRenderTask = renderTask;
+      try {
+        await renderTask.promise;
+      } catch (err){
+        if (err && err.name === "RenderingCancelledException") return;
+        throw err;
+      }
+      if (currentRenderTask === renderTask) currentRenderTask = null;
+      if (gen === renderGen) rememberRaster(cacheKey, canvas);
+    }
+    if (gen === renderGen) schedulePrefetch(renderViewport);
 
     pageLabel.textContent = currentPage + " / " + pageCount;
     prevPageBtn.disabled = currentPage <= 1;
@@ -487,6 +605,8 @@
         o.classList.toggle("active", o === opt);
         o.setAttribute("aria-selected", String(o === opt));
       });
+      activeFont = box.font || "arial";
+      renderFontBtn();
       activeBold = !!box.bold;
       activeItalic = !!box.italic;
       activeUnderline = !!box.underline;
@@ -504,9 +624,155 @@
     overlay.querySelectorAll(".context-text-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
+  /* Fonts for text boxes. Arial/Times/Courier use the PDF's own standard fonts
+     (nothing to download); the rest are open-licence fonts shipped in
+     vendor/fonts/context and loaded only when chosen. Preview and download
+     use the same files, so what you see is what the PDF gets. */
+  const FONT_DIR = "/vendor/fonts/context/";
+  const CTX_FONTS = {
+    arial: { label: "Arial", css: "Helvetica, Arial, sans-serif", std: ["Helvetica", "HelveticaBold", "HelveticaOblique", "HelveticaBoldOblique"] },
+    times: { label: "Times", css: "'Times New Roman', Times, serif", std: ["TimesRoman", "TimesRomanBold", "TimesRomanItalic", "TimesRomanBoldItalic"] },
+    courier: { label: "Courier", css: "'Courier New', Courier, monospace", std: ["Courier", "CourierBold", "CourierOblique", "CourierBoldOblique"] },
+    roboto: { label: "Roboto", family: "BC Roboto", fallback: "sans-serif", files: { r: "Roboto_400Regular.ttf", b: "Roboto_700Bold.ttf", i: "Roboto_400Regular_Italic.ttf", bi: "Roboto_700Bold_Italic.ttf" } },
+    opensans: { label: "Open Sans", family: "BC Open Sans", fallback: "sans-serif", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
+    comicneue: { label: "Comic Neue", family: "BC Comic Neue", fallback: "cursive", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
+    anton: { label: "Anton", family: "BC Anton", fallback: "Impact, sans-serif", files: { r: "Anton_400Regular.ttf" } },
+    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    playfair: { label: "Playfair Display", family: "BC Playfair Display", fallback: "serif", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
+  };
+  const fontOf = id => CTX_FONTS[id] || CTX_FONTS.arial;
+  function fontCss(id){
+    const f = fontOf(id);
+    return f.css || '"' + f.family + '", ' + f.fallback;
+  }
+  /* Which file of a family matches the bold/italic combination — a missing
+     style (Anton has no bold, Caveat no italic) falls back to the closest
+     one, the same rule the browser applies, so preview and PDF agree. */
+  function fontFaceKey(font, bold, italic){
+    const want = (bold ? "b" : "") + (italic ? "i" : "") || "r";
+    if (font.files[want]) return want;
+    if (bold && italic) return font.files.b ? "b" : font.files.i ? "i" : "r";
+    return "r";
+  }
+  const fontLoads = new Map();
+  function ensureFont(id, onlyRegular){
+    const f = fontOf(id);
+    if (!f.files) return Promise.resolve();
+    const key = id + (onlyRegular ? ":r" : ":all");
+    if (fontLoads.has(key)) return fontLoads.get(key);
+    const specs = { r: ["400", "normal"], b: ["700", "normal"], i: ["400", "italic"], bi: ["700", "italic"] };
+    const entries = Object.entries(f.files).filter(([k]) => !onlyRegular || k === "r");
+    const p = Promise.all(entries.map(([k, file]) => {
+      const face = new FontFace(f.family, "url(" + FONT_DIR + file + ")", { weight: specs[k][0], style: specs[k][1] });
+      document.fonts.add(face);
+      return face.load().catch(() => {});
+    }));
+    fontLoads.set(key, p);
+    return p;
+  }
+  function applyBoxFont(inner, box){
+    inner.style.fontFamily = fontCss(box.font);
+    inner.style.fontSynthesis = fontOf(box.font).files ? "none" : "";
+  }
+
+  fontMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    opt.style.fontFamily = fontCss(opt.dataset.font);
+  });
+  function renderFontBtn(){
+    fontBtn.style.fontFamily = fontCss(activeFont);
+    fontBtn.title = bcT("Font") + " — " + fontOf(activeFont).label;
+    bcSetDropdownActive(fontMenu, fontMenu.querySelector('[data-font="' + activeFont + '"]'));
+  }
+  fontBtn.addEventListener("click", () => {
+    Object.keys(CTX_FONTS).forEach(id => ensureFont(id, true));
+  });
+  bcRegisterDropdown(fontBtn, fontMenu, (opt) => {
+    activeFont = opt.dataset.font;
+    ensureFont(activeFont);
+    renderFontBtn();
+    const box = selectedBoxId ? findBoxById(selectedBoxId) : null;
+    if (box && box.page === currentPage){
+      box.font = activeFont;
+      const innerEl = overlay.querySelector('.context-text-box[data-box-id="' + box.id + '"] .context-text-inner');
+      if (innerEl) applyBoxFont(innerEl, box);
+      schedulePersist();
+    }
+  });
+  renderFontBtn();
+
+  /* Double-click a text box to open a small popup that can replace its text
+     with today's date; the chip beside it flips the order (day first or
+     month first), remembered between visits. */
+  const DATE_FORMATS = ["DD-MM-YYYY", "MM-DD-YYYY"];
+  const DATE_FORMAT_KEY = "context-date-format";
+  let dateFormat = DATE_FORMATS[0];
+  try {
+    const savedFmt = localStorage.getItem(DATE_FORMAT_KEY);
+    if (DATE_FORMATS.includes(savedFmt)) dateFormat = savedFmt;
+  } catch (err) { /* storage unavailable */ }
+
+  function todayString(){
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    return (dateFormat === "DD-MM-YYYY" ? dd + "-" + mm : mm + "-" + dd) + "-" + now.getFullYear();
+  }
+
+  const datePopup = document.createElement("div");
+  datePopup.className = "context-date-popup";
+  datePopup.hidden = true;
+  datePopup.setAttribute("role", "dialog");
+  datePopup.setAttribute("aria-label", bcT("Today's date"));
+  datePopup.innerHTML =
+    '<button type="button" class="dp-main" data-act="apply"></button>' +
+    '<button type="button" class="dp-chip" data-act="format" title="' + bcT("Change date format") + '"></button>';
+  document.body.appendChild(datePopup);
+  const dpApply = datePopup.querySelector('[data-act="apply"]');
+  const dpFormat = datePopup.querySelector('[data-act="format"]');
+  let datePopupTarget = null;
+
+  function renderDatePopup(){
+    dpApply.textContent = bcT("Today's date") + ": " + todayString();
+    dpFormat.textContent = dateFormat;
+  }
+  function closeDatePopup(){
+    datePopup.hidden = true;
+    datePopupTarget = null;
+  }
+  function openDatePopup(box, boxEl, innerEl){
+    datePopupTarget = { box, innerEl };
+    renderDatePopup();
+    datePopup.hidden = false;
+    const r = boxEl.getBoundingClientRect();
+    const w = datePopup.offsetWidth;
+    datePopup.style.top = Math.round(r.bottom + 8) + "px";
+    datePopup.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - w - 8))) + "px";
+  }
+  datePopup.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    if (btn.dataset.act === "format"){
+      dateFormat = DATE_FORMATS[(DATE_FORMATS.indexOf(dateFormat) + 1) % DATE_FORMATS.length];
+      try { localStorage.setItem(DATE_FORMAT_KEY, dateFormat); } catch (err) { /* skip */ }
+      renderDatePopup();
+    } else if (datePopupTarget){
+      const { box, innerEl } = datePopupTarget;
+      box.text = todayString();
+      innerEl.textContent = box.text;
+      closeDatePopup();
+      schedulePersist();
+    }
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (datePopup.hidden || datePopup.contains(e.target)) return;
+    closeDatePopup();
+  }, true);
+  bcRegisterEscapable(() => !datePopup.hidden, closeDatePopup, 95);
+
   function buildBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-text-box";
+    if (box.id === selectedBoxId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -521,6 +787,8 @@
     inner.contentEditable = "true";
     inner.spellcheck = false;
     inner.style.fontSize = (box.sizePt * scale) + "px";
+    applyBoxFont(inner, box);
+    ensureFont(box.font);
     inner.style.color = box.color;
     inner.style.fontWeight = box.bold ? "bold" : "normal";
     inner.style.fontStyle = box.italic ? "italic" : "normal";
@@ -537,6 +805,7 @@
       }
     });
     inner.addEventListener("focus", () => selectBox(box.id));
+    inner.addEventListener("dblclick", () => openDatePopup(box, el, inner));
     el.appendChild(inner);
 
     const removeBtn = document.createElement("button");
@@ -547,6 +816,7 @@
       e.stopPropagation();
       textBoxes = textBoxes.filter(b => b.id !== box.id);
       if (selectedBoxId === box.id) selectedBoxId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
@@ -637,6 +907,7 @@
   }
 
   function deselectSignatureBox(){
+    selectedSigId = null;
     overlay.querySelectorAll(".context-signature-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
@@ -647,6 +918,7 @@
   function buildSignatureBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-signature-box";
+    if (box.id === selectedSigId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -658,11 +930,6 @@
     img.alt = bcT("Signature");
     el.appendChild(img);
 
-    const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle bc-obj-drag-handle";
-    handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
-    el.appendChild(handle);
-
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "context-text-remove bc-obj-remove-btn";
@@ -670,6 +937,8 @@
     removeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       signatureBoxes = signatureBoxes.filter(b => b.id !== box.id);
+      if (selectedSigId === box.id) selectedSigId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
@@ -683,8 +952,13 @@
 
     function startDrag(handleEl, onMove){
       handleEl.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e.button !== 0) return;
+        if (handleEl === el){
+          if (e.target.closest(".bc-obj-remove-btn, .bc-obj-resize-handle")) return;
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
         const startX = e.clientX;
         const startY = e.clientY;
@@ -708,10 +982,11 @@
       deselectBox();
       deselectSignatureBox();
       deselectShapeBox();
+      selectedSigId = box.id;
       el.classList.add("selected");
     });
 
-    startDrag(handle, (dx, dy, start) => {
+    startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
       /* Same workspace-panel clamp as text boxes — see the comment on
          getDragBoundsPt(). */
@@ -759,14 +1034,28 @@
      an SVG scales with its box's own width/height for free the same way
      the signature's <img> already does, so resizing needs no extra math
      here beyond what startDrag below already computes. */
-  function shapeSvg(kind, color){
+  /* The two form marks come in a thin and a bold weight (the B button). */
+  const MARK_POINTS = {
+    check: {
+      thin: "7.6,56.6 38.3,85.1 94.7,18.3 89.3,13.7 37.7,74.9 12.4,51.4",
+      bold: "4.2,60.2 38.7,92.3 98.5,21.5 85.5,10.5 37.3,67.7 15.8,47.8"
+    },
+    xmark: {
+      thin: "14,6 50,42 86,6 94,14 58,50 94,86 86,94 50,58 14,94 6,86 42,50 6,14",
+      bold: "20,4 50,34 80,4 96,20 66,50 96,80 80,96 50,66 20,96 4,80 34,50 4,20"
+    }
+  };
+  const isMarkKind = kind => kind === "check" || kind === "xmark";
+  function shapeSvg(kind, color, bold){
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
       triangle: '<polygon points="50,4 96,96 4,96" />',
       /* Plus-shaped 12-point polygon — same 2-unit margin/96-unit span
          as square/circle above, 30-unit-wide arms (center ±15). */
-      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />'
+      cross: '<polygon points="35,2 65,2 65,35 98,35 98,65 65,65 65,98 35,98 35,65 2,65 2,35 35,35" />',
+      check: '<polygon points="' + MARK_POINTS.check[bold ? "bold" : "thin"] + '" />',
+      xmark: '<polygon points="' + MARK_POINTS.xmark[bold ? "bold" : "thin"] + '" />'
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
@@ -775,7 +1064,8 @@
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
     shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    shapeBtn.title = bcT("Add shape (H) — {0}", [bcT(activeShapeKind)]);
+    const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
+    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -783,6 +1073,16 @@
      non-uniformly stretched triangle/cross, since drawSvgPath's own
      `scale` option only takes one uniform number. Only handles the M/L/Z
      commands this file's own shapeSvg() paths actually use. */
+  const SHAPE_PATHS = {
+    triangle: "M50 4 L96 96 L4 96 Z",
+    cross: "M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z"
+  };
+  function shapePathFor(box){
+    if (isMarkKind(box.kind)){
+      return "M" + MARK_POINTS[box.kind][box.bold ? "bold" : "thin"].split(" ").map(pt => pt.replace(",", " ")).join(" L") + " Z";
+    }
+    return SHAPE_PATHS[box.kind];
+  }
   function scaleSvgPath(path, sx, sy){
     return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
       return cmd + " " + (parseFloat(x) * sx) + " " + (parseFloat(y) * sy);
@@ -797,20 +1097,22 @@
      but a signature is never recolored/re-kinded the way a shape is, so
      folding them into one function would mean branching on "is this a
      shape" throughout rather than two straightforward reads. */
+  function applyShapeRotation(el, deg){
+    el.style.transform = deg ? "rotate(" + deg + "deg)" : "";
+    el.style.setProperty("--ct-rot", deg + "deg");
+  }
+
   function buildShapeBoxEl(box){
     const el = document.createElement("div");
     el.className = "context-shape-box";
+    if (box.id === selectedShapeId) el.classList.add("selected");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
     el.style.width = (box.widthPt * scale) + "px";
     el.style.height = (box.heightPt * scale) + "px";
-    el.innerHTML = shapeSvg(box.kind, box.color);
-
-    const handle = document.createElement("span");
-    handle.className = "context-text-drag-handle bc-obj-drag-handle";
-    handle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>';
-    el.appendChild(handle);
+    applyShapeRotation(el, box.rotation || 0);
+    el.innerHTML = shapeSvg(box.kind, box.color, box.bold);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -820,18 +1122,24 @@
       e.stopPropagation();
       shapeBoxes = shapeBoxes.filter(b => b.id !== box.id);
       if (selectedShapeId === box.id) selectedShapeId = null;
+      selectLastCreated();
       renderTextBoxes();
     });
     el.appendChild(removeBtn);
 
     function startDrag(handleEl, onMove){
       handleEl.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e.button !== 0) return;
+        if (handleEl === el){
+          if (e.target.closest(".bc-obj-remove-btn, .bc-obj-resize-handle")) return;
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
         const startX = e.clientX;
         const startY = e.clientY;
-        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt };
+        const start = { xPt: box.xPt, topPt: box.topPt, widthPt: box.widthPt, heightPt: box.heightPt, clientX: startX, clientY: startY, rotation: box.rotation || 0 };
         function onPointerMove(ev){
           onMove(ev.clientX - startX, ev.clientY - startY, start, ev.shiftKey);
         }
@@ -856,6 +1164,10 @@
       bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
       activeShapeKind = box.kind;
       renderShapeBtnIcon();
+      if (isMarkKind(box.kind)){
+        activeBold = !!box.bold;
+        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      }
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
       bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
@@ -865,7 +1177,7 @@
       });
     });
 
-    startDrag(handle, (dx, dy, start) => {
+    startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
       const bounds = getDragBoundsPt(zoom, el);
       box.xPt = bounds.maxXPt < bounds.minXPt
@@ -885,27 +1197,96 @@
     resizeHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17"/><path d="M17 10v7h-7"/></svg>';
     el.appendChild(resizeHandle);
 
-    startDrag(resizeHandle, (dx, dy, start, shiftKey) => {
+    startDrag(resizeHandle, (screenDx, screenDy, start, shiftKey) => {
       const zoom = isFullscreen ? fsZoom : 1;
+      const turn = (box.rotation || 0) * Math.PI / 180;
+      const dx = screenDx * Math.cos(turn) + screenDy * Math.sin(turn);
+      const dy = -screenDx * Math.sin(turn) + screenDy * Math.cos(turn);
+      const minPt = isMarkKind(box.kind) ? 4 : 10;
       if (shiftKey){
         const ratio = start.widthPt / start.heightPt;
         const growth = (dx + dy) / 2 / zoom / scale;
-        box.widthPt = Math.max(20, start.widthPt + growth);
+        box.widthPt = Math.max(minPt, start.widthPt + growth);
         box.heightPt = box.widthPt / ratio;
       } else {
-        box.widthPt = Math.max(20, start.widthPt + dx / zoom / scale);
-        box.heightPt = Math.max(20, start.heightPt + dy / zoom / scale);
+        box.widthPt = Math.max(minPt, start.widthPt + dx / zoom / scale);
+        box.heightPt = Math.max(minPt, start.heightPt + dy / zoom / scale);
       }
       el.style.width = (box.widthPt * scale) + "px";
       el.style.height = (box.heightPt * scale) + "px";
     });
 
+    const rotateHandle = document.createElement("span");
+    rotateHandle.className = "context-shape-rotate-handle bc-obj-drag-handle";
+    rotateHandle.setAttribute("aria-hidden", "true");
+    rotateHandle.setAttribute("title", bcT("Drag to rotate — hold Shift to snap to 15°"));
+    rotateHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 1 0 18.4 16"/><path d="M20 4v7h-7"/></svg>';
+    el.appendChild(rotateHandle);
+
+    startDrag(rotateHandle, (dx, dy, start, shiftKey) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const a0 = Math.atan2(start.clientY - cy, start.clientX - cx);
+      const a1 = Math.atan2(start.clientY + dy - cy, start.clientX + dx - cx);
+      let deg = start.rotation + (a1 - a0) * 180 / Math.PI;
+      deg = ((deg % 360) + 360) % 360;
+      if (shiftKey) deg = (Math.round(deg / 15) * 15) % 360;
+      box.rotation = Math.round(deg * 10) / 10;
+      applyShapeRotation(el, box.rotation);
+    });
+
     return el;
   }
 
+  const BURST_COUNT = 5;
+  const BURST_WINDOW_MS = 600;
+  const burstOverlay = document.getElementById("ctBurstOverlay");
+  let recentCreated = [];
+  let createdOrder = [];
+
+  function selectLastCreated(){
+    const exists = { text: textBoxes, shape: shapeBoxes, sig: signatureBoxes };
+    for (let i = createdOrder.length - 1; i >= 0; i--){
+      const { type, id } = createdOrder[i];
+      if (!exists[type].some(b => b.id === id)) continue;
+      if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
+      if (type === "text") selectedBoxId = id;
+      else if (type === "shape") selectedShapeId = id;
+      else selectedSigId = id;
+      return;
+    }
+  }
+
+  function noteCreated(type, id){
+    createdOrder.push({ type, id });
+    const now = performance.now();
+    recentCreated.push({ type, id, at: now });
+    recentCreated = recentCreated.filter(c => now - c.at <= BURST_WINDOW_MS);
+    if (recentCreated.length >= BURST_COUNT) burstOverlay.hidden = false;
+  }
+
+  document.getElementById("ctBurstKeep").addEventListener("click", () => {
+    burstOverlay.hidden = true;
+    recentCreated = [];
+  });
+  document.getElementById("ctBurstUndo").addEventListener("click", () => {
+    const gone = (type) => new Set(recentCreated.filter(c => c.type === type).map(c => c.id));
+    const t = gone("text"), sh = gone("shape"), sg = gone("sig");
+    textBoxes = textBoxes.filter(b => !t.has(b.id));
+    shapeBoxes = shapeBoxes.filter(b => !sh.has(b.id));
+    signatureBoxes = signatureBoxes.filter(b => !sg.has(b.id));
+    selectedBoxId = selectedShapeId = selectedSigId = null;
+    recentCreated = [];
+    burstOverlay.hidden = true;
+    renderTextBoxes();
+  });
+
   function addShapeBox(){
-    const widthPt = 100;
-    const heightPt = 100;
+    /* The two form marks land small, sized for ticking a checkbox. */
+    const mark = isMarkKind(activeShapeKind);
+    const widthPt = mark ? 16 : 100;
+    const heightPt = widthPt;
     const box = {
       id: ++shapeBoxIdSeq,
       page: currentPage,
@@ -914,10 +1295,16 @@
       widthPt,
       heightPt,
       kind: activeShapeKind,
-      color: activeColor
+      color: activeColor,
+      bold: mark && activeBold
     };
     shapeBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = box.id;
     renderTextBoxes();
+    noteCreated("shape", box.id);
   }
 
   function dataUrlToBytes(dataUrl){
@@ -1000,19 +1387,233 @@
     const texts = textBoxes.filter(b => b.text);
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
     total += shapeBoxes.length * 130;
+    total += new Set(texts.filter(b => fontOf(b.font).files).map(b => (b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic))).size * 4000;
     if (signatureBoxes.length){
       for (const [dataUrl, w] of signatureTargetWidths()) total += await signatureEmbeddedSize(dataUrl, w);
       if (token !== sizeToken) return;
     }
     if (token !== sizeToken) return;
     sizeStatus.textContent = "File size: ~" + bcFormatFileSize(total);
+    compressWrap.hidden = total <= COMPRESS_THRESHOLD || compressBusy;
+    if (!compressWrap.hidden) explainSize();
   }
 
+  let explainedKey = null;
+  async function explainSize(){
+    const file = currentFile;
+    const key = file.name + "|" + file.size;
+    if (key === explainedKey) return;
+    explainedKey = key;
+    const list = document.getElementById("ctCompressWhy");
+    list.innerHTML = "";
+    try {
+      const { PDFDocument, PDFName, PDFRawStream } = PDFLib;
+      const pdf = await PDFDocument.load(new Uint8Array(currentFileBytes), { ignoreEncryption: true });
+      let imageBytes = 0;
+      let imageCount = 0;
+      let maxWidth = 0;
+      for (const [, obj] of pdf.context.enumerateIndirectObjects()){
+        if (!(obj instanceof PDFRawStream) || obj.dict.get(PDFName.of("Subtype")) !== PDFName.of("Image")) continue;
+        imageBytes += obj.contents.length;
+        imageCount++;
+        const w = obj.dict.get(PDFName.of("Width"));
+        maxWidth = Math.max(maxWidth, w && w.asNumber ? w.asNumber() : 0);
+      }
+      if (file !== currentFile) return;
+      const items = [];
+      if (!imageCount){
+        items.push(bcT("There are no photos or scans in this PDF, so its size comes from fonts and embedded data. Compressing won't help much."));
+      } else {
+        const share = Math.round(imageBytes / file.size * 100);
+        items.push(bcT("{0} images take up {1} of the {2} ({3}%).", [imageCount, bcFormatFileSize(imageBytes), bcFormatFileSize(file.size), share]));
+        const pageWidthIn = pdf.getPage(0).getWidth() / 72;
+        const dpi = Math.round(maxWidth / pageWidthIn / 10) * 10;
+        if (dpi > 200) items.push(bcT("The biggest image is about {0} dpi. 150 dpi is plenty for email and screens.", [dpi]));
+        items.push(bcT("Text, fonts and structure add only {0}.", [bcFormatFileSize(Math.max(0, file.size - imageBytes))]));
+      }
+      items.forEach(t => {
+        const li = document.createElement("li");
+        li.textContent = t;
+        list.appendChild(li);
+      });
+    } catch (err){
+      console.error(err);
+    }
+  }
+
+  const COMPRESS_THRESHOLD = 10 * 1024 * 1024;
+  const COMPRESS_TARGET = 9 * 1024 * 1024;
+  const COMPRESS_STEPS = Array.from({ length: 16 }, (_, i) => ({
+    maxDim: Math.round(4000 - (i / 15) * 2800),
+    quality: +(0.92 - (i / 15) * 0.38).toFixed(2)
+  }));
+  const compressWrap = document.getElementById("ctCompressWrap");
+  const compressBtn = document.getElementById("ctCompressBtn");
+  let compressBusy = false;
+  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), document.getElementById("ctCompressInfoTip"));
+
+  function eligibleImages(pdf){
+    const { PDFName, PDFRawStream, PDFArray, PDFNumber } = PDFLib;
+    const ctx = pdf.context;
+    const name = n => PDFName.of(n);
+    const isJpeg = dict => {
+      const f = ctx.lookup(dict.get(name("Filter")));
+      if (f instanceof PDFArray) return f.size() === 1 && ctx.lookup(f.get(0)) === name("DCTDecode");
+      return f === name("DCTDecode");
+    };
+    const colorOk = dict => {
+      const cs = ctx.lookup(dict.get(name("ColorSpace")));
+      if (cs === name("DeviceRGB") || cs === name("DeviceGray")) return true;
+      if (cs instanceof PDFArray && ctx.lookup(cs.get(0)) === name("ICCBased")){
+        const n = ctx.lookup(ctx.lookup(cs.get(1)).dict.get(name("N")));
+        return n instanceof PDFNumber && (n.asNumber() === 3 || n.asNumber() === 1);
+      }
+      return false;
+    };
+    /* An image tied to a soft mask (SMask/Mask, often with /Matte) must keep
+       the mask's exact pixel dimensions — Adobe rejects the page otherwise. */
+    const masks = new Set();
+    for (const [, obj] of ctx.enumerateIndirectObjects()){
+      if (!(obj instanceof PDFRawStream)) continue;
+      for (const key of ["SMask", "Mask"]){
+        const m = obj.dict.get(name(key));
+        if (m) masks.add(String(m));
+      }
+    }
+    const list = [];
+    for (const [ref, obj] of ctx.enumerateIndirectObjects()){
+      if (!(obj instanceof PDFRawStream)) continue;
+      const dict = obj.dict;
+      if (dict.get(name("Subtype")) !== name("Image") || !isJpeg(dict)) continue;
+      if (dict.get(name("ImageMask")) || dict.get(name("Decode"))) continue;
+      if (dict.get(name("SMask")) || dict.get(name("Mask")) || masks.has(String(ref))) continue;
+      if (!colorOk(dict)) continue;
+      list.push({ ref, obj });
+    }
+    return list;
+  }
+
+  async function encodeJpeg(bmp, step){
+    const ratio = Math.min(1, step.maxDim / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * ratio));
+    const h = Math.max(1, Math.round(bmp.height * ratio));
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    c.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", step.quality));
+    return { w, h, bytes: new Uint8Array(await blob.arrayBuffer()) };
+  }
+
+  /* Re-encoding every image once per candidate setting took minutes on a
+     60-image scan, so a handful of the biggest images are encoded at each
+     setting instead and the ratio extrapolated; only the winner runs in full. */
+  async function pickCompressStep(bytes){
+    const pdf = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+    const images = eligibleImages(pdf);
+    const total = images.reduce((n, i) => n + i.obj.contents.length, 0);
+    if (!total) return COMPRESS_STEPS.length - 1;
+    const sample = images.slice().sort((a, b) => b.obj.contents.length - a.obj.contents.length).slice(0, 4);
+    const bitmaps = [];
+    for (const { obj } of sample){
+      try { bitmaps.push({ bmp: await createImageBitmap(new Blob([obj.contents], { type: "image/jpeg" })), size: obj.contents.length }); } catch (err){ console.error(err); }
+    }
+    const sampleBytes = bitmaps.reduce((n, b) => n + b.size, 0);
+    const needed = bytes.length - COMPRESS_TARGET * 0.97;
+    let lo = 0;
+    let hi = COMPRESS_STEPS.length - 1;
+    let pick = hi;
+    while (lo <= hi && sampleBytes){
+      const mid = (lo + hi) >> 1;
+      let after = 0;
+      for (const { bmp, size } of bitmaps) after += Math.min(size, (await encodeJpeg(bmp, COMPRESS_STEPS[mid])).bytes.length);
+      const saved = total * (1 - after / sampleBytes);
+      if (saved >= needed){ pick = mid; hi = mid - 1; } else lo = mid + 1;
+    }
+    bitmaps.forEach(b => b.bmp.close());
+    return pick;
+  }
+
+  async function recompressImages(bytes, step, onProgress){
+    const { PDFDocument, PDFRawStream } = PDFLib;
+    const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const ctx = pdf.context;
+    const images = eligibleImages(pdf);
+    let done = 0;
+    for (const { ref, obj } of images){
+      onProgress(++done, images.length);
+      try {
+        const bmp = await createImageBitmap(new Blob([obj.contents], { type: "image/jpeg" }));
+        const enc = await encodeJpeg(bmp, step);
+        bmp.close();
+        if (enc.bytes.length >= obj.contents.length) continue;
+        const next = {
+          Type: "XObject", Subtype: "Image", Width: enc.w, Height: enc.h,
+          ColorSpace: "DeviceRGB", BitsPerComponent: 8, Filter: "DCTDecode"
+        };
+        ctx.assign(ref, PDFRawStream.of(ctx.obj(next), enc.bytes));
+      } catch (err){
+        console.error(err);
+      }
+    }
+    return await pdf.save();
+  }
+
+  compressBtn.addEventListener("click", async () => {
+    if (compressBusy || !currentFile) return;
+    compressBusy = true;
+    compressWrap.hidden = true;
+    downloadBtn.disabled = true;
+    const original = new Uint8Array(await currentFile.arrayBuffer());
+    const before = original.length;
+    let best = null;
+    try {
+      status.textContent = bcT("Compressing...");
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      let idx = await pickCompressStep(original);
+      for (let attempt = 0; attempt < 3; attempt++){
+        const out = await recompressImages(original, COMPRESS_STEPS[idx], (n, total) => {
+          status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
+        });
+        if (!best || out.length < best.length) best = out;
+        if (out.length <= COMPRESS_TARGET || idx >= COMPRESS_STEPS.length - 1) break;
+        idx = Math.min(COMPRESS_STEPS.length - 1, idx + 2);
+      }
+    } catch (err){
+      console.error(err);
+      status.textContent = bcT("Couldn't compress this PDF.");
+      compressBusy = false;
+      downloadBtn.disabled = false;
+      compressWrap.hidden = false;
+      return;
+    }
+    if (!best || best.length >= before){
+      status.textContent = bcT("This PDF can't be compressed any further.");
+    } else {
+      const file = new File([best], currentFile.name, { type: "application/pdf" });
+      currentFile = file;
+      currentFileBytes = best.slice().buffer;
+      try {
+        const doc = await pdfjsLib.getDocument({ data: best.slice() }).promise;
+        clearPageCache();
+        pdfjsDoc = doc;
+        await renderPage();
+      } catch (err){
+        console.error(err);
+      }
+      status.textContent = bcT("Compressed: {0} → {1}", [bcFormatFileSize(before), bcFormatFileSize(best.length)]);
+      schedulePersist();
+    }
+    compressBusy = false;
+    downloadBtn.disabled = false;
+    updateSizeStatus();
+  });
+
   function addSignatureBox(dataUrl, naturalWidth, naturalHeight){
-    /* Land it at a sensible fixed width (144pt ≈ 2in on a US Letter
-       page) instead of the image's raw pixel size, which could be
-       anywhere from tiny to huge depending on the source photo. */
-    const widthPt = 144;
+    /* Land it at a small fixed width (100pt) instead of the image's raw
+       pixel size, which could be anywhere from tiny to huge depending on
+       the source photo. */
+    const widthPt = 100;
     const heightPt = widthPt * (naturalHeight / naturalWidth);
     const box = {
       id: ++sigBoxIdSeq,
@@ -1024,7 +1625,12 @@
       dataUrl
     };
     signatureBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedSigId = box.id;
     renderTextBoxes();
+    noteCreated("sig", box.id);
   }
 
   function addTextBox(){
@@ -1035,6 +1641,7 @@
       xPt: (overlay.clientWidth / scale / 2) - 40,
       topPt: (overlay.clientHeight / scale / 2) - (sizePt / 2),
       sizePt,
+      font: activeFont,
       color: activeColor,
       bold: activeBold,
       italic: activeItalic,
@@ -1042,7 +1649,11 @@
       text: "Lorem Ipsum"
     };
     textBoxes.push(box);
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedBoxId = box.id;
     renderTextBoxes();
+    noteCreated("text", box.id);
     const el = overlay.lastChild;
     const inner = el && el.querySelector(".context-text-inner");
     if (inner){
@@ -1081,14 +1692,92 @@
   });
 
   addTextBtn.addEventListener("click", addTextBox);
+  /* The shape menu shows the shapes themselves, not their names — the name
+     (already in the markup, translated on the language pages) stays as the
+     tooltip and accessible label. */
+  shapeKindMenu.querySelectorAll(".bc-dropdown-option").forEach(opt => {
+    const label = opt.textContent.trim();
+    opt.title = label;
+    opt.setAttribute("aria-label", label);
+    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+  });
+  bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
   bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
 
-  /* "H" is now the dropdown's own trigger, not an immediate-add button —
-     clicking it just opens the Circle/Square/Triangle/Cross menu
-     (shared bcRegisterDropdown, CLAUDE.md's "pick one of several" rule),
-     and picking a kind is what actually places the shape. Re-kinds the
-     currently selected shape in place instead, if there is one. */
+  /* A tap adds the preselected shape; holding the button for 250 ms opens
+     the Circle/Square/Triangle/... menu instead, and picking a kind there
+     places it (or re-kinds the currently selected shape in place). The
+     click listener goes first so stopImmediatePropagation keeps
+     bcRegisterDropdown's own click-toggles-the-menu handler off this
+     trigger — it's only used here for the menu's option handling. */
+  const SHAPE_HOVER_MS = 100;
+  const SHAPE_LEAVE_MS = 200;
+  const SHAPE_HOLD_MS = 250;
+  const shapeDropdown = document.getElementById("ctShapeKindDropdown");
+  const shapeArrow = document.getElementById("ctShapeArrow");
+  let shapeHoverTimer = null;
+  let shapeLeaveTimer = null;
+  let shapeHoldTimer = null;
+  let shapeHoldFired = false;
+  function openShapeMenu(){
+    bcCloseAllPopups();
+    shapeKindMenu.hidden = false;
+    shapeBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeShapeHover(){
+    clearTimeout(shapeHoverTimer);
+    shapeArrow.classList.remove("shown");
+    shapeKindMenu.hidden = true;
+    shapeBtn.setAttribute("aria-expanded", "false");
+  }
+  shapeBtn.addEventListener("pointerenter", e => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(shapeLeaveTimer);
+    clearTimeout(shapeHoverTimer);
+    shapeHoverTimer = setTimeout(() => shapeArrow.classList.add("shown"), SHAPE_HOVER_MS);
+  });
+  shapeDropdown.addEventListener("pointerleave", e => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(shapeHoverTimer);
+    clearTimeout(shapeLeaveTimer);
+    shapeLeaveTimer = setTimeout(closeShapeHover, SHAPE_LEAVE_MS);
+  });
+  shapeArrow.addEventListener("pointerenter", () => {
+    clearTimeout(shapeLeaveTimer);
+    openShapeMenu();
+  });
+  shapeArrow.addEventListener("click", openShapeMenu);
+  shapeKindMenu.addEventListener("pointerenter", () => clearTimeout(shapeLeaveTimer));
+  shapeBtn.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.pointerType === "mouse") return;
+    shapeHoldFired = false;
+    clearTimeout(shapeHoldTimer);
+    shapeHoldTimer = setTimeout(() => {
+      shapeHoldFired = true;
+      openShapeMenu();
+    }, SHAPE_HOLD_MS);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+    shapeBtn.addEventListener(type, () => {
+      clearTimeout(shapeHoldTimer);
+      setTimeout(() => { shapeHoldFired = false; }, 0);
+    });
+  });
+  shapeBtn.addEventListener("click", e => {
+    e.stopImmediatePropagation();
+    if (shapeHoldFired){
+      e.stopPropagation();
+      return;
+    }
+    addShapeBox();
+  });
+  shapeBtn.addEventListener("keydown", e => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    openShapeMenu();
+  });
+  shapeBtn.addEventListener("contextmenu", e => e.preventDefault());
   bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
     renderShapeBtnIcon();
@@ -1109,7 +1798,7 @@
          separate elements right alongside it and keep their own JS
          listeners untouched this way, unlike a full innerHTML rebuild
          which would silently drop all three. */
-      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color);
+      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
     }
     schedulePersist();
   });
@@ -1122,12 +1811,15 @@
   function resetEditor(){
     currentFile = null;
     currentFileBytes = null;
+    clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
     signatureBoxes = [];
     shapeBoxes = [];
     selectedBoxId = null;
     selectedShapeId = null;
+    selectedSigId = null;
+    resetHistory();
     updateSizeStatus();
     drop.hidden = false;
     editor.hidden = true;
@@ -1161,20 +1853,7 @@
     canvasWrap.style.transform = "";
   }
 
-  /* Desktop keeps page-nav in the toolbar (its original spot, before
-     ctFilenameDropdown); mobile moves the same element below the canvas
-     instead, where it's easier to reach and doesn't crowd the single-row
-     toolbar. One element, relocated by viewport rather than duplicated. */
   const mobileMql = window.matchMedia("(max-width:768px)");
-  function positionPageNav(){
-    if (mobileMql.matches){
-      previewPanel.appendChild(pageNav);
-    } else {
-      pageNavDesktopSlot.parentNode.insertBefore(pageNav, pageNavDesktopSlot);
-    }
-  }
-  positionPageNav();
-  mobileMql.addEventListener("change", positionPageNav);
 
   async function openFullscreen(){
     if (isFullscreen) return;
@@ -1508,6 +2187,17 @@
         }
       }
 
+      if (propName === "bold" && selectedShapeId){
+        const shape = findShapeBoxById(selectedShapeId);
+        if (shape && shape.page === currentPage && isMarkKind(shape.kind)){
+          shape.bold = nowActive;
+          const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + shape.id + '"]');
+          const svgEl = shapeEl && shapeEl.querySelector("svg");
+          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+          schedulePersist();
+        }
+      }
+
       if (propName === "bold") activeBold = nowActive;
       if (propName === "italic") activeItalic = nowActive;
       if (propName === "underline") activeUnderline = nowActive;
@@ -1527,9 +2217,203 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
+
+  document.addEventListener("pointerdown", e => {
+    if (!e.target.closest) return;
+    if (e.target.closest(".context-text-box, .context-signature-box, .context-shape-box, .context-panel-bar")) return;
+    if (!e.target.closest("#ctPreviewPanel, .context-fullscreen-canvas-area")) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+  });
+
+  const undoBtn = document.getElementById("ctUndoBtn");
+  const redoBtn = document.getElementById("ctRedoBtn");
+  const isMacLike = /Mac|iPhone|iPad/.test(navigator.platform || "");
+  const modKey = isMacLike ? "⌘" : "Ctrl+";
+  undoBtn.title = bcT("Undo") + " (" + modKey + "Z)";
+  redoBtn.title = bcT("Redo") + " (" + modKey + (isMacLike ? "⇧Z" : "Shift+Z") + ")";
+
+  function takeSnapshot(){
+    return {
+      t: textBoxes.map(b => ({ ...b })),
+      s: signatureBoxes.map(b => ({ ...b })),
+      h: shapeBoxes.map(b => ({ ...b }))
+    };
+  }
+  function sameBoxes(a, b){
+    if (a.length !== b.length) return false;
+    return a.every((x, i) => {
+      const y = b[i];
+      const keys = Object.keys(x);
+      return keys.length === Object.keys(y).length && keys.every(k => x[k] === y[k]);
+    });
+  }
+  function sameSnapshot(a, b){
+    return sameBoxes(a.t, b.t) && sameBoxes(a.s, b.s) && sameBoxes(a.h, b.h);
+  }
+  function changedPage(a, b){
+    for (const key of ["t", "s", "h"]){
+      const byId = new Map(a[key].map(x => [x.id, x]));
+      for (const y of b[key]){
+        const x = byId.get(y.id);
+        if (!x || Object.keys(y).some(k => x[k] !== y[k])) return y.page;
+        byId.delete(y.id);
+      }
+      for (const x of byId.values()) return x.page;
+    }
+    return null;
+  }
+  function updateHistoryButtons(){
+    undoBtn.disabled = !undoStack.length && !historyTimer;
+    redoBtn.disabled = !redoStack.length;
+  }
+  function resetHistory(){
+    clearTimeout(historyTimer);
+    historyTimer = null;
+    undoStack = [];
+    redoStack = [];
+    historyCurrent = takeSnapshot();
+    updateHistoryButtons();
+  }
+  function commitHistory(){
+    clearTimeout(historyTimer);
+    historyTimer = null;
+    if (!historyCurrent) return;
+    const cur = takeSnapshot();
+    if (!sameSnapshot(cur, historyCurrent)){
+      undoStack.push(historyCurrent);
+      if (undoStack.length > HISTORY_MAX) undoStack.shift();
+      historyCurrent = cur;
+      redoStack = [];
+    }
+    updateHistoryButtons();
+  }
+  function noteHistory(){
+    if (applyingHistory || !historyCurrent) return;
+    clearTimeout(historyTimer);
+    historyTimer = setTimeout(commitHistory, 350);
+  }
+  async function restoreSnapshot(snap){
+    const page = changedPage(historyCurrent, snap);
+    applyingHistory = true;
+    historyCurrent = snap;
+    textBoxes = snap.t.map(b => ({ ...b }));
+    signatureBoxes = snap.s.map(b => ({ ...b }));
+    shapeBoxes = snap.h.map(b => ({ ...b }));
+    selectedBoxId = null;
+    selectedShapeId = null;
+    selectedSigId = null;
+    try {
+      if (page && page !== currentPage){
+        currentPage = page;
+        await renderPage();
+      } else {
+        renderTextBoxes();
+      }
+    } finally {
+      applyingHistory = false;
+    }
+    updateHistoryButtons();
+  }
+  async function undoHistory(){
+    commitHistory();
+    if (!undoStack.length || applyingHistory) return;
+    redoStack.push(historyCurrent);
+    await restoreSnapshot(undoStack.pop());
+  }
+  async function redoHistory(){
+    commitHistory();
+    if (!redoStack.length || applyingHistory) return;
+    undoStack.push(historyCurrent);
+    await restoreSnapshot(redoStack.pop());
+  }
+  undoBtn.addEventListener("click", undoHistory);
+  redoBtn.addEventListener("click", redoHistory);
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const isUndo = k === "z" && !e.shiftKey;
+    const isRedo = (k === "z" && e.shiftKey) || (k === "y" && !e.shiftKey);
+    if (!isUndo && !isRedo) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    e.preventDefault();
+    if (isUndo) undoHistory(); else redoHistory();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Backspace" && e.key !== "Delete") return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    const btn = overlay.querySelector(".context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
+    if (!btn) return;
+    e.preventDefault();
+    btn.click();
+  });
+
+  let copiedObject = null;
+  let pasteCount = 0;
+
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    const k = e.key.toLowerCase();
+    if (k !== "c" && k !== "v") return;
+    const active = document.activeElement;
+    const inText = active && active.classList && active.classList.contains("context-text-inner");
+    const sel = window.getSelection();
+    const bareCaret = inText && (sel.isCollapsed || sel.toString().trim() === active.textContent.replace("×", "").trim());
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable) && !bareCaret) return;
+    if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
+    if (k === "c"){
+      const text = findBoxById(selectedBoxId);
+      const shape = shapeBoxes.find(b => b.id === selectedShapeId);
+      const sig = signatureBoxes.find(b => b.id === selectedSigId);
+      const src = text || shape || sig;
+      if (!src) return;
+      e.preventDefault();
+      copiedObject = { type: text ? "text" : shape ? "shape" : "sig", data: { ...src } };
+      pasteCount = 0;
+      if (inText) active.blur();
+      return;
+    }
+    if (bareCaret) return;
+    if (!copiedObject) return;
+    e.preventDefault();
+    const { type, data } = copiedObject;
+    const step = 20 * ++pasteCount;
+    const pageW = overlay.clientWidth / scale;
+    const pageH = overlay.clientHeight / scale;
+    const base = { ...data, page: currentPage };
+    const w = data.widthPt || 80;
+    const h = data.heightPt || data.sizePt * 1.2;
+    base.xPt = Math.max(0, Math.min(data.xPt + step, pageW - w));
+    base.topPt = Math.max(0, Math.min(data.topPt + step, pageH - h));
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    if (type === "text"){
+      base.id = ++boxIdSeq;
+      textBoxes.push(base);
+      selectedBoxId = base.id;
+    } else if (type === "shape"){
+      base.id = ++shapeBoxIdSeq;
+      shapeBoxes.push(base);
+      selectedShapeId = base.id;
+    } else {
+      base.id = ++sigBoxIdSeq;
+      signatureBoxes.push(base);
+      selectedSigId = base.id;
+    }
+    renderTextBoxes();
+    noteCreated(type, base.id);
+  });
 
   bcRegisterEscapable(() => isFullscreen, () => closeFullscreen(), 90);
   bcRegisterEscapable(
@@ -1630,6 +2514,8 @@
     if (currentPage > 1){
       currentPage--;
       selectedBoxId = null;
+      selectedSigId = null;
+      selectedShapeId = null;
       renderPage();
     }
   });
@@ -1637,6 +2523,8 @@
     if (currentPage < pageCount){
       currentPage++;
       selectedBoxId = null;
+      selectedSigId = null;
+      selectedShapeId = null;
       renderPage();
     }
   });
@@ -1689,7 +2577,7 @@
         return { u: box.xPt + o.du / scale, v: box.topPt + o.dv / scale };
       }
     }
-    const key = box.sizePt + "|" + pageScale;
+    const key = box.sizePt + "|" + pageScale + "|" + (box.font || "arial");
     let o = textOriginCache.get(key);
     if (!o){
       const savedScale = scale;
@@ -1732,10 +2620,39 @@
       /* Bold/italic aren't a style flag on Helvetica — pdf-lib's base 14
          fonts include separate bold/oblique/bold-oblique variants, so
          pick the matching embedded font per box instead. */
-      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-      const fontBoldItalic = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      /* Fonts are embedded per use: the PDF's own standard fonts for
+         Arial/Times/Courier, the shipped open fonts (through fontkit,
+         loaded only now) for the rest. */
+      const embeddedFonts = new Map();
+      let fontkitReady = false;
+      async function embedFontFor(fontId, bold, italic){
+        const f = fontOf(fontId);
+        if (f.std){
+          const name = f.std[bold && italic ? 3 : bold ? 1 : italic ? 2 : 0];
+          if (!embeddedFonts.has(name)) embeddedFonts.set(name, await pdfDoc.embedFont(StandardFonts[name]));
+          return embeddedFonts.get(name);
+        }
+        const faceKey = fontId + ":" + fontFaceKey(f, bold, italic);
+        if (embeddedFonts.has(faceKey)) return embeddedFonts.get(faceKey);
+        if (!fontkitReady){
+          if (!window.fontkit){
+            await new Promise((resolve, reject) => {
+              const sc = document.createElement("script");
+              sc.src = "/vendor/fontkit.umd.min.js";
+              sc.onload = resolve;
+              sc.onerror = () => reject(new Error("Couldn't load the font library."));
+              document.head.appendChild(sc);
+            });
+          }
+          pdfDoc.registerFontkit(window.fontkit);
+          fontkitReady = true;
+        }
+        const res = await fetch(FONT_DIR + f.files[fontFaceKey(f, bold, italic)]);
+        const font = await pdfDoc.embedFont(await res.arrayBuffer(), { subset: true });
+        embeddedFonts.set(faceKey, font);
+        return font;
+      }
+      await Promise.all([...new Set(textBoxes.filter(b => b.text).map(b => b.font || "arial"))].map(id => ensureFont(id)));
       const pages = pdfDoc.getPages();
 
       /* Box coordinates are measured on the page as displayed (pdf.js applies
@@ -1752,18 +2669,15 @@
         return { rot, toPdf };
       };
 
-      textBoxes.forEach(box => {
+      for (const box of textBoxes){
         const page = pages[box.page - 1];
-        if (!page || !box.text) return;
+        if (!page || !box.text) continue;
         const { rot, toPdf } = pageFrame(page);
         const r = parseInt(box.color.slice(1, 3), 16) / 255;
         const g = parseInt(box.color.slice(3, 5), 16) / 255;
         const b = parseInt(box.color.slice(5, 7), 16) / 255;
         const color = rgb(r, g, b);
-        const font = box.bold && box.italic ? fontBoldItalic
-          : box.bold ? fontBold
-          : box.italic ? fontItalic
-          : fontRegular;
+        const font = await embedFontFor(box.font || "arial", !!box.bold, !!box.italic);
         const dispW = (pg) => (pg.getRotation().angle % 180 ? pg.getHeight() : pg.getWidth());
         const pageScale = Math.min(scale * dispW(pages[currentPage - 1] || page) / dispW(page), 1.4);
         const origin = measureTextOrigin(box, pageScale) || { u: box.xPt + 31 / pageScale, v: box.topPt + 2 / pageScale + box.sizePt * 0.95 };
@@ -1781,7 +2695,7 @@
             color
           });
         }
-      });
+      }
 
       /* A signature placed several times shares one embedded image. */
       const sigImages = new Map();
@@ -1814,35 +2728,29 @@
         /* Bottom-left anchor, same convention as the signature image
            above — pageHeight - topPt - heightPt converts this box's
            top-down on-screen position into pdf-lib's bottom-up one. */
-        const { x, y } = toPdf(box.xPt, box.topPt + box.heightPt);
+        const phi = -(box.rotation || 0) * Math.PI / 180;
+        const turn = degrees(rot - (box.rotation || 0));
+        const mid = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
+        const around = (p) => ({
+          x: mid.x + (p.x - mid.x) * Math.cos(phi) - (p.y - mid.y) * Math.sin(phi),
+          y: mid.y + (p.x - mid.x) * Math.sin(phi) + (p.y - mid.y) * Math.cos(phi)
+        });
+        const { x, y } = around(toPdf(box.xPt, box.topPt + box.heightPt));
         if (box.kind === "square"){
-          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate });
-        } else if (box.kind === "triangle"){
-          /* Same "M50 4 L96 96 L4 96 Z" path as the on-screen <svg> (0-100
-             viewBox), anchored at its bottom-left corner — drawSvgPath
-             flips the path's own y-axis internally to match its (x,y)
-             anchor sitting at the bottom, the same way
-             drawRectangle/drawImage above already do. drawSvgPath's own
-             `scale` option is a single uniform number, which can't
-             reproduce a non-uniformly stretched box (deforming the shape
-             with the resize handle's non-Shift drag, see buildShapeBoxEl)
-             — so the path's own coordinates are pre-scaled by width/height
-             independently instead, and `scale` stays 1. */
-          page.drawSvgPath(scaleSvgPath("M50 4 L96 96 L4 96 Z", box.widthPt / 100, box.heightPt / 100), {
-            x,
-            y,
+          page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate: turn });
+        } else if (shapePathFor(box)){
+          /* Triangle, cross and the two marks are the same polygons as
+             shapeSvg()'s (0-100 viewBox), written as path strings and
+             pre-scaled by width/height independently — drawSvgPath's own
+             `scale` option takes one uniform number, which can't
+             reproduce a non-uniformly stretched box. Anchored at the
+             bottom-left corner like drawRectangle/drawImage above. */
+          const top = around(toPdf(box.xPt, box.topPt));
+          page.drawSvgPath(scaleSvgPath(shapePathFor(box), box.widthPt / 100, box.heightPt / 100), {
+            x: top.x,
+            y: top.y,
             color,
-            rotate
-          });
-        } else if (box.kind === "cross"){
-          /* Same 12-point plus polygon as shapeSvg()'s "cross" case,
-             written as a path string — same pre-scaled-coordinates
-             convention as the triangle above. */
-          page.drawSvgPath(scaleSvgPath("M35 2 L65 2 L65 35 L98 35 L98 65 L65 65 L65 98 L35 98 L35 65 L2 65 L2 35 L35 35 Z", box.widthPt / 100, box.heightPt / 100), {
-            x,
-            y,
-            color,
-            rotate
+            rotate: turn
           });
         } else {
           const center = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
@@ -1852,7 +2760,7 @@
             xScale: box.widthPt / 2,
             yScale: box.heightPt / 2,
             color,
-            rotate
+            rotate: turn
           });
         }
       });

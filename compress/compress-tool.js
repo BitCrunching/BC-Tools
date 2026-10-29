@@ -275,15 +275,8 @@
     updateDownloadModeToggle(files.length);
     if (files.length > 0){
       const count = files.length;
-      const word = count === 1 ? "image" : "images";
-      const readyText = bcT("Ready to compress: {0} {1}", [count, word]);
-
-      const hasPng = files.some(f => f.type === "image/png");
-      if (hasPng){
-        status.innerHTML = `${readyText}. <span style="color:var(--text)">${bcT("PNG will be converted to JPG for better compression.")}</span>`;
-      } else {
-        status.textContent = readyText;
-      }
+      const word = count === 1 ? "file" : "files";
+      status.textContent = bcT("{0} {1} loaded", [count, word]);
     } else {
       status.textContent = "";
     }
