@@ -36,7 +36,14 @@
     const lane = document.createElement("div");
     lane.className = "hw-bat-lane";
     lane.setAttribute("aria-hidden", "true");
-    lane.innerHTML = '<span class="hw-bat"><svg viewBox="0 0 60 28"><g class="hw-bat-wing"><path d="M26 11Q15 3 2 6Q8 8 9 13Q11 12 14 15Q15 14 19 17Q21 16 24 21Z"/><path transform="translate(60 0) scale(-1 1)" d="M26 11Q15 3 2 6Q8 8 9 13Q11 12 14 15Q15 14 19 17Q21 16 24 21Z"/></g><path d="M26 12Q30 14 34 12L33 20L30 26L27 20Z"/><ellipse cx="30" cy="11" rx="4.2" ry="3.7"/><path d="M26.2 9L26.8 4.4L28.8 7.8ZM33.8 9L33.2 4.4L31.2 7.8Z"/><path class="hw-bat-eye" d="M27.4 10.6L29.4 11.3L28.9 12.3ZM32.6 10.6L30.6 11.3L31.1 12.3Z"/></svg></span>';
+    const bat = '<span class="hw-bat"><svg viewBox="0 0 60 28"><g class="hw-wing hw-wing-l"><path d="M26 11Q15 3 2 6Q8 8 9 13Q11 12 14 15Q15 14 19 17Q21 16 24 21Z"/></g><g class="hw-wing hw-wing-r"><path transform="translate(60 0) scale(-1 1)" d="M26 11Q15 3 2 6Q8 8 9 13Q11 12 14 15Q15 14 19 17Q21 16 24 21Z"/></g><g class="hw-bat-body"><path d="M26 12Q30 14 34 12L33 20L30 26L27 20Z"/><ellipse cx="30" cy="11" rx="4.2" ry="3.7"/><path d="M26.2 9L26.8 4.4L28.8 7.8ZM33.8 9L33.2 4.4L31.2 7.8Z"/><path class="hw-bat-eye" d="M27.4 10.6L29.4 11.3L28.9 12.3ZM32.6 10.6L30.6 11.3L31.1 12.3Z"/></g></svg></span>';
+    lane.innerHTML = bat.replace('hw-bat"', 'hw-bat hw-bat-a"') + bat.replace('hw-bat"', 'hw-bat hw-bat-b"');
     nav.appendChild(lane);
   }
+
+  document.querySelectorAll("#page-mainpage .card-open").forEach(card => {
+    card.insertAdjacentHTML("beforeend", '<span class="hw-dangler" aria-hidden="true"><i class="hw-thread"></i>' + spider("hw-spider-d").outerHTML + '</span>');
+  });
+  const openBtn = document.getElementById("toolPreviewOpen");
+  if (openBtn) openBtn.insertAdjacentHTML("beforeend", '<span class="hw-peeker" aria-hidden="true">' + spider("hw-spider-p").outerHTML + '</span>');
 })();

@@ -781,7 +781,7 @@ function showNavTerminal(text){
 }
 
 /* Halloween skin loader — remove with shared/halloween.*. */
-(function(){ const s = document.createElement("script"); s.src = "/shared/halloween.js?v=8"; document.head.appendChild(s); })();
+(function(){ const s = document.createElement("script"); s.src = "/shared/halloween.js?v=10"; document.head.appendChild(s); })();
 
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){

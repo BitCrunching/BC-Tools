@@ -276,13 +276,28 @@ html #page-mainpage .card-readmore:hover{
 }
 .hw-bat{
   position:absolute;
-  left:-40px;
-  top:50%;
+  left:0;
+  top:0;
   width:46px;
   height:22px;
-  margin:-11px 0 0 -23px;
   opacity:0;
-  animation:hw-bat-fly 12s linear 2s infinite;
+  offset-rotate:0deg;
+  offset-anchor:50% 50%;
+}
+.hw-bat-a{
+  offset-path:path("M -40 50 C 0 10, 40 90, 95 55 C 140 25, 175 70, 215 30 C 240 5, 262 -20, 275 -75");
+  animation:hw-bat-move 12s linear 2s infinite;
+}
+.hw-bat-a svg{
+  animation:hw-bat-bank 2s ease-in-out 2s infinite, hw-bat-zoom 12s ease-in-out 2s infinite;
+}
+.hw-bat-b{
+  offset-path:path("M 262 -70 C 255 0, 245 70, 215 72 C 170 74, 150 5, 110 12 C 70 20, 55 85, 20 60 C 5 48, -15 40, -45 50");
+  animation:hw-bat-move 12s linear 8s infinite;
+}
+.hw-bat-b svg{
+  transform:scaleX(-1);
+  animation:hw-bat-bank 2s ease-in-out 8s infinite, hw-bat-zoom 12s ease-in-out 8s infinite;
 }
 .hw-bat svg{
   display:block;
@@ -293,36 +308,113 @@ html #page-mainpage .card-readmore:hover{
 .hw-bat-eye{
   fill:#ffb000;
 }
-.hw-bat-wing{
-  transform-origin:30px 11px;
-  animation:hw-bat-flap .16s ease-in-out infinite alternate;
+.hw-wing-l{
+  transform-origin:26px 11px;
+  animation:hw-flap-l .2s ease-in-out infinite alternate;
 }
-@keyframes hw-bat-flap{
-  to{ transform:scaleY(.45); }
+.hw-wing-r{
+  transform-origin:34px 11px;
+  animation:hw-flap-r .2s ease-in-out infinite alternate;
 }
-@keyframes hw-bat-fly{
-  0%{ left:-40px; top:55%; opacity:0; transform:scaleX(1) rotate(0deg); }
-  1%{ opacity:1; }
-  5%{ left:20px; top:22%; }
-  10%{ left:75px; top:72%; transform:scaleX(1) rotate(12deg); }
-  15%{ left:135px; top:26%; transform:scaleX(1) rotate(-8deg); }
-  20%{ left:195px; top:62%; transform:scaleX(1) rotate(8deg); }
-  25%{ left:270px; top:30%; opacity:1; transform:scaleX(1) rotate(0deg); }
-  25.5%{ opacity:0; }
-  50%{ left:270px; top:30%; opacity:0; transform:scaleX(-1) rotate(0deg); }
-  51%{ opacity:1; }
-  56%{ left:205px; top:78%; transform:scaleX(-1) rotate(-12deg); }
-  61%{ left:145px; top:12%; transform:scaleX(-1) rotate(10deg); }
-  65%{ left:100px; top:50%; transform:scaleX(-1) rotate(-180deg); }
-  69%{ left:60px; top:78%; transform:scaleX(-1) rotate(-360deg); }
-  73%{ left:12px; top:24%; transform:scaleX(-1) rotate(-360deg); }
-  75%{ left:-40px; top:50%; opacity:1; transform:scaleX(-1) rotate(-360deg); }
-  75.5%{ opacity:0; }
-  100%{ left:-40px; top:50%; opacity:0; }
+.hw-bat-body{
+  animation:hw-bat-bob .2s ease-in-out infinite alternate;
+}
+@keyframes hw-flap-l{
+  from{ transform:rotate(30deg); }
+  to{ transform:rotate(-38deg) scaleX(.88); }
+}
+@keyframes hw-flap-r{
+  from{ transform:rotate(-30deg); }
+  to{ transform:rotate(38deg) scaleX(.88); }
+}
+@keyframes hw-bat-bob{
+  from{ transform:translateY(1.2px); }
+  to{ transform:translateY(-1.2px); }
+}
+@keyframes hw-bat-move{
+  0%{ offset-distance:0%; opacity:1; }
+  16.7%{ offset-distance:100%; opacity:1; }
+  16.8%{ offset-distance:100%; opacity:0; }
+  100%{ offset-distance:100%; opacity:0; }
+}
+@keyframes hw-bat-zoom{
+  0%{ scale:1; }
+  8.35%{ scale:2; }
+  16.7%{ scale:1; }
+  100%{ scale:1; }
+}
+@keyframes hw-bat-bank{
+  0%{ rotate:10deg; }
+  25%{ rotate:-8deg; }
+  50%{ rotate:8deg; }
+  75%{ rotate:-8deg; }
+  100%{ rotate:-14deg; }
 }
 @media (max-width:768px){
   .hw-bat-lane{ width:200px; }
 }
 @media (prefers-reduced-motion:reduce){
   .hw-bat{ display:none; }
+}
+
+.hw-dangler{
+  position:absolute;
+  top:0;
+  right:7%;
+  width:24px;
+  height:0;
+  pointer-events:none;
+  z-index:2;
+}
+.hw-thread{
+  position:absolute;
+  left:11.5px;
+  top:0;
+  width:1px;
+  height:0;
+  background:#ffe2c8;
+  transition:height .55s ease-in;
+}
+.hw-dangler .hw-spider{
+  opacity:1;
+  left:0;
+  top:-26px;
+  transform:rotate(180deg);
+  transition:top .55s ease-in;
+}
+#page-mainpage .card-open:hover .hw-thread{
+  height:56px;
+  transition:height .35s ease-out;
+}
+#page-mainpage .card-open:hover .hw-dangler .hw-spider{
+  top:44px;
+  transition:top .35s ease-out;
+  animation:hw-dangle 1.4s ease-in-out .4s infinite alternate;
+}
+@keyframes hw-dangle{
+  from{ transform:rotate(172deg); }
+  to{ transform:rotate(188deg); }
+}
+.tool-preview-open{
+  position:relative;
+}
+.hw-peeker{
+  position:absolute;
+  right:-44px;
+  top:-20px;
+  width:24px;
+  height:24px;
+  opacity:0;
+  pointer-events:none;
+  transition:right .5s ease-in, opacity .2s ease .35s;
+}
+.hw-peeker .hw-spider{
+  position:static;
+  opacity:1;
+  transform:rotate(-90deg);
+}
+.tool-preview-open:hover .hw-peeker{
+  right:16px;
+  opacity:1;
+  transition:right .4s ease-out, opacity .1s ease;
 }
