@@ -15,10 +15,12 @@
      ever changes. -->
 <script>
 (function(){
+  var hw = !/[?&]hw=off\b/.test(location.search) && (/[?&]hw=on\b/.test(location.search) || Date.now() < new Date(2026, 10, 3).getTime());
+  if (hw) document.documentElement.classList.add("hw");
   try {
     var t = localStorage.getItem("bc-theme");
-    document.documentElement.setAttribute("data-theme", "dark");
-  } catch(e){}
+    document.documentElement.setAttribute("data-theme", hw || t === "dark" ? "dark" : "light");
+  } catch(e){ if (hw) document.documentElement.setAttribute("data-theme", "dark"); }
 })();
 </script>
 <!-- Custom scroll-position restore on reload, replacing the browser's
@@ -143,7 +145,7 @@
      duplicating the block inline, since this page otherwise keeps all
      its own CSS inline and doesn't load the rest of shared/site.css. -->
 <link rel="stylesheet" href="/shared/icons.css?v=13">
-<link rel="stylesheet" href="/shared/halloween.css?v=45">
+<link rel="stylesheet" href="/shared/halloween.css?v=47">
 <link rel="stylesheet" href="/shared/nav.css?v=1">
 <!-- Same reasoning, same pattern: the 4 category texture recipes
      (image/video/sound/code) live in shared/textures.css so a tool's
@@ -3404,11 +3406,14 @@ if (VALID_PAGES.includes(startPage)) {
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  applyTheme("dark");
+  const hw = root.classList.contains("hw");
+  applyTheme(hw || saved === "dark" ? "dark" : "light");
 
   if (themeBtn){
-    themeBtn.disabled = true;
-    themeBtn.title = (window.BC_I18N && window.BC_I18N["Dark mode only during Halloween"]) || "Dark mode only during Halloween";
+    if (hw){
+      themeBtn.disabled = true;
+      themeBtn.title = (window.BC_I18N && window.BC_I18N["Dark mode only during Halloween"]) || "Dark mode only during Halloween";
+    }
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
@@ -3641,6 +3646,6 @@ if (VALID_PAGES.includes(startPage)) {
 
 </div>
 <script src="/shared/report.js?v=31" defer></script>
-<script src="/shared/halloween.js?v=19" defer></script>
+<script src="/shared/halloween.js?v=21" defer></script>
 </body>
 </html>
