@@ -1289,6 +1289,7 @@ window.BC_I18N = {
  "The On-Device Guarantee does not apply to the \"Report a bug\" button. When you decide to report a bug or any issue with the site, you share data as stated in section 2 of the Privacy Policy.": "デバイス上での処理の保証は「Report a bug」ボタンには適用されません。バグやサイトに関する問題を報告することを選んだ場合、プライバシーポリシーの第2項に記載のとおりデータを共有することになります。",
  "The On-Device Guarantee does not apply to the report button (\"Report a bug\", translation suggestions and feedback). When you decide to send a report, you share data as stated in section 2 of the Privacy Policy. Reports are not anonymous.": "オンデバイス保証は、報告ボタン（「Report a bug」、翻訳の提案、フィードバック）には適用されません。報告を送信することを選択した場合、プライバシーポリシーのセクション2に記載のとおりデータを共有することになります。報告は匿名ではありません。",
  "The code Colorfy reads back is the exact value stored in the image file — but how that color actually looks depends on the screen displaying it, and displays vary in calibration. If a sampled color needs to match a physical reference (printed material, a physical product) exactly, treat the sampled code as the accurate starting point and expect to verify the final result against the physical reference itself, not just how it looks on your monitor.": "Colorfyが読み返すコードは、画像ファイルに保存されている正確な値ですが、その色が実際にどう見えるかは、表示する画面に依存し、ディスプレイごとにキャリブレーションが異なります。サンプリングした色を物理的な参照物（印刷物、物理的な製品）に正確に合わせる必要がある場合は、サンプリングしたコードを正確な出発点として扱い、モニター上での見え方だけでなく、物理的な参照物そのものと照らして最終結果を確認することを想定してください。",
+ "The color is: Cobalt Blue": "色：コバルトブルー",
  "The color is: Coral Red": "色：コーラルレッド",
  "The color is: Emerald Green": "色：エメラルドグリーン",
  "The color is: Indigo": "色：インディゴ",

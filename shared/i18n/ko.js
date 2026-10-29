@@ -1289,6 +1289,7 @@ window.BC_I18N = {
  "The On-Device Guarantee does not apply to the \"Report a bug\" button. When you decide to report a bug or any issue with the site, you share data as stated in section 2 of the Privacy Policy.": "기기 내 처리 보장은 \"Report a bug\" 버튼에는 적용되지 않습니다. 버그나 사이트의 문제를 신고하기로 하면, 개인정보 처리방침 2항에 명시된 대로 데이터를 공유하게 됩니다.",
  "The On-Device Guarantee does not apply to the report button (\"Report a bug\", translation suggestions and feedback). When you decide to send a report, you share data as stated in section 2 of the Privacy Policy. Reports are not anonymous.": "온디바이스 보장은 신고 버튼(\"Report a bug\", 번역 제안, 의견)에는 적용되지 않습니다. 신고를 보내기로 하면 개인정보 처리방침 섹션 2에 설명된 대로 데이터를 공유하게 됩니다. 신고는 익명이 아닙니다.",
  "The code Colorfy reads back is the exact value stored in the image file — but how that color actually looks depends on the screen displaying it, and displays vary in calibration. If a sampled color needs to match a physical reference (printed material, a physical product) exactly, treat the sampled code as the accurate starting point and expect to verify the final result against the physical reference itself, not just how it looks on your monitor.": "Colorfy가 읽어 오는 코드는 이미지 파일에 저장된 정확한 값이지만, 그 색이 실제로 어떻게 보이는지는 그것을 표시하는 화면에 달려 있고 디스플레이마다 보정 상태가 다릅니다. 샘플링한 색이 물리적 참고물(인쇄물, 실물 제품)과 정확히 일치해야 한다면, 샘플링한 코드를 정확한 출발점으로 취급하고 모니터에서 보이는 모습만이 아니라 물리적 참고물 자체와 비교해 최종 결과를 확인할 것을 예상하세요.",
+ "The color is: Cobalt Blue": "색: 코발트 블루",
  "The color is: Coral Red": "색: 코랄 레드",
  "The color is: Emerald Green": "색: 에메랄드 그린",
  "The color is: Indigo": "색: 인디고",
