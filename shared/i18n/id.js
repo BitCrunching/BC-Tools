@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "Tanda silang",
  "Custom hex color": "Warna hex khusus",
  "DEV_TOOLS_COOKIES:": "DEV_TOOLS_COOKIES:",
+ "Dark mode only during Halloween": "Hanya mode gelap selama Halloween",
  "Dark mode set": "Mode gelap diatur",
  "Date metadata found!": "Metadata tanggal ditemukan!",
  "Debounce": "Debounce",

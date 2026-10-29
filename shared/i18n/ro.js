@@ -521,6 +521,7 @@ window.BC_I18N = {
  "Crossmark": "Cruce",
  "Custom hex color": "Culoare hex personalizată",
  "DEV_TOOLS_COOKIES:": "COOKIE-URI_DEV_TOOLS:",
+ "Dark mode only during Halloween": "Doar modul întunecat în timpul Halloween-ului",
  "Dark mode set": "Mod închis activat",
  "Date metadata found!": "S-au găsit metadate de dată!",
  "Debounce": "Debounce",

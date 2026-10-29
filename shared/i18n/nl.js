@@ -532,6 +532,7 @@ window.BC_I18N = {
  "Crossmark": "Kruisje",
  "Custom hex color": "Eigen hex-kleur",
  "DEV_TOOLS_COOKIES:": "DEV_TOOLS_COOKIES:",
+ "Dark mode only during Halloween": "Alleen donkere modus tijdens Halloween",
  "Dark mode set": "Donkere modus ingesteld",
  "Date metadata found!": "Datummetadata gevonden!",
  "Debounce": "Debounce",
