@@ -274,6 +274,13 @@
   position:relative;
 }
 
+#ctShapeBtn{
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+
 .context-download-btn:hover{
   background:rgba(0,0,0,.35);
 }
@@ -519,8 +526,48 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   #ctFontDropdown .bc-dropdown-menu{
     top:auto;
     bottom:calc(100% + 6px);
+    margin-top:0;
+    margin-bottom:16px;
   }
 }
+.context-shape-kind-dropdown{ position:relative; }
+.ct-shape-arrow{
+  position:absolute;
+  top:100%;
+  left:0;
+  width:100%;
+  height:16px;
+  padding:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--btn-fill);
+  border-top:0;
+  border-radius:0 0 12px 12px;
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+  cursor:pointer;
+  z-index:5;
+  transform:scaleY(0);
+  transform-origin:top center;
+  transition:transform .15s cubic-bezier(.22,1,.36,1);
+}
+.ct-shape-arrow.shown{
+  display:flex;
+  transform:scaleY(1);
+}
+@starting-style{
+  .ct-shape-arrow.shown{ transform:scaleY(0); }
+}
+#ctShapeKindDropdown:has(.ct-shape-arrow.shown) #ctShapeBtn{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+  border-bottom-left-radius:0;
+  border-bottom-right-radius:0;
+}
+.ct-shape-arrow svg{ width:12px; height:12px; display:block; }
+#ctShapeKindDropdown .bc-dropdown-menu{ margin-top:16px; }
 .ct-shape-btn-icon{
   width:16px;
   height:16px;
@@ -657,7 +704,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
     border-radius:7px;
     font-size:14px;
   }
-  :is(#page-context, .context-fullscreen-overlay) .context-page-nav{
+  :is(#page-context, .context-fullscreen-overlay) .context-panel-bar{
     margin-top:12px;
   }
   :is(#page-context, .context-fullscreen-overlay) #ctColorTrigger{
@@ -762,7 +809,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 /* .context-page-nav itself is just the "1/2" text + layout, no
    border/background of its own to force dark — only its text color
    needs pinning here, same reasoning as the buttons above. */
-.context-fullscreen-overlay .context-page-nav{
+.context-fullscreen-overlay .context-panel-bar{
   color:#fff;
 }
 
@@ -835,6 +882,58 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   display:none;
 }
 
+.context-panel-bar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+.context-history-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.context-history-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+#page-context .context-panel-bar{
+  --btn-fill:#F1F5F9;
+  --btn-fill-text:#1C2436;
+  color:#fff;
+}
+#page-context .context-panel-bar .context-page-btn{
+  color:#fff;
+  font-family:var(--bc-mono);
+  font-weight:700;
+}
+#page-context .context-panel-bar .context-page-btn:hover:not(:disabled){
+  color:var(--btn-fill-text);
+}
+@media (min-width:769px){
+  #page-context .context-panel-bar{
+    display:contents;
+  }
+  #page-context .context-panel-bar .context-page-nav{
+    position:absolute;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:4;
+  }
+  #page-context .context-panel-bar .context-history-nav{
+    position:absolute;
+    top:8px;
+    left:10px;
+    z-index:4;
+  }
+  #page-context .context-preview-panel{
+    padding-top:52px;
+  }
+}
+
 /* Flip light/dark same as every other on-banner control — see
    "On-banner controls flip with theme" in shared/site.css's header
    comment. Was a fixed dark tint (border:rgba(0,0,0,.4)/
@@ -849,15 +948,12 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   cursor:pointer;
 }
 
-.context-page-btn:disabled{
-  opacity:.35;
-  cursor:default;
-}
-.context-page-btn:disabled:hover{
-  background:rgba(255,255,255,.35);
-}
+.context-page-btn:disabled,
+.context-page-btn:disabled:hover,
 html[data-theme="dark"] .context-page-btn:disabled:hover{
-  background:rgba(0,0,0,.25);
+  background:transparent;
+  border-style:dashed;
+  cursor:default;
 }
 
 /* Same background as .site-nav — gives the PDF preview its own visible
@@ -943,6 +1039,18 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   flex-shrink:0;
 }
 
+.context-text-box:not(.selected) .context-text-drag-handle,
+.context-text-box:not(.selected) .context-text-remove,
+.context-signature-box:not(.selected) .context-text-drag-handle,
+.context-signature-box:not(.selected) .context-text-remove,
+.context-signature-box:not(.selected) .context-text-resize-handle,
+.context-shape-box:not(.selected) .context-text-drag-handle,
+.context-shape-box:not(.selected) .context-text-remove,
+.context-shape-box:not(.selected) .context-text-resize-handle,
+.context-shape-box:not(.selected) .context-shape-rotate-handle{
+  visibility:hidden;
+}
+
 /* Circle geometry/color/border/touch-action is the shared
    .bc-obj-resize-handle (shared/site.css) — split from the canvas-level
    .bc-resize-handle since this one resizes an object placed ON the
@@ -1021,7 +1129,9 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    .context-text-box, just an <img> instead of editable text. */
 .context-signature-box{
   position:absolute;
-  cursor:default;
+  cursor:move;
+  touch-action:none;
+  user-select:none;
   -webkit-touch-callout:none;
   outline:1px dashed rgba(0,0,0,.35);
 }
@@ -1071,7 +1181,9 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    unwanted stroke. */
 .context-shape-box{
   position:absolute;
-  cursor:default;
+  cursor:move;
+  touch-action:none;
+  user-select:none;
   -webkit-touch-callout:none;
 }
 .context-shape-box.selected{
@@ -1105,6 +1217,18 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
   display:flex;
   right:-34px;
   bottom:-34px;
+}
+.context-shape-box .context-shape-rotate-handle{
+  display:flex;
+  position:absolute;
+  top:calc(50% - 12px);
+  left:-40px;
+  cursor:grab;
+}
+.context-shape-box .context-text-remove,
+.context-shape-box .context-text-resize-handle,
+.context-shape-box .context-shape-rotate-handle{
+  transform:rotate(calc(-1 * var(--ct-rot, 0deg)));
 }
 
 /* ===== Signature capture modal ===== */
@@ -1643,6 +1767,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Tebal (B)" aria-label="Tebal" aria-pressed="false"><b>B</b></button>
           <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
             <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Tambah bentuk (H)" aria-label="Tambah bentuk" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
+            <button type="button" class="ct-shape-arrow" id="ctShapeArrow" tabindex="-1" aria-label="Choose shape" title="Choose shape"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-kind="circle" data-label="Lingkaran" role="option" aria-selected="false">Lingkaran</button>
               <button type="button" class="bc-dropdown-option" data-kind="square" data-label="Persegi" role="option" aria-selected="false">Persegi</button>
@@ -1706,8 +1831,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
 
-        <span id="ctPageNavDesktopSlot"></span>
-
         <div class="context-filename-dropdown context-toolbar-gap" id="ctFilenameDropdown">
           <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctFilenameTrigger" aria-haspopup="true" aria-expanded="false" title="Ganti nama file (R)">
             <span id="ctFilenameTriggerLabel">Ganti nama file</span>
@@ -1740,10 +1863,20 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           <div class="context-overlay" id="ctOverlay"></div>
         </div>
 
-        <div class="context-page-nav" id="ctPageNav" hidden>
-          <button type="button" class="context-page-btn" id="ctPrevPage">‹</button>
-          <span class="context-page-label" id="ctPageLabel">1 / 1</span>
-          <button type="button" class="context-page-btn" id="ctNextPage">›</button>
+        <div class="context-panel-bar">
+          <div class="context-history-nav">
+            <button type="button" class="context-page-btn context-history-btn" id="ctUndoBtn" title="Urungkan (Ctrl+Z)" aria-label="Urungkan" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
+            <button type="button" class="context-page-btn context-history-btn" id="ctRedoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Ulangi" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+            </button>
+          </div>
+          <div class="context-page-nav" id="ctPageNav" hidden>
+            <button type="button" class="context-page-btn" id="ctPrevPage">&lt;</button>
+            <span class="context-page-label" id="ctPageLabel">1 / 1</span>
+            <button type="button" class="context-page-btn" id="ctNextPage">&gt;</button>
+          </div>
         </div>
       </div>
 
@@ -1774,6 +1907,17 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
     <div class="tool-status" id="ctStatus"></div>
     <div class="tool-status" id="ctSizeStatus"></div>
+
+    <div class="context-signature-overlay" id="ctBurstOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header"><span>Everything okay?</span></div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">Five items were just added in a fraction of a second. Do you want to keep them and continue?</p>
+          <button type="button" class="context-signature-action-btn" id="ctBurstKeep">Yes, continue</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctBurstUndo">Remove those 5</button>
+        </div>
+      </div>
+    </div>
 
     <div class="context-signature-overlay" id="ctSigOverlay" hidden>
       <div class="context-signature-modal">
@@ -1935,6 +2079,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=79" defer></script>
+<script src="/context/context-tool.js?v=104" defer></script>
 </body>
 </html>
