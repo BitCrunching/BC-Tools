@@ -40,6 +40,28 @@
     lane.setAttribute("aria-hidden", "true");
     lane.innerHTML = bat.replace('hw-bat"', 'hw-bat hw-bat-a"') + bat.replace('hw-bat"', 'hw-bat hw-bat-b"');
     nav.appendChild(lane);
+
+    const countdown = document.createElement("div");
+    countdown.className = "hw-countdown";
+    countdown.setAttribute("aria-hidden", "true");
+    countdown.innerHTML = '<span class="hw-cd-prompt">&gt;</span> <span class="hw-cd-long"></span><span class="hw-cd-time"></span><span class="hw-cd-cursor">_</span>';
+    nav.appendChild(countdown);
+    const label = (window.BC_I18N && window.BC_I18N["Halloween ends in"]) || "Halloween ends in";
+    countdown.querySelector(".hw-cd-long").textContent = label + " ";
+    const END = new Date(2026, 10, 3).getTime();
+    const pad = n => String(n).padStart(2, "0");
+    const time = countdown.querySelector(".hw-cd-time");
+    const tick = () => {
+      const left = Math.floor((END - Date.now()) / 1000);
+      if (left <= 0){
+        countdown.remove();
+        clearInterval(timer);
+        return;
+      }
+      time.textContent = `${Math.floor(left / 86400)}d ${pad(Math.floor(left % 86400 / 3600))}h ${pad(Math.floor(left % 3600 / 60))}m ${pad(left % 60)}s`;
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
   }
 
   document.querySelectorAll("#page-mainpage .card-open").forEach(card => {

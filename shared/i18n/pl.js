@@ -737,6 +737,7 @@ window.BC_I18N = {
  "HSL": "HSL",
  "HSL (": "HSL (",
  "HTML": "HTML",
+ "Halloween ends in": "Halloween kończy się za",
  "He also brought the BC Tools logo, but he would not tell us what it means. He told us, \"Human civilization is not prepared for it yet.\" He did not want to reveal his identity here, so we will only tell you that he likes the color sky blue.": "Przywiózł też logo BC Tools, ale nie chciał nam powiedzieć, co oznacza. Powiedział nam: „Ludzka cywilizacja nie jest jeszcze na to gotowa”. Nie chciał tu ujawniać swojej tożsamości, więc powiemy tylko, że lubi kolor niebiańskiego błękitu.",
  "Hello world": "Hello world",
  "Here's what each format is actually for. Pick format you already have and which format you need.": "Oto do czego służy każdy format. Wybierz format, który masz, i ten, którego potrzebujesz.",
