@@ -511,7 +511,7 @@
     perPage = opt.perPage || 1;
     refreshPreviews();
   }
-  const marginBtn = bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_STEPS, applyMargin, 0);
+  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_STEPS, applyMargin, 0);
   bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), [
     { label: bcT("Auto"), value: "auto" },
     { label: bcT("Portrait"), value: "portrait" },
@@ -526,10 +526,6 @@
     if (!btn) return;
     fillCopies = btn.dataset.value === "on";
     copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-    if (fillCopies && perPage === 1){
-      marginBtn.setIndex(3);
-      applyMargin(MARGIN_STEPS[3]);
-    }
     refreshPreviews();
   });
   const qualityToggle = document.getElementById("cbQualityToggle");
