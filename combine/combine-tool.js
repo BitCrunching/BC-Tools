@@ -21,9 +21,9 @@
   let pageSize = "a4";
   let imageQuality = "original";
   let pageMargin = 0;
-  let imageShrink = 1;
   let perPage = 1;
   let fillCopies = false;
+  let copiesCount = 2;
   const TILE_COLS = { 2: 1, 4: 2, 8: 2 };
   let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
@@ -423,8 +423,7 @@
 
   /* Page and image box for an image of shownW x shownH. "Auto" follows the
      image; a forced orientation fixes the page and centres the image in it.
-     imageShrink < 1 (the "N per page" margin steps) keeps the page at full
-     size and scales the image down inside it. */
+     Tiled copies keep the page at full size and split it into a grid. */
   function imageLayout(shownW, shownH){
     const m = pageMargin;
     const landscape = pageOrientation === "auto" ? shownW >= shownH : pageOrientation === "landscape";
@@ -441,7 +440,7 @@
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
       scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
-      if (pageOrientation === "auto" && imageShrink === 1){
+      if (pageOrientation === "auto" && !(fillCopies && perPage > 1)){
         pageW = shownW * scale + 2 * m;
         pageH = shownH * scale + 2 * m;
       }
@@ -464,7 +463,6 @@
       }
       return { pageW, pageH, innerW, innerH, spots };
     }
-    scale *= imageShrink;
     const innerW = shownW * scale;
     const innerH = shownH * scale;
     return { pageW, pageH, innerW, innerH, spots: [{ x: (pageW - innerW) / 2, yTop: (pageH - innerH) / 2 }] };
@@ -537,14 +535,17 @@
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
     { label: bcT("Big margin"), value: 36 },
-    { label: bcT("2 copies"), value: 0, shrink: Math.SQRT1_2, perPage: 2 },
-    { label: bcT("4 copies"), value: 0, shrink: 0.5, perPage: 4 },
-    { label: bcT("8 copies"), value: 0, shrink: Math.SQRT1_2 / 2, perPage: 8 }
+    { label: bcT("Multiple"), value: 0, multiple: true }
   ];
+  let multipleStep = false;
+  function applyCopies(){
+    fillCopies = multipleStep;
+    perPage = multipleStep ? Math.max(copiesCount, 1) : 1;
+  }
   function applyMargin(opt){
     pageMargin = opt.value;
-    imageShrink = opt.shrink || 1;
-    perPage = opt.perPage || 1;
+    multipleStep = !!opt.multiple;
+    applyCopies();
     syncCopiesTab();
     refreshPreviews();
   }
@@ -561,16 +562,28 @@
   const COPIES_LEAVE_MS = 200;
   const marginWrap = document.getElementById("cbMarginWrap");
   const copiesTab = document.getElementById("cbCopiesTab");
+  const copiesMenu = document.getElementById("cbCopiesMenu");
   const copiesState = document.getElementById("cbCopiesState");
   const touchOnly = window.matchMedia("(hover: none)").matches;
   let copiesHoverTimer = null;
   let copiesLeaveTimer = null;
+  function closeCopiesTab(){
+    clearTimeout(copiesHoverTimer);
+    copiesTab.classList.remove("shown");
+    copiesMenu.hidden = true;
+    copiesTab.setAttribute("aria-expanded", "false");
+  }
+  function openCopiesMenu(){
+    bcCloseAllPopups();
+    copiesMenu.hidden = false;
+    copiesTab.setAttribute("aria-expanded", "true");
+  }
   function syncCopiesTab(){
-    if (perPage === 1) copiesTab.classList.remove("shown");
+    if (!multipleStep) closeCopiesTab();
     else if (touchOnly) copiesTab.classList.add("shown");
   }
   marginWrap.addEventListener("pointerenter", e => {
-    if (e.pointerType !== "mouse" || perPage === 1) return;
+    if (e.pointerType !== "mouse" || !multipleStep) return;
     clearTimeout(copiesLeaveTimer);
     clearTimeout(copiesHoverTimer);
     copiesHoverTimer = setTimeout(() => copiesTab.classList.add("shown"), COPIES_HOVER_MS);
@@ -579,16 +592,19 @@
     if (e.pointerType !== "mouse") return;
     clearTimeout(copiesHoverTimer);
     clearTimeout(copiesLeaveTimer);
-    copiesLeaveTimer = setTimeout(() => copiesTab.classList.remove("shown"), COPIES_LEAVE_MS);
+    copiesLeaveTimer = setTimeout(closeCopiesTab, COPIES_LEAVE_MS);
   });
-  copiesTab.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
-  copiesTab.addEventListener("click", () => {
-    fillCopies = !fillCopies;
-    copiesTab.setAttribute("aria-pressed", String(fillCopies));
-    copiesState.textContent = bcT(fillCopies ? "On" : "Off");
+  copiesTab.addEventListener("pointerenter", e => {
+    clearTimeout(copiesLeaveTimer);
+    if (e.pointerType === "mouse") openCopiesMenu();
+  });
+  copiesMenu.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
+  bcRegisterDropdown(copiesTab, copiesMenu, opt => {
+    copiesCount = Number(opt.dataset.value);
+    copiesState.textContent = opt.dataset.label;
+    applyCopies();
     refreshPreviews();
   });
-  copiesState.textContent = bcT("Off");
   bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
     { label: bcT("Original"), value: "original" },
     { label: bcT("Smaller"), value: "smaller" },
