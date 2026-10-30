@@ -453,6 +453,7 @@
       }
       return;
     }
+    continueBtn.hidden = true;
     for (const file of picked){
       const tags = isSvgFile(file) ? await readSvgFindings(file)
         : isHeicFile(file) ? heicFindings()

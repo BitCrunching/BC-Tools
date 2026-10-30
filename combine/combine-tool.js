@@ -1,4 +1,4 @@
-/* ===== COMBINE TOOL (PDF merge with drag-to-reorder) ===== */
+/* ===== COMBINE TOOL (PDF + JPG/PNG merge with drag-to-reorder) ===== */
 (function(){
   const drop = document.getElementById("cbDrop");
   const input = document.getElementById("cbInput");
@@ -22,9 +22,9 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("combine", "cb", [
-    ["WELCOME_TO_COMBINE", "Combine merges multiple PDFs into one, in whatever order you drag them into. Click, drop, or press (A) to add your PDFs to get started."],
-    ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF."],
-    ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail of its first page and its size — check them before combining, and remove any you don't need."],
+    ["WELCOME_TO_COMBINE", "Combine merges PDFs and JPG or PNG images into one PDF, in whatever order you drag them into. Click, drop, or press (A) to add your files to get started."],
+    ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF. Each image becomes one page."],
+    ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail and its size — check them before combining, and remove any you don't need."],
     ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],
     ["YOU_ARE_SET", "Hit the Download button (D) and your merged PDF is saved automatically. Close this with the red dot and we won't show it again."]
   ]);
@@ -92,9 +92,26 @@
   function isPdfFile(f){
     return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
   }
+  function isJpegFile(f){
+    return f.type === "image/jpeg" || /\.jpe?g$/i.test(f.name);
+  }
+  function isPngFile(f){
+    return f.type === "image/png" || /\.png$/i.test(f.name);
+  }
+  function isImageFile(f){
+    return isJpegFile(f) || isPngFile(f);
+  }
+  function isCombinable(f){
+    return isPdfFile(f) || isImageFile(f);
+  }
 
   async function getThumbnail(file){
     if (thumbnailCache.has(file)) return thumbnailCache.get(file);
+    if (isImageFile(file)){
+      const url = URL.createObjectURL(file);
+      thumbnailCache.set(file, url);
+      return url;
+    }
     if (!window.pdfjsLib) return null;
 
     try {
@@ -142,11 +159,12 @@
           thumbSlot.innerHTML = `<img src="${dataUrl}" alt="">`;
         } else {
           thumbSlot.classList.add("combine-file-thumb-fallback");
-          thumbSlot.textContent = bcT("PDF");
+          thumbSlot.textContent = isPngFile(file) ? "PNG" : isJpegFile(file) ? "JPG" : bcT("PDF");
         }
       });
 
       item.querySelector(".combine-file-remove").addEventListener("click", () => {
+        if (isImageFile(file) && thumbnailCache.get(file)) URL.revokeObjectURL(thumbnailCache.get(file));
         files.splice(i, 1);
         if (files.length === 0){
           resetTool();
@@ -193,25 +211,26 @@
 
   function addFiles(newFiles){
     const incoming = [...newFiles];
-    const pdfs = incoming.filter(isPdfFile);
-    if (pdfs.length === 0 && incoming.length > 0){
+    const accepted = incoming.filter(isCombinable);
+    if (accepted.length === 0 && incoming.length > 0){
       /* Same fix shape as Convert's applyPickedFiles() — a selection
-         that's wholly non-PDF (e.g. a .txt/.exe) used to be silent. */
-      status.textContent = bcT("Combine only works with PDF files — none of the selected file(s) qualify.");
+         that's wholly unsupported (e.g. a .txt/.exe) used to be silent. */
+      status.textContent = bcT("Combine works with PDFs and JPG or PNG images — none of the selected file(s) qualify.");
       return;
     }
-    files = files.concat(pdfs);
+    files = files.concat(accepted);
+    continueBtn.hidden = true;
     if (files.length) revealAfterDropUI();
     renderList();
     /* Same partial-rejection gap Convert's applyPickedFiles() closed —
-       the wholly-non-PDF branch above never fires for a mixed batch
-       (e.g. 2 valid PDFs + 1 .cr2), which used to load the 2 with zero
-       indication the odd one out never made it in. */
-    if (pdfs.length < incoming.length && pdfs.length > 0){
-      const skipped = incoming.length - pdfs.length;
+       the wholly-unsupported branch above never fires for a mixed batch
+       (e.g. 2 valid files + 1 .cr2), which used to load the valid ones
+       with zero indication the odd one out never made it in. */
+    if (accepted.length < incoming.length && accepted.length > 0){
+      const skipped = incoming.length - accepted.length;
       const msg = skipped === 1
-        ? bcT("1 file wasn't a PDF and was skipped.")
-        : bcT("{0} files weren't PDFs and were skipped.", [skipped]);
+        ? bcT("1 file wasn't a PDF or JPG/PNG image and was skipped.")
+        : bcT("{0} files weren't PDFs or JPG/PNG images and were skipped.", [skipped]);
       status.innerHTML += ` <span style="color:var(--text)">${msg}</span>`;
     }
   }
@@ -220,6 +239,89 @@
     addFiles(e.target.files);
     input.value = "";
   });
+
+  /* EXIF orientation of a JPEG (1 = upright). pdf-lib embeds the raw
+     bytes and ignores the tag, so the page has to rotate for it. Same
+     helper as Convert's JPG-to-PDF path. */
+  function jpegOrientation(bytes){
+    if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return 1;
+    let o = 2;
+    while (o + 4 < bytes.length && bytes[o] === 0xFF){
+      const marker = bytes[o + 1];
+      const len = (bytes[o + 2] << 8) | bytes[o + 3];
+      if (marker === 0xE1 && bytes[o + 4] === 0x45 && bytes[o + 5] === 0x78 && bytes[o + 6] === 0x69 && bytes[o + 7] === 0x66){
+        const t = o + 10;
+        const le = bytes[t] === 0x49;
+        const u16 = p => le ? bytes[p] | (bytes[p + 1] << 8) : (bytes[p] << 8) | bytes[p + 1];
+        const u32 = p => le
+          ? (bytes[p] | (bytes[p + 1] << 8) | (bytes[p + 2] << 16) | (bytes[p + 3] << 24)) >>> 0
+          : ((bytes[p] << 24) | (bytes[p + 1] << 16) | (bytes[p + 2] << 8) | bytes[p + 3]) >>> 0;
+        const ifd = t + u32(t + 4);
+        const count = u16(ifd);
+        for (let i = 0; i < count; i++){
+          const entry = ifd + 2 + i * 12;
+          if (u16(entry) === 0x0112) return u16(entry + 8);
+        }
+        return 1;
+      }
+      if (marker === 0xDA) break;
+      o += 2 + len;
+    }
+    return 1;
+  }
+
+  /* Mirrored EXIF orientations (rare) can't be expressed with a rotated
+     draw, so those JPEGs are redrawn upright on a canvas first. */
+  async function uprightJpegBytes(file){
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    return blob.arrayBuffer();
+  }
+
+  /* One image -> one page. JPG and PNG are embedded as-is (no
+     re-encoding, so the merged PDF grows by about the file's own size);
+     the page keeps the image's proportions, sized to fit A4. */
+  async function addImagePage(pdfDoc, file){
+    const { degrees } = PDFLib;
+    let image;
+    let orientation = 1;
+    if (isJpegFile(file)){
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      orientation = jpegOrientation(bytes);
+      if (orientation === 2 || orientation === 4 || orientation === 5 || orientation === 7){
+        orientation = 1;
+        image = await pdfDoc.embedJpg(await uprightJpegBytes(file));
+      } else {
+        image = await pdfDoc.embedJpg(bytes);
+      }
+    } else {
+      image = await pdfDoc.embedPng(await file.arrayBuffer());
+    }
+
+    const sideways = orientation === 6 || orientation === 8;
+    const shownW = sideways ? image.height : image.width;
+    const shownH = sideways ? image.width : image.height;
+    const [boxW, boxH] = shownW >= shownH ? [842, 595] : [595, 842];
+    const scale = Math.min(boxW / shownW, boxH / shownH);
+    const pageW = shownW * scale;
+    const pageH = shownH * scale;
+    const page = pdfDoc.addPage([pageW, pageH]);
+
+    if (orientation === 6){
+      page.drawImage(image, { x: 0, y: pageH, width: pageH, height: pageW, rotate: degrees(-90) });
+    } else if (orientation === 8){
+      page.drawImage(image, { x: pageW, y: 0, width: pageH, height: pageW, rotate: degrees(90) });
+    } else if (orientation === 3){
+      page.drawImage(image, { x: pageW, y: pageH, width: pageW, height: pageH, rotate: degrees(180) });
+    } else {
+      page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
+    }
+  }
 
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
@@ -232,6 +334,10 @@
       const mergedPdf = await PDFDocument.create();
 
       for (const file of files){
+        if (isImageFile(file)){
+          await addImagePage(mergedPdf, file);
+          continue;
+        }
         const bytes = await file.arrayBuffer();
         const srcPdf = await PDFDocument.load(bytes);
         const copiedPages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices());

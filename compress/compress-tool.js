@@ -603,6 +603,7 @@
       return;
     }
     files = files.concat(picked);
+    continueBtn.hidden = true;
     revealAfterDropUI();
     renderStatus();
     if (gifRejected){
