@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=249">
+<link rel="stylesheet" href="/shared/site.css?v=250">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -213,61 +213,6 @@
 /* ===== CONTEXT TOOL (click-to-place text on a PDF) ===== */
 .context-editor{
   margin-top:20px;
-}
-
-/* File name dropdown — same trigger/popup pattern as the color picker,
-   so it works the same way with touch as with a mouse (no native
-   dropdown quirks, no reliance on hover). */
-.context-filename-dropdown{
-  position:relative;
-}
-
-.context-filename-popup{
-  position:absolute;
-  top:calc(100% + 6px);
-  right:0;
-  z-index:5;
-  width:max(260px, calc(100vw - 32px));
-  max-width:300px;
-  padding:10px;
-  border-radius:14px;
-}
-
-.context-filename-popup[hidden]{
-  display:none;
-}
-
-.context-filename-input-wrap{
-  position:relative;
-}
-
-.context-filename-input{
-  width:100%;
-  height:40px;
-  padding:0 34px 0 14px;
-  border-radius:10px;
-  font-size:14px;
-  box-sizing:border-box;
-}
-
-.context-filename-input::placeholder{
-  opacity:.55;
-}
-
-.context-filename-clear{
-  position:absolute;
-  top:50%;
-  right:6px;
-  transform:translateY(-50%);
-  width:26px;
-  height:26px;
-  border-radius:50%;
-  font-size:15px;
-  line-height:1;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
 
 .context-download-btn{
@@ -466,31 +411,6 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   bottom:calc(100% + 6px);
 }
 
-/* Renaming is worse than the color menu: it also opens the keyboard,
-   which eats even more of the screen right where "open upward from
-   the bottom bar" would put it. Pin it as a bar across the TOP of the
-   screen instead — always visible regardless of keyboard height, and
-   no longer positioned relative to the trigger at all (JS skips its
-   own clamp math here; see clampFilenamePopup). Targets
-   .context-fullscreen-overlay, not .context-fullscreen-bar — JS
-   reparents the popup directly into the overlay while open (see
-   openFullscreen), specifically to escape the toolbar's own light-
-   theme filter, which would otherwise become ITS containing block
-   and trap it down at the toolbar instead of the true viewport. */
-.context-fullscreen-overlay .context-filename-popup{
-  position:fixed;
-  /* The canvas's own delete × sits at z-index:6 — without an explicit
-     z-index here (default auto/0) it was winning and poking through
-     the top of this banner instead of sitting behind it. */
-  z-index:10;
-  top:calc(16px + env(safe-area-inset-top, 0px));
-  left:16px;
-  right:16px;
-  bottom:auto;
-  width:auto;
-  max-width:none;
-}
-
 /* Was margin-left:auto, splitting the toolbar into a left-packed
    cluster + a right-flushed one instead of one centered row — removed
    so .context-toolbar's justify-content:center actually centers
@@ -671,26 +591,6 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   :is(#page-context, .context-fullscreen-overlay) #ctSignatureBtn{
     font-size:13px;
   }
-  /* "Rename file" -> "R" — the label always gets reset to "Rename file"
-     by JS (kept that way for accessibility/consistency), so swap the
-     visible text in CSS only instead of touching the JS string. */
-  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTriggerLabel{
-    font-size:0;
-  }
-  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTriggerLabel::after{
-    content:"R";
-    font-size:13px;
-  }
-  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger{
-    max-width:none;
-    width:34px;
-    padding:0;
-    gap:0;
-    justify-content:center;
-  }
-  :is(#page-context, .context-fullscreen-overlay) #ctFilenameTrigger .context-color-chevron{
-    display:none;
-  }
   /* Font-size nav replaced by dragging each box's own resize handle. */
   :is(#page-context, .context-fullscreen-overlay) .context-font-size-combo{
     display:none;
@@ -813,16 +713,6 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   color:#fff;
 }
 
-#ctFilenameTrigger{
-  max-width:150px;
-}
-
-#ctFilenameTriggerLabel{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
 /* Thin outline chevron (a rotated border-corner, not a filled glyph) —
    matches the native <select> arrow's weight so every dropdown/button
    trigger on the page reads as the same control, not a mix of glyphs. */
@@ -895,6 +785,26 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   display:flex;
   align-items:center;
   gap:8px;
+}
+.context-panel-bar,
+.context-fullscreen-overlay .context-panel-bar{
+  --btn-fill:#F1F5F9;
+  --btn-fill-text:#1C2436;
+}
+.context-panel-bar .context-name-field{
+  width:200px;
+  height:34px;
+  padding:0 10px;
+  border-radius:10px;
+  color:#fff;
+}
+.context-panel-bar .context-name-field:hover,
+.context-panel-bar .context-name-field:focus-within{
+  color:var(--btn-fill-text);
+}
+.context-panel-bar .context-name-field input::placeholder{ color:inherit; opacity:.55; }
+@media (max-width:768px){
+  .context-panel-bar .context-name-field{ width:150px; }
 }
 .context-history-btn{
   display:inline-flex;
@@ -1862,19 +1772,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
 
-        <div class="context-filename-dropdown context-toolbar-gap" id="ctFilenameDropdown">
-          <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctFilenameTrigger" aria-haspopup="true" aria-expanded="false" title="Datei umbenennen (R)">
-            <span id="ctFilenameTriggerLabel">Datei umbenennen</span>
-            <span class="context-color-chevron" aria-hidden="true"></span>
-          </button>
-          <div class="context-filename-popup bc-popup" id="ctFilenamePopup" hidden>
-            <div class="context-filename-input-wrap">
-              <input type="text" class="context-filename-input bc-popup-input" id="ctFilenameInput" placeholder="Dateiname" aria-label="Dateiname">
-              <button type="button" class="context-filename-clear bc-popup-clear" id="ctFilenameClear">×</button>
-            </div>
-          </div>
-        </div>
-
         <button class="tool-primary-btn context-download-btn" id="ctDownloadBtn" disabled title="Herunterladen (D)" data-ga-event="tool_primary_action" data-ga-tool="context">
           <svg class="ct-mobile-only ct-download-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
           <span class="ct-desktop-only">Herunterladen</span>
@@ -1896,6 +1793,10 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
         <div class="context-panel-bar">
           <div class="context-history-nav">
+            <div class="bc-name-field context-name-field" title="Datei umbenennen (R)">
+              <input type="text" id="ctFilenameInput" placeholder="Dateiname" aria-label="Dateiname" maxlength="80" spellcheck="false" autocomplete="off">
+              <span class="bc-name-ext">.pdf</span>
+            </div>
             <button type="button" class="context-page-btn context-history-btn" id="ctUndoBtn" title="Rückgängig (Strg+Z)" aria-label="Rückgängig" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
             </button>
@@ -2117,6 +2018,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=112" defer></script>
+<script src="/context/context-tool.js?v=113" defer></script>
 </body>
 </html>
