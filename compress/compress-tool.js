@@ -684,7 +684,6 @@
     }
 
     compressBtn.disabled = true;
-    compressBtn.textContent = bcT("Compressing...");
     status.textContent = bcT("Compressing... 0 of {0}", [files.length]);
 
     const useZip = effectiveUseZip(files.length);
