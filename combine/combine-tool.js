@@ -22,6 +22,7 @@
   let imageQuality = "original";
   let pageMargin = 0;
   let pageOrientation = "auto";
+  let orientTouched = false;
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const QUALITY_LEVELS = {
     smaller: { maxSide: 2400, jpegQuality: 0.82 },
@@ -71,6 +72,9 @@
     drop.classList.remove("tool-drop-revealed");
     combineBtn.disabled = true;
     status.textContent = "";
+    pageOrientation = "auto";
+    orientTouched = false;
+    syncOrientButton("portrait");
     bcDbClear(CB_DB_NAME, CB_DB_STORE);
   }
 
@@ -193,6 +197,7 @@
       baseW *= down;
       baseH *= down;
     }
+    if (!orientTouched && files[0] === file) syncOrientButton(baseW >= baseH ? "landscape" : "portrait");
     const w = sideways ? baseH : baseW;
     const h = sideways ? baseW : baseH;
     const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h, baseW, baseH);
@@ -574,21 +579,38 @@
     btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
   });
   phoneQuery.addEventListener("change", () => marginControl.setIndex(MARGIN_OPTIONS.indexOf(marginControl.current)));
-  const RECT_ICON = (w, h) => `<svg class="cb-orient-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="${(24 - w) / 2}" y="${(24 - h) / 2}" width="${w}" height="${h}" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>`;
+  /* No "Auto" choice: until the user clicks, pages follow each image's own
+     orientation (pageOrientation "auto") and the button just shows what the
+     first image is; a click then forces that orientation on every page. */
   const ORIENT_OPTIONS = [
-    { label: bcT("Auto"), phoneHtml: null, value: "auto" },
-    { label: bcT("Portrait"), phoneHtml: RECT_ICON(12, 20), value: "portrait" },
-    { label: bcT("Landscape"), phoneHtml: RECT_ICON(20, 12), value: "landscape" }
+    { label: bcT("Portrait"), value: "portrait" },
+    { label: bcT("Landscape"), value: "landscape" }
   ];
   const orientControl = bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), ORIENT_OPTIONS, opt => {
+    orientTouched = true;
     pageOrientation = opt.value;
     refreshPreviews();
   }, 0, (opt, btn) => {
     const labelEl = btn.querySelector(".option-change-btn-label");
-    if (phoneQuery.matches && opt.phoneHtml) labelEl.innerHTML = opt.phoneHtml;
-    else labelEl.textContent = opt.label;
+    if (phoneQuery.matches){
+      let rect = labelEl.querySelector(".cb-orient-rect");
+      if (!rect){
+        labelEl.textContent = "";
+        rect = document.createElement("span");
+        rect.className = "cb-orient-rect";
+        rect.setAttribute("aria-hidden", "true");
+        labelEl.appendChild(rect);
+      }
+      rect.dataset.orient = opt.value;
+    } else {
+      labelEl.textContent = opt.label;
+    }
     btn.setAttribute("aria-label", opt.label);
   });
+  function syncOrientButton(value){
+    const i = ORIENT_OPTIONS.findIndex(o => o.value === value);
+    if (i !== -1 && orientControl.current !== ORIENT_OPTIONS[i]) orientControl.setIndex(i);
+  }
   phoneQuery.addEventListener("change", () => orientControl.setIndex(ORIENT_OPTIONS.indexOf(orientControl.current)));
   bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
     { label: bcT("Original"), value: "original" },
