@@ -562,21 +562,12 @@
   const COPIES_LEAVE_MS = 200;
   const marginWrap = document.getElementById("cbMarginWrap");
   const copiesTab = document.getElementById("cbCopiesTab");
-  const copiesMenu = document.getElementById("cbCopiesMenu");
-  const copiesState = document.getElementById("cbCopiesState");
   const touchOnly = window.matchMedia("(hover: none)").matches;
   let copiesHoverTimer = null;
   let copiesLeaveTimer = null;
   function closeCopiesTab(){
     clearTimeout(copiesHoverTimer);
     copiesTab.classList.remove("shown");
-    copiesMenu.hidden = true;
-    copiesTab.setAttribute("aria-expanded", "false");
-  }
-  function openCopiesMenu(){
-    bcCloseAllPopups();
-    copiesMenu.hidden = false;
-    copiesTab.setAttribute("aria-expanded", "true");
   }
   function syncCopiesTab(){
     if (!multipleStep) closeCopiesTab();
@@ -594,14 +585,12 @@
     clearTimeout(copiesLeaveTimer);
     copiesLeaveTimer = setTimeout(closeCopiesTab, COPIES_LEAVE_MS);
   });
-  copiesTab.addEventListener("pointerenter", e => {
-    clearTimeout(copiesLeaveTimer);
-    if (e.pointerType === "mouse") openCopiesMenu();
-  });
-  copiesMenu.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
-  bcRegisterDropdown(copiesTab, copiesMenu, opt => {
-    copiesCount = Number(opt.dataset.value);
-    copiesState.textContent = opt.dataset.label;
+  copiesTab.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
+  copiesTab.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    copiesCount = Number(btn.dataset.value);
+    copiesTab.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
     applyCopies();
     refreshPreviews();
   });

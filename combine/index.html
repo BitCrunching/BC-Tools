@@ -450,11 +450,11 @@ html[data-theme="dark"] .combine-file-index{
   left:0;
   width:100%;
   height:28px;
-  padding:0 12px;
+  padding:0 4px 3px;
   display:none;
   align-items:center;
   justify-content:center;
-  gap:6px;
+  gap:2px;
   border:1px solid var(--btn-fill);
   border-top:0;
   border-radius:0 0 12px 12px;
@@ -477,8 +477,24 @@ html[data-theme="dark"] .combine-file-index{
 @starting-style{
   .combine-copies-tab.shown{ transform:scaleY(0); }
 }
-.combine-copies-state{ font-size:15px; font-weight:900; }
-.combine-margin-wrap .bc-dropdown-menu{ margin-top:28px; }
+.combine-copies-tab button{
+  flex:1 1 0;
+  min-width:0;
+  height:22px;
+  padding:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:inherit;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.combine-copies-tab button[aria-pressed="true"]{
+  background:var(--btn-fill-text);
+  color:var(--btn-fill);
+}
 .combine-margin-wrap:has(.combine-copies-tab.shown) .option-change-btn{
   background:var(--btn-fill);
   border-color:var(--btn-fill);
@@ -675,12 +691,11 @@ html[data-theme="dark"] .combine-file-index{
               <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
               <span class="option-change-btn-icon" aria-hidden="true"></span>
             </button>
-            <button type="button" class="combine-copies-tab" id="cbCopiesTab" tabindex="-1" aria-haspopup="listbox" aria-expanded="false" title="Number of copies" aria-label="Number of copies"><span class="combine-copies-state" id="cbCopiesState">2x</span><span class="bc-dropdown-chevron" aria-hidden="true"></span></button>
-            <div class="bc-dropdown-menu" id="cbCopiesMenu" role="listbox" hidden>
-              <button type="button" class="bc-dropdown-option active" data-value="2" data-label="2x" role="option" aria-selected="true">2x</button>
-              <button type="button" class="bc-dropdown-option" data-value="4" data-label="4x" role="option" aria-selected="false">4x</button>
-              <button type="button" class="bc-dropdown-option" data-value="8" data-label="8x" role="option" aria-selected="false">8x</button>
-              <button type="button" class="bc-dropdown-option" data-value="0" data-label="OFF" role="option" aria-selected="false">OFF</button>
+            <div class="combine-copies-tab" id="cbCopiesTab" role="group" aria-label="Number of copies">
+              <button type="button" data-value="2" aria-pressed="true">2x</button>
+              <button type="button" data-value="4" aria-pressed="false">4x</button>
+              <button type="button" data-value="8" aria-pressed="false">8x</button>
+              <button type="button" data-value="0" aria-pressed="false">OFF</button>
             </div>
           </div>
         </div>
@@ -768,6 +783,6 @@ html[data-theme="dark"] .combine-file-index{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=45" defer></script>
+<script src="/combine/combine-tool.js?v=46" defer></script>
 </body>
 </html>
