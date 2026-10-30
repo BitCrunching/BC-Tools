@@ -20,6 +20,7 @@
   const rotations = new WeakMap();
   let pageSize = "a4";
   let imageQuality = "original";
+  let pageMargin = 0;
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const SMALL_MAX_SIDE = 1600;
   const SMALL_JPEG_QUALITY = 0.7;
@@ -357,20 +358,21 @@
     if (pageSize !== "original"){
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       const [boxW, boxH] = shownW >= shownH ? [longSide, shortSide] : [shortSide, longSide];
-      scale = Math.min(boxW / shownW, boxH / shownH);
+      scale = Math.min((boxW - 2 * pageMargin) / shownW, (boxH - 2 * pageMargin) / shownH);
     }
     const pageW = shownW * scale;
     const pageH = shownH * scale;
-    const page = pdfDoc.addPage([pageW, pageH]);
+    const m = pageMargin;
+    const page = pdfDoc.addPage([pageW + 2 * m, pageH + 2 * m]);
 
     if (turn === 90){
-      page.drawImage(image, { x: 0, y: pageH, width: pageH, height: pageW, rotate: degrees(-90) });
+      page.drawImage(image, { x: m, y: m + pageH, width: pageH, height: pageW, rotate: degrees(-90) });
     } else if (turn === 270){
-      page.drawImage(image, { x: pageW, y: 0, width: pageH, height: pageW, rotate: degrees(90) });
+      page.drawImage(image, { x: m + pageW, y: m, width: pageH, height: pageW, rotate: degrees(90) });
     } else if (turn === 180){
-      page.drawImage(image, { x: pageW, y: pageH, width: pageW, height: pageH, rotate: degrees(180) });
+      page.drawImage(image, { x: m + pageW, y: m + pageH, width: pageW, height: pageH, rotate: degrees(180) });
     } else {
-      page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
+      page.drawImage(image, { x: m, y: m, width: pageW, height: pageH });
     }
   }
 
@@ -386,6 +388,10 @@
   bcRegisterDropdown(document.getElementById("cbSizeTrigger"), document.getElementById("cbSizeMenu"), opt => {
     pageSize = opt.dataset.value;
     document.getElementById("cbSizeTriggerLabel").textContent = opt.dataset.label;
+  });
+  bcRegisterDropdown(document.getElementById("cbMarginTrigger"), document.getElementById("cbMarginMenu"), opt => {
+    pageMargin = Number(opt.dataset.value);
+    document.getElementById("cbMarginTriggerLabel").textContent = opt.dataset.label;
   });
   const qualityToggle = document.getElementById("cbQualityToggle");
   qualityToggle.addEventListener("click", e => {
