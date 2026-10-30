@@ -21,6 +21,7 @@
   let pageSize = "a4";
   let imageQuality = "original";
   let pageMargin = 0;
+  let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const SMALL_MAX_SIDE = 1600;
   const SMALL_JPEG_QUALITY = 0.7;
@@ -162,12 +163,7 @@
       w *= down;
       h *= down;
     }
-    const scale = imageFitScale(w, h);
-    const innerW = w * scale;
-    const innerH = h * scale;
-    const m = pageMargin;
-    const pageW = innerW + 2 * m;
-    const pageH = innerH + 2 * m;
+    const { pageW, pageH, innerW, innerH, offX, offY } = imageLayout(w, h);
     const k = Math.min((slot.clientWidth - 2) / pageW, (slot.clientHeight - 2) / pageH);
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
@@ -176,8 +172,8 @@
     const boxH = sideways ? innerW * k : innerH * k;
     img.style.width = boxW + "px";
     img.style.height = boxH + "px";
-    img.style.left = m * k + (innerW * k - boxW) / 2 + "px";
-    img.style.top = m * k + (innerH * k - boxH) / 2 + "px";
+    img.style.left = offX * k + (innerW * k - boxW) / 2 + "px";
+    img.style.top = offY * k + (innerH * k - boxH) / 2 + "px";
     img.style.transform = turn ? `rotate(${turn}deg)` : "";
   }
 
@@ -376,11 +372,32 @@
     return blob.arrayBuffer();
   }
 
-  function imageFitScale(shownW, shownH){
-    if (pageSize === "original") return 1;
-    const [shortSide, longSide] = PAGE_BOXES[pageSize];
-    const [boxW, boxH] = shownW >= shownH ? [longSide, shortSide] : [shortSide, longSide];
-    return Math.min((boxW - 2 * pageMargin) / shownW, (boxH - 2 * pageMargin) / shownH);
+  /* Page and image box for an image of shownW x shownH. "Auto" follows the
+     image; a forced orientation fixes the page and centres the image in it. */
+  function imageLayout(shownW, shownH){
+    const m = pageMargin;
+    const landscape = pageOrientation === "auto" ? shownW >= shownH : pageOrientation === "landscape";
+    let pageW, pageH, scale;
+    if (pageSize === "original"){
+      pageW = shownW + 2 * m;
+      pageH = shownH + 2 * m;
+      scale = 1;
+      if (pageOrientation !== "auto" && (pageW >= pageH) !== landscape){
+        [pageW, pageH] = [pageH, pageW];
+        scale = Math.min(1, (pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
+      }
+    } else {
+      const [shortSide, longSide] = PAGE_BOXES[pageSize];
+      [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
+      scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
+      if (pageOrientation === "auto"){
+        pageW = shownW * scale + 2 * m;
+        pageH = shownH * scale + 2 * m;
+      }
+    }
+    const innerW = shownW * scale;
+    const innerH = shownH * scale;
+    return { pageW, pageH, innerW, innerH, offX: (pageW - innerW) / 2, offY: (pageH - innerH) / 2 };
   }
 
   /* One image -> one page. In "Original" quality JPG and PNG are
@@ -411,20 +428,17 @@
     const sideways = turn === 90 || turn === 270;
     const shownW = sideways ? image.height : image.width;
     const shownH = sideways ? image.width : image.height;
-    const scale = imageFitScale(shownW, shownH);
-    const pageW = shownW * scale;
-    const pageH = shownH * scale;
-    const m = pageMargin;
-    const page = pdfDoc.addPage([pageW + 2 * m, pageH + 2 * m]);
+    const { pageW, pageH, innerW, innerH, offX, offY } = imageLayout(shownW, shownH);
+    const page = pdfDoc.addPage([pageW, pageH]);
 
     if (turn === 90){
-      page.drawImage(image, { x: m, y: m + pageH, width: pageH, height: pageW, rotate: degrees(-90) });
+      page.drawImage(image, { x: offX, y: offY + innerH, width: innerH, height: innerW, rotate: degrees(-90) });
     } else if (turn === 270){
-      page.drawImage(image, { x: m + pageW, y: m, width: pageH, height: pageW, rotate: degrees(90) });
+      page.drawImage(image, { x: offX + innerW, y: offY, width: innerH, height: innerW, rotate: degrees(90) });
     } else if (turn === 180){
-      page.drawImage(image, { x: m + pageW, y: m + pageH, width: pageW, height: pageH, rotate: degrees(180) });
+      page.drawImage(image, { x: offX + innerW, y: offY + innerH, width: innerW, height: innerH, rotate: degrees(180) });
     } else {
-      page.drawImage(image, { x: m, y: m, width: pageW, height: pageH });
+      page.drawImage(image, { x: offX, y: offY, width: innerW, height: innerH });
     }
   }
 
@@ -446,6 +460,11 @@
     pageMargin = Number(opt.dataset.value);
     refreshPreviews();
     document.getElementById("cbMarginTriggerLabel").textContent = opt.dataset.label;
+  });
+  bcRegisterDropdown(document.getElementById("cbOrientTrigger"), document.getElementById("cbOrientMenu"), opt => {
+    pageOrientation = opt.dataset.value;
+    refreshPreviews();
+    document.getElementById("cbOrientTriggerLabel").textContent = opt.dataset.label;
   });
   const qualityToggle = document.getElementById("cbQualityToggle");
   qualityToggle.addEventListener("click", e => {
