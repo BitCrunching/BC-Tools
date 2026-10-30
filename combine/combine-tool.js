@@ -545,6 +545,7 @@
     pageMargin = opt.value;
     imageShrink = opt.shrink || 1;
     perPage = opt.perPage || 1;
+    syncCopiesTab();
     refreshPreviews();
   }
   bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_STEPS, applyMargin, 0);
@@ -556,14 +557,38 @@
     pageOrientation = opt.value;
     refreshPreviews();
   }, 0);
-  const copiesToggle = document.getElementById("cbCopiesToggle");
-  copiesToggle.addEventListener("click", e => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    fillCopies = btn.dataset.value === "on";
-    copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  const COPIES_HOVER_MS = 100;
+  const COPIES_LEAVE_MS = 200;
+  const marginWrap = document.getElementById("cbMarginWrap");
+  const copiesTab = document.getElementById("cbCopiesTab");
+  const copiesState = document.getElementById("cbCopiesState");
+  const touchOnly = window.matchMedia("(hover: none)").matches;
+  let copiesHoverTimer = null;
+  let copiesLeaveTimer = null;
+  function syncCopiesTab(){
+    if (perPage === 1) copiesTab.classList.remove("shown");
+    else if (touchOnly) copiesTab.classList.add("shown");
+  }
+  marginWrap.addEventListener("pointerenter", e => {
+    if (e.pointerType !== "mouse" || perPage === 1) return;
+    clearTimeout(copiesLeaveTimer);
+    clearTimeout(copiesHoverTimer);
+    copiesHoverTimer = setTimeout(() => copiesTab.classList.add("shown"), COPIES_HOVER_MS);
+  });
+  marginWrap.addEventListener("pointerleave", e => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(copiesHoverTimer);
+    clearTimeout(copiesLeaveTimer);
+    copiesLeaveTimer = setTimeout(() => copiesTab.classList.remove("shown"), COPIES_LEAVE_MS);
+  });
+  copiesTab.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
+  copiesTab.addEventListener("click", () => {
+    fillCopies = !fillCopies;
+    copiesTab.setAttribute("aria-pressed", String(fillCopies));
+    copiesState.textContent = bcT(fillCopies ? "On" : "Off");
     refreshPreviews();
   });
+  copiesState.textContent = bcT("Off");
   bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
     { label: bcT("Original"), value: "original" },
     { label: bcT("Smaller"), value: "smaller" },

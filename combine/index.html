@@ -443,6 +443,49 @@ html[data-theme="dark"] .combine-file-index{
   font-weight:700;
 }
 .combine-name-ext{ font-size:14px; font-weight:700; opacity:.7; }
+.combine-margin-wrap{ position:relative; }
+.combine-copies-tab{
+  position:absolute;
+  top:100%;
+  left:0;
+  width:100%;
+  height:28px;
+  padding:0 12px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid var(--btn-fill);
+  border-top:0;
+  border-radius:0 0 12px 12px;
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  z-index:5;
+  transform:scaleY(0);
+  transform-origin:top center;
+  transition:transform .15s cubic-bezier(.22,1,.36,1);
+}
+.combine-copies-tab.shown{
+  display:flex;
+  transform:scaleY(1);
+}
+@starting-style{
+  .combine-copies-tab.shown{ transform:scaleY(0); }
+}
+.combine-copies-state{ opacity:.75; }
+.combine-copies-tab[aria-pressed="true"] .combine-copies-state{ opacity:1; }
+.combine-margin-wrap:has(.combine-copies-tab.shown) .option-change-btn{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+  border-bottom-left-radius:0;
+  border-bottom-right-radius:0;
+}
 .combine-file-rotate{
   flex-shrink:0;
   display:inline-flex;
@@ -627,16 +670,12 @@ html[data-theme="dark"] .combine-file-index{
         </div>
         <div class="combine-option">
           <span class="bc-label">Margin</span>
-          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
-            <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
-            <span class="option-change-btn-icon" aria-hidden="true"></span>
-          </button>
-        </div>
-        <div class="combine-option">
-          <span class="bc-label">Multiple copies</span>
-          <div class="bc-segmented-toggle" id="cbCopiesToggle">
-            <button type="button" data-value="off" aria-pressed="true">Off</button>
-            <button type="button" data-value="on" aria-pressed="false">On</button>
+          <div class="combine-margin-wrap" id="cbMarginWrap">
+            <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
+              <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="combine-copies-tab" id="cbCopiesTab" tabindex="-1" aria-pressed="false" title="Multiple copies"><span>Multiple copies</span><span class="combine-copies-state" id="cbCopiesState">Off</span></button>
           </div>
         </div>
         <div class="combine-option">
@@ -723,6 +762,6 @@ html[data-theme="dark"] .combine-file-index{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=43" defer></script>
+<script src="/combine/combine-tool.js?v=44" defer></script>
 </body>
 </html>
