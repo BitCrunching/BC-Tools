@@ -22,6 +22,9 @@
   let imageQuality = "original";
   let pageMargin = 0;
   let imageShrink = 1;
+  let perPage = 1;
+  let fillCopies = false;
+  const TILE_COLS = { 2: 1, 4: 2, 8: 2 };
   let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const SMALL_MAX_SIDE = 1600;
@@ -164,18 +167,27 @@
       w *= down;
       h *= down;
     }
-    const { pageW, pageH, innerW, innerH, offX, offY } = imageLayout(w, h);
+    const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h);
     const k = Math.min((slot.clientWidth - 2) / pageW, (slot.clientHeight - 2) / pageH);
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
     page.style.height = pageH * k + "px";
+    page.querySelectorAll(".combine-thumb-copy").forEach(c => c.remove());
     const boxW = sideways ? innerH * k : innerW * k;
     const boxH = sideways ? innerW * k : innerH * k;
-    img.style.width = boxW + "px";
-    img.style.height = boxH + "px";
-    img.style.left = offX * k + (innerW * k - boxW) / 2 + "px";
-    img.style.top = offY * k + (innerH * k - boxH) / 2 + "px";
-    img.style.transform = turn ? `rotate(${turn}deg)` : "";
+    spots.forEach((spot, n) => {
+      let el = img;
+      if (n > 0){
+        el = img.cloneNode();
+        el.className = "combine-thumb-copy";
+        page.appendChild(el);
+      }
+      el.style.width = boxW + "px";
+      el.style.height = boxH + "px";
+      el.style.left = spot.x * k + (innerW * k - boxW) / 2 + "px";
+      el.style.top = spot.yTop * k + (innerH * k - boxH) / 2 + "px";
+      el.style.transform = turn ? `rotate(${turn}deg)` : "";
+    });
   }
 
   function renderList(){
@@ -398,10 +410,28 @@
         pageH = shownH * scale + 2 * m;
       }
     }
+    const tiled = fillCopies && perPage > 1;
+    if (tiled){
+      const portrait = pageH >= pageW;
+      const cols = portrait ? TILE_COLS[perPage] : perPage / TILE_COLS[perPage];
+      const rows = perPage / cols;
+      const cellW = pageW / cols;
+      const cellH = pageH / rows;
+      scale = Math.min(cellW / shownW, cellH / shownH);
+      const innerW = shownW * scale;
+      const innerH = shownH * scale;
+      const spots = [];
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          spots.push({ x: c * cellW + (cellW - innerW) / 2, yTop: r * cellH + (cellH - innerH) / 2 });
+        }
+      }
+      return { pageW, pageH, innerW, innerH, spots };
+    }
     scale *= imageShrink;
     const innerW = shownW * scale;
     const innerH = shownH * scale;
-    return { pageW, pageH, innerW, innerH, offX: (pageW - innerW) / 2, offY: (pageH - innerH) / 2 };
+    return { pageW, pageH, innerW, innerH, spots: [{ x: (pageW - innerW) / 2, yTop: (pageH - innerH) / 2 }] };
   }
 
   /* One image -> one page. In "Original" quality JPG and PNG are
@@ -432,17 +462,21 @@
     const sideways = turn === 90 || turn === 270;
     const shownW = sideways ? image.height : image.width;
     const shownH = sideways ? image.width : image.height;
-    const { pageW, pageH, innerW, innerH, offX, offY } = imageLayout(shownW, shownH);
+    const { pageW, pageH, innerW, innerH, spots } = imageLayout(shownW, shownH);
     const page = pdfDoc.addPage([pageW, pageH]);
 
-    if (turn === 90){
-      page.drawImage(image, { x: offX, y: offY + innerH, width: innerH, height: innerW, rotate: degrees(-90) });
-    } else if (turn === 270){
-      page.drawImage(image, { x: offX + innerW, y: offY, width: innerH, height: innerW, rotate: degrees(90) });
-    } else if (turn === 180){
-      page.drawImage(image, { x: offX + innerW, y: offY + innerH, width: innerW, height: innerH, rotate: degrees(180) });
-    } else {
-      page.drawImage(image, { x: offX, y: offY, width: innerW, height: innerH });
+    for (const spot of spots){
+      const offX = spot.x;
+      const offY = pageH - spot.yTop - innerH;
+      if (turn === 90){
+        page.drawImage(image, { x: offX, y: offY + innerH, width: innerH, height: innerW, rotate: degrees(-90) });
+      } else if (turn === 270){
+        page.drawImage(image, { x: offX + innerW, y: offY, width: innerH, height: innerW, rotate: degrees(90) });
+      } else if (turn === 180){
+        page.drawImage(image, { x: offX + innerW, y: offY + innerH, width: innerW, height: innerH, rotate: degrees(180) });
+      } else {
+        page.drawImage(image, { x: offX, y: offY, width: innerW, height: innerH });
+      }
     }
   }
 
@@ -464,12 +498,14 @@
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
     { label: bcT("Big margin"), value: 36 },
-    { label: bcT("2 per page"), value: 0, shrink: Math.SQRT1_2 },
-    { label: bcT("4 per page"), value: 0, shrink: 0.5 },
-    { label: bcT("8 per page"), value: 0, shrink: Math.SQRT1_2 / 2 }
+    { label: bcT("2 per page"), value: 0, shrink: Math.SQRT1_2, perPage: 2 },
+    { label: bcT("4 per page"), value: 0, shrink: 0.5, perPage: 4 },
+    { label: bcT("8 per page"), value: 0, shrink: Math.SQRT1_2 / 2, perPage: 8 }
   ], opt => {
     pageMargin = opt.value;
     imageShrink = opt.shrink || 1;
+    perPage = opt.perPage || 1;
+    updateCopiesToggle();
     refreshPreviews();
   }, 0);
   bcRegisterDropdown(document.getElementById("cbOrientTrigger"), document.getElementById("cbOrientMenu"), opt => {
@@ -477,6 +513,18 @@
     refreshPreviews();
     document.getElementById("cbOrientTriggerLabel").textContent = opt.dataset.label;
   });
+  const copiesToggle = document.getElementById("cbCopiesToggle");
+  function updateCopiesToggle(){
+    copiesToggle.querySelectorAll("button").forEach(b => { b.disabled = perPage === 1; });
+  }
+  copiesToggle.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn || btn.disabled) return;
+    fillCopies = btn.dataset.value === "fill";
+    copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+    refreshPreviews();
+  });
+  updateCopiesToggle();
   const qualityToggle = document.getElementById("cbQualityToggle");
   qualityToggle.addEventListener("click", e => {
     const btn = e.target.closest("button");
