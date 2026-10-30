@@ -537,9 +537,9 @@
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
     { label: bcT("Big margin"), value: 36 },
-    { label: bcT("2 per page"), value: 0, shrink: Math.SQRT1_2, perPage: 2 },
-    { label: bcT("4 per page"), value: 0, shrink: 0.5, perPage: 4 },
-    { label: bcT("8 per page"), value: 0, shrink: Math.SQRT1_2 / 2, perPage: 8 }
+    { label: bcT("2 copies"), value: 0, shrink: Math.SQRT1_2, perPage: 2 },
+    { label: bcT("4 copies"), value: 0, shrink: 0.5, perPage: 4 },
+    { label: bcT("8 copies"), value: 0, shrink: Math.SQRT1_2 / 2, perPage: 8 }
   ];
   function applyMargin(opt){
     pageMargin = opt.value;
