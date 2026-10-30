@@ -564,15 +564,15 @@
     copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
     refreshPreviews();
   });
-  const qualityToggle = document.getElementById("cbQualityToggle");
-  qualityToggle.addEventListener("click", e => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    imageQuality = btn.dataset.value;
+  bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
+    { label: bcT("Original"), value: "original" },
+    { label: bcT("Smaller"), value: "smaller" },
+    { label: bcT("Smallest"), value: "smallest" }
+  ], opt => {
+    imageQuality = opt.value;
     refreshPreviews();
     refreshSizes();
-    qualityToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  });
+  }, 0);
 
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
