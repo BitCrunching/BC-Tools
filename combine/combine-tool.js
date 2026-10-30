@@ -456,11 +456,14 @@
     refreshPreviews();
     document.getElementById("cbSizeTriggerLabel").textContent = opt.dataset.label;
   });
-  bcRegisterDropdown(document.getElementById("cbMarginTrigger"), document.getElementById("cbMarginMenu"), opt => {
-    pageMargin = Number(opt.dataset.value);
+  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
+    { label: bcT("No margin"), value: 0 },
+    { label: bcT("Small margin"), value: 18 },
+    { label: bcT("Big margin"), value: 36 }
+  ], opt => {
+    pageMargin = opt.value;
     refreshPreviews();
-    document.getElementById("cbMarginTriggerLabel").textContent = opt.dataset.label;
-  });
+  }, 0);
   bcRegisterDropdown(document.getElementById("cbOrientTrigger"), document.getElementById("cbOrientMenu"), opt => {
     pageOrientation = opt.dataset.value;
     refreshPreviews();
