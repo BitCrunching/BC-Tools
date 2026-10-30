@@ -559,17 +559,21 @@
     btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
   });
   phoneQuery.addEventListener("change", () => sizeControl.setIndex(SIZE_OPTIONS.indexOf(sizeControl.current)));
-  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
-    { label: bcT("No margin"), value: 0 },
-    { label: bcT("Margin 1") + " (12px)", value: 12 },
-    { label: bcT("Margin 2") + " (24px)", value: 24 },
-    { label: bcT("Margin 3") + " (36px)", value: 36 },
-    { label: bcT("Margin 4") + " (48px)", value: 48 },
-    { label: bcT("Margin 5") + " (60px)", value: 60 }
-  ], opt => {
+  const MARGIN_OPTIONS = [
+    { label: bcT("No margin"), phoneLabel: bcT("No margin"), value: 0 },
+    { label: bcT("Margin 1") + " (12px)", phoneLabel: bcT("Margin 1"), value: 12 },
+    { label: bcT("Margin 2") + " (24px)", phoneLabel: bcT("Margin 2"), value: 24 },
+    { label: bcT("Margin 3") + " (36px)", phoneLabel: bcT("Margin 3"), value: 36 },
+    { label: bcT("Margin 4") + " (48px)", phoneLabel: bcT("Margin 4"), value: 48 },
+    { label: bcT("Margin 5") + " (60px)", phoneLabel: bcT("Margin 5"), value: 60 }
+  ];
+  const marginControl = bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_OPTIONS, opt => {
     pageMargin = opt.value;
     refreshPreviews();
-  }, 0);
+  }, 0, (opt, btn) => {
+    btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
+  });
+  phoneQuery.addEventListener("change", () => marginControl.setIndex(MARGIN_OPTIONS.indexOf(marginControl.current)));
   const RECT_ICON = (w, h) => `<svg class="cb-orient-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="${(24 - w) / 2}" y="${(24 - h) / 2}" width="${w}" height="${h}" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>`;
   const ORIENT_OPTIONS = [
     { label: bcT("Auto"), phoneHtml: null, value: "auto" },
