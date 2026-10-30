@@ -270,7 +270,16 @@
     }
   }
 
+  const savedBases = new WeakMap();
+  function defaultBaseOf(entry){
+    return (entry.file.name.replace(/\.[^.]+$/, "") || "video") + "-compressed";
+  }
+  function resultNameOf(entry){
+    return bcSafeBaseName(entry.outputBase, defaultBaseOf(entry)) + "." + entry.result.ext;
+  }
+
   function buildCard(entry){
+    if (entry.outputBase === undefined && savedBases.has(entry.file)) entry.outputBase = savedBases.get(entry.file);
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
@@ -279,8 +288,10 @@
       <div class="result-name"></div>
       <div class="result-size"></div>
     `;
-    card.querySelector(".result-name").textContent = entry.file.name;
-    card.querySelector(".result-name").title = entry.file.name;
+    card.querySelector(".result-name").replaceWith(bcCreateRowNameInput(
+      entry.outputBase !== undefined ? entry.outputBase : defaultBaseOf(entry),
+      value => { entry.outputBase = value; schedulePersist(); }
+    ));
     const video = card.querySelector("video");
     video.src = entry.objectUrl + "#t=0.1";
     card.querySelector(".cr-card-meta").addEventListener("click", () => cycleSize(entry));
@@ -383,7 +394,7 @@
     const p = plan(entry);
     const key = settingsKey(entry);
     if (entry.result && entry.result.key === key && entry.result.blob){
-      downloadBlob(entry.result.blob, entry.result.name);
+      downloadBlob(entry.result.blob, resultNameOf(entry));
       return true;
     }
     const mb = await loadMediabunny();
@@ -407,12 +418,11 @@
       if (!conversion.isValid) throw new Error("This video can't be compressed in your browser.");
       await conversion.execute();
       const ext = useAvc ? "mp4" : "webm";
-      const base = entry.file.name.replace(/\.[^.]+$/, "") || "video";
       const blob = new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
       if (lastResultEntry && lastResultEntry !== entry && lastResultEntry.result) lastResultEntry.result.blob = null;
       lastResultEntry = entry;
-      entry.result = { key, blob, size: blob.size, name: `${base}-compressed.${ext}` };
-      downloadBlob(blob, entry.result.name);
+      entry.result = { key, blob, size: blob.size, ext };
+      downloadBlob(blob, resultNameOf(entry));
       return true;
     } finally {
       entry.conversion = null;
@@ -468,7 +478,7 @@
       : bcT("Couldn't compress {0} files. Try another level or a smaller size.", [failed]);
     else if (failed) status.textContent = bcT("Done — {0} compressed, {1} couldn't be compressed.", [done, failed]);
     else if (done) status.textContent = done === 1 && queue.length === 1
-      ? bcT("Done — {0} saved.", [queue[0].result.name])
+      ? bcT("Done — {0} saved.", [resultNameOf(queue[0])])
       : bcT("Done — {0} videos compressed.", [done]);
   }
 
@@ -493,7 +503,7 @@
     persistBusy = true;
     try {
       const files = await Promise.all(entries.map(async e => ({
-        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer(), targetHeight: e.targetHeight
+        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer(), targetHeight: e.targetHeight, outputName: e.outputBase
       })));
       await bcDbPut(CR_DB_NAME, CR_DB_STORE, { files, levelKey });
     } catch (err){
@@ -513,7 +523,11 @@
           if (levelOptionChangeControl && i !== -1) levelOptionChangeControl.setIndex(i);
           levelKey = saved.levelKey;
         }
-        addFiles(saved.files.map(f => new File([f.bytes], f.name, { type: f.type })));
+        addFiles(saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") savedBases.set(file, f.outputName);
+          return file;
+        }));
         saved.files.forEach((f, i) => { if (entries[i] && f.targetHeight) entries[i].targetHeight = f.targetHeight; });
       } catch (err){
         continueBtn.hidden = false;
