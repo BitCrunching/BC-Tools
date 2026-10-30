@@ -27,8 +27,10 @@
   const TILE_COLS = { 2: 1, 4: 2, 8: 2 };
   let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
-  const SMALL_MAX_SIDE = 1600;
-  const SMALL_JPEG_QUALITY = 0.7;
+  const QUALITY_LEVELS = {
+    smaller: { maxSide: 2400, jpegQuality: 0.82 },
+    smallest: { maxSide: 1600, jpegQuality: 0.7 }
+  };
   const rotationOf = file => rotations.get(file) || 0;
 
   /* ===== Help banner (step-through intro for first-time visitors) =====
@@ -160,11 +162,12 @@
   const sizeUpdaters = new Set();
   const smallSizes = new WeakMap();
   let smallSizeQueue = Promise.resolve();
-  function smallSizeOf(file){
-    if (smallSizes.has(file)) return Promise.resolve(smallSizes.get(file));
+  function smallSizeOf(file, levelName){
+    const cached = smallSizes.get(file) || {};
+    if (levelName in cached) return Promise.resolve(cached[levelName]);
     const job = smallSizeQueue.then(async () => {
-      const size = (await smallJpegBytes(file)).byteLength;
-      smallSizes.set(file, size);
+      const size = (await smallJpegBytes(file, QUALITY_LEVELS[levelName])).byteLength;
+      smallSizes.set(file, { ...smallSizes.get(file), [levelName]: size });
       return size;
     });
     smallSizeQueue = job.catch(() => {});
@@ -181,8 +184,8 @@
     const sideways = turn === 90 || turn === 270;
     let w = sideways ? img.naturalHeight : img.naturalWidth;
     let h = sideways ? img.naturalWidth : img.naturalHeight;
-    if (imageQuality === "small"){
-      const down = Math.min(1, SMALL_MAX_SIDE / Math.max(w, h));
+    if (imageQuality in QUALITY_LEVELS){
+      const down = Math.min(1, QUALITY_LEVELS[imageQuality].maxSide / Math.max(w, h));
       w *= down;
       h *= down;
     }
@@ -232,10 +235,11 @@
       const sizeEl = item.querySelector(".combine-file-size");
       const updateSize = async () => {
         sizeEl.textContent = bcFormatFileSize(file.size);
-        if (imageQuality !== "small" || !isImageFile(file)) return;
+        const levelName = imageQuality;
+        if (!(levelName in QUALITY_LEVELS) || !isImageFile(file)) return;
         try {
-          const size = await smallSizeOf(file);
-          if (imageQuality === "small") sizeEl.textContent = bcFormatFileSize(size);
+          const size = await smallSizeOf(file, levelName);
+          if (imageQuality === levelName) sizeEl.textContent = bcFormatFileSize(size);
         } catch (err){}
       };
       sizeUpdaters.add(updateSize);
@@ -400,11 +404,11 @@
   /* Quarter turns a JPEG's EXIF orientation asks for, clockwise. */
   const EXIF_TURN = { 1: 0, 3: 180, 6: 90, 8: 270 };
 
-  /* "Smaller file": the image is redrawn on a canvas at most
-     SMALL_MAX_SIDE px on its long side and saved as a JPEG, upright. */
-  async function smallJpegBytes(file){
+  /* "Smaller"/"Smallest": the image is redrawn on a canvas at most
+     level.maxSide px on its long side and saved as a JPEG, upright. */
+  async function smallJpegBytes(file, level){
     const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const ratio = Math.min(1, SMALL_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const ratio = Math.min(1, level.maxSide / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
     canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
@@ -413,7 +417,7 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", SMALL_JPEG_QUALITY));
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", level.jpegQuality));
     return blob.arrayBuffer();
   }
 
@@ -475,8 +479,8 @@
     const { degrees } = PDFLib;
     let image;
     let turn = 0;
-    if (imageQuality === "small"){
-      image = await pdfDoc.embedJpg(await smallJpegBytes(file));
+    if (imageQuality in QUALITY_LEVELS){
+      image = await pdfDoc.embedJpg(await smallJpegBytes(file, QUALITY_LEVELS[imageQuality]));
     } else if (isJpegFile(file)){
       const bytes = new Uint8Array(await file.arrayBuffer());
       const orientation = jpegOrientation(bytes);
