@@ -238,8 +238,10 @@
           <div class="combine-file-thumb"></div>
           <button type="button" class="combine-thumb-resize bc-resize-handle bc-hover-reveal" aria-label="${bcT("Resize preview")}" title="${bcT("Resize preview")}"></button>
         </div>
-        <span class="combine-file-name">${file.name}</span>
-        <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
+        <div class="combine-file-meta">
+          <span class="combine-file-name">${file.name}</span>
+          <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
+        </div>
         <div class="combine-file-actions">
         <button type="button" class="combine-file-rotate bc-file-remove-btn" aria-label="${bcT("Rotate")}" title="${bcT("Rotate 90°")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
         <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
