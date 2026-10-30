@@ -224,9 +224,9 @@
       item.innerHTML = `
         <span class="combine-drag-handle">⠿</span>
         <span class="combine-file-index">${i + 1}</span>
-        <div class="combine-file-thumb-wrap">
+        <div class="combine-file-thumb-wrap bc-hover-reveal-host">
           <div class="combine-file-thumb"></div>
-          <button type="button" class="combine-thumb-resize bc-resize-handle" aria-label="${bcT("Resize preview")}" title="${bcT("Resize preview")}"></button>
+          <button type="button" class="combine-thumb-resize bc-resize-handle bc-hover-reveal" aria-label="${bcT("Resize preview")}" title="${bcT("Resize preview")}"></button>
         </div>
         <span class="combine-file-name">${file.name}</span>
         <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
@@ -262,7 +262,7 @@
         const startX = e.clientX;
         const startW = thumbWrap.offsetWidth;
         item.draggable = false;
-        thumbWrap.classList.add("resizing");
+        thumbWrap.classList.add("is-active");
         resizeHandle.setPointerCapture(e.pointerId);
         const move = ev => {
           thumbWidths.set(file, Math.max(THUMB_MIN, Math.min(THUMB_MAX, Math.round(startW + ev.clientX - startX))));
@@ -274,7 +274,7 @@
           resizeHandle.removeEventListener("pointerup", stop);
           resizeHandle.removeEventListener("pointercancel", stop);
           item.draggable = true;
-          thumbWrap.classList.remove("resizing");
+          thumbWrap.classList.remove("is-active");
           schedulePersist();
         };
         resizeHandle.addEventListener("pointermove", move);
