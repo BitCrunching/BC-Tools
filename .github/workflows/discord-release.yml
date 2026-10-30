@@ -3,14 +3,40 @@ name: Announce Release on Discord
 on:
   release:
     types: [published] # Triggers whenever you publish a release or pre-release on GitHub
+  workflow_dispatch: # Manual re-send: Actions > Announce Release on Discord > Run workflow
+    inputs:
+      tag:
+        description: Release tag to announce again (e.g. 26.10.6)
+        required: true
 
 jobs:
   notify-discord:
     runs-on: ubuntu-latest
     steps:
       - name: Send Discord Release Announcement
+        if: github.event_name == 'release' && github.event.release.name != ''
         uses: SethCohen/github-releases-to-discord@v1
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           color: '3066993' # Custom embed color (Hex/Decimal)
           username: 'Bitcrouching System'
+
+      # The action above refuses a release with no title, so a release published
+      # without one (and every manual re-send) is posted directly, titled by its tag.
+      - name: Send Discord Release Announcement (untitled release or manual re-send)
+        if: github.event_name == 'workflow_dispatch' || github.event.release.name == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          release=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")
+          jq '{
+            username: "Bitcrouching System",
+            embeds: [{
+              title: (if (.name // "") == "" then .tag_name else .name end),
+              url: .html_url,
+              description: ((.body // "") | gsub("\r"; "") | gsub("<img[^>]*>"; "") | .[0:4000]),
+              color: 3066993
+            }]
+          }' <<< "$release" | curl -fsS -H 'Content-Type: application/json' -d @- "$WEBHOOK?wait=true" > /dev/null
