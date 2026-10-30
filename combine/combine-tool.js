@@ -23,6 +23,7 @@
   let pageMargin = 0;
   let pageOrientation = "auto";
   let orientTouched = false;
+  let autoLandscape = null;
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const QUALITY_LEVELS = {
     smaller: { maxSide: 2400, jpegQuality: 0.82 },
@@ -75,6 +76,7 @@
     status.textContent = "";
     pageOrientation = "auto";
     orientTouched = false;
+    autoLandscape = null;
     syncOrientButton("portrait");
     bcDbClear(CB_DB_NAME, CB_DB_STORE);
   }
@@ -198,7 +200,14 @@
       baseW *= down;
       baseH *= down;
     }
-    if (!orientTouched && files[0] === file) syncOrientButton(baseW >= baseH ? "landscape" : "portrait");
+    if (files[0] === file){
+      const first = baseW >= baseH;
+      if (autoLandscape !== first){
+        autoLandscape = first;
+        if (!orientTouched) setTimeout(refreshPreviews, 0);
+      }
+      if (!orientTouched) syncOrientButton(first ? "landscape" : "portrait");
+    }
     const w = sideways ? baseH : baseW;
     const h = sideways ? baseW : baseH;
     const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h, baseW, baseH);
@@ -222,6 +231,7 @@
   }
 
   function renderList(){
+    if (files.length && !isImageFile(files[0]) && autoLandscape !== null) autoLandscape = null;
     fileList.innerHTML = "";
     previewLayouts.clear();
     sizeUpdaters.clear();
@@ -520,12 +530,18 @@
      "Auto" picks portrait/landscape from the upright image. */
   function imageLayout(shownW, shownH, baseW, baseH){
     const m = pageMargin;
-    const landscape = pageOrientation === "auto" ? baseW >= baseH : pageOrientation === "landscape";
+    /* Until the user picks one, every page takes the orientation of the
+       first file in the list (so reordering changes it); only a PDF in
+       first place leaves each image on its own shape. */
+    const effective = pageOrientation === "auto"
+      ? (autoLandscape === null ? "auto" : autoLandscape ? "landscape" : "portrait")
+      : pageOrientation;
+    const landscape = effective === "auto" ? baseW >= baseH : effective === "landscape";
     let pageW, pageH;
     if (pageSize === "original"){
       pageW = baseW;
       pageH = baseH;
-      if (pageOrientation !== "auto" && (pageW >= pageH) !== landscape){
+      if (effective !== "auto" && (pageW >= pageH) !== landscape){
         [pageW, pageH] = [pageH, pageW];
       }
     } else {
@@ -728,6 +744,12 @@
     try {
       const { PDFDocument } = PDFLib;
       const mergedPdf = await PDFDocument.create();
+      autoLandscape = null;
+      if (isImageFile(files[0])){
+        const probe = await createImageBitmap(files[0], { imageOrientation: "from-image" });
+        autoLandscape = probe.width >= probe.height;
+        probe.close();
+      }
 
       for (const file of files){
         if (isImageFile(file)){
