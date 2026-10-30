@@ -718,7 +718,7 @@
           src: "",
           name: file.name,
           file,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         card.classList.add("result-pdf");
         card.querySelector("img").remove();
@@ -751,7 +751,7 @@
           src: URL.createObjectURL(file),
           name: file.name,
           file,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         addRemoveButton(card, file);
       }
