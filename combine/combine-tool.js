@@ -597,76 +597,123 @@
     return raw || "combined";
   }
 
-  /* ===== Options row ===== */
+  /* ===== Options row =====
+     Desktop cycles each value with a click-to-advance button; phones get a
+     normal dropdown per option (built here) with the title inside the
+     button. Both controls drive the same state and are kept in sync. */
   const SIZE_OPTIONS = [
     { label: bcT("Fit to A4"), phoneLabel: bcT("A4"), value: "a4" },
     { label: bcT("Fit to Letter"), phoneLabel: bcT("Letter"), value: "letter" },
     { label: bcT("Original size"), phoneLabel: bcT("Original"), value: "original" }
   ];
-  const sizeControl = bcRegisterOptionChangeBtn(document.getElementById("cbSizeBtn"), SIZE_OPTIONS, opt => {
-    pageSize = opt.value;
-    refreshPreviews();
-  }, 0, (opt, btn) => {
-    btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
-  });
-  phoneQuery.addEventListener("change", () => sizeControl.setIndex(SIZE_OPTIONS.indexOf(sizeControl.current)));
   const MARGIN_OPTIONS = [
-    { label: bcT("No margin"), phoneLabel: bcT("No margin"), value: 0 },
-    { label: bcT("Margin 1") + " (12px)", phoneLabel: bcT("Margin 1"), value: 12 },
-    { label: bcT("Margin 2") + " (24px)", phoneLabel: bcT("Margin 2"), value: 24 },
-    { label: bcT("Margin 3") + " (36px)", phoneLabel: bcT("Margin 3"), value: 36 },
-    { label: bcT("Margin 4") + " (48px)", phoneLabel: bcT("Margin 4"), value: 48 },
-    { label: bcT("Margin 5") + " (60px)", phoneLabel: bcT("Margin 5"), value: 60 }
+    { label: bcT("No margin") },
+    { label: bcT("Margin 1") + " (12px)", phoneLabel: bcT("Margin 1") },
+    { label: bcT("Margin 2") + " (24px)", phoneLabel: bcT("Margin 2") },
+    { label: bcT("Margin 3") + " (36px)", phoneLabel: bcT("Margin 3") },
+    { label: bcT("Margin 4") + " (48px)", phoneLabel: bcT("Margin 4") },
+    { label: bcT("Margin 5") + " (60px)", phoneLabel: bcT("Margin 5") }
   ];
-  const marginControl = bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_OPTIONS, opt => {
-    pageMargin = opt.value;
-    refreshPreviews();
-  }, 0, (opt, btn) => {
-    btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
-  });
-  phoneQuery.addEventListener("change", () => marginControl.setIndex(MARGIN_OPTIONS.indexOf(marginControl.current)));
-  /* No "Auto" choice: until the user clicks, pages follow each image's own
-     orientation (pageOrientation "auto") and the button just shows what the
-     first image is; a click then forces that orientation on every page. */
+  [0, 12, 24, 36, 48, 60].forEach((px, i) => { MARGIN_OPTIONS[i].value = px; });
+  /* No "Auto" choice: until the user picks one, pages follow each image's own
+     orientation (pageOrientation "auto") and the control just shows what the
+     first image is; a pick then forces that orientation on every page. */
   const ORIENT_OPTIONS = [
     { label: bcT("Portrait"), value: "portrait" },
     { label: bcT("Landscape"), value: "landscape" }
   ];
-  const orientControl = bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), ORIENT_OPTIONS, opt => {
-    orientTouched = true;
-    pageOrientation = opt.value;
-    refreshPreviews();
-  }, 0, (opt, btn) => {
-    const labelEl = btn.querySelector(".option-change-btn-label");
-    if (phoneQuery.matches){
-      let rect = labelEl.querySelector(".cb-orient-rect");
-      if (!rect){
-        labelEl.textContent = "";
-        rect = document.createElement("span");
-        rect.className = "cb-orient-rect";
-        rect.setAttribute("aria-hidden", "true");
-        labelEl.appendChild(rect);
-      }
-      rect.dataset.orient = opt.value;
-    } else {
-      labelEl.textContent = opt.label;
-    }
-    btn.setAttribute("aria-label", opt.label);
-  });
-  function syncOrientButton(value){
-    const i = ORIENT_OPTIONS.findIndex(o => o.value === value);
-    if (i !== -1 && orientControl.current !== ORIENT_OPTIONS[i]) orientControl.setIndex(i);
-  }
-  phoneQuery.addEventListener("change", () => orientControl.setIndex(ORIENT_OPTIONS.indexOf(orientControl.current)));
-  bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
+  const QUALITY_OPTIONS = [
     { label: bcT("Original"), value: "original" },
     { label: bcT("Smaller"), value: "smaller" },
     { label: bcT("Smallest"), value: "smallest" }
-  ], opt => {
-    imageQuality = opt.value;
-    refreshPreviews();
-    refreshSizes();
-  }, 0);
+  ];
+
+  function buildPhoneDropdown(cycleBtn, title, options, valueHtml, onPick){
+    const wrap = document.createElement("div");
+    wrap.className = "bc-dropdown cb-phone-dd";
+    wrap.innerHTML = `
+      <button type="button" class="bc-dropdown-trigger cb-dd-trigger" aria-haspopup="listbox" aria-expanded="false">
+        <span class="bc-dropdown-trigger-label"><span class="cb-dd-title"></span> <span class="cb-dd-value"></span></span>
+        <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="bc-dropdown-menu" role="listbox" hidden></div>`;
+    const trigger = wrap.querySelector(".cb-dd-trigger");
+    const menu = wrap.querySelector(".bc-dropdown-menu");
+    wrap.querySelector(".cb-dd-title").textContent = title + ":";
+    options.forEach((opt, i) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "bc-dropdown-option";
+      el.dataset.index = i;
+      el.setAttribute("role", "option");
+      el.innerHTML = valueHtml(opt);
+      menu.appendChild(el);
+    });
+    const valueEl = wrap.querySelector(".cb-dd-value");
+    bcRegisterDropdown(trigger, menu, optEl => onPick(Number(optEl.dataset.index)));
+    cycleBtn.insertAdjacentElement("afterend", wrap);
+    return {
+      update(i){
+        const rect = valueEl.querySelector(".cb-orient-rect");
+        if (rect && options[i].value) rect.dataset.orient = options[i].value;
+        else valueEl.innerHTML = valueHtml(options[i]);
+        bcSetDropdownActive(menu, menu.children[i]);
+        trigger.setAttribute("aria-label", title + ": " + options[i].label);
+      }
+    };
+  }
+  const phoneText = opt => (opt.phoneLabel || opt.label);
+  const rectHtml = opt => `<span class="cb-orient-rect" data-orient="${opt.value}" aria-hidden="true"></span><span class="cb-orient-name">${opt.label}</span>`;
+
+  function wireOption({ btnId, title, options, apply, phoneHtml, onPickExtra }){
+    const btn = document.getElementById(btnId);
+    let phoneDd;
+    const control = bcRegisterOptionChangeBtn(btn, options, (opt, i) => {
+      apply(opt);
+      phoneDd.update(i);
+    }, 0, (opt, el) => {
+      el.querySelector(".option-change-btn-label").textContent = opt.label;
+    });
+    phoneDd = buildPhoneDropdown(btn, title, options, phoneHtml || phoneText, i => {
+      control.setIndex(i);
+      apply(options[i]);
+      phoneDd.update(i);
+    });
+    phoneDd.update(0);
+    return {
+      select(i){
+        control.setIndex(i);
+        phoneDd.update(i);
+      },
+      get current(){ return control.current; }
+    };
+  }
+
+  wireOption({
+    btnId: "cbSizeBtn", title: bcT("Size"), options: SIZE_OPTIONS,
+    apply: opt => { pageSize = opt.value; refreshPreviews(); }
+  });
+  wireOption({
+    btnId: "cbMarginBtn", title: bcT("Margin"), options: MARGIN_OPTIONS,
+    apply: opt => { pageMargin = opt.value; refreshPreviews(); }
+  });
+  const orientControl = wireOption({
+    btnId: "cbOrientBtn", title: bcT("Orientation"), options: ORIENT_OPTIONS,
+    apply: opt => { orientTouched = true; pageOrientation = opt.value; refreshPreviews(); },
+    phoneHtml: opt => `<span class="cb-orient-rect" data-orient="${opt.value}" aria-hidden="true"></span><span class="cb-orient-name">${opt.label}</span>`
+  });
+  function syncOrientButton(value){
+    const i = ORIENT_OPTIONS.findIndex(o => o.value === value);
+    if (i !== -1 && orientControl.current !== ORIENT_OPTIONS[i]) orientControl.select(i);
+  }
+  wireOption({
+    btnId: "cbQualityBtn", title: bcT("Quality"), options: QUALITY_OPTIONS,
+    apply: opt => { imageQuality = opt.value; refreshPreviews(); refreshSizes(); }
+  });
+  const nameTitle = document.createElement("span");
+  nameTitle.className = "cb-name-title";
+  nameTitle.textContent = bcT("Output name");
+  document.querySelector(".combine-option-name .bc-name-field").appendChild(nameTitle);
 
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
