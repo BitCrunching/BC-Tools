@@ -35,7 +35,7 @@
   const THUMB_MAX = 300;
   const THUMB_RATIO = 96 / 76;
   const phoneQuery = window.matchMedia("(max-width:768px)");
-  const PHONE_THUMB = 65;
+  const PHONE_THUMB = 75;
   const thumbWidthOf = file => phoneQuery.matches ? PHONE_THUMB : (thumbWidths.get(file) || THUMB_MIN);
   phoneQuery.addEventListener("change", () => { if (files.length) renderList(); });
 
