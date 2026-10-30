@@ -489,11 +489,14 @@
   }
 
   /* ===== Options row ===== */
-  bcRegisterDropdown(document.getElementById("cbSizeTrigger"), document.getElementById("cbSizeMenu"), opt => {
-    pageSize = opt.dataset.value;
+  bcRegisterOptionChangeBtn(document.getElementById("cbSizeBtn"), [
+    { label: bcT("Fit to A4"), value: "a4" },
+    { label: bcT("Fit to Letter"), value: "letter" },
+    { label: bcT("Original size"), value: "original" }
+  ], opt => {
+    pageSize = opt.value;
     refreshPreviews();
-    document.getElementById("cbSizeTriggerLabel").textContent = opt.dataset.label;
-  });
+  }, 0);
   bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
@@ -508,11 +511,14 @@
     updateCopiesToggle();
     refreshPreviews();
   }, 0);
-  bcRegisterDropdown(document.getElementById("cbOrientTrigger"), document.getElementById("cbOrientMenu"), opt => {
-    pageOrientation = opt.dataset.value;
+  bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), [
+    { label: bcT("Auto"), value: "auto" },
+    { label: bcT("Portrait"), value: "portrait" },
+    { label: bcT("Landscape"), value: "landscape" }
+  ], opt => {
+    pageOrientation = opt.value;
     refreshPreviews();
-    document.getElementById("cbOrientTriggerLabel").textContent = opt.dataset.label;
-  });
+  }, 0);
   const copiesToggle = document.getElementById("cbCopiesToggle");
   function updateCopiesToggle(){
     copiesToggle.querySelectorAll("button").forEach(b => { b.disabled = perPage === 1; });
