@@ -526,7 +526,7 @@
   copiesToggle.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn || btn.disabled) return;
-    fillCopies = btn.dataset.value === "fill";
+    fillCopies = btn.dataset.value === "on";
     copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
     refreshPreviews();
   });
