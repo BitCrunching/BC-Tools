@@ -74,11 +74,6 @@
   const toolbarEl = document.querySelector("#page-context .context-toolbar");
   const previewPanel = document.querySelector("#page-context .context-preview-panel");
   const filenameInput = document.getElementById("ctFilenameInput");
-  const filenameDropdown = document.getElementById("ctFilenameDropdown");
-  const filenameTrigger = document.getElementById("ctFilenameTrigger");
-  const filenameTriggerLabel = document.getElementById("ctFilenameTriggerLabel");
-  const filenamePopup = document.getElementById("ctFilenamePopup");
-  const filenameClear = document.getElementById("ctFilenameClear");
   const status = document.getElementById("ctStatus");
   if (!drop || !input || !editor || !canvas || !overlay || !downloadBtn) return;
 
@@ -321,7 +316,6 @@
     filenameInput.value = restoreState && restoreState.filenameValue
       ? restoreState.filenameValue
       : file.name.replace(/\.pdf$/i, "") + "-context";
-    updateFilenameTriggerLabel();
 
     /* Render into the canvas while it's still hidden (off-screen canvas
        drawing works fine) so the preview panel only ever appears with
@@ -1839,7 +1833,6 @@
     editor.hidden = true;
     downloadBtn.disabled = true;
     filenameInput.value = "";
-    updateFilenameTriggerLabel();
     status.textContent = "";
     ctxDbClear();
   }
@@ -1883,13 +1876,6 @@
     document.body.appendChild(fullscreenOverlay);
     fullscreenCanvasArea.appendChild(previewPanel);
     fullscreenBar.appendChild(toolbarEl);
-    /* The rename popup is pinned (position:fixed) to the top of the
-       screen — keeping it as a direct child of the overlay (rather
-       than nested inside the toolbar) means its own position:fixed
-       resolves against this overlay's box, not wherever inside the
-       toolbar it happened to sit; moved back on close so its home DOM
-       position is unchanged outside fullscreen. */
-    fullscreenOverlay.appendChild(filenamePopup);
     fullscreenOverlay.hidden = false;
     /* Belt-and-suspenders: force the critical positioning inline so a
        stale cached stylesheet (a real, previously-seen failure mode on
@@ -1952,9 +1938,6 @@
     resetFsZoom();
     editor.insertBefore(toolbarEl, editor.firstChild);
     editor.appendChild(previewPanel);
-    filenameDropdown.appendChild(filenamePopup);
-    filenamePopup.hidden = true;
-    filenameTrigger.setAttribute("aria-expanded", "false");
     /* Restores original source order: toolbar, then panel, then the
        overlay last — matching the markup this was moved out of in
        openFullscreen. */
@@ -2226,7 +2209,7 @@
   bcRegisterKeyShortcut("b", boldBtn);
   bcRegisterKeyShortcut("i", italicBtn);
   bcRegisterKeyShortcut("u", underlineBtn);
-  bcRegisterKeyShortcut("r", filenameTrigger);
+  bcRegisterKeyShortcut("r", { click(){ filenameInput.focus({ preventScroll: true }); filenameInput.select(); } });
   bcRegisterKeyShortcut("d", downloadBtn);
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
@@ -2431,12 +2414,10 @@
 
   bcRegisterEscapable(() => isFullscreen, () => closeFullscreen(), 90);
   bcRegisterEscapable(
-    () => !colorMenu.hidden || !filenamePopup.hidden,
+    () => !colorMenu.hidden,
     () => {
       colorMenu.hidden = true;
       colorTrigger.setAttribute("aria-expanded", "false");
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
     },
     70
   );
@@ -2446,82 +2427,10 @@
       colorMenu.hidden = true;
       colorTrigger.setAttribute("aria-expanded", "false");
     }
-    if (!filenameDropdown.contains(e.target)){
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  /* Trigger always reads "Rename file" — the actual current name shows
-     inside the popup itself once opened, not on the button. */
-  function updateFilenameTriggerLabel(){
-    filenameTriggerLabel.textContent = bcT("Rename file");
-  }
-
-  /* The popup defaults to right:0 on its dropdown container, which only
-     sits flush with the viewport's right edge on wide screens. On
-     narrow viewports the container can be anywhere in the flex-wrapped
-     toolbar, so a near-full-width popup can run off the LEFT edge of
-     the screen. Clamp it on-screen explicitly, and keep it clamped if
-     the viewport resizes (e.g. a phone rotating) while it's open. */
-  function clampFilenamePopup(){
-    /* In fullscreen the popup is pinned to the top of the screen via
-       CSS (position:fixed, left/right:16px) instead of being anchored
-       relative to the trigger button — this trigger-relative math
-       would fight that and misplace it, so skip it entirely there. */
-    if (isFullscreen) return;
-    filenamePopup.style.left = "";
-    filenamePopup.style.right = "";
-    const margin = 12;
-    const containerRect = filenameDropdown.getBoundingClientRect();
-    const popupWidth = filenamePopup.offsetWidth;
-    const naturalLeft = containerRect.right - popupWidth;
-    const clampedLeft = Math.max(margin, Math.min(naturalLeft, window.innerWidth - popupWidth - margin));
-    if (clampedLeft !== naturalLeft){
-      filenamePopup.style.left = (clampedLeft - containerRect.left) + "px";
-      filenamePopup.style.right = "auto";
-    }
-  }
-
-  bcRegisterPopup(() => {
-    filenamePopup.hidden = true;
-    filenameTrigger.setAttribute("aria-expanded", "false");
-  });
-  filenameTrigger.addEventListener("click", () => {
-    const willOpen = filenamePopup.hidden;
-    if (willOpen) bcCloseAllPopups();
-    filenamePopup.hidden = !willOpen;
-    filenameTrigger.setAttribute("aria-expanded", String(willOpen));
-    if (willOpen){
-      clampFilenamePopup();
-      /* preventScroll stops iOS Safari's native "scroll the focused
-         input above the keyboard" behavior — inside fullscreen that
-         scroll drags the whole real document (including the footer
-         sitting below the fixed overlay) into view, since it isn't
-         blocked by the documentElement overflow:hidden lock used
-         everywhere else here. */
-      filenameInput.focus({ preventScroll: true });
-      filenameInput.select();
-    }
-  });
-
-  window.addEventListener("resize", () => {
-    if (!filenamePopup.hidden) clampFilenamePopup();
-  });
-
-  filenameInput.addEventListener("input", updateFilenameTriggerLabel);
-
-  filenameClear.addEventListener("click", () => {
-    filenameInput.value = "";
-    updateFilenameTriggerLabel();
-    filenameInput.focus({ preventScroll: true });
   });
 
   filenameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
-    }
+    if (e.key === "Enter") filenameInput.blur();
   });
 
   prevPageBtn.addEventListener("click", () => {
