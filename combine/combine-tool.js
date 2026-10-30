@@ -363,6 +363,48 @@
         renderList();
       });
 
+      /* HTML5 drag-and-drop never fires on touch screens, so touch/pen
+         reorder through the grip with pointer events instead (mouse keeps
+         the native drag above). */
+      item.querySelector(".combine-drag-handle").addEventListener("pointerdown", e => {
+        if (e.pointerType === "mouse") return;
+        e.preventDefault();
+        const handle = e.currentTarget;
+        const rows = [...fileList.children];
+        let target = i;
+        const startY = e.clientY;
+        item.draggable = false;
+        item.classList.add("dragging", "touch-dragging");
+        handle.setPointerCapture(e.pointerId);
+        const move = ev => {
+          item.style.transform = `translateY(${ev.clientY - startY}px)`;
+          rows.forEach(r => r.classList.remove("drag-over"));
+          const hit = rows.findIndex(r => r !== item && ev.clientY >= r.getBoundingClientRect().top && ev.clientY <= r.getBoundingClientRect().bottom);
+          if (hit !== -1){
+            target = hit;
+            rows[hit].classList.add("drag-over");
+          } else {
+            target = i;
+          }
+          if (ev.clientY < 70) window.scrollBy(0, -12);
+          else if (ev.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+        };
+        const stop = () => {
+          handle.removeEventListener("pointermove", move);
+          handle.removeEventListener("pointerup", stop);
+          handle.removeEventListener("pointercancel", stop);
+          item.draggable = true;
+          if (target !== i){
+            const [moved] = files.splice(i, 1);
+            files.splice(target, 0, moved);
+          }
+          renderList();
+        };
+        handle.addEventListener("pointermove", move);
+        handle.addEventListener("pointerup", stop);
+        handle.addEventListener("pointercancel", stop);
+      });
+
       fileList.appendChild(item);
     });
 
