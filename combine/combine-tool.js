@@ -454,26 +454,23 @@
 
   /* Page and image box for an image shown at shownW x shownH. The page is
      worked out from the image as uploaded (baseW x baseH) so rotating the
-     file turns only the picture inside its page. "Auto" follows the
-     upright image; a forced orientation fixes the page. */
+     file turns only the picture inside its page. The page size never
+     depends on the margin: A4/Letter stay a full sheet and Original keeps
+     the image's own size, the margin only shrinks the picture inside.
+     "Auto" picks portrait/landscape from the upright image. */
   function imageLayout(shownW, shownH, baseW, baseH){
     const m = pageMargin;
     const landscape = pageOrientation === "auto" ? baseW >= baseH : pageOrientation === "landscape";
     let pageW, pageH;
     if (pageSize === "original"){
-      pageW = baseW + 2 * m;
-      pageH = baseH + 2 * m;
+      pageW = baseW;
+      pageH = baseH;
       if (pageOrientation !== "auto" && (pageW >= pageH) !== landscape){
         [pageW, pageH] = [pageH, pageW];
       }
     } else {
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
-      if (pageOrientation === "auto"){
-        const baseScale = Math.min((pageW - 2 * m) / baseW, (pageH - 2 * m) / baseH);
-        pageW = baseW * baseScale + 2 * m;
-        pageH = baseH * baseScale + 2 * m;
-      }
     }
     let scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
     if (pageSize === "original") scale = Math.min(1, scale);
