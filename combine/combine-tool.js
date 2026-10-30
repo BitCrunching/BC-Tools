@@ -21,10 +21,6 @@
   let pageSize = "a4";
   let imageQuality = "original";
   let pageMargin = 0;
-  let perPage = 1;
-  let fillCopies = false;
-  let copiesCount = 2;
-  const TILE_COLS = { 2: 1, 4: 2, 8: 2 };
   let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const QUALITY_LEVELS = {
@@ -196,22 +192,14 @@
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
     page.style.height = pageH * k + "px";
-    page.querySelectorAll(".combine-thumb-copy").forEach(c => c.remove());
     const boxW = sideways ? innerH * k : innerW * k;
     const boxH = sideways ? innerW * k : innerH * k;
-    spots.forEach((spot, n) => {
-      let el = img;
-      if (n > 0){
-        el = img.cloneNode();
-        el.className = "combine-thumb-copy";
-        page.appendChild(el);
-      }
-      el.style.width = boxW + "px";
-      el.style.height = boxH + "px";
-      el.style.left = spot.x * k + (innerW * k - boxW) / 2 + "px";
-      el.style.top = spot.yTop * k + (innerH * k - boxH) / 2 + "px";
-      el.style.transform = turn ? `rotate(${turn}deg)` : "";
-    });
+    const spot = spots[0];
+    img.style.width = boxW + "px";
+    img.style.height = boxH + "px";
+    img.style.left = spot.x * k + (innerW * k - boxW) / 2 + "px";
+    img.style.top = spot.yTop * k + (innerH * k - boxH) / 2 + "px";
+    img.style.transform = turn ? `rotate(${turn}deg)` : "";
   }
 
   function renderList(){
@@ -426,12 +414,10 @@
   /* Page and image box for an image shown at shownW x shownH. The page is
      worked out from the image as uploaded (baseW x baseH) so rotating the
      file turns only the picture inside its page. "Auto" follows the
-     upright image; a forced orientation fixes the page. Tiled copies keep
-     the page at full size and split it into a grid. */
+     upright image; a forced orientation fixes the page. */
   function imageLayout(shownW, shownH, baseW, baseH){
     const m = pageMargin;
     const landscape = pageOrientation === "auto" ? baseW >= baseH : pageOrientation === "landscape";
-    const tiled = fillCopies && perPage > 1;
     let pageW, pageH;
     if (pageSize === "original"){
       pageW = baseW + 2 * m;
@@ -442,7 +428,7 @@
     } else {
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
-      if (pageOrientation === "auto" && !tiled){
+      if (pageOrientation === "auto"){
         const baseScale = Math.min((pageW - 2 * m) / baseW, (pageH - 2 * m) / baseH);
         pageW = baseW * baseScale + 2 * m;
         pageH = baseH * baseScale + 2 * m;
@@ -450,23 +436,6 @@
     }
     let scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
     if (pageSize === "original") scale = Math.min(1, scale);
-    if (tiled){
-      const portrait = pageH >= pageW;
-      const cols = portrait ? TILE_COLS[perPage] : perPage / TILE_COLS[perPage];
-      const rows = perPage / cols;
-      const cellW = pageW / cols;
-      const cellH = pageH / rows;
-      scale = Math.min(cellW / shownW, cellH / shownH);
-      const innerW = shownW * scale;
-      const innerH = shownH * scale;
-      const spots = [];
-      for (let r = 0; r < rows; r++){
-        for (let c = 0; c < cols; c++){
-          spots.push({ x: c * cellW + (cellW - innerW) / 2, yTop: r * cellH + (cellH - innerH) / 2 });
-        }
-      }
-      return { pageW, pageH, innerW, innerH, spots };
-    }
     const innerW = shownW * scale;
     const innerH = shownH * scale;
     return { pageW, pageH, innerW, innerH, spots: [{ x: (pageW - innerW) / 2, yTop: (pageH - innerH) / 2 }] };
@@ -539,25 +508,17 @@
     pageSize = opt.value;
     refreshPreviews();
   }, 0);
-  const MARGIN_STEPS = [
+  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
     { label: bcT("No margin"), value: 0 },
-    { label: bcT("Small margin"), value: 18 },
-    { label: bcT("Big margin"), value: 36 },
-    { label: bcT("Multiple"), value: 0, multiple: true }
-  ];
-  let multipleStep = false;
-  function applyCopies(){
-    fillCopies = multipleStep;
-    perPage = multipleStep ? Math.max(copiesCount, 1) : 1;
-  }
-  function applyMargin(opt){
+    { label: bcT("Margin 1") + " (12px)", value: 12 },
+    { label: bcT("Margin 2") + " (24px)", value: 24 },
+    { label: bcT("Margin 3") + " (36px)", value: 36 },
+    { label: bcT("Margin 4") + " (48px)", value: 48 },
+    { label: bcT("Margin 5") + " (60px)", value: 60 }
+  ], opt => {
     pageMargin = opt.value;
-    multipleStep = !!opt.multiple;
-    applyCopies();
-    syncCopiesTab();
     refreshPreviews();
-  }
-  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_STEPS, applyMargin, 0);
+  }, 0);
   bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), [
     { label: bcT("Auto"), value: "auto" },
     { label: bcT("Portrait"), value: "portrait" },
@@ -566,42 +527,6 @@
     pageOrientation = opt.value;
     refreshPreviews();
   }, 0);
-  const COPIES_HOVER_MS = 100;
-  const COPIES_LEAVE_MS = 200;
-  const marginWrap = document.getElementById("cbMarginWrap");
-  const copiesTab = document.getElementById("cbCopiesTab");
-  const touchOnly = window.matchMedia("(hover: none)").matches;
-  let copiesHoverTimer = null;
-  let copiesLeaveTimer = null;
-  function closeCopiesTab(){
-    clearTimeout(copiesHoverTimer);
-    copiesTab.classList.remove("shown");
-  }
-  function syncCopiesTab(){
-    if (!multipleStep) closeCopiesTab();
-    else if (touchOnly) copiesTab.classList.add("shown");
-  }
-  marginWrap.addEventListener("pointerenter", e => {
-    if (e.pointerType !== "mouse" || !multipleStep) return;
-    clearTimeout(copiesLeaveTimer);
-    clearTimeout(copiesHoverTimer);
-    copiesHoverTimer = setTimeout(() => copiesTab.classList.add("shown"), COPIES_HOVER_MS);
-  });
-  marginWrap.addEventListener("pointerleave", e => {
-    if (e.pointerType !== "mouse") return;
-    clearTimeout(copiesHoverTimer);
-    clearTimeout(copiesLeaveTimer);
-    copiesLeaveTimer = setTimeout(closeCopiesTab, COPIES_LEAVE_MS);
-  });
-  copiesTab.addEventListener("pointerenter", () => clearTimeout(copiesLeaveTimer));
-  copiesTab.addEventListener("click", e => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    copiesCount = Number(btn.dataset.value);
-    copiesTab.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-    applyCopies();
-    refreshPreviews();
-  });
   bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
     { label: bcT("Original"), value: "original" },
     { label: bcT("Smaller"), value: "smaller" },
