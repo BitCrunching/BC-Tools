@@ -770,6 +770,7 @@
       return;
     }
     files = combined;
+    continueBtn.hidden = true;
     revealAfterDropUI();
     renderStatus();
     /* picked.length === 0 above only catches a batch that's wholly

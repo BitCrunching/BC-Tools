@@ -219,6 +219,7 @@
       return;
     }
     files = files.concat(accepted);
+    continueBtn.hidden = true;
     if (files.length) revealAfterDropUI();
     renderList();
     /* Same partial-rejection gap Convert's applyPickedFiles() closed —
