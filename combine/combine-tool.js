@@ -34,7 +34,8 @@
   const THUMB_MAX = 300;
   const THUMB_RATIO = 96 / 76;
   const phoneQuery = window.matchMedia("(max-width:768px)");
-  const thumbWidthOf = file => phoneQuery.matches ? THUMB_MIN : (thumbWidths.get(file) || THUMB_MIN);
+  const PHONE_THUMB = 57.5;
+  const thumbWidthOf = file => phoneQuery.matches ? PHONE_THUMB : (thumbWidths.get(file) || THUMB_MIN);
   phoneQuery.addEventListener("change", () => { if (files.length) renderList(); });
 
   /* ===== Help banner (step-through intro for first-time visitors) =====
@@ -202,7 +203,8 @@
     const h = sideways ? baseW : baseH;
     const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h, baseW, baseH);
     const thumbBoxW = thumbWidthOf(file);
-    const k = Math.min((thumbBoxW - 2) / pageW, (thumbBoxW * THUMB_RATIO - 2) / pageH);
+    const thumbBoxH = phoneQuery.matches ? thumbBoxW : thumbBoxW * THUMB_RATIO;
+    const k = Math.min((thumbBoxW - 2) / pageW, (thumbBoxH - 2) / pageH);
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
     page.style.height = pageH * k + "px";
