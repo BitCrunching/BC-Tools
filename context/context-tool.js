@@ -131,6 +131,7 @@
   let historyTimer = null;
   let applyingHistory = false;
   let activeShapeKind = "triangle";
+  let activeShapeOutline = false;
   let currentFileBytes = null;
 
   function isPdfFile(f){
@@ -1040,7 +1041,26 @@
     }
   };
   const isMarkKind = kind => kind === "check" || kind === "xmark";
-  function shapeSvg(kind, color, bold){
+  /* Outline ("stroke") variants: no fill, only the edge in the shape's
+     colour. The base shapes are inset by half the stroke so the line stays
+     inside the 0-100 box; the marks keep their polygons with a thinner
+     line and may overshoot by a hair (overflow is visible). */
+  const OUTLINE_STROKE = 8;
+  const MARK_OUTLINE_STROKE = 4;
+  const OUTLINE_SHAPES = {
+    circle: '<circle cx="50" cy="50" r="46" />',
+    square: '<rect x="4" y="4" width="92" height="92" />',
+    triangle: '<polygon points="50,10 90,92 10,92" />',
+    cross: '<polygon points="39,6 61,6 61,39 94,39 94,61 61,61 61,94 39,94 39,61 6,61 6,39 39,39" />'
+  };
+  function shapeSvg(kind, color, bold, outline){
+    if (outline){
+      const mark = isMarkKind(kind);
+      const body = mark
+        ? '<polygon points="' + MARK_POINTS[kind][bold ? "bold" : "thin"] + '" />'
+        : OUTLINE_SHAPES[kind] || OUTLINE_SHAPES.circle;
+      return `<svg viewBox="0 0 100 100" fill="none" stroke="${color}" stroke-width="${mark ? MARK_OUTLINE_STROKE : OUTLINE_STROKE}" stroke-linejoin="round" stroke-linecap="round" preserveAspectRatio="none" style="overflow:visible">${body}</svg>`;
+    }
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
@@ -1053,13 +1073,16 @@
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
+  const shapeOptionFor = (kind, outline) =>
+    shapeKindMenu.querySelector('[data-kind="' + kind + '"][data-outline="' + (outline ? "1" : "0") + '"]');
 
   /* The shape button shows the currently chosen shape (not a fixed
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
-    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor", false, activeShapeOutline).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
     const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
-    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
+    const kindLabel = kindLabels[activeShapeKind] || bcT(activeShapeKind);
+    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [activeShapeOutline ? kindLabel + " " + bcT("outline") : kindLabel]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -1076,6 +1099,14 @@
       return "M" + MARK_POINTS[box.kind][box.bold ? "bold" : "thin"].split(" ").map(pt => pt.replace(",", " ")).join(" L") + " Z";
     }
     return SHAPE_PATHS[box.kind];
+  }
+  const OUTLINE_PATHS = {
+    square: "M4 4 L96 4 L96 96 L4 96 Z",
+    triangle: "M50 10 L90 92 L10 92 Z",
+    cross: "M39 6 L61 6 L61 39 L94 39 L94 61 L61 61 L61 94 L39 94 L39 61 L6 61 L6 39 L39 39 Z"
+  };
+  function outlinePathFor(box){
+    return OUTLINE_PATHS[box.kind] || shapePathFor(box);
   }
   function scaleSvgPath(path, sx, sy){
     return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
@@ -1106,7 +1137,7 @@
     el.style.width = (box.widthPt * scale) + "px";
     el.style.height = (box.heightPt * scale) + "px";
     applyShapeRotation(el, box.rotation || 0);
-    el.innerHTML = shapeSvg(box.kind, box.color, box.bold);
+    el.innerHTML = shapeSvg(box.kind, box.color, box.bold, box.outline);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -1155,8 +1186,9 @@
       deselectShapeBox();
       selectedShapeId = box.id;
       el.classList.add("selected");
-      bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
+      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
       activeShapeKind = box.kind;
+      activeShapeOutline = !!box.outline;
       renderShapeBtnIcon();
       if (isMarkKind(box.kind)){
         activeBold = !!box.bold;
@@ -1289,6 +1321,7 @@
       widthPt,
       heightPt,
       kind: activeShapeKind,
+      outline: activeShapeOutline,
       color: activeColor,
       bold: mark && activeBold
     };
@@ -1707,11 +1740,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true, opt.dataset.outline === "1").replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
-  bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
+  bcSetDropdownActive(shapeKindMenu, shapeOptionFor(activeShapeKind, activeShapeOutline));
 
   /* A tap adds the preselected shape; holding the button for 250 ms opens
      the Circle/Square/Triangle/... menu instead, and picking a kind there
@@ -1788,6 +1821,7 @@
   shapeBtn.addEventListener("contextmenu", e => e.preventDefault());
   bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
+    activeShapeOutline = opt.dataset.outline === "1";
     renderShapeBtnIcon();
     if (!selectedShapeId){
       addShapeBox();
@@ -1799,6 +1833,7 @@
       return;
     }
     shape.kind = activeShapeKind;
+    shape.outline = activeShapeOutline;
     const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
     const oldSvg = shapeEl && shapeEl.querySelector("svg");
     if (oldSvg){
@@ -1806,7 +1841,7 @@
          separate elements right alongside it and keep their own JS
          listeners untouched this way, unlike a full innerHTML rebuild
          which would silently drop all three. */
-      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold, shape.outline);
     }
     schedulePersist();
   });
@@ -2190,7 +2225,7 @@
           shape.bold = nowActive;
           const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + shape.id + '"]');
           const svgEl = shapeEl && shapeEl.querySelector("svg");
-          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold, shape.outline);
           schedulePersist();
         }
       }
@@ -2659,7 +2694,30 @@
           y: mid.y + (p.x - mid.x) * Math.sin(phi) + (p.y - mid.y) * Math.cos(phi)
         });
         const { x, y } = around(toPdf(box.xPt, box.topPt + box.heightPt));
-        if (box.kind === "square"){
+        if (box.outline){
+          const borderWidth = (isMarkKind(box.kind) ? MARK_OUTLINE_STROKE : OUTLINE_STROKE) / 100 * Math.min(box.widthPt, box.heightPt);
+          if (box.kind === "circle"){
+            const center = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
+            page.drawEllipse({
+              x: center.x,
+              y: center.y,
+              xScale: box.widthPt / 2 * 0.92,
+              yScale: box.heightPt / 2 * 0.92,
+              borderColor: color,
+              borderWidth,
+              rotate: turn
+            });
+          } else {
+            const top = around(toPdf(box.xPt, box.topPt));
+            page.drawSvgPath(scaleSvgPath(outlinePathFor(box), box.widthPt / 100, box.heightPt / 100), {
+              x: top.x,
+              y: top.y,
+              borderColor: color,
+              borderWidth,
+              rotate: turn
+            });
+          }
+        } else if (box.kind === "square"){
           page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate: turn });
         } else if (shapePathFor(box)){
           /* Triangle, cross and the two marks are the same polygons as
