@@ -633,13 +633,12 @@
     wrap.className = "bc-dropdown cb-phone-dd";
     wrap.innerHTML = `
       <button type="button" class="bc-dropdown-trigger cb-dd-trigger" aria-haspopup="listbox" aria-expanded="false">
-        <span class="bc-dropdown-trigger-label"><span class="cb-dd-title"></span> <span class="cb-dd-value"></span></span>
+        <span class="bc-dropdown-trigger-label cb-dd-value"></span>
         <span class="bc-dropdown-chevron" aria-hidden="true"></span>
       </button>
       <div class="bc-dropdown-menu" role="listbox" hidden></div>`;
     const trigger = wrap.querySelector(".cb-dd-trigger");
     const menu = wrap.querySelector(".bc-dropdown-menu");
-    wrap.querySelector(".cb-dd-title").textContent = title + ":";
     options.forEach((opt, i) => {
       const el = document.createElement("button");
       el.type = "button";
@@ -650,12 +649,17 @@
       menu.appendChild(el);
     });
     const valueEl = wrap.querySelector(".cb-dd-value");
+    let picked = false;
     bcRegisterDropdown(trigger, menu, optEl => onPick(Number(optEl.dataset.index)));
     cycleBtn.insertAdjacentElement("afterend", wrap);
     return {
-      update(i){
+      /* Like Congify's pickers: the pill shows its title until the user
+         chooses something, then the chosen option replaces it. */
+      update(i, fromUser){
+        if (fromUser) picked = true;
         const rect = valueEl.querySelector(".cb-orient-rect");
-        if (rect && options[i].value) rect.dataset.orient = options[i].value;
+        if (!picked) valueEl.textContent = title;
+        else if (rect && options[i].value) rect.dataset.orient = options[i].value;
         else valueEl.innerHTML = valueHtml(options[i]);
         bcSetDropdownActive(menu, menu.children[i]);
         trigger.setAttribute("aria-label", title + ": " + options[i].label);
@@ -670,14 +674,14 @@
     let phoneDd;
     const control = bcRegisterOptionChangeBtn(btn, options, (opt, i) => {
       apply(opt);
-      phoneDd.update(i);
+      phoneDd.update(i, true);
     }, 0, (opt, el) => {
       el.querySelector(".option-change-btn-label").textContent = opt.label;
     });
     phoneDd = buildPhoneDropdown(btn, title, options, phoneHtml || phoneText, i => {
       control.setIndex(i);
       apply(options[i]);
-      phoneDd.update(i);
+      phoneDd.update(i, true);
     });
     phoneDd.update(0);
     return {
