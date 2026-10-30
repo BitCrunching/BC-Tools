@@ -497,20 +497,21 @@
     pageSize = opt.value;
     refreshPreviews();
   }, 0);
-  bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
+  const MARGIN_STEPS = [
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
     { label: bcT("Big margin"), value: 36 },
     { label: bcT("2 per page"), value: 0, shrink: Math.SQRT1_2, perPage: 2 },
     { label: bcT("4 per page"), value: 0, shrink: 0.5, perPage: 4 },
     { label: bcT("8 per page"), value: 0, shrink: Math.SQRT1_2 / 2, perPage: 8 }
-  ], opt => {
+  ];
+  function applyMargin(opt){
     pageMargin = opt.value;
     imageShrink = opt.shrink || 1;
     perPage = opt.perPage || 1;
-    updateCopiesToggle();
     refreshPreviews();
-  }, 0);
+  }
+  const marginBtn = bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), MARGIN_STEPS, applyMargin, 0);
   bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), [
     { label: bcT("Auto"), value: "auto" },
     { label: bcT("Portrait"), value: "portrait" },
@@ -520,17 +521,17 @@
     refreshPreviews();
   }, 0);
   const copiesToggle = document.getElementById("cbCopiesToggle");
-  function updateCopiesToggle(){
-    copiesToggle.querySelectorAll("button").forEach(b => { b.disabled = perPage === 1; });
-  }
   copiesToggle.addEventListener("click", e => {
     const btn = e.target.closest("button");
-    if (!btn || btn.disabled) return;
+    if (!btn) return;
     fillCopies = btn.dataset.value === "on";
     copiesToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+    if (fillCopies && perPage === 1){
+      marginBtn.setIndex(3);
+      applyMargin(MARGIN_STEPS[3]);
+    }
     refreshPreviews();
   });
-  updateCopiesToggle();
   const qualityToggle = document.getElementById("cbQualityToggle");
   qualityToggle.addEventListener("click", e => {
     const btn = e.target.closest("button");
