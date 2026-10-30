@@ -155,6 +155,25 @@
     previewLayouts.forEach(layout => layout());
   }
 
+  /* In "Smaller" quality an image row shows the size its re-encoded JPEG
+     will add, computed one file at a time so a big batch doesn't stall. */
+  const sizeUpdaters = new Set();
+  const smallSizes = new WeakMap();
+  let smallSizeQueue = Promise.resolve();
+  function smallSizeOf(file){
+    if (smallSizes.has(file)) return Promise.resolve(smallSizes.get(file));
+    const job = smallSizeQueue.then(async () => {
+      const size = (await smallJpegBytes(file)).byteLength;
+      smallSizes.set(file, size);
+      return size;
+    });
+    smallSizeQueue = job.catch(() => {});
+    return job;
+  }
+  function refreshSizes(){
+    sizeUpdaters.forEach(update => update());
+  }
+
   /* Mirrors addImagePage's page maths so the thumbnail shows the page
      (size, margin, rotation) the combined PDF will actually get. */
   function layoutImagePreview(slot, img, file){
@@ -193,6 +212,7 @@
   function renderList(){
     fileList.innerHTML = "";
     previewLayouts.clear();
+    sizeUpdaters.clear();
     files.forEach((file, i) => {
       const item = document.createElement("div");
       item.className = "combine-file-item result";
@@ -208,6 +228,18 @@
         <button type="button" class="combine-file-rotate bc-file-remove-btn" aria-label="${bcT("Rotate")}" title="${bcT("Rotate 90°")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
         <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
+
+      const sizeEl = item.querySelector(".combine-file-size");
+      const updateSize = async () => {
+        sizeEl.textContent = bcFormatFileSize(file.size);
+        if (imageQuality !== "small" || !isImageFile(file)) return;
+        try {
+          const size = await smallSizeOf(file);
+          if (imageQuality === "small") sizeEl.textContent = bcFormatFileSize(size);
+        } catch (err){}
+      };
+      sizeUpdaters.add(updateSize);
+      updateSize();
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
       const applyThumbRotation = () => {
@@ -534,6 +566,7 @@
     if (!btn) return;
     imageQuality = btn.dataset.value;
     refreshPreviews();
+    refreshSizes();
     qualityToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
   });
 
