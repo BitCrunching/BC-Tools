@@ -716,7 +716,7 @@
   });
   const nameTitle = document.createElement("span");
   nameTitle.className = "cb-name-title";
-  nameTitle.textContent = bcT("Output name");
+  nameTitle.innerHTML = '<span class="nav-terminal-prompt">&gt;</span> ' + bcT("Output name") + ":";
   document.querySelector(".combine-option-name .bc-name-field").appendChild(nameTitle);
 
   combineBtn.addEventListener("click", async () => {

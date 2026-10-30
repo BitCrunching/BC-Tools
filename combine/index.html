@@ -488,25 +488,39 @@ html[data-theme="dark"] .combine-file-index{
   .cb-dd-value .cb-orient-name{ display:none; }
   .cb-phone-dd .bc-dropdown-option{ white-space:nowrap; }
   .cb-phone-dd .bc-dropdown-option .cb-orient-rect{ margin:0 10px 0 0; flex-shrink:0; }
-  .combine-option-name .bc-name-field{
-    position:relative;
-    height:52px;
-    align-items:flex-end;
-    padding-bottom:7px;
+  /* Congify's terminal-style file name line: "> Output name: combined.pdf" */
+  .combine-option .bc-name-field,
+  .combine-option .bc-name-field:hover,
+  .combine-option .bc-name-field:focus-within{
+    width:auto;
+    max-width:none;
+    min-width:0;
+    height:auto;
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--text);
+    justify-content:center;
+    gap:6px;
+    font-family:var(--bc-mono);
+    font-size:13px;
   }
-  .combine-option-name .bc-name-field input{ height:20px; }
-  .cb-name-title{
-    display:block;
-    position:absolute;
-    top:7px;
-    left:12px;
-    font-size:10px;
-    font-weight:800;
-    letter-spacing:.04em;
-    text-transform:uppercase;
-    opacity:.7;
+  .cb-name-title{ display:inline; order:-1; flex-shrink:0; }
+  .combine-option .bc-name-field input{
+    field-sizing:content;
+    flex:0 1 auto;
+    max-width:200px;
+    min-width:20px;
+    height:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    border-bottom:1px solid transparent;
+    font:inherit;
   }
-  .combine-option .bc-name-field{ width:200px; min-width:0; max-width:200px; }
+  .combine-option .bc-name-field input:hover{ border-bottom-color:var(--border-strong); }
+  .combine-option .bc-name-field input:focus{ border-bottom-color:var(--text); }
+  .combine-option .bc-name-ext{ font:inherit; flex-shrink:0; margin-left:-6px; }
   .combine-file-actions{ flex-direction:column; gap:8px; }
   .combine-file-thumb-wrap .combine-thumb-resize{ display:none; }
 }
@@ -770,6 +784,6 @@ html[data-theme="dark"] .combine-file-index{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=66" defer></script>
+<script src="/combine/combine-tool.js?v=67" defer></script>
 </body>
 </html>
