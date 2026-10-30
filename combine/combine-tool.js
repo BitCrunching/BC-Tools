@@ -547,14 +547,18 @@
   }
 
   /* ===== Options row ===== */
-  bcRegisterOptionChangeBtn(document.getElementById("cbSizeBtn"), [
-    { label: bcT("Fit to A4"), value: "a4" },
-    { label: bcT("Fit to Letter"), value: "letter" },
-    { label: bcT("Original size"), value: "original" }
-  ], opt => {
+  const SIZE_OPTIONS = [
+    { label: bcT("Fit to A4"), phoneLabel: bcT("A4"), value: "a4" },
+    { label: bcT("Fit to Letter"), phoneLabel: bcT("Letter"), value: "letter" },
+    { label: bcT("Original size"), phoneLabel: bcT("Original"), value: "original" }
+  ];
+  const sizeControl = bcRegisterOptionChangeBtn(document.getElementById("cbSizeBtn"), SIZE_OPTIONS, opt => {
     pageSize = opt.value;
     refreshPreviews();
-  }, 0);
+  }, 0, (opt, btn) => {
+    btn.querySelector(".option-change-btn-label").textContent = phoneQuery.matches ? opt.phoneLabel : opt.label;
+  });
+  phoneQuery.addEventListener("change", () => sizeControl.setIndex(SIZE_OPTIONS.indexOf(sizeControl.current)));
   bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Margin 1") + " (12px)", value: 12 },
