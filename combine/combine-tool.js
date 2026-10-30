@@ -35,9 +35,10 @@
   bcSetupHelpBanner("combine", "cb", [
     ["WELCOME_TO_COMBINE", "Combine merges PDFs and JPG or PNG images into one PDF, in whatever order you drag them into. Click, drop, or press (A) to add your files to get started."],
     ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF. Each image becomes one page."],
-    ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail and its size — check them before combining, and remove any you don't need."],
-    ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],
-    ["TUNE_THE_RESULT", "Use the rotate button on a file to turn it a quarter at a time. Below the list, pick how images are placed on the page, keep their original quality or make the file smaller, and name the PDF before you download it."],
+    ["CHECK_BEFORE_COMBINING", "Each file shows a preview of its page and its size — check them before combining, and remove any you don't need."],
+    ["ROTATE_A_FILE", "Use the rotate button on a file to turn just the picture a quarter at a time. The page keeps its shape, so the picture turns inside it."],
+    ["TUNE_THE_RESULT", "Click the options below the list to cycle them: image page size (A4, Letter or original), page orientation, margin, and image quality. Smaller quality updates each file's size, and the previews follow every change."],
+    ["NAME_YOUR_PDF", "Type the name you want in Combined file name — the .pdf is added for you. Combine always produces a single PDF, in the exact order shown in the list."],
     ["YOU_ARE_SET", "Hit the Download button (D) and your merged PDF is saved automatically. Close this with the red dot and we won't show it again."]
   ]);
 
