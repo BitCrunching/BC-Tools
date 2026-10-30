@@ -570,14 +570,22 @@
     pageMargin = opt.value;
     refreshPreviews();
   }, 0);
-  bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), [
-    { label: bcT("Auto"), value: "auto" },
-    { label: bcT("Portrait"), value: "portrait" },
-    { label: bcT("Landscape"), value: "landscape" }
-  ], opt => {
+  const RECT_ICON = (w, h) => `<svg class="cb-orient-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="${(24 - w) / 2}" y="${(24 - h) / 2}" width="${w}" height="${h}" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>`;
+  const ORIENT_OPTIONS = [
+    { label: bcT("Auto"), phoneHtml: null, value: "auto" },
+    { label: bcT("Portrait"), phoneHtml: RECT_ICON(12, 20), value: "portrait" },
+    { label: bcT("Landscape"), phoneHtml: RECT_ICON(20, 12), value: "landscape" }
+  ];
+  const orientControl = bcRegisterOptionChangeBtn(document.getElementById("cbOrientBtn"), ORIENT_OPTIONS, opt => {
     pageOrientation = opt.value;
     refreshPreviews();
-  }, 0);
+  }, 0, (opt, btn) => {
+    const labelEl = btn.querySelector(".option-change-btn-label");
+    if (phoneQuery.matches && opt.phoneHtml) labelEl.innerHTML = opt.phoneHtml;
+    else labelEl.textContent = opt.label;
+    btn.setAttribute("aria-label", opt.label);
+  });
+  phoneQuery.addEventListener("change", () => orientControl.setIndex(ORIENT_OPTIONS.indexOf(orientControl.current)));
   bcRegisterOptionChangeBtn(document.getElementById("cbQualityBtn"), [
     { label: bcT("Original"), value: "original" },
     { label: bcT("Smaller"), value: "smaller" },
