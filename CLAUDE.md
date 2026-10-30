@@ -471,9 +471,8 @@ mode and the disabled theme button follow it, so the skin ends on its own.
 by merging (a merge conflicts on every page the skin touched): in a `main`
 checkout run `git checkout development -- .`, delete the dev-only files that
 came along (`CLAUDE.md`, `ads.txt`, `.release-drafts`), check them with the
-promotion grep above, restore the permanent bug-leg hover animation
-(`shared/report.js` / `shared/report.css` from `main`), rebuild translations
-if copy changed, bump versions, and push `main`. That drops the skin files,
+promotion grep above, rebuild translations if copy changed, bump versions,
+and push `main`. That drops the skin files,
 the `hw` head-script check and the `hw` theme branches in one commit.
 
 ## Cache-busting (non-negotiable)
