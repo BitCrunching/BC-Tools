@@ -1382,7 +1382,12 @@
   }
   async function updateSizeStatus(){
     const token = ++sizeToken;
-    if (!currentFile){ sizeStatus.textContent = ""; return; }
+    if (!currentFile){
+      sizeStatus.textContent = "";
+      compressWrap.hidden = true;
+      compressInfoTip.hidden = true;
+      return;
+    }
     let total = currentFile.size;
     const texts = textBoxes.filter(b => b.text);
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
@@ -1450,7 +1455,8 @@
   const compressWrap = document.getElementById("ctCompressWrap");
   const compressBtn = document.getElementById("ctCompressBtn");
   let compressBusy = false;
-  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), document.getElementById("ctCompressInfoTip"));
+  const compressInfoTip = document.getElementById("ctCompressInfoTip");
+  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), compressInfoTip);
 
   function eligibleImages(pdf){
     const { PDFName, PDFRawStream, PDFArray, PDFNumber } = PDFLib;
@@ -1564,6 +1570,7 @@
     compressBusy = true;
     compressWrap.hidden = true;
     downloadBtn.disabled = true;
+    const source = currentFile;
     const original = new Uint8Array(await currentFile.arrayBuffer());
     const before = original.length;
     let best = null;
@@ -1573,7 +1580,7 @@
       let idx = await pickCompressStep(original);
       for (let attempt = 0; attempt < 3; attempt++){
         const out = await recompressImages(original, COMPRESS_STEPS[idx], (n, total) => {
-          status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
+          if (currentFile === source) status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
         });
         if (!best || out.length < best.length) best = out;
         if (out.length <= COMPRESS_TARGET || idx >= COMPRESS_STEPS.length - 1) break;
@@ -1581,10 +1588,16 @@
       }
     } catch (err){
       console.error(err);
+      if (currentFile !== source){ compressBusy = false; if (!currentFile) status.textContent = ""; return; }
       status.textContent = bcT("Couldn't compress this PDF.");
       compressBusy = false;
       downloadBtn.disabled = false;
       compressWrap.hidden = false;
+      return;
+    }
+    if (currentFile !== source){
+      compressBusy = false;
+      if (!currentFile) status.textContent = "";
       return;
     }
     if (!best || best.length >= before){
@@ -1595,6 +1608,7 @@
       currentFileBytes = best.slice().buffer;
       try {
         const doc = await pdfjsLib.getDocument({ data: best.slice() }).promise;
+        if (currentFile !== file){ compressBusy = false; return; }
         clearPageCache();
         pdfjsDoc = doc;
         await renderPage();
