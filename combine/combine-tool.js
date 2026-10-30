@@ -21,6 +21,7 @@
   let pageSize = "a4";
   let imageQuality = "original";
   let pageMargin = 0;
+  let imageShrink = 1;
   let pageOrientation = "auto";
   const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
   const SMALL_MAX_SIDE = 1600;
@@ -373,7 +374,9 @@
   }
 
   /* Page and image box for an image of shownW x shownH. "Auto" follows the
-     image; a forced orientation fixes the page and centres the image in it. */
+     image; a forced orientation fixes the page and centres the image in it.
+     imageShrink < 1 (the "N per page" margin steps) keeps the page at full
+     size and scales the image down inside it. */
   function imageLayout(shownW, shownH){
     const m = pageMargin;
     const landscape = pageOrientation === "auto" ? shownW >= shownH : pageOrientation === "landscape";
@@ -390,11 +393,12 @@
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
       scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
-      if (pageOrientation === "auto"){
+      if (pageOrientation === "auto" && imageShrink === 1){
         pageW = shownW * scale + 2 * m;
         pageH = shownH * scale + 2 * m;
       }
     }
+    scale *= imageShrink;
     const innerW = shownW * scale;
     const innerH = shownH * scale;
     return { pageW, pageH, innerW, innerH, offX: (pageW - innerW) / 2, offY: (pageH - innerH) / 2 };
@@ -459,9 +463,13 @@
   bcRegisterOptionChangeBtn(document.getElementById("cbMarginBtn"), [
     { label: bcT("No margin"), value: 0 },
     { label: bcT("Small margin"), value: 18 },
-    { label: bcT("Big margin"), value: 36 }
+    { label: bcT("Big margin"), value: 36 },
+    { label: bcT("2 per page"), value: 0, shrink: Math.SQRT1_2 },
+    { label: bcT("4 per page"), value: 0, shrink: 0.5 },
+    { label: bcT("8 per page"), value: 0, shrink: Math.SQRT1_2 / 2 }
   ], opt => {
     pageMargin = opt.value;
+    imageShrink = opt.shrink || 1;
     refreshPreviews();
   }, 0);
   bcRegisterDropdown(document.getElementById("cbOrientTrigger"), document.getElementById("cbOrientMenu"), opt => {
