@@ -28,6 +28,10 @@
     smallest: { maxSide: 1600, jpegQuality: 0.7 }
   };
   const rotationOf = file => rotations.get(file) || 0;
+  const thumbWidths = new WeakMap();
+  const THUMB_MIN = 76;
+  const THUMB_MAX = 300;
+  const THUMB_RATIO = 96 / 76;
 
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
@@ -132,7 +136,7 @@
       const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
       const page = await pdf.getPage(1);
       const baseViewport = page.getViewport({ scale: 1 });
-      const scale = 90 / baseViewport.width;
+      const scale = THUMB_MAX / baseViewport.width;
       const viewport = page.getViewport({ scale });
 
       const canvas = document.createElement("canvas");
@@ -216,7 +220,10 @@
       item.innerHTML = `
         <span class="combine-drag-handle">⠿</span>
         <span class="combine-file-index">${i + 1}</span>
-        <div class="combine-file-thumb"></div>
+        <div class="combine-file-thumb-wrap">
+          <div class="combine-file-thumb"></div>
+          <button type="button" class="combine-thumb-resize bc-resize-handle" aria-label="${bcT("Resize preview")}" title="${bcT("Resize preview")}"></button>
+        </div>
         <span class="combine-file-name">${file.name}</span>
         <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
         <button type="button" class="combine-file-rotate bc-file-remove-btn" aria-label="${bcT("Rotate")}" title="${bcT("Rotate 90°")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
@@ -237,6 +244,39 @@
       updateSize();
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
+      const thumbWrap = item.querySelector(".combine-file-thumb-wrap");
+      const resizeHandle = item.querySelector(".combine-thumb-resize");
+      const applyThumbSize = () => {
+        const w = thumbWidths.get(file) || THUMB_MIN;
+        thumbWrap.style.width = w + "px";
+        thumbWrap.style.height = Math.round(w * THUMB_RATIO) + "px";
+      };
+      applyThumbSize();
+      resizeHandle.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startW = thumbWrap.offsetWidth;
+        item.draggable = false;
+        thumbWrap.classList.add("resizing");
+        resizeHandle.setPointerCapture(e.pointerId);
+        const move = ev => {
+          thumbWidths.set(file, Math.max(THUMB_MIN, Math.min(THUMB_MAX, Math.round(startW + ev.clientX - startX))));
+          applyThumbSize();
+          refreshPreviews();
+        };
+        const stop = () => {
+          resizeHandle.removeEventListener("pointermove", move);
+          resizeHandle.removeEventListener("pointerup", stop);
+          resizeHandle.removeEventListener("pointercancel", stop);
+          item.draggable = true;
+          thumbWrap.classList.remove("resizing");
+          schedulePersist();
+        };
+        resizeHandle.addEventListener("pointermove", move);
+        resizeHandle.addEventListener("pointerup", stop);
+        resizeHandle.addEventListener("pointercancel", stop);
+      });
       const applyThumbRotation = () => {
         if (thumbSlot.querySelector(".combine-thumb-page")){
           refreshPreviews();
@@ -608,6 +648,7 @@
         name: f.name,
         type: f.type,
         rotation: rotationOf(f),
+        thumbWidth: thumbWidths.get(f),
         bytes: await f.arrayBuffer()
       })));
       await bcDbPut(CB_DB_NAME, CB_DB_STORE, { files: storedFiles });
@@ -636,6 +677,7 @@
         files = saved.files.map(f => {
           const restored = new File([f.bytes], f.name, { type: f.type });
           if (f.rotation) rotations.set(restored, f.rotation);
+          if (f.thumbWidth) thumbWidths.set(restored, f.thumbWidth);
           return restored;
         });
         if (files.length) revealAfterDropUI();
