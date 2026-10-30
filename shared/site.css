@@ -3605,3 +3605,22 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
   outline:none;
   border-bottom-color:var(--text);
 }
+
+/* ===== .bc-hover-reveal — a control that fades in while its host is
+   hovered (or has .is-active, e.g. mid-drag) and fades out after. Put
+   .bc-hover-reveal-host on the parent and .bc-hover-reveal on the control;
+   it stays in the layout and unclickable while hidden. Touch screens have
+   no hover, so it stays visible there. ===== */
+.bc-hover-reveal{
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+.bc-hover-reveal-host:hover .bc-hover-reveal,
+.bc-hover-reveal-host.is-active .bc-hover-reveal{
+  opacity:1;
+  pointer-events:auto;
+}
+@media (hover:none){
+  .bc-hover-reveal{ opacity:1; pointer-events:auto; }
+}
