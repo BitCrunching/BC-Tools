@@ -145,8 +145,45 @@
     }
   }
 
+  const previewLayouts = new Set();
+  function refreshPreviews(){
+    previewLayouts.forEach(layout => layout());
+  }
+
+  /* Mirrors addImagePage's page maths so the thumbnail shows the page
+     (size, margin, rotation) the combined PDF will actually get. */
+  function layoutImagePreview(slot, img, file){
+    const turn = rotationOf(file);
+    const sideways = turn === 90 || turn === 270;
+    let w = sideways ? img.naturalHeight : img.naturalWidth;
+    let h = sideways ? img.naturalWidth : img.naturalHeight;
+    if (imageQuality === "small"){
+      const down = Math.min(1, SMALL_MAX_SIDE / Math.max(w, h));
+      w *= down;
+      h *= down;
+    }
+    const scale = imageFitScale(w, h);
+    const innerW = w * scale;
+    const innerH = h * scale;
+    const m = pageMargin;
+    const pageW = innerW + 2 * m;
+    const pageH = innerH + 2 * m;
+    const k = Math.min((slot.clientWidth - 2) / pageW, (slot.clientHeight - 2) / pageH);
+    const page = slot.firstElementChild;
+    page.style.width = pageW * k + "px";
+    page.style.height = pageH * k + "px";
+    const boxW = sideways ? innerH * k : innerW * k;
+    const boxH = sideways ? innerW * k : innerH * k;
+    img.style.width = boxW + "px";
+    img.style.height = boxH + "px";
+    img.style.left = m * k + (innerW * k - boxW) / 2 + "px";
+    img.style.top = m * k + (innerH * k - boxH) / 2 + "px";
+    img.style.transform = turn ? `rotate(${turn}deg)` : "";
+  }
+
   function renderList(){
     fileList.innerHTML = "";
+    previewLayouts.clear();
     files.forEach((file, i) => {
       const item = document.createElement("div");
       item.className = "combine-file-item result";
@@ -165,12 +202,25 @@
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
       const applyThumbRotation = () => {
+        if (thumbSlot.querySelector(".combine-thumb-page")){
+          refreshPreviews();
+          return;
+        }
         const turn = rotationOf(file);
         const target = thumbSlot.firstElementChild || thumbSlot;
         const fit = turn === 90 || turn === 270 ? " scale(.79)" : "";
         target.style.transform = turn ? `rotate(${turn}deg)${fit}` : "";
       };
       getThumbnail(file).then(dataUrl => {
+        if (dataUrl && isImageFile(file)){
+          thumbSlot.innerHTML = `<div class="combine-thumb-page"><img src="${dataUrl}" alt=""></div>`;
+          const img = thumbSlot.querySelector("img");
+          const layout = () => layoutImagePreview(thumbSlot, img, file);
+          previewLayouts.add(layout);
+          if (img.complete && img.naturalWidth) layout();
+          else img.addEventListener("load", layout);
+          return;
+        }
         if (dataUrl){
           thumbSlot.innerHTML = `<img src="${dataUrl}" alt="">`;
         } else {
@@ -326,6 +376,13 @@
     return blob.arrayBuffer();
   }
 
+  function imageFitScale(shownW, shownH){
+    if (pageSize === "original") return 1;
+    const [shortSide, longSide] = PAGE_BOXES[pageSize];
+    const [boxW, boxH] = shownW >= shownH ? [longSide, shortSide] : [shortSide, longSide];
+    return Math.min((boxW - 2 * pageMargin) / shownW, (boxH - 2 * pageMargin) / shownH);
+  }
+
   /* One image -> one page. In "Original" quality JPG and PNG are
      embedded as-is (no re-encoding, so the merged PDF grows by about
      the file's own size). The page keeps the image's proportions and is
@@ -354,12 +411,7 @@
     const sideways = turn === 90 || turn === 270;
     const shownW = sideways ? image.height : image.width;
     const shownH = sideways ? image.width : image.height;
-    let scale = 1;
-    if (pageSize !== "original"){
-      const [shortSide, longSide] = PAGE_BOXES[pageSize];
-      const [boxW, boxH] = shownW >= shownH ? [longSide, shortSide] : [shortSide, longSide];
-      scale = Math.min((boxW - 2 * pageMargin) / shownW, (boxH - 2 * pageMargin) / shownH);
-    }
+    const scale = imageFitScale(shownW, shownH);
     const pageW = shownW * scale;
     const pageH = shownH * scale;
     const m = pageMargin;
@@ -387,10 +439,12 @@
   /* ===== Options row ===== */
   bcRegisterDropdown(document.getElementById("cbSizeTrigger"), document.getElementById("cbSizeMenu"), opt => {
     pageSize = opt.dataset.value;
+    refreshPreviews();
     document.getElementById("cbSizeTriggerLabel").textContent = opt.dataset.label;
   });
   bcRegisterDropdown(document.getElementById("cbMarginTrigger"), document.getElementById("cbMarginMenu"), opt => {
     pageMargin = Number(opt.dataset.value);
+    refreshPreviews();
     document.getElementById("cbMarginTriggerLabel").textContent = opt.dataset.label;
   });
   const qualityToggle = document.getElementById("cbQualityToggle");
@@ -398,6 +452,7 @@
     const btn = e.target.closest("button");
     if (!btn) return;
     imageQuality = btn.dataset.value;
+    refreshPreviews();
     qualityToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
   });
 
