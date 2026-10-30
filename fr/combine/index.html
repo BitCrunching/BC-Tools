@@ -378,6 +378,62 @@ html[data-theme="dark"] .combine-file-index{
    Kept as a class only as an addressing hook for its own JS
    listener. */
 
+.combine-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px 20px;
+  margin-top:24px;
+}
+.combine-option{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.combine-option .bc-dropdown{ min-width:170px; }
+.combine-option-name{ flex:1 1 220px; }
+.combine-name-field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+}
+html[data-theme="dark"] .combine-name-field{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+.combine-name-field input{
+  flex:1 1 auto;
+  min-width:0;
+  height:100%;
+  border:0;
+  outline:none;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+}
+.combine-name-ext{ font-size:14px; font-weight:700; opacity:.7; }
+.combine-file-rotate{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.combine-file-rotate svg{ width:16px; height:16px; }
+.combine-file-thumb img,
+.combine-file-thumb-fallback{ transition:transform .2s ease; }
+@media (max-width:768px){
+  .combine-option{ flex:1 1 100%; }
+}
+
 .combine-primary-btn{
   margin-top:24px;
   width:100%;
@@ -531,6 +587,37 @@ html[data-theme="dark"] .combine-file-index{
     <div class="tool-after-drop" id="cbAfterDrop" hidden>
       <div class="combine-file-list" id="cbFileList"></div>
 
+      <div class="combine-options" id="cbOptions">
+        <div class="combine-option">
+          <span class="bc-label">Image page size</span>
+          <div class="bc-dropdown" id="cbSizeDropdown">
+            <button type="button" class="bc-dropdown-trigger" id="cbSizeTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label" id="cbSizeTriggerLabel">Fit to A4</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cbSizeMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option active" data-value="a4" data-label="Fit to A4" role="option" aria-selected="true">Fit to A4</button>
+              <button type="button" class="bc-dropdown-option" data-value="letter" data-label="Fit to Letter" role="option" aria-selected="false">Fit to Letter</button>
+              <button type="button" class="bc-dropdown-option" data-value="original" data-label="Original size" role="option" aria-selected="false">Original size</button>
+            </div>
+          </div>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Image quality</span>
+          <div class="bc-segmented-toggle" id="cbQualityToggle">
+            <button type="button" data-value="original" aria-pressed="true">Original</button>
+            <button type="button" data-value="small" aria-pressed="false">Smaller file</button>
+          </div>
+        </div>
+        <div class="combine-option combine-option-name">
+          <span class="bc-label">Nom du fichier</span>
+          <div class="combine-name-field">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Nom du fichier" spellcheck="false" autocomplete="off">
+            <span class="combine-name-ext">.pdf</span>
+          </div>
+        </div>
+      </div>
+
       <button class="tool-primary-btn combine-primary-btn" id="cbCombineBtn" disabled title="Combiner et télécharger le PDF (D)" data-ga-event="tool_primary_action" data-ga-tool="combine">Combiner et télécharger le PDF</button>
     </div>
 
@@ -599,6 +686,6 @@ html[data-theme="dark"] .combine-file-index{
 
 <script src="/shared/site.js?v=98" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=27" defer></script>
+<script src="/combine/combine-tool.js?v=28" defer></script>
 </body>
 </html>

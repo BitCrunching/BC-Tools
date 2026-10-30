@@ -17,6 +17,13 @@
   let files = [];
   let dragSrcIndex = null;
   const thumbnailCache = new WeakMap();
+  const rotations = new WeakMap();
+  let pageSize = "a4";
+  let imageQuality = "original";
+  const PAGE_BOXES = { a4: [595, 842], letter: [612, 792] };
+  const SMALL_MAX_SIDE = 1600;
+  const SMALL_JPEG_QUALITY = 0.7;
+  const rotationOf = file => rotations.get(file) || 0;
 
   /* ===== Help banner (step-through intro for first-time visitors) =====
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
@@ -26,6 +33,7 @@
     ["REORDER_YOUR_PAGES", "Drag files up or down in the list to change the order they'll appear in the merged PDF. Each image becomes one page."],
     ["CHECK_BEFORE_COMBINING", "Each file shows a thumbnail and its size — check them before combining, and remove any you don't need."],
     ["ONE_FILE_OUT", "Combine always produces a single merged PDF, in the exact order shown in the list."],
+    ["TUNE_THE_RESULT", "Use the rotate button on a file to turn it a quarter at a time. Below the list, pick how images are placed on the page, keep their original quality or make the file smaller, and name the PDF before you download it."],
     ["YOU_ARE_SET", "Hit the Download button (D) and your merged PDF is saved automatically. Close this with the red dot and we won't show it again."]
   ]);
 
@@ -150,10 +158,17 @@
         <div class="combine-file-thumb"></div>
         <span class="combine-file-name">${file.name}</span>
         <span class="combine-file-size">${bcFormatFileSize(file.size)}</span>
+        <button type="button" class="combine-file-rotate bc-file-remove-btn" aria-label="${bcT("Rotate")}" title="${bcT("Rotate 90°")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
         <button type="button" class="combine-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
 
       const thumbSlot = item.querySelector(".combine-file-thumb");
+      const applyThumbRotation = () => {
+        const turn = rotationOf(file);
+        const target = thumbSlot.firstElementChild || thumbSlot;
+        const fit = turn === 90 || turn === 270 ? " scale(.79)" : "";
+        target.style.transform = turn ? `rotate(${turn}deg)${fit}` : "";
+      };
       getThumbnail(file).then(dataUrl => {
         if (dataUrl){
           thumbSlot.innerHTML = `<img src="${dataUrl}" alt="">`;
@@ -161,6 +176,13 @@
           thumbSlot.classList.add("combine-file-thumb-fallback");
           thumbSlot.textContent = isPngFile(file) ? "PNG" : isJpegFile(file) ? "JPG" : bcT("PDF");
         }
+        applyThumbRotation();
+      });
+
+      item.querySelector(".combine-file-rotate").addEventListener("click", () => {
+        rotations.set(file, (rotationOf(file) + 90) % 360);
+        applyThumbRotation();
+        schedulePersist();
       });
 
       item.querySelector(".combine-file-remove").addEventListener("click", () => {
@@ -283,45 +305,95 @@
     return blob.arrayBuffer();
   }
 
-  /* One image -> one page. JPG and PNG are embedded as-is (no
-     re-encoding, so the merged PDF grows by about the file's own size);
-     the page keeps the image's proportions, sized to fit A4. */
+  /* Quarter turns a JPEG's EXIF orientation asks for, clockwise. */
+  const EXIF_TURN = { 1: 0, 3: 180, 6: 90, 8: 270 };
+
+  /* "Smaller file": the image is redrawn on a canvas at most
+     SMALL_MAX_SIDE px on its long side and saved as a JPEG, upright. */
+  async function smallJpegBytes(file){
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const ratio = Math.min(1, SMALL_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+    canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", SMALL_JPEG_QUALITY));
+    return blob.arrayBuffer();
+  }
+
+  /* One image -> one page. In "Original" quality JPG and PNG are
+     embedded as-is (no re-encoding, so the merged PDF grows by about
+     the file's own size). The page keeps the image's proportions and is
+     sized by the page-size option; the file's rotate button adds to any
+     rotation the photo's own EXIF tag asks for. */
   async function addImagePage(pdfDoc, file){
     const { degrees } = PDFLib;
     let image;
-    let orientation = 1;
-    if (isJpegFile(file)){
+    let turn = 0;
+    if (imageQuality === "small"){
+      image = await pdfDoc.embedJpg(await smallJpegBytes(file));
+    } else if (isJpegFile(file)){
       const bytes = new Uint8Array(await file.arrayBuffer());
-      orientation = jpegOrientation(bytes);
-      if (orientation === 2 || orientation === 4 || orientation === 5 || orientation === 7){
-        orientation = 1;
-        image = await pdfDoc.embedJpg(await uprightJpegBytes(file));
-      } else {
+      const orientation = jpegOrientation(bytes);
+      if (orientation in EXIF_TURN){
+        turn = EXIF_TURN[orientation];
         image = await pdfDoc.embedJpg(bytes);
+      } else {
+        image = await pdfDoc.embedJpg(await uprightJpegBytes(file));
       }
     } else {
       image = await pdfDoc.embedPng(await file.arrayBuffer());
     }
+    turn = (turn + rotationOf(file)) % 360;
 
-    const sideways = orientation === 6 || orientation === 8;
+    const sideways = turn === 90 || turn === 270;
     const shownW = sideways ? image.height : image.width;
     const shownH = sideways ? image.width : image.height;
-    const [boxW, boxH] = shownW >= shownH ? [842, 595] : [595, 842];
-    const scale = Math.min(boxW / shownW, boxH / shownH);
+    let scale = 1;
+    if (pageSize !== "original"){
+      const [shortSide, longSide] = PAGE_BOXES[pageSize];
+      const [boxW, boxH] = shownW >= shownH ? [longSide, shortSide] : [shortSide, longSide];
+      scale = Math.min(boxW / shownW, boxH / shownH);
+    }
     const pageW = shownW * scale;
     const pageH = shownH * scale;
     const page = pdfDoc.addPage([pageW, pageH]);
 
-    if (orientation === 6){
+    if (turn === 90){
       page.drawImage(image, { x: 0, y: pageH, width: pageH, height: pageW, rotate: degrees(-90) });
-    } else if (orientation === 8){
+    } else if (turn === 270){
       page.drawImage(image, { x: pageW, y: 0, width: pageH, height: pageW, rotate: degrees(90) });
-    } else if (orientation === 3){
+    } else if (turn === 180){
       page.drawImage(image, { x: pageW, y: pageH, width: pageW, height: pageH, rotate: degrees(180) });
     } else {
       page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
     }
   }
+
+  function outputFileName(){
+    const raw = (document.getElementById("cbFileName").value || "").trim()
+      .replace(/\.pdf$/i, "")
+      .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "")
+      .trim();
+    return raw || "combined";
+  }
+
+  /* ===== Options row ===== */
+  bcRegisterDropdown(document.getElementById("cbSizeTrigger"), document.getElementById("cbSizeMenu"), opt => {
+    pageSize = opt.dataset.value;
+    document.getElementById("cbSizeTriggerLabel").textContent = opt.dataset.label;
+  });
+  const qualityToggle = document.getElementById("cbQualityToggle");
+  qualityToggle.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    imageQuality = btn.dataset.value;
+    qualityToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  });
 
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
@@ -341,7 +413,11 @@
         const bytes = await file.arrayBuffer();
         const srcPdf = await PDFDocument.load(bytes);
         const copiedPages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices());
-        copiedPages.forEach(page => mergedPdf.addPage(page));
+        const turn = rotationOf(file);
+        copiedPages.forEach(page => {
+          if (turn) page.setRotation(PDFLib.degrees((page.getRotation().angle + turn) % 360));
+          mergedPdf.addPage(page);
+        });
       }
 
       const mergedBytes = await mergedPdf.save();
@@ -349,7 +425,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "combined.pdf";
+      a.download = outputFileName() + ".pdf";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -388,6 +464,7 @@
       const storedFiles = await Promise.all(files.map(async f => ({
         name: f.name,
         type: f.type,
+        rotation: rotationOf(f),
         bytes: await f.arrayBuffer()
       })));
       await bcDbPut(CB_DB_NAME, CB_DB_STORE, { files: storedFiles });
@@ -413,7 +490,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        files = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        files = saved.files.map(f => {
+          const restored = new File([f.bytes], f.name, { type: f.type });
+          if (f.rotation) rotations.set(restored, f.rotation);
+          return restored;
+        });
         if (files.length) revealAfterDropUI();
         renderList();
       } catch (err){
