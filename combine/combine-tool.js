@@ -193,10 +193,14 @@
     const w = sideways ? baseH : baseW;
     const h = sideways ? baseW : baseH;
     const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h, baseW, baseH);
-    const k = Math.min((slot.clientWidth - 2) / pageW, (slot.clientHeight - 2) / pageH);
+    const thumbBoxW = thumbWidths.get(file) || THUMB_MIN;
+    const k = Math.min((thumbBoxW - 2) / pageW, (thumbBoxW * THUMB_RATIO - 2) / pageH);
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
     page.style.height = pageH * k + "px";
+    /* The row's preview box hugs the page, so the resize handle sits on
+       the page's own corner whatever its shape. */
+    slot.parentElement.style.height = Math.round(pageH * k + 2) + "px";
     const boxW = sideways ? innerH * k : innerW * k;
     const boxH = sideways ? innerW * k : innerH * k;
     const spot = spots[0];
