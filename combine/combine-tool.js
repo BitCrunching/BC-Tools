@@ -182,14 +182,16 @@
   function layoutImagePreview(slot, img, file){
     const turn = rotationOf(file);
     const sideways = turn === 90 || turn === 270;
-    let w = sideways ? img.naturalHeight : img.naturalWidth;
-    let h = sideways ? img.naturalWidth : img.naturalHeight;
+    let baseW = img.naturalWidth;
+    let baseH = img.naturalHeight;
     if (imageQuality in QUALITY_LEVELS){
-      const down = Math.min(1, QUALITY_LEVELS[imageQuality].maxSide / Math.max(w, h));
-      w *= down;
-      h *= down;
+      const down = Math.min(1, QUALITY_LEVELS[imageQuality].maxSide / Math.max(baseW, baseH));
+      baseW *= down;
+      baseH *= down;
     }
-    const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h);
+    const w = sideways ? baseH : baseW;
+    const h = sideways ? baseW : baseH;
+    const { pageW, pageH, innerW, innerH, spots } = imageLayout(w, h, baseW, baseH);
     const k = Math.min((slot.clientWidth - 2) / pageW, (slot.clientHeight - 2) / pageH);
     const page = slot.firstElementChild;
     page.style.width = pageW * k + "px";
@@ -421,31 +423,33 @@
     return blob.arrayBuffer();
   }
 
-  /* Page and image box for an image of shownW x shownH. "Auto" follows the
-     image; a forced orientation fixes the page and centres the image in it.
-     Tiled copies keep the page at full size and split it into a grid. */
-  function imageLayout(shownW, shownH){
+  /* Page and image box for an image shown at shownW x shownH. The page is
+     worked out from the image as uploaded (baseW x baseH) so rotating the
+     file turns only the picture inside its page. "Auto" follows the
+     upright image; a forced orientation fixes the page. Tiled copies keep
+     the page at full size and split it into a grid. */
+  function imageLayout(shownW, shownH, baseW, baseH){
     const m = pageMargin;
-    const landscape = pageOrientation === "auto" ? shownW >= shownH : pageOrientation === "landscape";
-    let pageW, pageH, scale;
+    const landscape = pageOrientation === "auto" ? baseW >= baseH : pageOrientation === "landscape";
+    const tiled = fillCopies && perPage > 1;
+    let pageW, pageH;
     if (pageSize === "original"){
-      pageW = shownW + 2 * m;
-      pageH = shownH + 2 * m;
-      scale = 1;
+      pageW = baseW + 2 * m;
+      pageH = baseH + 2 * m;
       if (pageOrientation !== "auto" && (pageW >= pageH) !== landscape){
         [pageW, pageH] = [pageH, pageW];
-        scale = Math.min(1, (pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
       }
     } else {
       const [shortSide, longSide] = PAGE_BOXES[pageSize];
       [pageW, pageH] = landscape ? [longSide, shortSide] : [shortSide, longSide];
-      scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
-      if (pageOrientation === "auto" && !(fillCopies && perPage > 1)){
-        pageW = shownW * scale + 2 * m;
-        pageH = shownH * scale + 2 * m;
+      if (pageOrientation === "auto" && !tiled){
+        const baseScale = Math.min((pageW - 2 * m) / baseW, (pageH - 2 * m) / baseH);
+        pageW = baseW * baseScale + 2 * m;
+        pageH = baseH * baseScale + 2 * m;
       }
     }
-    const tiled = fillCopies && perPage > 1;
+    let scale = Math.min((pageW - 2 * m) / shownW, (pageH - 2 * m) / shownH);
+    if (pageSize === "original") scale = Math.min(1, scale);
     if (tiled){
       const portrait = pageH >= pageW;
       const cols = portrait ? TILE_COLS[perPage] : perPage / TILE_COLS[perPage];
@@ -491,12 +495,16 @@
     } else {
       image = await pdfDoc.embedPng(await file.arrayBuffer());
     }
+    const exifTurn = turn;
     turn = (turn + rotationOf(file)) % 360;
 
     const sideways = turn === 90 || turn === 270;
     const shownW = sideways ? image.height : image.width;
     const shownH = sideways ? image.width : image.height;
-    const { pageW, pageH, innerW, innerH, spots } = imageLayout(shownW, shownH);
+    const baseSideways = exifTurn === 90 || exifTurn === 270;
+    const baseW = baseSideways ? image.height : image.width;
+    const baseH = baseSideways ? image.width : image.height;
+    const { pageW, pageH, innerW, innerH, spots } = imageLayout(shownW, shownH, baseW, baseH);
     const page = pdfDoc.addPage([pageW, pageH]);
 
     for (const spot of spots){
