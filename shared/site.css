@@ -2181,6 +2181,12 @@ html[data-theme="light"] .engine-status-error{
   transition:color .2s;
 }
 
+.exif-file-info .bc-row-name{
+  display:block;
+  font-size:15px;
+  max-width:230px;
+}
+
 .exif-file-size{
   font-size:15px;
   color:var(--text);
@@ -3536,4 +3542,87 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
 @media (max-width:768px){
   html .nav-lang-wrap{position:static}
   html .nav-lang-menu{position:fixed;top:64px;right:12px;left:auto;max-height:calc(100vh - 76px);overflow-y:auto}
+}
+
+/* ===== .bc-name-field — outlined file-name input with a fixed extension
+   suffix (Combine's "Combined file name", Context's rename field). Same
+   outline/fill-on-hover recipe as .bc-dropdown-trigger. ===== */
+.bc-name-field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height:40px;
+  padding:0 12px;
+  border-radius:12px;
+  background:transparent;
+  border:var(--border-bold) solid var(--btn-fill);
+  color:var(--text);
+  transition:background-color .3s ease-in-out, color .3s ease-in-out, border-color .3s ease-in-out;
+}
+.bc-name-field:hover,
+.bc-name-field:focus-within{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+.bc-name-field input{
+  flex:1 1 auto;
+  min-width:0;
+  height:100%;
+  border:0;
+  outline:none;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+}
+.bc-name-ext{ font-size:14px; font-weight:700; opacity:.7; }
+
+/* ===== .bc-row-name — borderless editable output name inside a file row
+   (Coudio's .cd-file-name, shared) ===== */
+.bc-row-name{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  border:none;
+  border-bottom:1px solid transparent;
+  background:none;
+  padding:0;
+  color:var(--text);
+  font:inherit;
+  font-weight:700;
+  font-size:14px;
+  text-align:inherit;
+  cursor:text;
+}
+.bc-row-name:hover{
+  border-bottom-color:var(--border-strong);
+}
+.bc-row-name:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+
+/* ===== .bc-hover-reveal — a control that fades in while its host is
+   hovered (or has .is-active, e.g. mid-drag) and fades out after. Put
+   .bc-hover-reveal-host on the parent and .bc-hover-reveal on the control;
+   it stays in the layout and unclickable while hidden. Touch screens have
+   no hover, so it stays visible there. ===== */
+.bc-hover-reveal{
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+.bc-hover-reveal-host:hover .bc-hover-reveal,
+.bc-hover-reveal-host.is-active .bc-hover-reveal,
+.bc-hover-reveal:focus-visible,
+.bc-hover-reveal:active{
+  opacity:1;
+  pointer-events:auto;
+}
+@media (hover:none){
+  .bc-hover-reveal{ opacity:1; pointer-events:auto; }
 }

@@ -234,6 +234,14 @@
     document.title = entry ? "Convert " + FORMAT_TO_SLUG[src].toUpperCase() + " to " + FORMAT_TO_SLUG[dst].toUpperCase() + " – Free Online Converter – BC Tools" : baseTitle;
   }
 
+  const outputBases = new WeakMap();
+  function defaultBaseOf(file){
+    return file.name.replace(/\.[^.]+$/, "");
+  }
+  function outputBaseOf(file){
+    return bcSafeBaseName(outputBases.get(file), defaultBaseOf(file));
+  }
+
   function appendPreviewCard(item){
     const card = document.createElement("div");
     card.className = "result" + (/\.svg$/i.test(item.name) ? " result-svg" : "");
@@ -242,6 +250,12 @@
       <div class="result-name">${item.name}</div>
       <div class="result-size">${item.info}</div>
     `;
+    if (item.file){
+      card.querySelector(".result-name").replaceWith(bcCreateRowNameInput(
+        outputBases.has(item.file) ? outputBases.get(item.file) : defaultBaseOf(item.file),
+        value => { outputBases.set(item.file, value); schedulePersist(); }
+      ));
+    }
     results.appendChild(card);
     return card;
   }
@@ -678,7 +692,7 @@
 
     files.forEach(file => {
       if (isPdfFile(file)){
-        const card = appendPreviewCard({ src: "", name: file.name, info: "PDF" });
+        const card = appendPreviewCard({ src: "", name: file.name, file, info: "PDF" });
         card.classList.add("result-pdf");
         const img = card.querySelector("img");
         previewQueue = previewQueue.then(() => getPdfThumbnail(file)).then(dataUrl => {
@@ -703,7 +717,8 @@
         const card = appendPreviewCard({
           src: "",
           name: file.name,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          file,
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         card.classList.add("result-pdf");
         card.querySelector("img").remove();
@@ -735,7 +750,8 @@
         const card = appendPreviewCard({
           src: URL.createObjectURL(file),
           name: file.name,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          file,
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         addRemoveButton(card, file);
       }
@@ -1015,7 +1031,7 @@
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
       const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 0.95));
-      const baseName = file.name.replace(/\.[^.]+$/, "");
+      const baseName = outputBaseOf(file);
       const outputName = pdf.numPages > 1
         ? `${baseName}_page${pageNum}.${extension}`
         : `${baseName}.${extension}`;
@@ -1033,7 +1049,8 @@
       const useZip = outputs.length > 1 && lastZipName && effectiveUseZip(outputs.length);
       if (useZip){
         const zip = new JSZip();
-        outputs.forEach(({ blob, outputName }) => zip.file(outputName, blob));
+        const zipNames = new Set();
+        outputs.forEach(({ blob, outputName }) => zip.file(bcUniqueName(outputName, zipNames), blob));
         status.textContent = bcT("Building ZIP file...");
         downloadBlob(await zip.generateAsync({ type: "blob" }), lastZipName);
         status.textContent = lastZipName === "bcconvert-pdfs.zip"
@@ -1087,12 +1104,13 @@
         status.textContent = bcT("Converting... 0 of {total}", { total: files.length });
         const useZip = effectiveUseZip(files.length);
         const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
         const finishedResults = [];
         let done = 0;
 
         for (const file of files){
           const blob = await imageToPdf(file);
-          const outputName = file.name.replace(/\.[^.]+$/, "") + ".pdf";
+          const outputName = outputBaseOf(file) + ".pdf";
           finishedResults.push({
             blob,
             outputName,
@@ -1101,7 +1119,7 @@
           });
 
           if (useZip){
-            zip.file(outputName, blob);
+            zip.file(bcUniqueName(outputName, zipNames), blob);
           } else {
             downloadBlob(blob, outputName);
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1148,6 +1166,7 @@
 
         const useZip = effectiveUseZip(allOutputs.length);
         const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
         let done = 0;
 
         /* Result cards render an <img> each, which forces the browser
@@ -1157,7 +1176,7 @@
            loop finishes keeps that entirely off the conversion path. */
         for (const { blob, outputName } of allOutputs){
           if (useZip){
-            zip.file(outputName, blob);
+            zip.file(bcUniqueName(outputName, zipNames), blob);
           } else {
             downloadBlob(blob, outputName);
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1197,6 +1216,7 @@
         const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
         const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
         const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
         const finishedResults = [];
         let done = 0;
 
@@ -1207,7 +1227,7 @@
            actually done. */
         for (const file of files){
           const blob = await convertImageFile(file, selectedFormat);
-          const outputName = file.name.replace(/\.[^.]+$/, "") + "." + extension;
+          const outputName = outputBaseOf(file) + "." + extension;
 
           finishedResults.push({
             blob,
@@ -1216,7 +1236,7 @@
           });
 
           if (useZip){
-            zip.file(outputName, blob);
+            zip.file(bcUniqueName(outputName, zipNames), blob);
           } else {
             downloadBlob(blob, outputName);
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1287,6 +1307,7 @@
       const storedFiles = await Promise.all(files.map(async f => ({
         name: f.name,
         type: f.type,
+        outputName: outputBases.get(f),
         bytes: await f.arrayBuffer()
       })));
       await bcDbPut(CV_DB_NAME, CV_DB_STORE, { files: storedFiles, selectedFormat });
@@ -1312,7 +1333,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        const restored = saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") outputBases.set(file, f.outputName);
+          return file;
+        });
         applyPickedFiles(restored);
         if (saved.selectedFormat){
           selectedFormat = saved.selectedFormat;
