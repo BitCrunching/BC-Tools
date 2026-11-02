@@ -1064,6 +1064,7 @@
   resizeHandle.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     resizingPreview = true;
+    previewFrame.classList.add("is-active");
     resizeLastX = e.clientX;
     resizeVirtualWidth = frameWidth;
     resizeHandle.setPointerCapture(e.pointerId);
@@ -1108,6 +1109,7 @@
   function endPreviewResize(e){
     if (!resizingPreview) return;
     resizingPreview = false;
+    previewFrame.classList.remove("is-active");
     resizeHandle.releasePointerCapture(e.pointerId);
     /* The canvas keeps its pre-drag raster resolution throughout the
        drag itself (re-rendering every pointermove would be wasteful) —

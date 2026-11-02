@@ -759,9 +759,7 @@
      any other file. */
   async function convertEntry(entry){
     const btn = entry.row.querySelector(".cd-row-convert-btn");
-    const idleLabel = btn.textContent;
     btn.disabled = true;
-    btn.textContent = bcT("Converting…");
     entry.row.classList.remove("cd-file-row-error");
     entry.row.removeAttribute("title");
     statusEl.textContent = bcT("Converting {0}...", [entry.file.name]);
@@ -771,7 +769,6 @@
       const { blob, ext } = await convertOneFile(entry.file, entry.outputFormat, entry.bitrate);
       const outName = (entry.outputName.trim() || "converted") + "." + ext;
       downloadBlob(blob, outName);
-      btn.textContent = bcT("Done");
       statusEl.textContent = bcT("Done — {0} converted successfully.", [outName]);
     } catch (err){
       console.error(err);
@@ -783,14 +780,10 @@
          forever, never actually reacting to a failed conversion. */
       entry.row.classList.add("cd-file-row-error");
       entry.row.title = bcT("Couldn't convert \"{0}\" — it may not be a valid or supported audio/video file.", [entry.file.name]) + `\n(${err.message || err})`;
-      btn.textContent = bcT("Failed");
       statusEl.textContent = bcT("Couldn't convert {0}. Make sure it's a valid audio or video file.", [entry.file.name]);
     } finally {
       finishPrivacyCheck(document.getElementById("cdPrivacyBadge"));
-      setTimeout(() => {
-        btn.textContent = idleLabel;
-        btn.disabled = false;
-      }, 1800);
+      btn.disabled = false;
     }
   }
 

@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/combine/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/combine/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/combine/">
-<script src="/shared/i18n/es.js?v=7"></script>
+<script src="/shared/i18n/es.js?v=8"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Combine – Une imágenes o PDF en un solo PDF – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=253">
+<link rel="stylesheet" href="/shared/site.css?v=256">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#FF6961); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -306,12 +306,35 @@
   color:var(--text);
   opacity:.6;
   user-select:none;
+  touch-action:none;
+}
+@media (hover:none), (max-width:768px){
+  .combine-drag-handle{ padding:12px 6px; margin:-12px -6px; }
+}
+.combine-file-item.touch-dragging{
+  position:relative;
+  z-index:5;
+  transition:none;
 }
 
-.combine-file-thumb{
+.combine-file-thumb-wrap{
+  position:relative;
   flex-shrink:0;
   width:76px;
   height:96px;
+}
+.combine-file-thumb-wrap .combine-thumb-resize{
+  right:-8px;
+  bottom:-8px;
+  width:24px;
+  height:24px;
+  padding:0;
+  cursor:nwse-resize;
+}
+
+.combine-file-thumb{
+  width:100%;
+  height:100%;
   border-radius:8px;
   overflow:hidden;
   background:rgba(255,255,255,.08);
@@ -325,6 +348,27 @@
   height:100%;
   object-fit:cover;
   display:block;
+}
+
+.combine-thumb-page{
+  position:relative;
+  flex-shrink:0;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.25);
+  box-sizing:content-box;
+}
+.combine-file-thumb:has(.combine-thumb-page){
+  border-radius:0;
+  overflow:visible;
+  background:none;
+}
+.combine-file-thumb .combine-thumb-page img{
+  position:absolute;
+  max-width:none;
+  object-fit:fill;
+  border-radius:0;
+  margin:0;
+  transition:none;
 }
 
 .combine-file-thumb-fallback{
@@ -353,6 +397,7 @@ html[data-theme="dark"] .combine-file-index{
   background:rgba(255,255,255,.14);
 }
 
+.combine-file-meta{ display:contents; }
 .combine-file-name{
   flex:1;
   min-width:0;
@@ -377,6 +422,110 @@ html[data-theme="dark"] .combine-file-index{
    on the markup (class="combine-file-remove bc-file-remove-btn").
    Kept as a class only as an addressing hook for its own JS
    listener. */
+
+.combine-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px 20px;
+  margin-top:24px;
+}
+.combine-option{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.combine-option .bc-dropdown,
+.combine-option .option-change-btn{ min-width:170px; }
+.combine-option-name{ flex:1 1 220px; }
+.combine-file-rotate{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.combine-file-rotate svg{ width:16px; height:16px; }
+.combine-file-thumb img,
+.combine-file-thumb-fallback{ transition:transform .2s ease; }
+.combine-file-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+.cb-phone-dd{ display:none; }
+.cb-name-title{ display:none; }
+.cb-orient-rect{
+  display:block;
+  box-sizing:border-box;
+  width:14px;
+  height:22px;
+  margin:0 auto;
+  border:2.2px solid currentColor;
+  border-radius:3px;
+  transition:transform .3s cubic-bezier(.22,1,.36,1);
+}
+.cb-orient-rect[data-orient="landscape"]{ transform:rotate(90deg); }
+@media (max-width:768px){
+  .tool-wrap{ padding-left:10px; padding-right:10px; }
+  .tool-app{ max-width:max(97vw, 315px); padding-left:10px; padding-right:10px; }
+  .combine-file-item{ gap:8px; padding:12px 10px; }
+  .combine-file-meta{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-width:0;
+    gap:2px;
+  }
+  .combine-file-name{ flex:0 0 auto; }
+  .combine-option > .bc-label{ display:none; }
+  .combine-option .option-change-btn{ display:none; }
+  .combine-options{ flex-direction:column; align-items:center; gap:10px; }
+  .combine-option{ flex:0 0 auto; }
+  .combine-option .cb-phone-dd{ display:block; width:200px; min-width:0; }
+  .combine-option .cb-dd-trigger{ height:34px; font-size:15px; }
+  .cb-dd-value{ display:inline-flex; align-items:center; justify-content:center; }
+  .cb-dd-value .cb-orient-name{ display:none; }
+  .cb-phone-dd .bc-dropdown-option{ white-space:nowrap; }
+  .cb-phone-dd .bc-dropdown-option .cb-orient-rect{ margin:0 10px 0 0; flex-shrink:0; }
+  /* Congify's file name line (13px/700 bold, ">" prompt): "> Output name: combined.pdf" */
+  .combine-option .bc-name-field,
+  .combine-option .bc-name-field:hover,
+  .combine-option .bc-name-field:focus-within{
+    width:auto;
+    max-width:none;
+    min-width:0;
+    height:auto;
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--text);
+    justify-content:center;
+    gap:6px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+  }
+  .cb-name-title{ display:inline; order:-1; flex-shrink:0; }
+  .combine-option .bc-name-field input{
+    field-sizing:content;
+    flex:0 1 auto;
+    max-width:185px;
+    min-width:20px;
+    height:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    border-bottom:1px solid transparent;
+    font:inherit;
+  }
+  .combine-option .bc-name-field input:hover{ border-bottom-color:var(--border-strong); }
+  .combine-option .bc-name-field input:focus{ border-bottom-color:var(--text); }
+  .combine-option .bc-name-ext{ font:inherit; flex-shrink:0; margin-left:-6px; opacity:.7; }
+  .combine-file-actions{ flex-direction:column; gap:8px; }
+  .combine-file-thumb-wrap .combine-thumb-resize{ display:none; }
+}
 
 .combine-primary-btn{
   margin-top:24px;
@@ -524,12 +673,50 @@ html[data-theme="dark"] .combine-file-index{
     </button>
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Quitar todos los archivos">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Haz clic</span><span class="tool-drop-or-drop"> o suelta </span><span class="tool-drop-rest">archivos PDF</span></div>
-    <input type="file" id="cbInput" accept="application/pdf,.pdf" multiple hidden>
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Haz clic</span><span class="tool-drop-or-drop"> o suelta </span><span class="tool-drop-rest">PDFs or JPG images</span></div>
+    <input type="file" id="cbInput" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Continuar donde lo dejaste</button>
 
     <div class="tool-after-drop" id="cbAfterDrop" hidden>
       <div class="combine-file-list" id="cbFileList"></div>
+
+      <div class="combine-options" id="cbOptions">
+        <div class="combine-option">
+          <span class="bc-label">Image page size</span>
+          <button type="button" class="option-change-btn" id="cbSizeBtn" title="Image page size">
+            <span class="option-change-btn-label" id="cbSizeBtnLabel">Fit to A4</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Page orientation</span>
+          <button type="button" class="option-change-btn" id="cbOrientBtn" title="Page orientation">
+            <span class="option-change-btn-label" id="cbOrientBtnLabel">Portrait</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Margin</span>
+          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
+            <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Image quality</span>
+          <button type="button" class="option-change-btn" id="cbQualityBtn" title="Image quality">
+            <span class="option-change-btn-label" id="cbQualityBtnLabel">Original</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option combine-option-name">
+          <span class="bc-label">Combined file name</span>
+          <div class="bc-name-field">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Combined file name" spellcheck="false" autocomplete="off">
+            <span class="bc-name-ext">.pdf</span>
+          </div>
+        </div>
+      </div>
 
       <button class="tool-primary-btn combine-primary-btn" id="cbCombineBtn" disabled title="Unir y descargar PDF (D)" data-ga-event="tool_primary_action" data-ga-tool="combine">Unir y descargar PDF</button>
     </div>
@@ -600,8 +787,8 @@ html[data-theme="dark"] .combine-file-index{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=98" defer></script>
+<script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/combine/combine-tool.js?v=25" defer></script>
+<script src="/combine/combine-tool.js?v=69" defer></script>
 </body>
 </html>

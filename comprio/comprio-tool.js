@@ -29,6 +29,8 @@
     high:   { bpp: .035, keep: .35, audio: 96000 }
   };
   const MIN_VIDEO_BITRATE = 150000;
+  const MAX_SIZE_RETRIES = 2;
+  const SIZE_TOLERANCE = 1.12;
 
   let entries = [];
   let levelKey = "medium";
@@ -270,7 +272,16 @@
     }
   }
 
+  const savedBases = new WeakMap();
+  function defaultBaseOf(entry){
+    return (entry.file.name.replace(/\.[^.]+$/, "") || "video") + "-compressed";
+  }
+  function resultNameOf(entry){
+    return bcSafeBaseName(entry.outputBase, defaultBaseOf(entry)) + "." + entry.result.ext;
+  }
+
   function buildCard(entry){
+    if (entry.outputBase === undefined && savedBases.has(entry.file)) entry.outputBase = savedBases.get(entry.file);
     const card = document.createElement("div");
     card.className = "result cr-file-card";
     card.innerHTML = `
@@ -279,8 +290,10 @@
       <div class="result-name"></div>
       <div class="result-size"></div>
     `;
-    card.querySelector(".result-name").textContent = entry.file.name;
-    card.querySelector(".result-name").title = entry.file.name;
+    card.querySelector(".result-name").replaceWith(bcCreateRowNameInput(
+      entry.outputBase !== undefined ? entry.outputBase : defaultBaseOf(entry),
+      value => { entry.outputBase = value; schedulePersist(); }
+    ));
     const video = card.querySelector("video");
     video.src = entry.objectUrl + "#t=0.1";
     card.querySelector(".cr-card-meta").addEventListener("click", () => cycleSize(entry));
@@ -383,7 +396,7 @@
     const p = plan(entry);
     const key = settingsKey(entry);
     if (entry.result && entry.result.key === key && entry.result.blob){
-      downloadBlob(entry.result.blob, entry.result.name);
+      downloadBlob(entry.result.blob, resultNameOf(entry));
       return true;
     }
     const mb = await loadMediabunny();
@@ -393,26 +406,43 @@
     const inp = new mb.Input({ source: new mb.BlobSource(entry.file), formats: mb.ALL_FORMATS });
     let useAvc = false;
     try { useAvc = await mb.canEncodeVideo("avc", { width: p.width, height: p.height, bitrate: p.videoBitrate }); } catch (e){}
-    const output = new mb.Output({
-      format: useAvc ? new mb.Mp4OutputFormat() : new mb.WebMOutputFormat(),
-      target: new mb.BufferTarget()
-    });
-    const videoOpts = { codec: useAvc ? "avc" : "vp9", bitrate: p.videoBitrate, fit: "fill" };
-    if (p.resized){ videoOpts.width = p.width; videoOpts.height = p.height; }
     const audioOpts = p.audioBitrate ? { bitrate: p.audioBitrate } : {};
 
-    try {
+    async function encodeOnce(videoBitrate){
+      const output = new mb.Output({
+        format: useAvc ? new mb.Mp4OutputFormat() : new mb.WebMOutputFormat(),
+        target: new mb.BufferTarget()
+      });
+      const videoOpts = { codec: useAvc ? "avc" : "vp9", bitrate: videoBitrate, fit: "fill" };
+      if (p.resized){ videoOpts.width = p.width; videoOpts.height = p.height; }
       const conversion = await mb.Conversion.init({ input: inp, output, video: videoOpts, audio: audioOpts, showWarnings: false });
       entry.conversion = conversion;
       if (!conversion.isValid) throw new Error("This video can't be compressed in your browser.");
       await conversion.execute();
+      return new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
+    }
+
+    try {
+      /* Hardware encoders (60 fps footage on a Mac, for one) can ignore the
+         requested bitrate and write about twice as much, which made the
+         result bigger than the original. Measure what came out and, if it
+         overshoots the estimate, encode again at a bitrate scaled down by
+         the miss. */
+      let videoBitrate = p.videoBitrate;
+      let blob = await encodeOnce(videoBitrate);
+      for (let attempt = 0; attempt < MAX_SIZE_RETRIES && blob.size > p.bytes * SIZE_TOLERANCE && videoBitrate > MIN_VIDEO_BITRATE; attempt++){
+        const audioBytes = p.audioBitrate * entry.info.duration / 8;
+        const wanted = Math.max(p.bytes - audioBytes, 1);
+        const got = Math.max(blob.size - audioBytes, 1);
+        videoBitrate = Math.max(MIN_VIDEO_BITRATE, Math.round(videoBitrate * (wanted / got) * .95));
+        blob = await encodeOnce(videoBitrate);
+      }
+      if (blob.size >= entry.file.size) throw new Error("The compressed video came out larger than the original.");
       const ext = useAvc ? "mp4" : "webm";
-      const base = entry.file.name.replace(/\.[^.]+$/, "") || "video";
-      const blob = new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
       if (lastResultEntry && lastResultEntry !== entry && lastResultEntry.result) lastResultEntry.result.blob = null;
       lastResultEntry = entry;
-      entry.result = { key, blob, size: blob.size, name: `${base}-compressed.${ext}` };
-      downloadBlob(blob, entry.result.name);
+      entry.result = { key, blob, size: blob.size, ext };
+      downloadBlob(blob, resultNameOf(entry));
       return true;
     } finally {
       entry.conversion = null;
@@ -468,7 +498,7 @@
       : bcT("Couldn't compress {0} files. Try another level or a smaller size.", [failed]);
     else if (failed) status.textContent = bcT("Done — {0} compressed, {1} couldn't be compressed.", [done, failed]);
     else if (done) status.textContent = done === 1 && queue.length === 1
-      ? bcT("Done — {0} saved.", [queue[0].result.name])
+      ? bcT("Done — {0} saved.", [resultNameOf(queue[0])])
       : bcT("Done — {0} videos compressed.", [done]);
   }
 
@@ -493,7 +523,7 @@
     persistBusy = true;
     try {
       const files = await Promise.all(entries.map(async e => ({
-        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer(), targetHeight: e.targetHeight
+        name: e.file.name, type: e.file.type, bytes: await e.file.arrayBuffer(), targetHeight: e.targetHeight, outputName: e.outputBase
       })));
       await bcDbPut(CR_DB_NAME, CR_DB_STORE, { files, levelKey });
     } catch (err){
@@ -513,7 +543,11 @@
           if (levelOptionChangeControl && i !== -1) levelOptionChangeControl.setIndex(i);
           levelKey = saved.levelKey;
         }
-        addFiles(saved.files.map(f => new File([f.bytes], f.name, { type: f.type })));
+        addFiles(saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") savedBases.set(file, f.outputName);
+          return file;
+        }));
         saved.files.forEach((f, i) => { if (entries[i] && f.targetHeight) entries[i].targetHeight = f.targetHeight; });
       } catch (err){
         continueBtn.hidden = false;

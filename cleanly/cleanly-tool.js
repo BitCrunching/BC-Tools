@@ -350,6 +350,10 @@
         <div class="exif-file-actions">${actionButtonsHtml}</div>
         <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
+      el.querySelector(".exif-file-name").replaceWith(bcCreateRowNameInput(
+        item.outputBase !== undefined ? item.outputBase : defaultBaseOf(item),
+        value => { item.outputBase = value; schedulePersist(); }
+      ));
 
       el.querySelectorAll(".ex-heic-format-toggle").forEach(heicFormatToggleEl => {
         heicFormatToggleEl.querySelectorAll("button").forEach(btn => {
@@ -453,6 +457,7 @@
       }
       return;
     }
+    continueBtn.hidden = true;
     for (const file of picked){
       const tags = isSvgFile(file) ? await readSvgFindings(file)
         : isHeicFile(file) ? heicFindings()
@@ -469,7 +474,8 @@
            becoming "Download" once item.stripped flips true (see
            actionButtonsHtml below). */
         wasAlreadyClean: tags.length === 0,
-        heicFormat: "png"
+        heicFormat: "png",
+        outputBase: pendingBases.get(file)
       });
     }
     revealAfterDropUI();
@@ -708,10 +714,20 @@
      Download button stays clickable for as many re-downloads as wanted.
      The only step in this flow that gets a privacy-check pair — cleaning
      itself never touches the network. */
+  const pendingBases = new WeakMap();
+  function defaultBaseOf(item){
+    return item.file.name.replace(/\.[^.]+$/, "");
+  }
+  function finalNameOf(item){
+    const ext = (item.strippedName.match(/\.[^.]+$/) || [""])[0];
+    return bcSafeBaseName(item.outputBase, defaultBaseOf(item)) + ext;
+  }
+
   function downloadEntry(item){
     startPrivacyCheck();
-    downloadBlob(item.strippedBlob, item.strippedName);
-    status.textContent = bcT("Downloaded {0}.", [item.strippedName]);
+    const name = finalNameOf(item);
+    downloadBlob(item.strippedBlob, name);
+    status.textContent = bcT("Downloaded {0}.", [name]);
     finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     renderList();
   }
@@ -739,6 +755,7 @@
       const storedFiles = await Promise.all(files.map(async item => ({
         name: item.file.name,
         type: item.file.type,
+        outputName: item.outputBase,
         bytes: await item.file.arrayBuffer()
       })));
       await bcDbPut(EX_DB_NAME, EX_DB_STORE, { files: storedFiles });
@@ -764,7 +781,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        const restored = saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") pendingBases.set(file, f.outputName);
+          return file;
+        });
         addFiles(restored);
       } catch (err){
         console.error(err);
