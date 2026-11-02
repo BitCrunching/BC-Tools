@@ -29,6 +29,8 @@
     high:   { bpp: .035, keep: .35, audio: 96000 }
   };
   const MIN_VIDEO_BITRATE = 150000;
+  const MAX_SIZE_RETRIES = 2;
+  const SIZE_TOLERANCE = 1.12;
 
   let entries = [];
   let levelKey = "medium";
@@ -404,21 +406,39 @@
     const inp = new mb.Input({ source: new mb.BlobSource(entry.file), formats: mb.ALL_FORMATS });
     let useAvc = false;
     try { useAvc = await mb.canEncodeVideo("avc", { width: p.width, height: p.height, bitrate: p.videoBitrate }); } catch (e){}
-    const output = new mb.Output({
-      format: useAvc ? new mb.Mp4OutputFormat() : new mb.WebMOutputFormat(),
-      target: new mb.BufferTarget()
-    });
-    const videoOpts = { codec: useAvc ? "avc" : "vp9", bitrate: p.videoBitrate, fit: "fill" };
-    if (p.resized){ videoOpts.width = p.width; videoOpts.height = p.height; }
     const audioOpts = p.audioBitrate ? { bitrate: p.audioBitrate } : {};
 
-    try {
+    async function encodeOnce(videoBitrate){
+      const output = new mb.Output({
+        format: useAvc ? new mb.Mp4OutputFormat() : new mb.WebMOutputFormat(),
+        target: new mb.BufferTarget()
+      });
+      const videoOpts = { codec: useAvc ? "avc" : "vp9", bitrate: videoBitrate, fit: "fill" };
+      if (p.resized){ videoOpts.width = p.width; videoOpts.height = p.height; }
       const conversion = await mb.Conversion.init({ input: inp, output, video: videoOpts, audio: audioOpts, showWarnings: false });
       entry.conversion = conversion;
       if (!conversion.isValid) throw new Error("This video can't be compressed in your browser.");
       await conversion.execute();
+      return new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
+    }
+
+    try {
+      /* Hardware encoders (60 fps footage on a Mac, for one) can ignore the
+         requested bitrate and write about twice as much, which made the
+         result bigger than the original. Measure what came out and, if it
+         overshoots the estimate, encode again at a bitrate scaled down by
+         the miss. */
+      let videoBitrate = p.videoBitrate;
+      let blob = await encodeOnce(videoBitrate);
+      for (let attempt = 0; attempt < MAX_SIZE_RETRIES && blob.size > p.bytes * SIZE_TOLERANCE && videoBitrate > MIN_VIDEO_BITRATE; attempt++){
+        const audioBytes = p.audioBitrate * entry.info.duration / 8;
+        const wanted = Math.max(p.bytes - audioBytes, 1);
+        const got = Math.max(blob.size - audioBytes, 1);
+        videoBitrate = Math.max(MIN_VIDEO_BITRATE, Math.round(videoBitrate * (wanted / got) * .95));
+        blob = await encodeOnce(videoBitrate);
+      }
+      if (blob.size >= entry.file.size) throw new Error("The compressed video came out larger than the original.");
       const ext = useAvc ? "mp4" : "webm";
-      const blob = new Blob([output.target.buffer], { type: useAvc ? "video/mp4" : "video/webm" });
       if (lastResultEntry && lastResultEntry !== entry && lastResultEntry.result) lastResultEntry.result.blob = null;
       lastResultEntry = entry;
       entry.result = { key, blob, size: blob.size, ext };
