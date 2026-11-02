@@ -40,6 +40,7 @@ PAGES = [
     "codify/index.html",
     "colorfy/index.html",
     "comprio/index.html",
+    "convido/index.html",
     "faq/index.html",
     "golden-rules/index.html",
     "about/index.html",
