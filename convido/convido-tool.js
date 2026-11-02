@@ -61,7 +61,12 @@
     const v = fmt ? fmt.getSupportedVideoCodecs() : ["avc"];
     const a = fmt ? fmt.getSupportedAudioCodecs() : ["aac"];
     const info = entry.info;
-    return !v.includes(info.videoCodec) || (info.hasAudio && !a.includes(info.audioCodec));
+    return !v.includes(info.videoCodec) || (info.hasAudio && !a.includes(info.audioCodec)) || appleUnsafe(info, target);
+  }
+
+  function appleUnsafe(info, target){
+    if (target.ext !== "mp4" && target.ext !== "mov") return false;
+    return info.videoCodec === "vp9" || info.videoCodec === "av1" || (info.hasAudio && (info.audioCodec === "opus" || info.audioCodec === "vorbis"));
   }
 
   function entryNotes(entry){
@@ -136,9 +141,13 @@
     });
     downloadModeSingleBtn.classList.toggle("bc-segmented-toggle-solo", showSingle && !showZip);
     downloadModeZipBtn.classList.toggle("bc-segmented-toggle-solo", showZip && !showSingle);
-    if (showSingle && !showZip) setDownloadMode("single");
-    else if (showZip && !showSingle) setDownloadMode("zip");
+    const band = showSingle && !showZip ? "single" : showZip && !showSingle ? "zip" : "both";
+    if (band === "single") setDownloadMode("single");
+    else if (band === "zip") setDownloadMode("zip");
+    else if (lastBand !== "both") setDownloadMode("zip");
+    lastBand = band;
   }
+  let lastBand = "both";
   function effectiveUseZip(count){
     if (count <= DOWNLOAD_MODE_TOGGLE_MIN) return false;
     if (count > DOWNLOAD_MODE_TOGGLE_MAX) return true;
@@ -463,7 +472,12 @@
     const output = new mb.Output({ format: new mb[fmt.output](), target: new mb.BufferTarget() });
 
     try {
-      const conversion = await mb.Conversion.init({ input: inp, output, showWarnings: false });
+      const opts = { input: inp, output, showWarnings: false };
+      if (appleUnsafe(entry.info, fmt)){
+        if (entry.info.videoCodec === "vp9" || entry.info.videoCodec === "av1") opts.video = { codec: "avc" };
+        if (entry.info.audioCodec === "opus" || entry.info.audioCodec === "vorbis") opts.audio = { codec: "aac", bitrate: 128000 };
+      }
+      const conversion = await mb.Conversion.init(opts);
       entry.conversion = conversion;
       if (!conversion.isValid) throw new Error("This video can't be converted in your browser.");
       await conversion.execute();
@@ -564,6 +578,7 @@
     let done = 0, failed = 0;
     const useZip = effectiveUseZip(queue.length);
     const zip = useZip ? new JSZip() : null;
+    const usedNames = new Set();
     convertBtn.classList.add("cn-convert-btn-working");
     for (const entry of queue){
       if (cancelRequested) break;
@@ -573,7 +588,7 @@
       status.textContent = bcT("Converting {0}…", [entry.file.name]);
       try {
         const result = await convertEntry(entry);
-        if (useZip) zip.file(result.name, result.blob);
+        if (useZip) zip.file(bcUniqueName(result.name, usedNames), result.blob);
         else {
           downloadBlob(result.blob, result.name);
           await new Promise(resolve => setTimeout(resolve, 300));
