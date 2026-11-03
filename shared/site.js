@@ -197,7 +197,7 @@ async function bcToggleGoldenRules(btn){
   box.inert = !opening;
   btn.setAttribute("aria-expanded", String(opening));
   btn.setAttribute("aria-pressed", String(opening));
-  btn.textContent = bcT(opening ? "Read less" : "Read more");
+  btn.textContent = bcT(opening ? "I wanna see less" : "I wanna see more");
   if (opening && typeof gtag === "function") gtag("event", "golden_rules_unroll", { tool });
 }
 document.addEventListener("click", (e) => {
