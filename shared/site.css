@@ -3641,14 +3641,28 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
    intro text pulls that tool's articles from the Golden Rules page and
    slides them open in place (shared/site.js, bcToggleGoldenRules). ===== */
 .gr-unroll-btn{
-  display:block;
+  width:fit-content;
   margin:22px auto 0;
   height:40px;
   padding:0 22px;
   border-radius:12px;
   font-size:14px;
   font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-color:transparent;
 }
+.gr-unroll-btn::after{
+  content:"";
+  width:7px;
+  height:7px;
+  border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;
+  transform:translateY(-2px) rotate(45deg);
+  transition:transform .3s ease-in-out;
+}
+.gr-unroll-btn[aria-expanded="true"]::after{ transform:translateY(2px) rotate(225deg); }
 .gr-inline{
   display:grid;
   grid-template-rows:0fr;
