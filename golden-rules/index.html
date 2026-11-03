@@ -72,7 +72,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=267">
+<link rel="stylesheet" href="/shared/site.css?v=268">
 <style>
 /* ===== GOLDEN RULES ===== */
 /* Wheel-picker switcher: the "active" slot is a fixed position — dead
@@ -490,7 +490,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>If you're uploading images to your own website, converting old JPG and PNG images to WEBP is one of the highest-value, lowest-effort improvements you can make — smaller files mean faster page loads, which affects both user experience and search engine rankings. This matters more for image-heavy pages (galleries, product listings, blogs with lots of photos) than for a page with just one or two small icons.</p>
 
           <h3>Needing a transparent background</h3>
-          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — though it's worth knowing that Convert can add a transparent format wrapper but can't magically remove an existing solid background from within the photo itself. If the background needs to be genuinely removed (not just made transparent-compatible), that requires a background-removal tool, not a format converter.</p>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
 
           <h3>Preparing for print or professional use</h3>
           <p>Print shops and professional design workflows sometimes have specific format requirements — PNG for logos and graphics with sharp edges is a common one, since it avoids the soft compression artifacts JPG can introduce around text and hard lines. If you're unsure what a specific print shop wants, PNG is usually a safe, lossless default for anything that isn't a straightforward photograph.</p>
@@ -592,7 +592,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>An image displayed at 400 pixels wide on a page doesn't need to be delivered as a 4000-pixel camera-original file compressed lightly — it needs far less detail than that to look sharp at its actual display size. Before worrying about compression level at all, make sure the image dimensions roughly match how large it will actually appear; compressing an oversized image is treating the symptom while leaving the bigger cause (unnecessary resolution) in place.</p>
 
           <h3>Choosing a format for the web</h3>
-          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG (left uncompressed by lossy methods) usually looks better and can even end up smaller than a heavily-artifacted lossy version of the same graphic.</p>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
 
           <h3>The diminishing-returns point</h3>
           <p>Compression doesn't scale linearly with visual quality lost — the first chunk of compression from an uncompressed original removes an enormous amount of file size for almost no visible change, while pushing compression further and further into aggressive territory removes progressively less size for progressively more visible damage. In practice, most photos hit a sweet spot well before "maximum compression," and it's worth spot-checking a compressed image at its actual display size rather than assuming more compression is always better for speed.</p>
@@ -631,10 +631,10 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Every lossy compression pass throws away a little more detail, and that loss compounds with each additional pass — a file that's been compressed, re-opened, edited, and re-compressed several times will look noticeably worse than one compressed once from a clean original. Always compress from the original or an uncompressed master, not from a previously-compressed copy.</p>
 
           <h3>Overwriting your only copy</h3>
-          <p>Compressing in place and deleting the original is the single most common way people lose access to full quality permanently. Once a lossy compression pass has discarded detail, there's no way to get it back — keep the original somewhere safe until you're certain you won't need it at higher quality later.</p>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
 
           <h3>Compressing graphics as if they were photos</h3>
-          <p>Screenshots, logos, and text-heavy graphics don't respond well to the same lossy compression that works great on photographs — the sharp edges and flat colors that make these images what they are turn into visible smudging and color fringing under lossy compression. These are typically better handled with lossless formats, or a much lighter compression touch than you'd use on a photo.</p>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
 
           <h3>Choosing a compression level without checking the result</h3>
           <p>It's tempting to pick "maximum compression" for the smallest possible file and move on, but that setting often introduces artifacts that are obviously visible once you actually look at the output at real size. A quick check of the compressed result — at the size it'll actually be viewed — takes seconds and prevents sending or publishing something that looks noticeably worse than intended.</p>
@@ -652,16 +652,16 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Combine's whole job is deceptively simple — take several files and merge them into one PDF — but the detail that trips people up most often isn't the merging itself, it's making sure the pages land in the order you actually intended.</p>
 
           <h3>How Combine determines page order</h3>
-          <p>Combine merges your files in the order they appear in your selection — the order you picked them in the file browser, or the order they were dropped in, from top to bottom. It doesn't try to guess a "correct" order based on file names, dates, or content, because there isn't a universal rule for what order you want; it simply respects the sequence you gave it. That means the responsibility for correct ordering sits entirely with how you select or arrange files before hitting combine.</p>
+          <p>Combine merges your files in the exact order shown in its list, top to bottom. It doesn't try to guess a "correct" order from file names, dates, or content, because there's no universal rule for what you want. The list is also fully in your hands: drag any file up or down (by touch on a phone) and the merged PDF follows. PDFs are added as they are, and every JPG or PNG becomes one page.</p>
 
           <h3>Why file names can be deceiving</h3>
-          <p>A common assumption is that files will merge in alphabetical or numerical order automatically. If your operating system's file picker happens to list files that way, and you select them by dragging across the whole list, that's often what you'll get — but it's a side effect of the file picker's display order, not a guarantee. The moment you select files individually with the mouse, out of sequence, or drag them in one at a time, the merge order follows your clicks, not the file names.</p>
+          <p>A common assumption is that files will merge in alphabetical or numerical order automatically. If your file picker happens to list them that way and you select them all at once, the list often starts in that order, but that's a side effect of the picker, not a promise. Files added one at a time land in the order you added them, whatever their names say. Either way, the list is what counts, and you can fix it by dragging.</p>
 
           <h3>A reliable pre-check before combining</h3>
-          <p>Before clicking combine, look at the preview list Combine shows you — this reflects the actual order the merge will use. If something's out of place, remove it and re-add it in the right position, or reorder your selection before uploading in the first place. This thirty-second check is far faster than downloading a merged PDF, discovering page 4 is actually supposed to be page 2, and starting over.</p>
+          <p>Each file in the list shows a preview of its page, and the list is the real order the merge will use. If something's out of place, drag it to the right spot. This thirty-second check is far faster than downloading a merged PDF, discovering page 4 is actually supposed to be page 2, and starting over.</p>
 
           <h3>Naming files to make ordering foolproof</h3>
-          <p>If you're regularly merging multi-file sets — scanned pages, multi-part reports, sequential chapters — a simple habit that removes ordering guesswork entirely is prefixing file names with numbers before combining: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Selecting all of them at once in a file browser will then naturally follow that numeric order, and you get correct sequencing without needing to manually arrange anything in Combine itself.</p>
+          <p>If you regularly merge multi-file sets — scanned pages, multi-part reports, sequential chapters — prefix the file names with numbers: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Adding them all at once will then usually give you the right order from the start, and any stragglers are a quick drag away.</p>
         </div>
       </details>
 
@@ -677,10 +677,10 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>A sensible default sequence is: cover letter first (it's the shortest and sets context), resume second (the core of what most reviewers actually want), then supporting material — portfolio samples, certificates, references — last. This mirrors how most people naturally want to read an application: context, then substance, then supporting evidence, rather than starting with a portfolio before knowing what job you're even applying for.</p>
 
           <h3>Combining files that started in different formats</h3>
-          <p>It's common for a cover letter to exist as a Word-exported PDF, a resume as a separate PDF, and portfolio samples as image files (photos of physical work, screenshots of digital projects, scanned certificates). If your portfolio pieces are images rather than PDFs, convert them to PDF first using the Convert tool's PDF output, which turns a batch of images into one PDF with each image as its own page — then combine that resulting PDF with your cover letter and resume PDFs in the order you want them to appear.</p>
+          <p>It's common for a cover letter to exist as a Word-exported PDF, a resume as a separate PDF, and portfolio samples as image files (photos of physical work, screenshots of digital projects, scanned certificates). Combine takes all of that in one go: drop the PDFs and the JPG or PNG images together, and each image becomes its own page. Only images in other formats, such as WEBP or HEIC, need a quick trip through Convert first.</p>
 
           <h3>Keeping file size reasonable</h3>
-          <p>Portfolio images, especially camera photos of physical work or high-resolution screenshots, can be unnecessarily large. If your combined application PDF ends up huge, it's worth compressing the source images before converting them to PDF and merging, rather than after — a large, slow-to-open attachment is a small but real point of friction for anyone reviewing it under time pressure.</p>
+          <p>Portfolio images, especially camera photos of physical work or high-resolution screenshots, can be unnecessarily large. Switch the image quality option to Smaller or Smallest and Combine shrinks the images inside the PDF, showing the new size of each file as you go. A large, slow-to-open attachment is a small but real point of friction for anyone reviewing it under time pressure.</p>
 
           <h3>Double-checking before you submit</h3>
           <p>Once merged, open the final PDF and scroll through it once, start to finish. This catches out-of-order pages, an accidentally-included draft version, or a portfolio image that didn't convert the way you expected — the kind of small mistake that's invisible until you actually look, and considerably more embarrassing to discover after an employer has already opened it.</p>
@@ -693,13 +693,16 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Scanned paperwork — contracts, forms, ID documents, multi-page letters — brings its own particular ordering challenges, mostly because of how scanning itself tends to happen.</p>
 
           <h3>Why scanned pages go out of order more often than other files</h3>
-          <p>Many scanners and scanning apps save each page as a separate file with a generic, auto-generated name (scan001.pdf, IMG_2024.jpg, and so on), sometimes numbered by the order pages were physically fed into the scanner and sometimes not. If you scanned a stack of pages out of physical order, or a multi-function printer numbered them unexpectedly, the file names won't reliably reflect the document's true reading order — which means selecting files "in name order" can silently produce a merged document with pages out of sequence.</p>
+          <p>Many scanners and scanning apps save each page as a separate file with a generic, auto-generated name (scan001.pdf, IMG_2024.jpg, and so on), sometimes numbered by the order pages were physically fed into the scanner and sometimes not. If you scanned a stack of pages out of physical order, or a multi-function printer numbered them unexpectedly, the file names won't reliably reflect the document's true reading order, so a list sorted by name can silently produce a document with pages out of sequence.</p>
 
           <h3>The safest approach: check content, not just file names</h3>
-          <p>Before merging, glance at each scanned page's actual content (Combine's preview thumbnails make this quick) rather than trusting the file name alone. It only takes a few seconds to confirm page one is really the top of the document and page two follows it logically, but it's the single most reliable way to avoid submitting a scrambled document to a bank, government office, or landlord — places where an out-of-order document can cause real delays.</p>
+          <p>Before merging, glance at each page's preview in the list rather than trusting the file name alone. It only takes a few seconds to confirm page one is really the top of the document and page two follows it, and it's the most reliable way to avoid sending a scrambled document to a bank, government office, or landlord.</p>
 
           <h3>Mixed scans: some pages photographed, some scanned</h3>
-          <p>It's common to have a proper scan for most pages and a phone photo for one or two (a page that didn't fit on the scanner bed, or was scanned later as an afterthought). Combine handles images and PDFs interchangeably, so this isn't a problem technically — but visually, a photographed page often looks different in lighting and framing from a true scan. If consistency matters for the document's appearance, it's worth re-scanning the odd-one-out page properly rather than mixing formats, though this is a cosmetic concern rather than a functional one.</p>
+          <p>It's common to have a proper scan for most pages and a phone photo for one or two (a page that didn't fit on the scanner bed, or was scanned later as an afterthought). Combine takes PDFs and JPG or PNG images side by side, so this isn't a problem technically. A photographed page often looks different in lighting and framing from a true scan, though, so if the document's appearance matters, re-scan the odd one out.
+
+          <h3>Sideways or upside-down pages</h3>
+          <p>Phone photos and scans often come in rotated. Use the rotate button on that file to turn the picture a quarter at a time; the page keeps its shape and the previews update straight away, so you can see the fix before you download.</p></p>
 
           <h3>Multi-page contracts and signature pages</h3>
           <p>For contracts or forms with a signature page, that page needs to end up in the exact right position relative to the rest of the document, since a signature page merged into the wrong slot can make a legal document look invalid or incomplete. Treat these as a hard case for the preview-before-combining check above — this is exactly the situation where a five-second look at the ordered preview list saves you from a document that has to be re-signed and re-sent.</p>
@@ -743,19 +746,19 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Combine is a simple tool, but a handful of avoidable mistakes account for most of the frustration people run into with it.</p>
 
           <h3>Trusting file names for order instead of checking the preview</h3>
-          <p>As covered in the ordering articles above, file names don't always reflect the order you actually want — especially for scans and downloads with auto-generated names. Always glance at the preview list before combining rather than assuming the selection order matched your intention.</p>
+          <p>File names don't always reflect the order you want, especially for scans and downloads with auto-generated names. Look at the list before you download rather than assuming it came out right.</p>
 
           <h3>Mixing unrelated documents into one file "for convenience"</h3>
-          <p>Combining several unrelated documents just to have fewer files to manage often backfires — the recipient now has to open a large merged file and scroll to find the one section they actually need, rather than opening the specific file directly. Reserve combining for documents that genuinely belong together as one coherent read.</p>
+          <p>Combining unrelated documents just to have fewer files often backfires: the recipient has to scroll through a large merged file to find the one section they need. Reserve combining for documents that belong together as one read.</p>
 
           <h3>Not checking the final file before sending it</h3>
-          <p>A merged PDF should be opened and skimmed once before it goes anywhere important. This is the step that catches an out-of-order page, an accidentally duplicated document, or a page that didn't render the way you expected — problems that are trivial to fix before sending and considerably more awkward to explain after the fact.</p>
+          <p>Open the merged PDF and skim it once before it goes anywhere important. That catches an out-of-order page, a duplicated document, or a page that didn't render the way you expected.</p>
 
-          <h3>Forgetting to convert images before merging them with PDFs</h3>
-          <p>If you have loose images you want included in the same merged document as existing PDFs, remember that Combine merges files as provided — for the smoothest result, make sure images are already in the format and order you want, since fixing an image's orientation or content after it's already part of a merged PDF is far more of a hassle than fixing it beforehand.</p>
+          <h3>Leaving a page sideways</h3>
+          <p>A photo taken with the phone turned, or a page scanned the wrong way up, ends up sideways in the merged PDF and is a hassle to fix afterwards. Rotate it in the list before you download; the preview shows the result at once.</p>
 
           <h3>Sending an unnecessarily huge merged file</h3>
-          <p>Merging several already-large PDFs or high-resolution scanned images produces a combined file that inherits all of their weight — if the result is unexpectedly huge, it's worth compressing the source images before merging rather than after, since a slow-to-open, oversized PDF is a common source of complaints from recipients on slower connections or older devices.</p>
+          <p>Merging several already-large PDFs or high-resolution scans produces a combined file that inherits all of their weight. Before downloading, set the image quality to Smaller or Smallest and check the size shown on each file. A slow-to-open, oversized PDF is a common complaint from recipients on slower connections or older devices.</p>
         </div>
       </details>
     </div>
@@ -791,7 +794,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Technical details like aperture, shutter speed, and ISO are also stored, which matter to photographers reviewing their own shooting but are otherwise not privacy-sensitive on their own. Some devices and editing apps additionally embed a thumbnail preview, software/editing history, or even a copyright or author name field, depending on settings — the exact fields present vary by device and app, but the location and timestamp data are the two that carry the most real privacy weight.</p>
 
           <h3>Why this matters even for "unimportant" photos</h3>
-          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while leaving the visible image itself completely unchanged.</p>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
         </div>
       </details>
 
@@ -801,13 +804,16 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Two of the most common situations where EXIF data quietly causes real problems are selling items online and posting photos publicly — both involve photos going to strangers, which is exactly when hidden metadata matters most.</p>
 
           <h3>Selling on marketplaces</h3>
-          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with zero visible difference to the buyer.</p>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
 
           <h3>Posting to social media and forums</h3>
           <p>Most major social platforms strip metadata automatically on upload, which is good news, but not every platform does, and forwarded or downloaded copies of your photo (screenshots, saves, reposts) don't reliably go through that same stripping process. If a photo is ever downloaded from where you posted it and reshared elsewhere, any metadata that survived the original upload travels along with it. Stripping metadata before you post at all is the only way to guarantee it's never present anywhere in the chain.</p>
 
           <h3>A simple pre-posting habit</h3>
           <p>Before uploading photos anywhere they'll be visible to people you don't know personally — a marketplace listing, a public social post, a forum, a dating profile — run them through Cleanly first. It takes seconds, works on a whole batch of photos at once, and produces visually identical copies with none of the hidden data. Making this a default step, rather than something you only remember for "sensitive" photos, means you're never caught out by a photo you didn't think twice about.</p>
+
+          <h3>iPhone photos (HEIC)</h3>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
 
           <h3>What stripping doesn't change</h3>
           <p>It's worth being clear about what Cleanly does and doesn't do: it removes hidden metadata from the file, but it can't remove information that's visible in the image itself — a street sign in the background, a visible house number, a reflection showing your location. Metadata stripping handles the invisible layer; anything visible in the photo itself is a separate consideration you still need to check with your own eyes before posting.</p>
@@ -825,8 +831,8 @@ html[data-theme="dark"] .golden-rules-switcher{
           <h3>Why delivered or published copies are a different matter</h3>
           <p>The moment a photo is delivered to a client, published on a portfolio site, or posted publicly, the calculation changes — location data especially has no business being in a client-facing or public file, since it can reveal shoot locations that were meant to stay private (a client's home for a family shoot, a private venue, a studio's exact address if that's not meant to be public). Cleanly is meant for exactly this step: run final, outward-facing exports through it before delivery or publishing, while keeping your own working files with full metadata intact for your own reference.</p>
 
-          <h3>No quality loss, ever</h3>
-          <p>A common (and reasonable) worry is that stripping metadata might somehow affect image quality — it doesn't. Metadata is a separate block of text-like information stored alongside the pixel data, not mixed into it, so removing it has zero effect on resolution, color, or sharpness. Cleanly's output is pixel-for-pixel the same photo, just without the hidden data traveling alongside it.</p>
+          <h3>What actually changes in the image</h3>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
 
           <h3>Building it into a delivery workflow</h3>
           <p>For photographers who deliver galleries or export batches regularly, the simplest approach is treating metadata stripping as the last step before export, applied to the whole batch at once rather than photo by photo. This way it becomes a routine part of finishing a job, similar to a final quality check, rather than something that has to be remembered separately for each client or each platform a gallery gets shared to.</p>
@@ -916,7 +922,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>PDF pages measure position in points (1/72 of an inch), not the on-screen pixels you're dragging with your finger or cursor. Context handles that conversion for you — what you see on screen, at whatever zoom level you're viewing the page at, always maps back to the correct fixed position in the actual PDF, so a text box you place at the top of a page stays at the top of the page regardless of what device or zoom level someone else opens it at later.</p>
 
           <h3>What happens when you download</h3>
-          <p>When you hit Download, every text box and shape you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
         </div>
       </details>
 
@@ -958,10 +964,13 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Print, sign, scan, and email back is still how a lot of paperwork gets handled — and it's almost always unnecessary. Here's how to skip it using nothing but a browser.</p>
 
           <h3>Replacing the print-sign-scan loop</h3>
-          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a shape (a cross to mark it, a circle to select it) instead of trying to type a checkmark character that may not even be in the font.</p>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h3>Dates in one click</h3>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
 
           <h3>Typed signatures and initials</h3>
-          <p>Typing your name in a script-like or handwriting-style approach onto a signature line is common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms, and similar low-stakes documents. It's worth being clear-eyed about one thing though: a typed name is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that a simple typed overlay doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
 
           <h3>Lining answers up with printed labels</h3>
           <p>Most forms print a label ("Name:", "Date:") followed by a blank line or box for the answer. Drag your text box so it sits just above the line rather than on top of it — text placed directly on a printed line becomes hard to read once both overlap, while text floating just above stays clearly legible and still reads as "the answer to that label" to anyone looking at the finished page.</p>
@@ -980,7 +989,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.</p>
 
           <h3>Keeping size and color consistent across pages</h3>
-          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to.</p>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
 
           <h3>Planning a pass before you start typing</h3>
           <p>For longer documents, it's worth a quick first pass through every page — just looking, not yet typing — to see the full scope of what needs to be filled in before committing to a size and position on page one. A size that looks right on a sparse first page can turn out too large for a denser page further in, and catching that early saves having to go back and resize boxes you've already placed.</p>
@@ -1008,7 +1017,10 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Light colors — pale yellow especially — can look fine at editing size on a bright screen and then become genuinely hard to read once printed or viewed on a different display. Stick to colors with strong contrast against white, like black or a saturated color, for anything that actually needs to be read rather than just noticed.</p>
 
           <h3>Forgetting to rename the file before sharing</h3>
-          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Taking a moment to give it a clear, specific filename before downloading — what it is, and often the date — saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h3>Sending a PDF that's too big to email</h3>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
         </div>
       </details>
     </div>
@@ -1141,8 +1153,11 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>WAV stores audio uncompressed — every sample preserved exactly, with no data thrown away. This makes it the right choice for anything that will be edited, mixed, or processed further, since lossy compression artifacts don't stack on top of each other through multiple rounds of editing the way they would with a repeatedly re-saved MP3. It's also the standard format for archival masters, since it's the closest thing to keeping the original recording intact.</p>
           <p>The cost is size: WAV files are typically 5-10x larger than an MP3 of the same audio at a reasonable bitrate, since there's no compression doing any of the work. A few minutes of WAV audio can already be tens of megabytes, which matters if you're emailing it or storing a lot of it.</p>
 
+          <h3>OGG, AIFF and the rest</h3>
+          <p>Coudio also writes OGG (Opus), AIFF, AU, CAF and VOC. OGG (Opus) is lossy like MP3 but usually sounds as good or better at the same bitrate, which makes it a strong pick for websites and games; the catch is that not every player and device opens it. AIFF is lossless like WAV and is the default on macOS, Logic and GarageBand, so pick it when your Apple software asks for it. CAF is Apple's own container, AU comes from old Unix and Sun systems, and VOC from early Sound Blaster-era software. Choose those three only when a specific program or older system requires them.</p>
+
           <h3>The quick decision rule</h3>
-          <p>Sharing, listening, uploading to most platforms → MP3. Editing, mixing, or archiving a master copy you'll come back to → WAV. Not sure, and it's a one-off → MP3 is the safer default; almost everything can play it.</p>
+          <p>Sharing, listening, uploading to most platforms → MP3. Smallest file for a website or game → OGG. Editing, mixing, or archiving a master copy you'll come back to → WAV (or AIFF on a Mac). Not sure, and it's a one-off → MP3 is the safer default; almost everything can play it.</p>
         </div>
       </details>
 
@@ -1154,9 +1169,12 @@ html[data-theme="dark"] .golden-rules-switcher{
           <h3>What bitrate actually controls</h3>
           <p>Bitrate is how much data is used to encode each second of audio, measured in kilobits per second (kbps). A higher bitrate keeps more of the original detail and sounds closer to the uncompressed source; a lower bitrate compresses harder, discarding more, in exchange for a smaller file. It's a direct, roughly linear trade: doubling the bitrate roughly doubles the file size for the same length of audio.</p>
 
+          <h3>The three options in Coudio</h3>
+          <p>MP3 and OGG both offer 128, 192 and 320 kbps, and 320 is preselected. At 128 kbps a minute of audio takes about 1 MB, at 192 about 1.4 MB, and at 320 about 2.4 MB. For comparison, an uncompressed CD-quality WAV runs around 10 MB a minute.</p>
+
           <h3>Matching bitrate to what you're actually encoding</h3>
-          <p>Spoken word — podcasts, voice memos, audiobooks, narration — doesn't need a high bitrate at all; voice has far less complexity than music, and even a low bitrate sounds clear and perfectly intelligible while keeping file sizes small. Music, especially anything with a wide dynamic range or lots of simultaneous instruments, benefits from a meaningfully higher bitrate before compression artifacts (a slight harshness or "underwater" quality on complex passages) become audible.</p>
-          <p>There's a genuine diminishing-returns point on the high end: past a certain bitrate, most listeners on typical headphones or speakers can no longer reliably tell the difference from the source, so cranking the number higher just inflates the file without a perceptible quality gain. If you're not sure, a mid-range bitrate is the safe general-purpose choice — noticeably better than low-bitrate voice settings, without the file size of a maximum-quality music-mastering setting you don't need for everyday sharing.</p>
+          <p>Spoken word — podcasts, voice memos, audiobooks, narration — doesn't need a high bitrate; voice is far less complex than music, so 128 kbps sounds clear and keeps files small. Music, especially anything with a wide dynamic range or lots of instruments at once, benefits from 192 kbps or more before compression artifacts (a slight harshness or "underwater" quality on complex passages) become audible.</p>
+          <p>There's a genuine diminishing-returns point on the high end: past a certain bitrate, most listeners on typical headphones or speakers can no longer reliably tell the difference from the source, so cranking the number higher just inflates the file without a perceptible quality gain. If you're not sure, 192 kbps is the safe general-purpose choice for music, and 320 kbps is there for when you want the best an MP3 can offer and don't mind a file about 70% larger.</p>
 
           <h3>When bitrate doesn't matter at all</h3>
           <p>If you're converting to WAV instead of MP3, bitrate is irrelevant — WAV is uncompressed, so there's no bitrate setting to choose in the first place. Bitrate only comes into play once you're deliberately trading some quality for a smaller file, which is the entire premise of choosing MP3 over WAV to begin with.</p>
@@ -1172,7 +1190,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Turning a recorded lecture, meeting, or interview video into a podcast-style audio file that's far smaller and easier to listen to on the go. Pulling a song or sound clip out of a video when only the audio is actually needed. Archiving just the audio portion of old video footage to save on storage. Converting a screen recording's voiceover into a standalone audio file for editing or transcription elsewhere.</p>
 
           <h3>How it actually works</h3>
-          <p>Drop an MP4, WEBM, MOV, or OGV file into Coudio the same way you'd drop an audio file — the tool detects it's a video and extracts the audio track automatically, discarding the picture. Pick MP3 or WAV as the output the same way you would for a regular audio file, and (for MP3) choose a bitrate. The video itself is never re-encoded or altered; only its existing audio track is pulled out.</p>
+          <p>Drop an MP4, WEBM, MOV, or OGV file into Coudio the same way you'd drop an audio file — the tool detects it's a video and extracts the audio track automatically, discarding the picture. Pick the output format on the file's row the same way you would for a regular audio file, and for MP3 or OGG choose a bitrate. Your original video is never touched; only its audio track is read and converted.</p>
 
           <h3>What happens if the video has no audio track</h3>
           <p>A video with no sound at all — a muted screen recording, footage shot without audio — has nothing for Coudio to extract, since there's no audio track present in the file to begin with. This isn't something the tool can work around; if the original recording genuinely has no sound, there's no audio to pull out of it.</p>
@@ -1188,18 +1206,18 @@ html[data-theme="dark"] .golden-rules-switcher{
             </thead>
             <tbody>
               <tr><td data-label="Situation">Sharing a song, recording, or voice memo</td><td data-label="Best format">MP3</td></tr>
-              <tr><td data-label="Situation">Uploading to a podcast platform</td><td data-label="Best format">MP3, mid-range bitrate</td></tr>
+              <tr><td data-label="Situation">Uploading to a podcast platform</td><td data-label="Best format">MP3, 128 to 192 kbps</td></tr>
               <tr><td data-label="Situation">Editing or mixing the audio further</td><td data-label="Best format">WAV</td></tr>
               <tr><td data-label="Situation">Archiving a master recording</td><td data-label="Best format">WAV</td></tr>
-              <tr><td data-label="Situation">Emailing a quick voice note</td><td data-label="Best format">MP3, low bitrate is fine for speech</td></tr>
+              <tr><td data-label="Situation">Emailing a quick voice note</td><td data-label="Best format">MP3, 128 kbps is fine for speech</td></tr>
             </tbody>
           </table>
 
           <h3>Podcasts, voice notes, and spoken word</h3>
-          <p>MP3 at a modest bitrate is the standard here — file size matters more than it does for music, since episodes are often long, and speech tolerates compression exceptionally well without any audible quality loss for the listener.</p>
+          <p>MP3 at 128 kbps is the standard here — file size matters more than it does for music, since episodes are often long, and speech tolerates compression exceptionally well. Move up to 192 kbps if the show has music in it.</p>
 
           <h3>Music you're sharing or listening to</h3>
-          <p>MP3 at a mid-to-higher bitrate covers nearly every everyday case: sending a track to a friend, uploading to most platforms, keeping music on a phone where storage space adds up. Reach for WAV only if you specifically need the uncompressed original — for editing, sampling, or a truly critical-listening archive.</p>
+          <p>MP3 at 192 to 320 kbps covers nearly every everyday case: sending a track to a friend, uploading to most platforms, keeping music on a phone where storage space adds up. Reach for WAV only if you specifically need the uncompressed original — for editing, sampling, or a truly critical-listening archive.</p>
 
           <h3>Audio you'll edit or mix later</h3>
           <p>WAV avoids stacking additional compression loss on top of whatever editing you do — mixing, trimming, layering, adjusting levels — since there's no lossy compression in the file to begin with. Convert to MP3 only as the final export step, once editing is done, the same rule that applies to repeatedly re-saving a JPG.</p>
@@ -1218,7 +1236,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>Just like re-saving a JPG, re-encoding an already-compressed MP3 back into MP3 loses a little more detail each time — the second compression pass has less original information to work with than the first did. Where possible, keep and edit from a lossless source (WAV) and only export to MP3 once, at the end.</p>
 
           <h3>Using a bitrate that doesn't match the content</h3>
-          <p>A low bitrate that's perfectly fine for spoken word will sound noticeably compressed on music with a full instrumental mix, while a maximum bitrate on a simple voice memo just wastes file size for no audible benefit. Match the bitrate to what's actually in the recording, not a single number used for everything.</p>
+          <p>128 kbps is perfectly fine for spoken word but can sound noticeably compressed on music with a full instrumental mix, while 320 kbps on a simple voice memo just wastes file size for no audible benefit. Match the bitrate to what's actually in the recording, not a single number used for everything.</p>
 
           <h3>Not checking for an audio track before extracting</h3>
           <p>Trying to pull audio from a video that was recorded muted, or where the audio was stripped out earlier in some other step, will come back empty — there's nothing there to extract. Worth a quick check (or a quick listen to the original video) before assuming the extraction failed on Coudio's end rather than the source simply having no sound.</p>
@@ -1241,15 +1259,18 @@ html[data-theme="dark"] .golden-rules-switcher{
           <h3>Keeping the snippet short</h3>
           <p>A code screenshot is meant to be read at a glance, not scrolled through — the moment a snippet needs to shrink past a comfortable reading size to fit the frame, it's usually a sign the excerpt is too long for a screenshot and would serve the reader better as a linked file or a gist. Trim to just the lines that make the point; a shorter, larger, more legible snippet beats a complete-but-tiny one almost every time.</p>
 
+          <h3>PNG or SVG</h3>
+          <p>Pick PNG for almost everything: it works in every chat app, social post and slide deck, and the Copy button puts it straight on your clipboard. SVG stays perfectly sharp at any size, which is handy for documents and slides that accept it, but many chat and social apps won't take an SVG upload.</p>
+
           <h3>Picking a size that's actually readable where it'll be posted</h3>
           <p>A screenshot that looks perfectly sharp at full size on your own monitor can shrink to illegible in a chat thumbnail, an embedded tweet, or a slide viewed from the back of a room. If you know where the image is headed, preview it at roughly that size before finalizing — what's comfortable to read full-screen is not always comfortable to read as a thumbnail.</p>
         </div>
       </details>
 
       <details class="golden-rules-article">
-        <summary>2. Choosing a Theme: Dracula, VS Code Dark, Monokai, or GitHub Light</summary>
+        <summary>2. Choosing a Theme: Dracula, VS Code Dark, Monokai, One Dark, or GitHub Light</summary>
         <div class="golden-rules-body">
-          <p>The four themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.</p>
+          <p>The five themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.</p>
 
           <h3>Dracula: high-contrast and distinctive</h3>
           <p>Dracula's dark purple background with vivid pink, green, and cyan highlights is one of the most recognizable editor themes in use today — instantly familiar to a huge share of developers, and high-contrast enough to stay readable even shrunk down small. It's a strong default when you're not sure who's looking or where the image will end up.</p>
@@ -1260,8 +1281,11 @@ html[data-theme="dark"] .golden-rules-switcher{
           <h3>Monokai: warm and long-established</h3>
           <p>Monokai predates most of the newer themes and carries a distinct, warm palette — olive background undertones, orange and pink accents — that a lot of developers who've used Sublime Text or older setups will immediately recognize. It reads slightly softer in contrast than Dracula, which some people find easier on the eyes for longer viewing.</p>
 
+          <h3>One Dark: soft and balanced</h3>
+          <p>One Dark comes from the Atom editor and lives on in many popular editor setups. Its blue-grey background is a little gentler than Dracula's, with softer pastel highlights, so it's a good fit when you want something familiar that isn't as loud.</p>
+
           <h3>GitHub Light: the one for bright contexts</h3>
-          <p>All three of the above are dark themes; GitHub Light is the one genuinely light option, matching GitHub's own default code rendering. It's the right pick for a slide deck or document that's otherwise light-themed, where a dark code block would stand out as a jarring, disconnected rectangle rather than fitting the surrounding design.</p>
+          <p>All four of the above are dark themes; GitHub Light is the one genuinely light option, matching GitHub's own default code rendering. It's the right pick for a slide deck or document that's otherwise light-themed, where a dark code block would stand out as a jarring, disconnected rectangle rather than fitting the surrounding design.</p>
         </div>
       </details>
 
@@ -1481,6 +1505,9 @@ html[data-theme="dark"] .golden-rules-switcher{
         <div class="golden-rules-body">
           <p>Phones prioritise speed and battery over file size, so they record at a very high bitrate and often in 4K or 60 frames per second. That's why a one-minute clip can run to hundreds of megabytes. There is a lot of room to shrink it without a visible change, especially for anything that only needs to be watched, not edited.</p>
 
+          <h3>Where the size comes from</h3>
+          <p>Three things multiply: how many pixels each frame has, how many frames there are per second, and how many bits are spent on each. A 4K frame has four times the pixels of a 1080p one, and 60 frames per second doubles the count of 30, so a 4K, 60 fps clip carries roughly eight times the raw picture data of the same clip at 1080p and 30 fps. A phone screen or chat window can't show most of that, which is why scaling the video down (see the previous article) often saves more than anything else.</p>
+
           <h3>MOV, MP4 and what comes out</h3>
           <p>MOV and MP4 are containers — the box a video and its audio are packed into — not the compression itself. Comprio reads MOV, MP4, WebM and other common containers and always writes a standard H.264 MP4 (or WebM if your browser can't encode H.264), which plays almost everywhere: phones, computers, browsers and messaging apps.</p>
         </div>
@@ -1542,6 +1569,9 @@ html[data-theme="dark"] .golden-rules-switcher{
             </tbody>
           </table>
 
+          <h3>Which codecs fit which container</h3>
+          <p>MP4, MOV, MKV, AVI and FLV take H.264 video with AAC audio, so a typical phone or camera clip fits all of them and is simply re-packed. WebM takes VP8, VP9 or AV1 video with Opus or Vorbis audio, so an H.264 clip going into WebM has to be re-encoded, and so does a WebM clip going into MP4 or MOV (more on that in the output format article).</p>
+
           <h3>Why the extension can mislead</h3>
           <p>Renaming a file from .mov to .mp4 does not convert it. The contents stay exactly as they were, and some players refuse files whose name and contents disagree. Convido reads what is actually inside the file, not just its name.</p>
         </div>
@@ -1553,7 +1583,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>When the video and audio inside your file already fit the new format, Convido simply re-packs them into the new container. That takes a fraction of a second, even for a very large file, and nothing about the picture or sound changes at all. A 143 MB ten-minute video can be re-packed from MOV to MP4 in well under a second.</p>
 
           <h3>When Convido has to re-encode</h3>
-          <p>If the video or audio doesn't fit the new container — for example H.264 or HEVC video going into WebM, which only takes VP8, VP9 and AV1 — Convido re-encodes it. That takes longer, depends on your computer, and the picture is compressed a second time, so quality can change slightly.</p>
+          <p>If the video or audio doesn't fit the new container — for example H.264 or HEVC video going into WebM, which only takes VP8, VP9 and AV1 — Convido re-encodes it. It also re-encodes WebM-style video and audio (VP9, AV1, Opus, Vorbis) going into MP4 or MOV, so the result plays on Apple devices. That takes longer, depends on your computer, and the picture is compressed a second time, so quality can change slightly.</p>
 
           <h3>The little "i" on a video</h3>
           <p>A small "i" appears on a video's preview when it will be re-encoded for the output you chose. Pick a format that keeps it as it is, such as MP4, MOV or MKV for most camera and phone videos, and the note disappears and the result becomes instant and lossless.</p>
@@ -1569,7 +1599,7 @@ html[data-theme="dark"] .golden-rules-switcher{
           <p>When in doubt, choose MP4. It is the most widely supported video format there is and works on phones, computers, browsers, messaging apps and social platforms.</p>
 
           <h3>WebM and MP4 aren't interchangeable</h3>
-          <p>Videos recorded as WebM usually hold VP9 or AV1 video. Convido can re-pack that into MP4, MOV or MKV without re-encoding, but QuickTime, iPhones and some editors often cannot play VP9 inside an MP4 file. If a video must play on Apple devices, convert it to MP4 from an H.264 or HEVC source instead.</p>
+          <p>Videos recorded as WebM usually hold VP9 or AV1 video with Opus audio. QuickTime, iPhones and many editors can't play those inside an MP4 or MOV file, so when you convert a WebM to MP4 or MOV, Convido re-encodes it to H.264 and AAC (the small "i" tells you), and the result plays everywhere. That takes longer than a re-pack and compresses the picture a second time. MKV keeps the original codecs and re-packs instantly, which suits VLC and other media players.</p>
 
           <h3>AVI and FLV</h3>
           <p>Convido writes AVI and FLV with H.264 video and AAC audio, which modern players handle. AVI has no timestamps, so a video with a changing frame rate can drift slightly in some players, and an AVI file cannot be larger than 4 GB. Use these only when an old player or program asks for them.</p>
