@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/golden-rules/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/golden-rules/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/golden-rules/">
-<script src="/shared/i18n/ja.js?v=9"></script>
+<script src="/shared/i18n/ja.js?v=10"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="ゴールデンルール – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=297">
+<link rel="stylesheet" href="/shared/site.css?v=298">
 <style>
 /* ===== GOLDEN RULES ===== */
 /* Wheel-picker switcher: the "active" slot is a fixed position — dead
@@ -177,7 +177,8 @@ html[data-theme="dark"] .golden-rules-switcher{
 .golden-rules-tool-btn[data-tool="coudio"].active{ background:#18C98A; border-color:#18C98A; }
 .golden-rules-tool-btn[data-tool="codify"].active{ background:#C81C86; border-color:#C81C86; color:#fff; }
 .golden-rules-tool-btn[data-tool="colorfy"].active{ background:#FF8A4C; border-color:#FF8A4C; }
-.golden-rules-tool-btn[data-tool="comprio"].active{ background:#5B6CFF; border-color:#5B6CFF; color:#fff; }
+.golden-rules-tool-btn[data-tool="comprio"].active{ background:#3B6CF6; border-color:#3B6CF6; color:#fff; }
+.golden-rules-tool-btn[data-tool="convido"].active{ background:#B84CFF; border-color:#B84CFF; }
 
 .ad-slot-incontent{
   margin:32px auto;
@@ -389,6 +390,7 @@ html[data-theme="dark"] .golden-rules-switcher{
       <button type="button" class="golden-rules-tool-btn" data-tool="codify">Codify</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="colorfy">Colorfy</button>
       <button type="button" class="golden-rules-tool-btn" data-tool="comprio">Comprio</button>
+      <button type="button" class="golden-rules-tool-btn" data-tool="convido">Convido</button>
       <div class="golden-rules-switcher-spacer" aria-hidden="true"></div>
     </div>
 
@@ -1521,6 +1523,99 @@ html[data-theme="dark"] .golden-rules-switcher{
       </details>
     </div>
 
+    <div class="golden-rules-articles" data-tool="convido">
+      <details class="golden-rules-article">
+        <summary>1. コンテナとコーデック：動画フォーマットの正体</summary>
+        <div class="golden-rules-body">
+          <p>動画ファイルは2つの層が重なったものです。コーデックは映像と音声をどう圧縮するかの方式です（H.264、HEVC、VP9、AAC）。コンテナは、圧縮された映像・音声・タイミング情報を入れる箱です（MP4、MOV、MKV、WebM、AVI、FLV）。コンテナ間の変換は、同じ中身を別の箱に移すだけのことがよくあります。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>形式</th><th>最適な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="形式">MP4</td><td data-label="最適な用途">共有やアップロード — ほぼすべてのスマートフォン、パソコン、アプリで再生できます</td></tr>
+              <tr><td data-label="形式">MOV</td><td data-label="最適な用途">AppleデバイスやFinal Cut、Premiere、DaVinci Resolveなどの動画編集ソフト</td></tr>
+              <tr><td data-label="形式">WebM</td><td data-label="最適な用途">Webサイト — あらゆる最新ブラウザで再生できる小さなファイル</td></tr>
+              <tr><td data-label="形式">MKV</td><td data-label="最適な用途">アーカイブやVLCなどのメディアプレーヤー — ほぼ何でも収められます</td></tr>
+              <tr><td data-label="形式">AVI</td><td data-label="最適な用途">AVIしか理解できない古いプレーヤーやソフトウェア</td></tr>
+              <tr><td data-label="形式">FLV</td><td data-label="最適な用途">Flash時代の古いプレーヤーやレガシーなストリーミング環境</td></tr>
+            </tbody>
+          </table>
+
+          <h3>拡張子が誤解を招くことがある理由</h3>
+          <p>ファイル名を.movから.mp4に変えても変換にはなりません。中身は元のままで、名前と中身が一致しないファイルを拒否するプレーヤーもあります。Convidoは名前だけでなく、ファイルの実際の中身を読み取ります。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>2. 再パッケージか再エンコードか：高速・ロスレスか、時間がかかるか</summary>
+        <div class="golden-rules-body">
+          <p>ファイル内の映像と音声がすでに新しいフォーマットに合っている場合、Convidoはそれらを新しいコンテナに再パッケージするだけです。非常に大きなファイルでも1秒足らずで、映像や音声は一切変わりません。143MB・10分の動画を、MOVからMP4へ1秒未満で再パッケージできます。</p>
+
+          <h3>Convidoが再エンコードするとき</h3>
+          <p>動画または音声が新しいコンテナに合わない場合 — たとえばH.264やHEVCの動画をVP8・VP9・AV1しか受け付けないWebMにする場合 — Convidoは再エンコードします。時間がかかり、お使いのコンピューターに左右され、映像が二度圧縮されるため、画質がわずかに変わることがあります。</p>
+
+          <h3>動画の小さな「i」</h3>
+          <p>選んだ出力のために動画が再エンコードされる場合、プレビューに小さな「i」が表示されます。カメラやスマートフォンの動画の多くは、MP4・MOV・MKVのようにそのまま保てるフォーマットを選べば、表示が消え、結果は一瞬でロスレスになります。</p>
+
+          <h3>再エンコード後のファイルサイズ</h3>
+          <p>再エンコードしたファイルは、元より小さくなることも大きくなることもあります。すでに非常に強く圧縮されていた動画は、新しいエンコーダーが元の圧縮の強さを知らないため、大きくなることがあります。結果が思ったより大きい場合は、再パッケージだけで済むフォーマットに変換するか、あとでComprioで小さくしてください。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>3. 適切な出力フォーマットの選び方</summary>
+        <div class="golden-rules-body">
+          <p>迷ったらMP4を選んでください。最も広く対応している動画フォーマットで、スマートフォン、パソコン、ブラウザ、メッセージアプリ、SNSで動作します。</p>
+
+          <h3>WebMとMP4は互換ではありません</h3>
+          <p>WebMで録画された動画には、通常VP9またはAV1の映像が入っています。Convidoは再エンコードなしでMP4、MOV、MKVに再パッケージできますが、QuickTime、iPhone、一部の編集ソフトでは、MP4ファイル内のVP9を再生できないことがよくあります。Appleデバイスで再生する必要がある動画は、H.264またはHEVCのソースからMP4に変換してください。</p>
+
+          <h3>AVIとFLV</h3>
+          <p>ConvidoはAVIとFLVをH.264映像とAAC音声で書き出します。最近のプレーヤーなら再生できます。AVIにはタイムスタンプがないため、フレームレートが変化する動画は一部のプレーヤーでわずかにずれることがあり、AVIファイルは4GBを超えられません。古いプレーヤーやプログラムが必要とする場合にのみ使ってください。</p>
+
+          <h3>WMVは利用できません</h3>
+          <p>ブラウザはWMV動画をエンコードできないため、ConvidoはWMVファイルを作れません。Windowsでは、MP4はWindows Media Playerと現在のすべてのWindowsアプリで対応しています。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>4. Convidoが読めるものと読めないもの</summary>
+        <div class="golden-rules-body">
+          <p>ConvidoはMP4、M4V、MOV、3GP、3GPP、3G2、MKV、WebM、TS、M2TS、MTS、GIFのファイルを読み込めます。「想定する入力フォーマット」は最初に追加した動画から自動で入力され、各ファイルは個別に判別されるため、1回のバッチで形式を混在させられます。</p>
+
+          <h3>ブラウザが読めないフォーマット</h3>
+          <p>AVI、FLV、WMV、ASF、MPG、MPEG、VOB、MOD、MXF、DV、DVR、RM、RMVB、SWF、CAVS、OGG/OGVのファイルはブラウザでは開けないため、Convidoはスキップしてその旨を表示します。カメラのRAWファイルと音声のみのファイルもスキップされます。</p>
+
+          <h3>読めるコンテナの中の動画でも失敗することがあります</h3>
+          <p>ブラウザがデコードできないコーデックを使っているファイルもあります — たとえば古い一部のスマートフォン形式です。そうしたファイルは赤いカードで表示され、ステータス行に一覧されますが、バッチの残りは処理が続きます。AMR音声の古い3GPファイルも、同じ理由で音声なしで変換されることがあります。</p>
+
+          <h3>GIFを動画にする</h3>
+          <p>GIFにはビデオコーデックがないため、Convidoはすべてのフレームをデコードし、元のタイミングのまま通常の動画としてエンコードします。動画ファイルにすると、GIFはとても小さくなることがよくあります。動画には透明がないため透明部分は白になり、MP4・MOV・MKV・AVI・FLVは偶数サイズが必要なので、奇数サイズのGIFには1ピクセルの白い縁が付きます（WebMは正確なサイズを保ちます）。GIFの入力には、ChromeやEdgeのように画像デコーダーを内蔵したブラウザが必要です。</p>
+        </div>
+      </details>
+
+      <details class="golden-rules-article">
+        <summary>5. ブラウザでの変換：知っておきたいこと</summary>
+        <div class="golden-rules-body">
+          <p>Convidoはすべてお使いのデバイス上で動作します。何もアップロードされず、サーバーも関与しないため、動画は非公開のままで、サイトによるファイルサイズの制限もありません。</p>
+
+          <h3>個別ファイルまたは.zip</h3>
+          <p>5本までの動画は1つずつダウンロードされます。6〜20本では個別ファイルと1つの.zipを選べ、20本を超えるとブラウザがダウンロードであふれないよう、常に1つの.zipになります。.zipはメモリ上で作られるため、非常に大きな動画のバッチには十分な空きメモリが必要です。</p>
+
+          <h3>タブを開いたままにする</h3>
+          <p>ブラウザはバックグラウンドのタブを遅くしたり一時停止したりするので、処理中はConvidoのタブを表示したままにしてください。処理中にもう一度ボタンを押すと、ジョブがキャンセルされます。</p>
+
+          <h3>非常に大きい動画や超高解像度の動画</h3>
+          <p>再パッケージは主に空きメモリに左右されるため、非常に大きな録画は他に何も動いていないタブで行ってください。8K動画の再エンコードも可能ですが、時間がかかります。H.264は数ピクセルより小さい映像や、ピクセル数が奇数の映像をエンコードできないため、奇数サイズの動画をMP4、MOV、MKV、AVI、FLVに変換する場合は、代わりにWebMにする必要があるかもしれません。</p>
+
+          <h3>破損したファイル</h3>
+          <p>ファイルの途中だけが破損している場合、再パッケージでは破損もそのままコピーされます。Convidoが完了と表示しても、結果に乱れが出ることがあります。大切な変換は、元のファイルを削除する前に確認してください。</p>
+        </div>
+      </details>
+    </div>
+
     <div class="ad-slot ad-slot-bottom">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000004" data-ad-format="auto" data-full-width-responsive="true"></ins>
     </div>
@@ -1554,6 +1649,9 @@ html[data-theme="dark"] .golden-rules-switcher{
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
           <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
         </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+        </div>
       </div>
     </div>
     <div class="footer-dashboard-col" id="footerContactSection">
@@ -1569,8 +1667,8 @@ html[data-theme="dark"] .golden-rules-switcher{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=123" defer></script>
-<script src="/shared/report.js?v=33" defer></script>
-<script src="/golden-rules/golden-rules-tool.js?v=10" defer></script>
+<script src="/shared/site.js?v=124" defer></script>
+<script src="/shared/report.js?v=34" defer></script>
+<script src="/golden-rules/golden-rules-tool.js?v=11" defer></script>
 </body>
 </html>
