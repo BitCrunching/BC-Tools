@@ -3636,3 +3636,69 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
 @media (hover:none){
   .bc-hover-reveal{ opacity:1; pointer-events:auto; }
 }
+
+/* ===== Golden Rules unrolled on each tool page: the button under the
+   intro text pulls that tool's articles from the Golden Rules page and
+   slides them open in place (shared/site.js, bcToggleGoldenRules). ===== */
+.gr-unroll-btn{
+  display:block;
+  margin:22px auto 0;
+  height:40px;
+  padding:0 22px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:700;
+}
+.gr-inline{
+  display:grid;
+  grid-template-rows:0fr;
+  transition:grid-template-rows .45s cubic-bezier(.22,1,.36,1);
+}
+.gr-inline.open{ grid-template-rows:1fr; }
+.gr-inline-clip{
+  min-height:0;
+  overflow:hidden;
+}
+.gr-inline.open .gr-inline-clip{ padding-top:24px; }
+.gr-inline .golden-rules-article{
+  border-radius:18px;
+  border:1px solid rgba(128,128,128,.3);
+  background:rgba(128,128,128,.07);
+  margin-bottom:16px;
+  padding:6px 24px;
+}
+.gr-inline .golden-rules-article summary{
+  padding:18px 0;
+  font-weight:800;
+  font-size:19px;
+  color:var(--text);
+  cursor:pointer;
+  list-style:none;
+}
+.gr-inline .golden-rules-article summary::-webkit-details-marker{ display:none; }
+.gr-inline .golden-rules-article summary::after{
+  content:"+";
+  float:right;
+  font-size:24px;
+  font-weight:400;
+  transition:.2s;
+}
+.gr-inline .golden-rules-article[open] summary::after{ transform:rotate(45deg); }
+.gr-inline .golden-rules-body{
+  padding:0 0 28px;
+  color:var(--text);
+  text-align:left;
+}
+.gr-inline .golden-rules-body h3{
+  color:var(--text);
+  font-size:19px;
+  letter-spacing:0;
+  text-align:left;
+  margin:24px 0 10px;
+}
+.gr-inline .golden-rules-body h3:first-child{ margin-top:0; }
+.gr-inline .golden-rules-body p{
+  margin:0 0 14px;
+  font-size:16px;
+  line-height:1.7;
+}

@@ -150,6 +150,45 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ===== Golden Rules unrolled on a tool page ===== */
+const grInlineLoaded = {};
+async function bcFillGoldenRules(box, tool){
+  const res = await fetch(bcLangPath("/golden-rules/"));
+  if (!res.ok) throw new Error("golden rules");
+  const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+  const src = doc.querySelector('.golden-rules-articles[data-tool="' + tool + '"]');
+  if (!src) throw new Error("golden rules tool");
+  const clip = box.querySelector(".gr-inline-clip");
+  [...src.children].forEach(el => clip.appendChild(document.importNode(el, true)));
+}
+async function bcToggleGoldenRules(btn){
+  const tool = btn.dataset.tool;
+  const box = document.getElementById(btn.getAttribute("aria-controls"));
+  if (!box) return;
+  const opening = btn.getAttribute("aria-expanded") !== "true";
+  if (opening && !grInlineLoaded[tool]){
+    btn.disabled = true;
+    try {
+      await bcFillGoldenRules(box, tool);
+      grInlineLoaded[tool] = true;
+    } catch (err){
+      location.href = bcLangPath("/golden-rules/") + "?tool=" + encodeURIComponent(tool);
+      return;
+    } finally { btn.disabled = false; }
+    box.getBoundingClientRect();
+  }
+  box.classList.toggle("open", opening);
+  box.inert = !opening;
+  btn.setAttribute("aria-expanded", String(opening));
+  btn.setAttribute("aria-pressed", String(opening));
+  btn.textContent = bcT(opening ? "Hide the Golden Rules" : "Read the Golden Rules");
+  if (opening && typeof gtag === "function") gtag("event", "golden_rules_unroll", { tool });
+}
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".gr-unroll-btn");
+  if (btn) bcToggleGoldenRules(btn);
+});
+
 /* ===== GA4 click tracking ===== */
 /* Any element (anywhere on the site) can opt into GA4 click tracking by
    adding data-ga-event="<event_name>" — optionally data-ga-<param>="value"
