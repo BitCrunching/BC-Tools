@@ -234,6 +234,14 @@
     document.title = entry ? "Convert " + FORMAT_TO_SLUG[src].toUpperCase() + " to " + FORMAT_TO_SLUG[dst].toUpperCase() + " – Free Online Converter – BC Tools" : baseTitle;
   }
 
+  const outputBases = new WeakMap();
+  function defaultBaseOf(file){
+    return file.name.replace(/\.[^.]+$/, "");
+  }
+  function outputBaseOf(file){
+    return bcSafeBaseName(outputBases.get(file), defaultBaseOf(file));
+  }
+
   function appendPreviewCard(item){
     const card = document.createElement("div");
     card.className = "result" + (/\.svg$/i.test(item.name) ? " result-svg" : "");
@@ -242,6 +250,12 @@
       <div class="result-name">${item.name}</div>
       <div class="result-size">${item.info}</div>
     `;
+    if (item.file){
+      card.querySelector(".result-name").replaceWith(bcCreateRowNameInput(
+        outputBases.has(item.file) ? outputBases.get(item.file) : defaultBaseOf(item.file),
+        value => { outputBases.set(item.file, value); schedulePersist(); }
+      ));
+    }
     results.appendChild(card);
     return card;
   }
@@ -678,7 +692,7 @@
 
     files.forEach(file => {
       if (isPdfFile(file)){
-        const card = appendPreviewCard({ src: "", name: file.name, info: "PDF" });
+        const card = appendPreviewCard({ src: "", name: file.name, file, info: "PDF" });
         card.classList.add("result-pdf");
         const img = card.querySelector("img");
         previewQueue = previewQueue.then(() => getPdfThumbnail(file)).then(dataUrl => {
@@ -703,7 +717,8 @@
         const card = appendPreviewCard({
           src: "",
           name: file.name,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          file,
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         card.classList.add("result-pdf");
         card.querySelector("img").remove();
@@ -735,7 +750,8 @@
         const card = appendPreviewCard({
           src: URL.createObjectURL(file),
           name: file.name,
-          info: `Original size: ${bcFormatFileSize(file.size)}`
+          file,
+          info: `Orig. size: ${bcFormatFileSize(file.size)}`
         });
         addRemoveButton(card, file);
       }
@@ -770,6 +786,7 @@
       return;
     }
     files = combined;
+    continueBtn.hidden = true;
     revealAfterDropUI();
     renderStatus();
     /* picked.length === 0 above only catches a batch that's wholly
@@ -921,22 +938,82 @@
     });
   }
 
-  async function imagesToSinglePdf(imageFiles){
-    const { PDFDocument } = PDFLib;
-    const pdfDoc = await PDFDocument.create();
+  /* EXIF orientation of a JPEG (1 = upright). pdf-lib embeds the raw
+     bytes and ignores the tag, so the page has to rotate for it. */
+  function jpegOrientation(bytes){
+    if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return 1;
+    let o = 2;
+    while (o + 4 < bytes.length && bytes[o] === 0xFF){
+      const marker = bytes[o + 1];
+      const len = (bytes[o + 2] << 8) | bytes[o + 3];
+      if (marker === 0xE1 && bytes[o + 4] === 0x45 && bytes[o + 5] === 0x78 && bytes[o + 6] === 0x69 && bytes[o + 7] === 0x66){
+        const t = o + 10;
+        const le = bytes[t] === 0x49;
+        const u16 = p => le ? bytes[p] | (bytes[p + 1] << 8) : (bytes[p] << 8) | bytes[p + 1];
+        const u32 = p => le
+          ? (bytes[p] | (bytes[p + 1] << 8) | (bytes[p + 2] << 16) | (bytes[p + 3] << 24)) >>> 0
+          : ((bytes[p] << 24) | (bytes[p + 1] << 16) | (bytes[p + 2] << 8) | bytes[p + 3]) >>> 0;
+        const ifd = t + u32(t + 4);
+        const count = u16(ifd);
+        for (let i = 0; i < count; i++){
+          const entry = ifd + 2 + i * 12;
+          if (u16(entry) === 0x0112) return u16(entry + 8);
+        }
+        return 1;
+      }
+      if (marker === 0xDA) break;
+      o += 2 + len;
+    }
+    return 1;
+  }
 
-    for (const file of imageFiles){
-      // Rasterizes to PNG first — pdf-lib only embeds JPG/PNG directly,
-      // so this reuses the canvas pipeline for SVG/WEBP too.
-      const pngBlob = await convertImageFile(file, "image/png");
-      const pngBytes = await pngBlob.arrayBuffer();
-      const pngImage = await pdfDoc.embedPng(pngBytes);
-      const page = pdfDoc.addPage([pngImage.width, pngImage.height]);
-      page.drawImage(pngImage, { x: 0, y: 0, width: pngImage.width, height: pngImage.height });
+  /* One image -> its own PDF. JPG and PNG files are embedded as-is (no
+     re-encoding), so the PDF stays about the size of the original; other
+     formats are drawn to a canvas and embedded as high-quality JPEG. The
+     page keeps the image's aspect ratio, sized to fit A4. */
+  async function imageToPdf(file){
+    const { PDFDocument, degrees } = PDFLib;
+    const pdfDoc = await PDFDocument.create();
+    const isJpeg = file.type === "image/jpeg" || /\.jpe?g$/i.test(file.name);
+    const isPng = file.type === "image/png" || /\.png$/i.test(file.name);
+
+    let image;
+    let orientation = 1;
+    if (isJpeg){
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      orientation = jpegOrientation(bytes);
+      if (orientation === 2 || orientation === 4 || orientation === 5 || orientation === 7){
+        orientation = 1;
+        image = await pdfDoc.embedJpg(await (await convertImageFile(file, "image/jpeg")).arrayBuffer());
+      } else {
+        image = await pdfDoc.embedJpg(bytes);
+      }
+    } else if (isPng){
+      image = await pdfDoc.embedPng(await file.arrayBuffer());
+    } else {
+      image = await pdfDoc.embedJpg(await (await convertImageFile(file, "image/jpeg")).arrayBuffer());
     }
 
-    const pdfBytes = await pdfDoc.save();
-    return new Blob([pdfBytes], { type: "application/pdf" });
+    const sideways = orientation === 6 || orientation === 8;
+    const shownW = sideways ? image.height : image.width;
+    const shownH = sideways ? image.width : image.height;
+    const [boxW, boxH] = shownW >= shownH ? [842, 595] : [595, 842];
+    const scale = Math.min(boxW / shownW, boxH / shownH);
+    const pageW = shownW * scale;
+    const pageH = shownH * scale;
+    const page = pdfDoc.addPage([pageW, pageH]);
+
+    if (orientation === 6){
+      page.drawImage(image, { x: 0, y: pageH, width: pageH, height: pageW, rotate: degrees(-90) });
+    } else if (orientation === 8){
+      page.drawImage(image, { x: pageW, y: 0, width: pageH, height: pageW, rotate: degrees(90) });
+    } else if (orientation === 3){
+      page.drawImage(image, { x: pageW, y: pageH, width: pageW, height: pageH, rotate: degrees(180) });
+    } else {
+      page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
+    }
+
+    return new Blob([await pdfDoc.save()], { type: "application/pdf" });
   }
 
   async function pdfFileToImageBlobs(file, mimeType, extension){
@@ -954,7 +1031,7 @@
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
       const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 0.95));
-      const baseName = file.name.replace(/\.[^.]+$/, "");
+      const baseName = outputBaseOf(file);
       const outputName = pdf.numPages > 1
         ? `${baseName}_page${pageNum}.${extension}`
         : `${baseName}.${extension}`;
@@ -972,10 +1049,13 @@
       const useZip = outputs.length > 1 && lastZipName && effectiveUseZip(outputs.length);
       if (useZip){
         const zip = new JSZip();
-        outputs.forEach(({ blob, outputName }) => zip.file(outputName, blob));
+        const zipNames = new Set();
+        outputs.forEach(({ blob, outputName }) => zip.file(bcUniqueName(outputName, zipNames), blob));
         status.textContent = bcT("Building ZIP file...");
         downloadBlob(await zip.generateAsync({ type: "blob" }), lastZipName);
-        status.textContent = bcT("Done. ZIP contains {n} images.", { n: outputs.length });
+        status.textContent = lastZipName === "bcconvert-pdfs.zip"
+          ? bcT("Done. ZIP contains {n} PDFs.", { n: outputs.length })
+          : bcT("Done. ZIP contains {n} images.", { n: outputs.length });
       } else {
         for (const { blob, outputName } of outputs){
           downloadBlob(blob, outputName);
@@ -1010,7 +1090,6 @@
     const outputIsPdf = selectedFormat === "application/pdf";
 
     convertBtn.disabled = true;
-    convertBtn.textContent = bcT("Converting...");
     let resultsCleared = false;
     function clearResultsOnce(){
       if (resultsCleared) return;
@@ -1021,14 +1100,58 @@
     startPrivacyCheck();
     try {
       if (outputIsPdf && !inputIsPdf){
-        // Images -> single combined PDF (many-to-one)
-        status.textContent = bcT("Building PDF...");
-        const pdfBlob = await imagesToSinglePdf(files);
+        // Images -> one PDF per image (one-to-one)
+        status.textContent = bcT("Converting... 0 of {total}", { total: files.length });
+        const useZip = effectiveUseZip(files.length);
+        const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
+        const finishedResults = [];
+        let done = 0;
+
+        for (const file of files){
+          const blob = await imageToPdf(file);
+          const outputName = outputBaseOf(file) + ".pdf";
+          finishedResults.push({
+            blob,
+            outputName,
+            source: file,
+            info: `${bcFormatFileSize(file.size)} → ${bcFormatFileSize(blob.size)} • .PDF`
+          });
+
+          if (useZip){
+            zip.file(bcUniqueName(outputName, zipNames), blob);
+          } else {
+            downloadBlob(blob, outputName);
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+
+          done++;
+          status.textContent = bcT("Converting... {done} of {total}", { done, total: files.length });
+        }
+
         clearResultsOnce();
-        lastOutputs = [{ blob: pdfBlob, outputName: "bcconvert-images.pdf" }];
-        lastZipName = "";
-        downloadBlob(pdfBlob, "bcconvert-images.pdf");
-        status.textContent = bcT("Done. Created a PDF with {n} pages.", { n: files.length });
+        lastOutputs = finishedResults.slice();
+        lastZipName = "bcconvert-pdfs.zip";
+        for (const output of finishedResults){
+          const { source, outputName, info } = output;
+          const preview = isHeicFile(source) ? await decodeHeicFile(source).catch(() => null) : source;
+          const resultCard = appendPreviewCard({
+            src: preview ? URL.createObjectURL(preview) : "",
+            name: outputName,
+            info
+          });
+          addResultRemoveButton(resultCard, output);
+        }
+
+        if (useZip){
+          status.textContent = bcT("Building ZIP file...");
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          downloadBlob(zipBlob, "bcconvert-pdfs.zip");
+          status.textContent = bcT("Done. ZIP contains {n} PDFs.", { n: files.length });
+        } else {
+          const word = files.length === 1 ? "PDF" : "PDFs";
+          status.textContent = bcT("Done. Downloaded {n} {word}.", { n: files.length, word });
+        }
 
       } else if (inputIsPdf){
         // PDF(s) -> images, one per page (one-to-many)
@@ -1043,6 +1166,7 @@
 
         const useZip = effectiveUseZip(allOutputs.length);
         const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
         let done = 0;
 
         /* Result cards render an <img> each, which forces the browser
@@ -1052,7 +1176,7 @@
            loop finishes keeps that entirely off the conversion path. */
         for (const { blob, outputName } of allOutputs){
           if (useZip){
-            zip.file(outputName, blob);
+            zip.file(bcUniqueName(outputName, zipNames), blob);
           } else {
             downloadBlob(blob, outputName);
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1092,6 +1216,7 @@
         const formatMap = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
         const extension = formatMap[selectedFormat] || selectedFormat.split("/")[1];
         const zip = useZip ? new JSZip() : null;
+        const zipNames = new Set();
         const finishedResults = [];
         let done = 0;
 
@@ -1102,7 +1227,7 @@
            actually done. */
         for (const file of files){
           const blob = await convertImageFile(file, selectedFormat);
-          const outputName = file.name.replace(/\.[^.]+$/, "") + "." + extension;
+          const outputName = outputBaseOf(file) + "." + extension;
 
           finishedResults.push({
             blob,
@@ -1111,7 +1236,7 @@
           });
 
           if (useZip){
-            zip.file(outputName, blob);
+            zip.file(bcUniqueName(outputName, zipNames), blob);
           } else {
             downloadBlob(blob, outputName);
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1182,6 +1307,7 @@
       const storedFiles = await Promise.all(files.map(async f => ({
         name: f.name,
         type: f.type,
+        outputName: outputBases.get(f),
         bytes: await f.arrayBuffer()
       })));
       await bcDbPut(CV_DB_NAME, CV_DB_STORE, { files: storedFiles, selectedFormat });
@@ -1207,7 +1333,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        const restored = saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") outputBases.set(file, f.outputName);
+          return file;
+        });
         applyPickedFiles(restored);
         if (saved.selectedFormat){
           selectedFormat = saved.selectedFormat;

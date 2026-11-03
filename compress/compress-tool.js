@@ -330,6 +330,14 @@
     setTimeout(run, 100);
   }
 
+  const outputBases = new WeakMap();
+  function defaultBaseOf(file){
+    return file.name.replace(/\.[^.]+$/, "") + "_compressed";
+  }
+  function outputBaseOf(file){
+    return bcSafeBaseName(outputBases.get(file), defaultBaseOf(file));
+  }
+
   function appendPreviewCard(item){
     const card = document.createElement("div");
     card.className = "result";
@@ -338,6 +346,12 @@
       <div class="result-name">${item.name}</div>
       <div class="result-size">${item.info}</div>
     `;
+    if (item.file){
+      card.querySelector(".result-name").replaceWith(bcCreateRowNameInput(
+        outputBases.has(item.file) ? outputBases.get(item.file) : defaultBaseOf(item.file),
+        value => { outputBases.set(item.file, value); schedulePersist(); }
+      ));
+    }
     results.appendChild(card);
     if (item.src) enqueueImageLoad(card.querySelector("img"), item.src);
     return card;
@@ -377,6 +391,7 @@
       const card = appendPreviewCard({
         src: heic ? "" : URL.createObjectURL(file),
         name: file.name,
+        file,
         info: bcFormatFileSize(file.size)
       });
       if (heic){
@@ -603,6 +618,7 @@
       return;
     }
     files = files.concat(picked);
+    continueBtn.hidden = true;
     revealAfterDropUI();
     renderStatus();
     if (gifRejected){
@@ -684,7 +700,6 @@
     }
 
     compressBtn.disabled = true;
-    compressBtn.textContent = bcT("Compressing...");
     status.textContent = bcT("Compressing... 0 of {0}", [files.length]);
 
     const useZip = effectiveUseZip(files.length);
@@ -698,13 +713,14 @@
     startPrivacyCheck();
     try {
       const zip = useZip ? new JSZip() : null;
+      const zipNames = new Set();
       let done = 0;
 
       for (const file of files){
         const outputMimeType = getOutputMimeType(file);
         const extension = getOutputExtension(outputMimeType);
         const compressedBlob = await compressImageFile(file, selectedQuality, outputMimeType);
-        const outputName = file.name.replace(/\.[^.]+$/, "") + "_compressed." + extension;
+        const outputName = outputBaseOf(file) + "." + extension;
 
         const savedPercent = Math.max(0, Math.round((1 - compressedBlob.size / file.size) * 100));
         clearResultsOnce();
@@ -716,7 +732,7 @@
         addResultRemoveButton(resultCard);
 
         if (useZip){
-          zip.file(outputName, compressedBlob);
+          zip.file(bcUniqueName(outputName, zipNames), compressedBlob);
         } else {
           downloadBlob(compressedBlob, outputName);
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -766,7 +782,7 @@
     persistBusy = true;
     try {
       const storedFiles = await Promise.all(files.map(async f => {
-        const record = { name: f.name, type: f.type, bytes: await f.arrayBuffer() };
+        const record = { name: f.name, type: f.type, outputName: outputBases.get(f), bytes: await f.arrayBuffer() };
         const preview = heicPreviewCache.get(f);
         if (preview){
           record.previewBytes = await preview.arrayBuffer();
@@ -803,6 +819,7 @@
       try {
         const restored = saved.files.map(f => {
           const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") outputBases.set(file, f.outputName);
           if (f.previewBytes) heicPreviewCache.set(file, new Blob([f.previewBytes], { type: f.previewType }));
           return file;
         });

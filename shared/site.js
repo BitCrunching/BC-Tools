@@ -780,9 +780,6 @@ function showNavTerminal(text){
   el._hideTimer = setTimeout(() => el.classList.remove("show"), 2200);
 }
 
-/* Halloween skin loader — remove with shared/halloween.*. */
-(function(){ if (!document.documentElement.classList.contains("hw")) return; const s = document.createElement("script"); s.src = "/shared/halloween.js?v=22"; document.head.appendChild(s); })();
-
 /* ===== LIGHT/DARK THEME TOGGLE ===== */
 (function(){
   /* The nav button, plus any other control marked data-theme-toggle (e.g.
@@ -808,14 +805,9 @@ function showNavTerminal(text){
 
   let saved = null;
   try { saved = localStorage.getItem("bc-theme"); } catch (e) { /* storage unavailable */ }
-  const hw = root.classList.contains("hw");
-  applyTheme(hw || saved === "dark" ? "dark" : "light");
+  applyTheme(saved === "dark" ? "dark" : "light");
 
   themeBtns.forEach(themeBtn => {
-    if (hw){
-      themeBtn.disabled = true;
-      themeBtn.title = bcT("Dark mode only during Halloween");
-    }
     themeBtn.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
       const next = isLight ? "dark" : "light";
@@ -1168,6 +1160,45 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 function bcFormatFileSize(bytes){
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/* ===== Editable output file name (per file row) =====
+   Coudio's pattern, shared: the row shows an input holding the output's
+   base name (no extension — that comes from the output format); the tool
+   keeps the value per file and builds the download name from it. */
+function bcCreateRowNameInput(initial, onChange){
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "bc-row-name";
+  input.value = initial;
+  input.spellcheck = false;
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", bcT("Output file name"));
+  input.title = bcT("Output file name");
+  input.addEventListener("input", () => onChange(input.value));
+  ["click", "pointerdown", "dragstart"].forEach(type => input.addEventListener(type, e => e.stopPropagation()));
+  input.draggable = false;
+  return input;
+}
+function bcSafeBaseName(value, fallback){
+  const cleaned = (value || "").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "").trim();
+  return cleaned || fallback;
+}
+/* Names collide once files can be renamed (two files both called "scan");
+   a ZIP would silently keep only the last, so suffix " (2)", " (3)"... */
+function bcUniqueName(name, used){
+  if (!used.has(name)){
+    used.add(name);
+    return name;
+  }
+  const m = name.match(/^(.*?)(\.[^.]+)?$/);
+  for (let i = 2; ; i++){
+    const candidate = `${m[1]} (${i})${m[2] || ""}`;
+    if (!used.has(candidate)){
+      used.add(candidate);
+      return candidate;
+    }
+  }
 }
 
 /* ===== SHARED "CONTINUE WHERE YOU LEFT OFF" PERSISTENCE =====

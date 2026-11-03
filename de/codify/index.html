@@ -13,12 +13,10 @@
      light/dark default logic if that ever changes. -->
 <script>
 (function(){
-  var hw = !/[?&]hw=off\b/.test(location.search) && (/[?&]hw=on\b/.test(location.search) || Date.now() < new Date(2026, 10, 3).getTime());
-  if (hw) document.documentElement.classList.add("hw");
   try {
     var t = localStorage.getItem("bc-theme");
-    document.documentElement.setAttribute("data-theme", hw || t === "dark" ? "dark" : "light");
-  } catch(e){ if (hw) document.documentElement.setAttribute("data-theme", "dark"); }
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
   /* Moved up from shared/site.js (deferred, so it only ran after full
      HTML parsing) — set here instead so the browser's own native scroll
      restoration is disabled from the very first possible moment, not
@@ -46,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/codify/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/codify/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/codify/">
-<script src="/shared/i18n/de.js?v=8"></script>
+<script src="/shared/i18n/de.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Codify – Kostenloser Code-Screenshot-Generator – BC Tools">
@@ -75,9 +73,9 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=296">
+<link rel="stylesheet" href="/shared/site.css?v=297">
 <script>window.Prism = { manual: true };</script>
-<script src="/vendor/prism.min.js?v=3"></script>
+<script src="/vendor/prism.min.js?v=4"></script>
 <link rel="stylesheet" href="/vendor/prism-dracula.css" id="cfThemeLink">
 <style>
 #page-codify::before{
@@ -1715,7 +1713,7 @@
 
     </div>
 
-    <div class="cf-preview-wrap" id="cfPreviewWrap">
+    <div class="cf-preview-wrap bc-hover-reveal-host" id="cfPreviewWrap">
       <!-- Mac nav/Shadow's zone outlines live directly in the wrap, not
            inside #cfWindow — their real click zone (see previewWrap's
            click listener in codify-tool.js) is the wrap's own padding
@@ -1738,10 +1736,10 @@
           <div class="cf-hod-zone cf-hod-zone-template" aria-hidden="true"></div>
           <div class="cf-hod-zone cf-hod-zone-theme" aria-hidden="true"></div>
         </div>
-        <span class="cf-window-resize-handle bc-resize-handle" id="cfWindowResizeHandle" role="slider" aria-label="Größe des Snippet-Bereichs" tabindex="0"></span>
+        <span class="cf-window-resize-handle bc-resize-handle bc-hover-reveal" id="cfWindowResizeHandle" role="slider" aria-label="Größe des Snippet-Bereichs" tabindex="0"></span>
       </div>
       <div class="cf-hod-zone cf-hod-zone-bg cf-hod-zone-bg-right" aria-hidden="true"></div>
-      <span class="cf-resize-handle bc-resize-handle" id="cfResizeHandle" role="slider" aria-label="Größe des Hintergrundbereichs" tabindex="0"></span>
+      <span class="cf-resize-handle bc-resize-handle bc-hover-reveal" id="cfResizeHandle" role="slider" aria-label="Größe des Hintergrundbereichs" tabindex="0"></span>
     </div>
 
     <div class="cf-filename-row">
@@ -1838,10 +1836,10 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=122" defer></script>
-<script src="/shared/report.js?v=32" defer></script>
+<script src="/shared/site.js?v=123" defer></script>
+<script src="/shared/report.js?v=33" defer></script>
 <script src="/vendor/html-to-image.min.js"></script>
-<script src="/codify/codify-pure.js?v=1" defer></script>
-<script src="/codify/codify-tool.js?v=126" defer></script>
+<script src="/codify/codify-pure.js?v=2" defer></script>
+<script src="/codify/codify-tool.js?v=127" defer></script>
 </body>
 </html>

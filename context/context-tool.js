@@ -40,6 +40,7 @@
   const overlay = document.getElementById("ctOverlay");
   const canvasWrap = document.getElementById("ctCanvasWrap");
   const addTextBtn = document.getElementById("ctAddTextBtn");
+  const addDateBtn = document.getElementById("ctAddDateBtn");
   const fontSizeTrigger = document.getElementById("ctFontSizeTrigger");
   const fontSizeInput = document.getElementById("ctFontSizeInput");
   const fontSizeMenu = document.getElementById("ctFontSizeMenu");
@@ -74,11 +75,6 @@
   const toolbarEl = document.querySelector("#page-context .context-toolbar");
   const previewPanel = document.querySelector("#page-context .context-preview-panel");
   const filenameInput = document.getElementById("ctFilenameInput");
-  const filenameDropdown = document.getElementById("ctFilenameDropdown");
-  const filenameTrigger = document.getElementById("ctFilenameTrigger");
-  const filenameTriggerLabel = document.getElementById("ctFilenameTriggerLabel");
-  const filenamePopup = document.getElementById("ctFilenamePopup");
-  const filenameClear = document.getElementById("ctFilenameClear");
   const status = document.getElementById("ctStatus");
   if (!drop || !input || !editor || !canvas || !overlay || !downloadBtn) return;
 
@@ -136,6 +132,7 @@
   let historyTimer = null;
   let applyingHistory = false;
   let activeShapeKind = "triangle";
+  let activeShapeOutline = false;
   let currentFileBytes = null;
 
   function isPdfFile(f){
@@ -321,7 +318,6 @@
     filenameInput.value = restoreState && restoreState.filenameValue
       ? restoreState.filenameValue
       : file.name.replace(/\.pdf$/i, "") + "-context";
-    updateFilenameTriggerLabel();
 
     /* Render into the canvas while it's still hidden (off-screen canvas
        drawing works fine) so the preview panel only ever appears with
@@ -1046,7 +1042,26 @@
     }
   };
   const isMarkKind = kind => kind === "check" || kind === "xmark";
-  function shapeSvg(kind, color, bold){
+  /* Outline ("stroke") variants: no fill, only the edge in the shape's
+     colour. The base shapes are inset by half the stroke so the line stays
+     inside the 0-100 box; the marks keep their polygons with a thinner
+     line and may overshoot by a hair (overflow is visible). */
+  const OUTLINE_STROKE = 8;
+  const MARK_OUTLINE_STROKE = 4;
+  const OUTLINE_SHAPES = {
+    circle: '<circle cx="50" cy="50" r="46" />',
+    square: '<rect x="4" y="4" width="92" height="92" />',
+    triangle: '<polygon points="50,10 90,92 10,92" />',
+    cross: '<polygon points="39,6 61,6 61,39 94,39 94,61 61,61 61,94 39,94 39,61 6,61 6,39 39,39" />'
+  };
+  function shapeSvg(kind, color, bold, outline){
+    if (outline){
+      const mark = isMarkKind(kind);
+      const body = mark
+        ? '<polygon points="' + MARK_POINTS[kind][bold ? "bold" : "thin"] + '" />'
+        : OUTLINE_SHAPES[kind] || OUTLINE_SHAPES.circle;
+      return `<svg viewBox="0 0 100 100" fill="none" stroke="${color}" stroke-width="${mark ? MARK_OUTLINE_STROKE : OUTLINE_STROKE}" stroke-linejoin="round" stroke-linecap="round" preserveAspectRatio="none" style="overflow:visible">${body}</svg>`;
+    }
     const shapes = {
       circle: '<circle cx="50" cy="50" r="48" />',
       square: '<rect x="2" y="2" width="96" height="96" />',
@@ -1059,13 +1074,16 @@
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
+  const shapeOptionFor = (kind, outline) =>
+    shapeKindMenu.querySelector('[data-kind="' + kind + '"][data-outline="' + (outline ? "1" : "0") + '"]');
 
   /* The shape button shows the currently chosen shape (not a fixed
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
-    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor").replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor", false, activeShapeOutline).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
     const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
-    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [kindLabels[activeShapeKind] || bcT(activeShapeKind)]);
+    const kindLabel = kindLabels[activeShapeKind] || bcT(activeShapeKind);
+    shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [activeShapeOutline ? kindLabel + " " + bcT("outline") : kindLabel]);
   }
 
   /* Scales an "M x y L x y ... Z" path string's coordinates by sx/sy
@@ -1082,6 +1100,14 @@
       return "M" + MARK_POINTS[box.kind][box.bold ? "bold" : "thin"].split(" ").map(pt => pt.replace(",", " ")).join(" L") + " Z";
     }
     return SHAPE_PATHS[box.kind];
+  }
+  const OUTLINE_PATHS = {
+    square: "M4 4 L96 4 L96 96 L4 96 Z",
+    triangle: "M50 10 L90 92 L10 92 Z",
+    cross: "M39 6 L61 6 L61 39 L94 39 L94 61 L61 61 L61 94 L39 94 L39 61 L6 61 L6 39 L39 39 Z"
+  };
+  function outlinePathFor(box){
+    return OUTLINE_PATHS[box.kind] || shapePathFor(box);
   }
   function scaleSvgPath(path, sx, sy){
     return path.replace(/([ML])\s*(-?[\d.]+)\s+(-?[\d.]+)/g, (match, cmd, x, y) => {
@@ -1112,7 +1138,7 @@
     el.style.width = (box.widthPt * scale) + "px";
     el.style.height = (box.heightPt * scale) + "px";
     applyShapeRotation(el, box.rotation || 0);
-    el.innerHTML = shapeSvg(box.kind, box.color, box.bold);
+    el.innerHTML = shapeSvg(box.kind, box.color, box.bold, box.outline);
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -1161,8 +1187,9 @@
       deselectShapeBox();
       selectedShapeId = box.id;
       el.classList.add("selected");
-      bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + box.kind + '"]'));
+      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
       activeShapeKind = box.kind;
+      activeShapeOutline = !!box.outline;
       renderShapeBtnIcon();
       if (isMarkKind(box.kind)){
         activeBold = !!box.bold;
@@ -1295,6 +1322,7 @@
       widthPt,
       heightPt,
       kind: activeShapeKind,
+      outline: activeShapeOutline,
       color: activeColor,
       bold: mark && activeBold
     };
@@ -1382,7 +1410,12 @@
   }
   async function updateSizeStatus(){
     const token = ++sizeToken;
-    if (!currentFile){ sizeStatus.textContent = ""; return; }
+    if (!currentFile){
+      sizeStatus.textContent = "";
+      compressWrap.hidden = true;
+      compressInfoTip.hidden = true;
+      return;
+    }
     let total = currentFile.size;
     const texts = textBoxes.filter(b => b.text);
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
@@ -1450,7 +1483,8 @@
   const compressWrap = document.getElementById("ctCompressWrap");
   const compressBtn = document.getElementById("ctCompressBtn");
   let compressBusy = false;
-  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), document.getElementById("ctCompressInfoTip"));
+  const compressInfoTip = document.getElementById("ctCompressInfoTip");
+  bcRegisterInfoTooltip(document.getElementById("ctCompressInfoBtn"), compressInfoTip);
 
   function eligibleImages(pdf){
     const { PDFName, PDFRawStream, PDFArray, PDFNumber } = PDFLib;
@@ -1564,6 +1598,7 @@
     compressBusy = true;
     compressWrap.hidden = true;
     downloadBtn.disabled = true;
+    const source = currentFile;
     const original = new Uint8Array(await currentFile.arrayBuffer());
     const before = original.length;
     let best = null;
@@ -1573,7 +1608,7 @@
       let idx = await pickCompressStep(original);
       for (let attempt = 0; attempt < 3; attempt++){
         const out = await recompressImages(original, COMPRESS_STEPS[idx], (n, total) => {
-          status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
+          if (currentFile === source) status.textContent = bcT("Compressing... image {0} of {1}", [n, total]);
         });
         if (!best || out.length < best.length) best = out;
         if (out.length <= COMPRESS_TARGET || idx >= COMPRESS_STEPS.length - 1) break;
@@ -1581,10 +1616,16 @@
       }
     } catch (err){
       console.error(err);
+      if (currentFile !== source){ compressBusy = false; if (!currentFile) status.textContent = ""; return; }
       status.textContent = bcT("Couldn't compress this PDF.");
       compressBusy = false;
       downloadBtn.disabled = false;
       compressWrap.hidden = false;
+      return;
+    }
+    if (currentFile !== source){
+      compressBusy = false;
+      if (!currentFile) status.textContent = "";
       return;
     }
     if (!best || best.length >= before){
@@ -1595,6 +1636,7 @@
       currentFileBytes = best.slice().buffer;
       try {
         const doc = await pdfjsLib.getDocument({ data: best.slice() }).promise;
+        if (currentFile !== file){ compressBusy = false; return; }
         clearPageCache();
         pdfjsDoc = doc;
         await renderPage();
@@ -1633,7 +1675,7 @@
     noteCreated("sig", box.id);
   }
 
-  function addTextBox(){
+  function addTextBox(text = "Lorem Ipsum"){
     const sizePt = activeSize;
     const box = {
       id: ++boxIdSeq,
@@ -1646,7 +1688,7 @@
       bold: activeBold,
       italic: activeItalic,
       underline: activeUnderline,
-      text: "Lorem Ipsum"
+      text
     };
     textBoxes.push(box);
     deselectSignatureBox();
@@ -1691,7 +1733,8 @@
     onDrop: e => { if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); }
   });
 
-  addTextBtn.addEventListener("click", addTextBox);
+  addTextBtn.addEventListener("click", () => addTextBox());
+  addDateBtn.addEventListener("click", () => addTextBox(todayString()));
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
      tooltip and accessible label. */
@@ -1699,11 +1742,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true, opt.dataset.outline === "1").replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
-  bcSetDropdownActive(shapeKindMenu, shapeKindMenu.querySelector('[data-kind="' + activeShapeKind + '"]'));
+  bcSetDropdownActive(shapeKindMenu, shapeOptionFor(activeShapeKind, activeShapeOutline));
 
   /* A tap adds the preselected shape; holding the button for 250 ms opens
      the Circle/Square/Triangle/... menu instead, and picking a kind there
@@ -1780,6 +1823,7 @@
   shapeBtn.addEventListener("contextmenu", e => e.preventDefault());
   bcRegisterDropdown(shapeBtn, shapeKindMenu, (opt) => {
     activeShapeKind = opt.dataset.kind;
+    activeShapeOutline = opt.dataset.outline === "1";
     renderShapeBtnIcon();
     if (!selectedShapeId){
       addShapeBox();
@@ -1791,6 +1835,7 @@
       return;
     }
     shape.kind = activeShapeKind;
+    shape.outline = activeShapeOutline;
     const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
     const oldSvg = shapeEl && shapeEl.querySelector("svg");
     if (oldSvg){
@@ -1798,7 +1843,7 @@
          separate elements right alongside it and keep their own JS
          listeners untouched this way, unlike a full innerHTML rebuild
          which would silently drop all three. */
-      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+      oldSvg.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold, shape.outline);
     }
     schedulePersist();
   });
@@ -1825,7 +1870,6 @@
     editor.hidden = true;
     downloadBtn.disabled = true;
     filenameInput.value = "";
-    updateFilenameTriggerLabel();
     status.textContent = "";
     ctxDbClear();
   }
@@ -1869,13 +1913,6 @@
     document.body.appendChild(fullscreenOverlay);
     fullscreenCanvasArea.appendChild(previewPanel);
     fullscreenBar.appendChild(toolbarEl);
-    /* The rename popup is pinned (position:fixed) to the top of the
-       screen — keeping it as a direct child of the overlay (rather
-       than nested inside the toolbar) means its own position:fixed
-       resolves against this overlay's box, not wherever inside the
-       toolbar it happened to sit; moved back on close so its home DOM
-       position is unchanged outside fullscreen. */
-    fullscreenOverlay.appendChild(filenamePopup);
     fullscreenOverlay.hidden = false;
     /* Belt-and-suspenders: force the critical positioning inline so a
        stale cached stylesheet (a real, previously-seen failure mode on
@@ -1938,9 +1975,6 @@
     resetFsZoom();
     editor.insertBefore(toolbarEl, editor.firstChild);
     editor.appendChild(previewPanel);
-    filenameDropdown.appendChild(filenamePopup);
-    filenamePopup.hidden = true;
-    filenameTrigger.setAttribute("aria-expanded", "false");
     /* Restores original source order: toolbar, then panel, then the
        overlay last — matching the markup this was moved out of in
        openFullscreen. */
@@ -2193,7 +2227,7 @@
           shape.bold = nowActive;
           const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + shape.id + '"]');
           const svgEl = shapeEl && shapeEl.querySelector("svg");
-          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold);
+          if (svgEl) svgEl.outerHTML = shapeSvg(shape.kind, shape.color, shape.bold, shape.outline);
           schedulePersist();
         }
       }
@@ -2209,10 +2243,11 @@
   toggleStyleProp(underlineBtn, "underline", "textDecoration", "underline", "none");
 
   bcRegisterKeyShortcut("t", addTextBtn);
+  bcRegisterKeyShortcut("e", addDateBtn);
   bcRegisterKeyShortcut("b", boldBtn);
   bcRegisterKeyShortcut("i", italicBtn);
   bcRegisterKeyShortcut("u", underlineBtn);
-  bcRegisterKeyShortcut("r", filenameTrigger);
+  bcRegisterKeyShortcut("r", { click(){ filenameInput.focus({ preventScroll: true }); filenameInput.select(); } });
   bcRegisterKeyShortcut("d", downloadBtn);
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
@@ -2417,12 +2452,10 @@
 
   bcRegisterEscapable(() => isFullscreen, () => closeFullscreen(), 90);
   bcRegisterEscapable(
-    () => !colorMenu.hidden || !filenamePopup.hidden,
+    () => !colorMenu.hidden,
     () => {
       colorMenu.hidden = true;
       colorTrigger.setAttribute("aria-expanded", "false");
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
     },
     70
   );
@@ -2432,82 +2465,10 @@
       colorMenu.hidden = true;
       colorTrigger.setAttribute("aria-expanded", "false");
     }
-    if (!filenameDropdown.contains(e.target)){
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  /* Trigger always reads "Rename file" — the actual current name shows
-     inside the popup itself once opened, not on the button. */
-  function updateFilenameTriggerLabel(){
-    filenameTriggerLabel.textContent = bcT("Rename file");
-  }
-
-  /* The popup defaults to right:0 on its dropdown container, which only
-     sits flush with the viewport's right edge on wide screens. On
-     narrow viewports the container can be anywhere in the flex-wrapped
-     toolbar, so a near-full-width popup can run off the LEFT edge of
-     the screen. Clamp it on-screen explicitly, and keep it clamped if
-     the viewport resizes (e.g. a phone rotating) while it's open. */
-  function clampFilenamePopup(){
-    /* In fullscreen the popup is pinned to the top of the screen via
-       CSS (position:fixed, left/right:16px) instead of being anchored
-       relative to the trigger button — this trigger-relative math
-       would fight that and misplace it, so skip it entirely there. */
-    if (isFullscreen) return;
-    filenamePopup.style.left = "";
-    filenamePopup.style.right = "";
-    const margin = 12;
-    const containerRect = filenameDropdown.getBoundingClientRect();
-    const popupWidth = filenamePopup.offsetWidth;
-    const naturalLeft = containerRect.right - popupWidth;
-    const clampedLeft = Math.max(margin, Math.min(naturalLeft, window.innerWidth - popupWidth - margin));
-    if (clampedLeft !== naturalLeft){
-      filenamePopup.style.left = (clampedLeft - containerRect.left) + "px";
-      filenamePopup.style.right = "auto";
-    }
-  }
-
-  bcRegisterPopup(() => {
-    filenamePopup.hidden = true;
-    filenameTrigger.setAttribute("aria-expanded", "false");
-  });
-  filenameTrigger.addEventListener("click", () => {
-    const willOpen = filenamePopup.hidden;
-    if (willOpen) bcCloseAllPopups();
-    filenamePopup.hidden = !willOpen;
-    filenameTrigger.setAttribute("aria-expanded", String(willOpen));
-    if (willOpen){
-      clampFilenamePopup();
-      /* preventScroll stops iOS Safari's native "scroll the focused
-         input above the keyboard" behavior — inside fullscreen that
-         scroll drags the whole real document (including the footer
-         sitting below the fixed overlay) into view, since it isn't
-         blocked by the documentElement overflow:hidden lock used
-         everywhere else here. */
-      filenameInput.focus({ preventScroll: true });
-      filenameInput.select();
-    }
-  });
-
-  window.addEventListener("resize", () => {
-    if (!filenamePopup.hidden) clampFilenamePopup();
-  });
-
-  filenameInput.addEventListener("input", updateFilenameTriggerLabel);
-
-  filenameClear.addEventListener("click", () => {
-    filenameInput.value = "";
-    updateFilenameTriggerLabel();
-    filenameInput.focus({ preventScroll: true });
   });
 
   filenameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      filenamePopup.hidden = true;
-      filenameTrigger.setAttribute("aria-expanded", "false");
-    }
+    if (e.key === "Enter") filenameInput.blur();
   });
 
   prevPageBtn.addEventListener("click", () => {
@@ -2736,7 +2697,30 @@
           y: mid.y + (p.x - mid.x) * Math.sin(phi) + (p.y - mid.y) * Math.cos(phi)
         });
         const { x, y } = around(toPdf(box.xPt, box.topPt + box.heightPt));
-        if (box.kind === "square"){
+        if (box.outline){
+          const borderWidth = (isMarkKind(box.kind) ? MARK_OUTLINE_STROKE : OUTLINE_STROKE) / 100 * Math.min(box.widthPt, box.heightPt);
+          if (box.kind === "circle"){
+            const center = toPdf(box.xPt + box.widthPt / 2, box.topPt + box.heightPt / 2);
+            page.drawEllipse({
+              x: center.x,
+              y: center.y,
+              xScale: box.widthPt / 2 * 0.92,
+              yScale: box.heightPt / 2 * 0.92,
+              borderColor: color,
+              borderWidth,
+              rotate: turn
+            });
+          } else {
+            const top = around(toPdf(box.xPt, box.topPt));
+            page.drawSvgPath(scaleSvgPath(outlinePathFor(box), box.widthPt / 100, box.heightPt / 100), {
+              x: top.x,
+              y: top.y,
+              borderColor: color,
+              borderWidth,
+              rotate: turn
+            });
+          }
+        } else if (box.kind === "square"){
           page.drawRectangle({ x, y, width: box.widthPt, height: box.heightPt, color, rotate: turn });
         } else if (shapePathFor(box)){
           /* Triangle, cross and the two marks are the same polygons as
