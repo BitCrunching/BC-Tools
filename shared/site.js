@@ -159,7 +159,23 @@ async function bcFillGoldenRules(box, tool){
   const src = doc.querySelector('.golden-rules-articles[data-tool="' + tool + '"]');
   if (!src) throw new Error("golden rules tool");
   const clip = box.querySelector(".gr-inline-clip");
-  [...src.children].forEach(el => clip.appendChild(document.importNode(el, true)));
+  src.querySelectorAll("details.golden-rules-article").forEach(d => {
+    const art = document.createElement("div");
+    art.className = "gr-article";
+    const h = document.createElement("h3");
+    h.textContent = d.querySelector("summary").textContent;
+    art.appendChild(h);
+    d.querySelectorAll(".golden-rules-body > *").forEach(el => {
+      let node = document.importNode(el, true);
+      if (node.tagName === "H3"){
+        const h4 = document.createElement("h4");
+        h4.innerHTML = node.innerHTML;
+        node = h4;
+      }
+      art.appendChild(node);
+    });
+    clip.appendChild(art);
+  });
 }
 async function bcToggleGoldenRules(btn){
   const tool = btn.dataset.tool;
