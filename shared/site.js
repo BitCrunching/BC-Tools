@@ -150,18 +150,18 @@ document.addEventListener("click", (e) => {
   }
 });
 
-/* ===== Golden Rules unrolled on a tool page ===== */
-const grInlineLoaded = {};
-async function bcFillGoldenRules(box, tool){
+/* ===== Golden Rules articles shown on a tool page ===== */
+let grInlinePromise = null;
+async function bcFillGoldenRules(box){
   const res = await fetch(bcLangPath("/golden-rules/"));
   if (!res.ok) throw new Error("golden rules");
   const doc = new DOMParser().parseFromString(await res.text(), "text/html");
-  const src = doc.querySelector('.golden-rules-articles[data-tool="' + tool + '"]');
+  const src = doc.querySelector('.golden-rules-articles[data-tool="' + box.dataset.tool + '"]');
   if (!src) throw new Error("golden rules tool");
-  const clip = box.querySelector(".gr-inline-clip");
-  src.querySelectorAll("details.golden-rules-article").forEach(d => {
+  src.querySelectorAll("details.golden-rules-article").forEach((d, i) => {
     const art = document.createElement("div");
     art.className = "gr-article";
+    art.id = "gr-article-" + (i + 1);
     const h = document.createElement("h3");
     h.textContent = d.querySelector("summary").textContent;
     art.appendChild(h);
@@ -174,35 +174,24 @@ async function bcFillGoldenRules(box, tool){
       }
       art.appendChild(node);
     });
-    clip.appendChild(art);
+    box.appendChild(art);
   });
 }
-async function bcToggleGoldenRules(btn){
-  const tool = btn.dataset.tool;
-  const box = document.getElementById(btn.getAttribute("aria-controls"));
-  if (!box) return;
-  const opening = btn.getAttribute("aria-expanded") !== "true";
-  if (opening && !grInlineLoaded[tool]){
-    btn.disabled = true;
-    try {
-      await bcFillGoldenRules(box, tool);
-      grInlineLoaded[tool] = true;
-    } catch (err){
-      location.href = bcLangPath("/golden-rules/") + "?tool=" + encodeURIComponent(tool);
-      return;
-    } finally { btn.disabled = false; }
-    box.getBoundingClientRect();
-  }
-  box.classList.toggle("open", opening);
-  box.inert = !opening;
-  btn.setAttribute("aria-expanded", String(opening));
-  btn.setAttribute("aria-pressed", String(opening));
-  btn.textContent = bcT(opening ? "I wanna see less" : "I wanna see more");
-  if (opening && typeof gtag === "function") gtag("event", "golden_rules_unroll", { tool });
+function bcLoadGoldenRules(){
+  const box = document.querySelector(".gr-inline[data-tool]");
+  if (!box) return null;
+  if (!grInlinePromise) grInlinePromise = bcFillGoldenRules(box).catch(() => null);
+  return grInlinePromise;
 }
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".gr-unroll-btn");
-  if (btn) bcToggleGoldenRules(btn);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bcLoadGoldenRules);
+else bcLoadGoldenRules();
+document.addEventListener("click", async (e) => {
+  const link = e.target.closest(".gr-topics a");
+  if (!link) return;
+  e.preventDefault();
+  await bcLoadGoldenRules();
+  const art = document.getElementById(link.getAttribute("href").slice(1));
+  if (art) art.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 /* ===== GA4 click tracking ===== */
