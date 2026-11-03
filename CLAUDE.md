@@ -426,9 +426,7 @@ site doesn't catch a throw from its async callback.
 - `development` is the day-to-day branch; `main` deploys (GitHub Pages).
   For a discrete unit (new tool, redesign, multi-file sync) branch
   `dev-<project>` off `main`, merge when ready, then delete it. A
-  single-file bugfix may go straight to `main`. `dev-original` is the
-  untouched snapshot of `development` before the Halloween merge — never
-  commit to it.
+  single-file bugfix may go straight to `main`.
 - **Dev-only files — never on `main`:** `CLAUDE.md`, `.release-drafts/`,
   `ads.txt`. So never fast-forward `development` onto `main`
   (`git push origin development:main`) and never merge `main` into

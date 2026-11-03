@@ -40,6 +40,7 @@
   const overlay = document.getElementById("ctOverlay");
   const canvasWrap = document.getElementById("ctCanvasWrap");
   const addTextBtn = document.getElementById("ctAddTextBtn");
+  const addDateBtn = document.getElementById("ctAddDateBtn");
   const fontSizeTrigger = document.getElementById("ctFontSizeTrigger");
   const fontSizeInput = document.getElementById("ctFontSizeInput");
   const fontSizeMenu = document.getElementById("ctFontSizeMenu");
@@ -1674,7 +1675,7 @@
     noteCreated("sig", box.id);
   }
 
-  function addTextBox(){
+  function addTextBox(text = "Lorem Ipsum"){
     const sizePt = activeSize;
     const box = {
       id: ++boxIdSeq,
@@ -1687,7 +1688,7 @@
       bold: activeBold,
       italic: activeItalic,
       underline: activeUnderline,
-      text: "Lorem Ipsum"
+      text
     };
     textBoxes.push(box);
     deselectSignatureBox();
@@ -1732,7 +1733,8 @@
     onDrop: e => { if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); }
   });
 
-  addTextBtn.addEventListener("click", addTextBox);
+  addTextBtn.addEventListener("click", () => addTextBox());
+  addDateBtn.addEventListener("click", () => addTextBox(todayString()));
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
      tooltip and accessible label. */
@@ -2241,6 +2243,7 @@
   toggleStyleProp(underlineBtn, "underline", "textDecoration", "underline", "none");
 
   bcRegisterKeyShortcut("t", addTextBtn);
+  bcRegisterKeyShortcut("e", addDateBtn);
   bcRegisterKeyShortcut("b", boldBtn);
   bcRegisterKeyShortcut("i", italicBtn);
   bcRegisterKeyShortcut("u", underlineBtn);
