@@ -18,7 +18,7 @@
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
     ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
-    ["REDACT_IT", "Press Redact (X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good."],
+    ["REDACT_IT", "Pick Redact at the bottom of the shape menu (or press X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
     ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
@@ -42,7 +42,6 @@
   const canvasWrap = document.getElementById("ctCanvasWrap");
   const addTextBtn = document.getElementById("ctAddTextBtn");
   const addDateBtn = document.getElementById("ctAddDateBtn");
-  const redactBtn = document.getElementById("ctRedactBtn");
   const fontSizeTrigger = document.getElementById("ctFontSizeTrigger");
   const fontSizeInput = document.getElementById("ctFontSizeInput");
   const fontSizeMenu = document.getElementById("ctFontSizeMenu");
@@ -1079,14 +1078,17 @@
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
+  const redactIconSvg = '<svg viewBox="0 0 100 100" fill="currentColor"><rect x="4" y="32" width="92" height="36" rx="4" /></svg>';
+  const shapeIconSvg = (kind, outline, bold) =>
+    kind === "redact" ? redactIconSvg : shapeSvg(kind, "currentColor", bold, outline);
   const shapeOptionFor = (kind, outline) =>
     shapeKindMenu.querySelector('[data-kind="' + kind + '"][data-outline="' + (outline ? "1" : "0") + '"]');
 
   /* The shape button shows the currently chosen shape (not a fixed
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
-    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor", false, activeShapeOutline).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
+    shapeBtn.innerHTML = shapeIconSvg(activeShapeKind, activeShapeOutline, false).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    const kindLabels = { check: "Checkmark", xmark: "Crossmark", redact: "Redact" };
     const kindLabel = kindLabels[activeShapeKind] || bcT(activeShapeKind);
     shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [activeShapeOutline ? kindLabel + " " + bcT("outline") : kindLabel]);
   }
@@ -1319,6 +1321,10 @@
   });
 
   function addShapeBox(){
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     /* The two form marks land small, sized for ticking a checkbox. */
     const mark = isMarkKind(activeShapeKind);
     const widthPt = mark ? 16 : 100;
@@ -1766,7 +1772,6 @@
 
   addTextBtn.addEventListener("click", () => addTextBox());
   addDateBtn.addEventListener("click", () => addTextBox(todayString()));
-  redactBtn.addEventListener("click", addRedactBox);
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
      tooltip and accessible label. */
@@ -1774,7 +1779,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true, opt.dataset.outline === "1").replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    opt.innerHTML = shapeIconSvg(opt.dataset.kind, opt.dataset.outline === "1", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    if (opt.dataset.kind === "redact"){
+      opt.title = label + " (X)";
+      opt.insertAdjacentHTML("beforeend", "<span>" + label + "</span>");
+    }
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
@@ -1857,6 +1866,10 @@
     activeShapeKind = opt.dataset.kind;
     activeShapeOutline = opt.dataset.outline === "1";
     renderShapeBtnIcon();
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     if (!selectedShapeId){
       addShapeBox();
       return;
@@ -2287,7 +2300,7 @@
   const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
-  bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) redactBtn.click(); } });
+  bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) addRedactBox(); } });
 
   document.addEventListener("pointerdown", e => {
     if (!e.target.closest) return;
