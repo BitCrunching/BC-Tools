@@ -473,6 +473,15 @@
     }
     const wrapMaxWidth = Math.min(760, availableWidth);
     scale = Math.min(wrapMaxWidth / baseViewport.width, 1.4);
+    if (isFullscreen){
+      const areaStyle = getComputedStyle(fullscreenCanvasArea);
+      const bar = previewPanel.querySelector(".context-panel-bar");
+      const availableHeight = fullscreenCanvasArea.clientHeight
+        - parseFloat(areaStyle.paddingTop) - parseFloat(areaStyle.paddingBottom)
+        - (bar ? bar.offsetHeight + 24 : 60);
+      const fitHeight = availableHeight / baseViewport.height;
+      if (fitHeight > scale * 0.5) scale = Math.min(scale, fitHeight);
+    }
     const viewport = page.getViewport({ scale });
 
     /* Canvas backing resolution was previously 1 device pixel per CSS

@@ -219,6 +219,15 @@
   position:relative;
 }
 
+.context-toolbar{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+.context-toolbar input{
+  -webkit-user-select:text;
+  user-select:text;
+}
 #ctShapeBtn{
   touch-action:manipulation;
   user-select:none;
@@ -1611,6 +1620,24 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 }
 
 
+/* Narrow phones (iPhone mini, SE): the single mobile toolbar row is a few
+   points wider than the screen, so trim its padding and wrap below 340. */
+@media (max-width:380px){
+  .context-fullscreen-bar .context-toolbar{
+    padding-left:4px;
+    padding-right:4px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-tool-btn,
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{
+    padding:0 6px;
+  }
+}
+@media (max-width:340px){
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+}
 </style>
 </head>
 <body>
@@ -2124,6 +2151,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=135" defer></script>
+<script src="/context/context-tool.js?v=136" defer></script>
 </body>
 </html>
