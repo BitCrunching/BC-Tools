@@ -18,7 +18,7 @@
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
     ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
-    ["REDACT_IT", "Press Redact (X) to drop a black box over anything private, then drag and resize it. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good. The page's text can no longer be selected or searched."],
+    ["REDACT_IT", "Press Redact (X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good. The page's text can no longer be selected or searched."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
     ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
@@ -1058,7 +1058,7 @@
   };
   function shapeSvg(kind, color, bold, outline){
     if (kind === "redact"){
-      return '<svg viewBox="0 0 100 100" fill="#000000" preserveAspectRatio="none"><rect width="100" height="100" /></svg>';
+      return '<svg viewBox="0 0 100 100" fill="' + color + '" preserveAspectRatio="none"><rect width="100" height="100" /></svg>';
     }
     if (outline){
       const mark = isMarkKind(kind);
@@ -1194,14 +1194,15 @@
       deselectShapeBox();
       selectedShapeId = box.id;
       el.classList.add("selected");
-      if (redact) return;
-      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
-      activeShapeKind = box.kind;
-      activeShapeOutline = !!box.outline;
-      renderShapeBtnIcon();
-      if (isMarkKind(box.kind)){
-        activeBold = !!box.bold;
-        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      if (!redact){
+        bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
+        activeShapeKind = box.kind;
+        activeShapeOutline = !!box.outline;
+        renderShapeBtnIcon();
+        if (isMarkKind(box.kind)){
+          activeBold = !!box.bold;
+          boldBtn.setAttribute("aria-pressed", String(activeBold));
+        }
       }
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
@@ -1250,8 +1251,6 @@
       el.style.width = (box.widthPt * scale) + "px";
       el.style.height = (box.heightPt * scale) + "px";
     });
-
-    if (redact) return el;
 
     const rotateHandle = document.createElement("span");
     rotateHandle.className = "context-shape-rotate-handle bc-obj-drag-handle";
@@ -1356,7 +1355,7 @@
       widthPt,
       heightPt,
       kind: "redact",
-      color: "#000000"
+      color: activeColor
     };
     shapeBoxes.push(box);
     deselectBox();
@@ -2215,7 +2214,7 @@
       }
     } else if (selectedShapeId){
       const shape = findShapeBoxById(selectedShapeId);
-      if (shape && shape.kind !== "redact" && shape.page === currentPage){
+      if (shape && shape.page === currentPage){
         shape.color = activeColor;
         const shapeEl = overlay.querySelector('.context-shape-box[data-box-id="' + selectedShapeId + '"]');
         const svg = shapeEl && shapeEl.querySelector("svg");
@@ -2633,11 +2632,13 @@
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvasContext: ctx, viewport }).promise;
-        ctx.fillStyle = "#000000";
         boxes.forEach(b => {
-          const x0 = Math.floor(b.xPt * s);
-          const y0 = Math.floor(b.topPt * s);
-          ctx.fillRect(x0, y0, Math.ceil((b.xPt + b.widthPt) * s) - x0, Math.ceil((b.topPt + b.heightPt) * s) - y0);
+          ctx.save();
+          ctx.fillStyle = b.color || "#000000";
+          ctx.translate((b.xPt + b.widthPt / 2) * s, (b.topPt + b.heightPt / 2) * s);
+          ctx.rotate((b.rotation || 0) * Math.PI / 180);
+          ctx.fillRect(-b.widthPt * s / 2 - 1, -b.heightPt * s / 2 - 1, b.widthPt * s + 2, b.heightPt * s + 2);
+          ctx.restore();
         });
         const image = await out.embedPng(dataUrlToBytes(canvas.toDataURL("image/png")));
         canvas.width = canvas.height = 0;
