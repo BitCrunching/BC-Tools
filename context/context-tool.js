@@ -18,7 +18,7 @@
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
     ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
-    ["REDACT_IT", "Press Redact (X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good. The trade-off: the text on those pages can no longer be selected, copied or searched, and the file can get bigger. Pages without a redaction box stay exactly as they were."],
+    ["REDACT_IT", "Press Redact (X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
     ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
@@ -1364,7 +1364,6 @@
     selectedShapeId = box.id;
     renderTextBoxes();
     noteCreated("shape", box.id);
-    status.textContent = bcT("Redacting turns each marked page into a picture. The covered text is removed for good, but that page's text can't be selected or searched, and the file can get bigger.");
   }
 
   function dataUrlToBytes(dataUrl){
@@ -2285,7 +2284,7 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
   bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) redactBtn.click(); } });
@@ -2652,8 +2651,34 @@
     return out.save();
   }
 
+  const redactOverlay = document.getElementById("ctRedactOverlay");
+  const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
+  let redactConfirmed = false;
+  function redactNoticeDismissed(){
+    try { return localStorage.getItem(REDACT_NOTICE_KEY) === "1"; } catch (e) { return false; }
+  }
+  function continueAfterRedactNotice(){
+    redactOverlay.hidden = true;
+    redactConfirmed = true;
+    downloadBtn.click();
+  }
+  document.getElementById("ctRedactContinue").addEventListener("click", continueAfterRedactNotice);
+  document.getElementById("ctRedactNever").addEventListener("click", () => {
+    try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
+    continueAfterRedactNotice();
+  });
+  document.getElementById("ctRedactCancel").addEventListener("click", () => {
+    redactOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !redactOverlay.hidden, () => { redactOverlay.hidden = true; }, 95);
+
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
+    if (shapeBoxes.some(b => b.kind === "redact") && !redactConfirmed && !redactNoticeDismissed()){
+      redactOverlay.hidden = false;
+      return;
+    }
+    redactConfirmed = false;
     downloadBtn.disabled = true;
     status.textContent = bcT("Preparing your PDF...");
     startPrivacyCheck();
@@ -2863,9 +2888,7 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        status.textContent = redactions.length
-          ? bcT("Done. Downloaded your PDF. Redacted pages are now pictures: the covered text is gone, but their text can't be selected or searched.")
-          : bcT("Done. Downloaded your edited PDF.");
+        status.textContent = bcT("Done. Downloaded your edited PDF.");
       }
 
       /* iOS Safari doesn't reliably honor <a download> for PDFs — it

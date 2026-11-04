@@ -1689,7 +1689,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Add date (E)"><span class="ct-desktop-only">Add date</span><span class="ct-mobile-only">Date</span></button>
 
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Handtekening (S)"><span class="ct-desktop-only">Handtekening</span><span class="ct-mobile-only">S</span></button>
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctRedactBtn" title="Redact (X) — covers an area. The covered text is removed for good, but the page is saved as a picture, so its text can no longer be selected or searched."><span class="ct-desktop-only">Redact</span><span class="ct-mobile-only">X</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctRedactBtn" title="Redact (X)"><span class="ct-desktop-only">Redact</span><span class="ct-mobile-only">X</span></button>
 
         <div class="bc-toggle-btn-group">
           <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
@@ -1867,6 +1867,19 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       </div>
     </div>
 
+    <div class="context-signature-overlay" id="ctRedactOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header"><span>Redaction: technical notice</span></div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">Redaction is applied by rasterization. On download, every page that contains a redaction box is rendered to a bitmap image (approximately 200 dpi) with the boxes burned into the pixels, and that image replaces the original page. All original content on the page, including the text, vector graphics and embedded images beneath the boxes, is permanently discarded and cannot be recovered.</p>
+          <p class="context-signature-hint">As a consequence, the text on each rasterized page is no longer machine-readable: it cannot be selected, copied, searched or read by assistive technology, and any links or form fields on that page are removed. The output file may be larger, and the page may appear less sharp when magnified. Pages without a redaction box are not modified. Verify the downloaded file before distributing it.</p>
+          <button type="button" class="context-signature-action-btn" id="ctRedactContinue">I understand and continue</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctRedactNever">Do not show again</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctRedactCancel">Go back</button>
+        </div>
+      </div>
+    </div>
+
     <div class="context-signature-overlay" id="ctSigOverlay" hidden>
       <div class="context-signature-modal">
         <div class="context-signature-header">
@@ -2030,6 +2043,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=118" defer></script>
+<script src="/context/context-tool.js?v=120" defer></script>
 </body>
 </html>
