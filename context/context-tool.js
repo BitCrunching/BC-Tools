@@ -635,7 +635,7 @@
     opensans: { label: "Open Sans", family: "BC Open Sans", fallback: "sans-serif", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
     comicneue: { label: "Comic Neue", family: "BC Comic Neue", fallback: "cursive", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
     anton: { label: "Anton", family: "BC Anton", fallback: "Impact, sans-serif", files: { r: "Anton_400Regular.ttf" } },
-    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" }, embed: { subset: false, features: { calt: false } }, embedBytes: 260000 },
     playfair: { label: "Playfair Display", family: "BC Playfair Display", fallback: "serif", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
   };
   const fontOf = id => CTX_FONTS[id] || CTX_FONTS.arial;
@@ -1462,7 +1462,18 @@
     const texts = textBoxes.filter(b => b.text && !flat.has(b.page));
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
     total += shapeBoxes.filter(b => b.kind !== "redact" && !flat.has(b.page)).length * 130;
-    total += new Set(texts.filter(b => fontOf(b.font).files).map(b => (b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic))).size * 4000;
+    const faces = new Map();
+    texts.filter(b => fontOf(b.font).files).forEach(b => faces.set((b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic), fontOf(b.font).embedBytes || 4000));
+    faces.forEach(bytes => { total += bytes; });
+    const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/gu;
+    const emojis = new Set();
+    let needsFallback = false;
+    texts.forEach(b => {
+      const plain = b.text.replace(EMOJI_RE, m => { emojis.add(m); return ""; });
+      if (b.font !== "roboto" && b.font !== "opensans" && /[^\x00-\xFF‘’“”–—•…€™]/.test(plain)) needsFallback = true;
+    });
+    if (needsFallback) total += 22000;
+    total += emojis.size * 3000;
     const sigWidths = new Map();
     signatureBoxes.filter(b => !flat.has(b.page)).forEach(b => {
       sigWidths.set(b.dataUrl, Math.max(sigWidths.get(b.dataUrl) || 0, Math.ceil(b.widthPt * 4)));
@@ -2811,12 +2822,69 @@
           fontkitReady = true;
         }
         const res = await fetch(FONT_DIR + f.files[fontFaceKey(f, bold, italic)]);
-        const font = await pdfDoc.embedFont(await res.arrayBuffer(), { subset: true });
+        const font = await pdfDoc.embedFont(await res.arrayBuffer(), f.embed || { subset: true });
         embeddedFonts.set(faceKey, font);
         return font;
       }
       await Promise.all([...new Set(textBoxes.filter(b => b.text).map(b => b.font || "arial"))].map(id => ensureFont(id)));
       const pages = pdfDoc.getPages();
+
+      /* The PDF's own fonts only cover Western characters, and the shipped
+         fonts each cover a different range, so text is split into runs: each
+         character stays in the chosen font when it has the glyph, otherwise
+         it moves to the first Unicode fallback that does; emoji are drawn as
+         small pictures; anything left becomes "?". Text the chosen font can
+         fully draw keeps the single drawText call. */
+      const charSets = new Map();
+      const supports = (f, cp) => {
+        let set = charSets.get(f);
+        if (!set){ set = new Set(f.getCharacterSet()); charSets.set(f, set); }
+        return set.has(cp);
+      };
+      const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u;
+      const graphemes = text => (typeof Intl !== "undefined" && Intl.Segmenter)
+        ? [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].map(x => x.segment)
+        : Array.from(text);
+      async function layoutTextRuns(box, primary){
+        const runs = [];
+        for (const g of graphemes(box.text)){
+          if (EMOJI_RE.test(g)){ runs.push({ emoji: g }); continue; }
+          const cps = Array.from(g).map(c => c.codePointAt(0));
+          let f = cps.every(cp => supports(primary, cp)) ? primary : null;
+          for (const id of ["roboto", "opensans"]){
+            if (f) break;
+            const cand = await embedFontFor(id, !!box.bold, !!box.italic);
+            if (cps.every(cp => supports(cand, cp))) f = cand;
+          }
+          const chunk = f ? g : "?";
+          const use = f || primary;
+          const last = runs[runs.length - 1];
+          if (last && last.font === use) last.text += chunk; else runs.push({ font: use, text: chunk });
+        }
+        return runs;
+      }
+      const emojiImages = new Map();
+      async function embedEmoji(g){
+        if (emojiImages.has(g)) return emojiImages.get(g);
+        let img = null;
+        try {
+          const size = 160;
+          const c = document.createElement("canvas");
+          c.width = c.height = size;
+          const x = c.getContext("2d");
+          x.font = '128px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+          x.textBaseline = "alphabetic";
+          const w = x.measureText(g).width;
+          x.fillText(g, (size - w) / 2, 124);
+          const blank = !x.getImageData(0, 0, size, size).data.some((v, i) => i % 4 === 3 && v > 0);
+          if (!blank){
+            const blob = await new Promise(resolve => c.toBlob(resolve, "image/png"));
+            img = await pdfDoc.embedPng(new Uint8Array(await blob.arrayBuffer()));
+          }
+        } catch (err) { img = null; }
+        emojiImages.set(g, img);
+        return img;
+      }
 
       /* Box coordinates are measured on the page as displayed (pdf.js applies
          the page's /Rotate), but pdf-lib draws in the unrotated page space —
@@ -2847,10 +2915,32 @@
         const { u, v } = origin;
         const { x, y } = toPdf(u, v);
 
-        page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
+        const runs = await layoutTextRuns(box, font);
+        let textWidth;
+        if (runs.length === 1 && runs[0].font === font){
+          page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
+          textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
+        } else {
+          let cursor = 0;
+          for (const run of runs){
+            if (run.emoji){
+              const img = await embedEmoji(run.emoji);
+              const side = box.sizePt * 1.15;
+              if (img){
+                const at = toPdf(u + cursor, v + box.sizePt * 0.2);
+                page.drawImage(img, { x: at.x, y: at.y, width: side, height: side, rotate: degrees(rot) });
+              }
+              cursor += side;
+            } else {
+              const at = toPdf(u + cursor, v);
+              page.drawText(run.text, { x: at.x, y: at.y, size: box.sizePt, font: run.font, color, rotate: degrees(rot) });
+              cursor += run.font.widthOfTextAtSize(run.text, box.sizePt);
+            }
+          }
+          textWidth = cursor;
+        }
 
         if (box.underline){
-          const textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
           page.drawLine({
             start: toPdf(u, v + box.sizePt * 0.1),
             end: toPdf(u + textWidth, v + box.sizePt * 0.1),
