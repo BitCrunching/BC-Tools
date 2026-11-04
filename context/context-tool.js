@@ -123,6 +123,7 @@
      can become an ellipse), holding Shift keeps the aspect ratio locked
      — see buildShapeBoxEl's resizeHandle drag callback. */
   let shapeBoxes = [];
+  let redactNoticeAcknowledged = false;
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
   let selectedSigId = null;
@@ -1351,7 +1352,7 @@
     showShapeNotice();
   }
 
-  function addRedactBox(){
+  function placeRedactBox(){
     const widthPt = 160;
     const heightPt = 22;
     const box = {
@@ -1902,6 +1903,7 @@
   function resetEditor(){
     currentFile = null;
     currentFileBytes = null;
+    redactNoticeAcknowledged = false;
     clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
@@ -2687,17 +2689,24 @@
   bcRegisterEscapable(() => !shapeNoticeOverlay.hidden, () => { shapeNoticeOverlay.hidden = true; }, 96);
 
   const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
-  let redactConfirmed = false;
   function redactNoticeDismissed(){
     try { return localStorage.getItem(REDACT_NOTICE_KEY) === "1"; } catch (e) { return false; }
+  }
+  function addRedactBox(){
+    if (redactNoticeAcknowledged || redactNoticeDismissed()){
+      placeRedactBox();
+      return;
+    }
+    document.getElementById("ctRedactNever").checked = false;
+    redactOverlay.hidden = false;
   }
   document.getElementById("ctRedactContinue").addEventListener("click", () => {
     if (document.getElementById("ctRedactNever").checked){
       try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
     }
+    redactNoticeAcknowledged = true;
     redactOverlay.hidden = true;
-    redactConfirmed = true;
-    downloadBtn.click();
+    placeRedactBox();
   });
   document.getElementById("ctRedactClose").addEventListener("click", () => { redactOverlay.hidden = true; });
   redactOverlay.addEventListener("pointerdown", e => {
@@ -2707,11 +2716,6 @@
 
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
-    if (shapeBoxes.some(b => b.kind === "redact") && !redactConfirmed && !redactNoticeDismissed()){
-      redactOverlay.hidden = false;
-      return;
-    }
-    redactConfirmed = false;
     downloadBtn.disabled = true;
     status.textContent = bcT("Preparing your PDF...");
     startPrivacyCheck();
