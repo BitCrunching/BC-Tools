@@ -2665,6 +2665,7 @@
     redactConfirmed = true;
     downloadBtn.click();
   });
+  document.getElementById("ctRedactClose").addEventListener("click", () => { redactOverlay.hidden = true; });
   redactOverlay.addEventListener("pointerdown", e => {
     if (e.target === redactOverlay) redactOverlay.hidden = true;
   });
