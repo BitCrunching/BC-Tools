@@ -1439,7 +1439,9 @@
   /* Terminal line under the editor: the estimated size of the downloaded PDF
      (original plus add-ons). Text/shapes are estimates
      (a few bytes of drawing commands each); signatures are the real
-     image bytes. */
+     image bytes. A page with a redaction box is exported as a picture, so
+     it counts as that picture (measured) instead of the original page's
+     share of the file, and its other add-ons are dropped. */
   const sizeStatus = document.getElementById("ctSizeStatus");
   let sizeTimer = null;
   let sizeToken = 0;
@@ -1456,13 +1458,25 @@
       return;
     }
     let total = currentFile.size;
-    const texts = textBoxes.filter(b => b.text);
+    const flat = new Set(shapeBoxes.filter(b => b.kind === "redact").map(b => b.page));
+    const texts = textBoxes.filter(b => b.text && !flat.has(b.page));
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
-    total += shapeBoxes.length * 130;
+    total += shapeBoxes.filter(b => b.kind !== "redact" && !flat.has(b.page)).length * 130;
     total += new Set(texts.filter(b => fontOf(b.font).files).map(b => (b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic))).size * 4000;
-    if (signatureBoxes.length){
-      for (const [dataUrl, w] of signatureTargetWidths()) total += await signatureEmbeddedSize(dataUrl, w);
+    const sigWidths = new Map();
+    signatureBoxes.filter(b => !flat.has(b.page)).forEach(b => {
+      sigWidths.set(b.dataUrl, Math.max(sigWidths.get(b.dataUrl) || 0, Math.ceil(b.widthPt * 4)));
+    });
+    for (const [dataUrl, w] of sigWidths){
+      total += await signatureEmbeddedSize(dataUrl, w);
       if (token !== sizeToken) return;
+    }
+    if (flat.size && pdfjsDoc){
+      const perPage = currentFile.size / pageCount;
+      for (const n of flat){
+        try { total += Math.max(0, await flattenedPageSize(n) - perPage); } catch (err) { /* keep the estimate without this page */ }
+        if (token !== sizeToken) return;
+      }
     }
     if (token !== sizeToken) return;
     sizeStatus.textContent = "File size: ~" + bcFormatFileSize(total);
@@ -2612,6 +2626,40 @@
   const REDACT_DPI = 200;
   const REDACT_MAX_SIDE = 4500;
   const REDACT_MAX_PIXELS = 16e6;
+  const redactRenderScale = base => Math.max(1, Math.min(
+    REDACT_DPI / 72,
+    REDACT_MAX_SIDE / Math.max(base.width, base.height),
+    Math.sqrt(REDACT_MAX_PIXELS / (base.width * base.height))
+  ));
+  const flatPageSizeCache = new Map();
+  async function flattenedPageSize(pageNo){
+    const key = currentFile.name + "|" + currentFile.size + "|" + pageNo;
+    if (flatPageSizeCache.has(key)) return flatPageSizeCache.get(key);
+    const doc = pdfjsDoc;
+    const page = await doc.getPage(pageNo);
+    const viewport = page.getViewport({ scale: redactRenderScale(page.getViewport({ scale: 1 })) });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    canvas.width = canvas.height = 0;
+    let size = blob ? blob.size : 0;
+    if (blob){
+      try {
+        const probe = await PDFLib.PDFDocument.create();
+        const empty = (await probe.save()).length;
+        await probe.embedPng(new Uint8Array(await blob.arrayBuffer()));
+        size = (await probe.save()).length - empty;
+      } catch (err) { /* keep the PNG's own size */ }
+    }
+    if (doc === pdfjsDoc) flatPageSizeCache.set(key, size);
+    return size;
+  }
+
   async function flattenRedactedPages(bytes, redactions){
     const { PDFDocument } = PDFLib;
     const byPage = new Map();
@@ -2635,11 +2683,7 @@
         status.textContent = bcT("Redacting page {0} of {1}...", [++done, byPage.size]);
         const page = await viewDoc.getPage(n);
         const base = page.getViewport({ scale: 1 });
-        const s = Math.max(1, Math.min(
-          REDACT_DPI / 72,
-          REDACT_MAX_SIDE / Math.max(base.width, base.height),
-          Math.sqrt(REDACT_MAX_PIXELS / (base.width * base.height))
-        ));
+        const s = redactRenderScale(base);
         const viewport = page.getViewport({ scale: s });
         const canvas = document.createElement("canvas");
         canvas.width = Math.ceil(viewport.width);
