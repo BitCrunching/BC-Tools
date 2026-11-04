@@ -94,7 +94,7 @@
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
-  const MOBILE_QUERY = "(max-width:768px), (max-height:520px) and (orientation:landscape) and (pointer:coarse)";
+  const MOBILE_QUERY = "(max-width:768px) and (orientation:portrait)";
   const mobileMql = window.matchMedia(MOBILE_QUERY);
   let fsZoom = 1;
   let fsPanX = 0;
@@ -2220,7 +2220,7 @@
     history.pushState({ ctFullscreen: true }, "");
   }
 
-  function closeFullscreen(fromPopstate){
+  function closeFullscreen(fromPopstate, keepEditor){
     if (!isFullscreen) return;
     isFullscreen = false;
     resetFsZoom();
@@ -2245,11 +2245,22 @@
        plain in-page editor to fall back to — closing it (via the × or
        the back gesture) means leaving the editor, same as removing the
        file. */
-    resetEditor();
+    if (!keepEditor) resetEditor();
     if (!fromPopstate && history.state && history.state.ctFullscreen){
       history.back();
     }
   }
+
+  mobileMql.addEventListener("change", async () => {
+    placePageNav();
+    if (!currentFileBytes || editor.hidden) return;
+    if (mobileMql.matches){
+      if (!isFullscreen) await openFullscreen();
+    } else if (isFullscreen){
+      closeFullscreen(false, true);
+    }
+    if (pdfjsDoc) renderPage();
+  });
 
   window.addEventListener("popstate", () => {
     if (isFullscreen) closeFullscreen(true);
