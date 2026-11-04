@@ -1824,6 +1824,12 @@
     setToolMode(mode);
   });
   toolBackBtn.addEventListener("click", () => setToolMode("home"));
+  document.getElementById("ctAddMoreBtn").addEventListener("click", () => {
+    const mode = toolbarEl.dataset.mode;
+    if (mode === "text") addTextBox();
+    else if (mode === "date") addTextBox(todayString());
+    else if (mode === "shape") activeShapeKind === "redact" ? addRedactBox() : addShapeBox();
+  });
   document.getElementById("ctSigEditBtn").addEventListener("click", () => document.getElementById("ctSignatureBtn").click());
   redactBtn.addEventListener("click", () => addRedactBox());
   shapeOptsBtn.addEventListener("click", (e) => {
