@@ -1348,6 +1348,7 @@
     selectedShapeId = box.id;
     renderTextBoxes();
     noteCreated("shape", box.id);
+    showShapeNotice();
   }
 
   function addRedactBox(){
@@ -2297,7 +2298,7 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden || !shapeNoticeOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
   bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) addRedactBox(); } });
@@ -2666,6 +2667,25 @@
 
   const redactOverlay = document.getElementById("ctRedactOverlay");
   document.body.appendChild(redactOverlay);
+  const shapeNoticeOverlay = document.getElementById("ctShapeNoticeOverlay");
+  document.body.appendChild(shapeNoticeOverlay);
+  const SHAPE_NOTICE_KEY = "bctools_ctx_shape_notice_dismissed";
+  function showShapeNotice(){
+    try { if (localStorage.getItem(SHAPE_NOTICE_KEY) === "1") return; } catch (e) {}
+    shapeNoticeOverlay.hidden = false;
+  }
+  document.getElementById("ctShapeNoticeContinue").addEventListener("click", () => {
+    if (document.getElementById("ctShapeNoticeNever").checked){
+      try { localStorage.setItem(SHAPE_NOTICE_KEY, "1"); } catch (e) {}
+    }
+    shapeNoticeOverlay.hidden = true;
+  });
+  document.getElementById("ctShapeNoticeClose").addEventListener("click", () => { shapeNoticeOverlay.hidden = true; });
+  shapeNoticeOverlay.addEventListener("pointerdown", e => {
+    if (e.target === shapeNoticeOverlay) shapeNoticeOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !shapeNoticeOverlay.hidden, () => { shapeNoticeOverlay.hidden = true; }, 96);
+
   const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
   let redactConfirmed = false;
   function redactNoticeDismissed(){
