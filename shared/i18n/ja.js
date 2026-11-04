@@ -1470,7 +1470,7 @@ window.BC_I18N = {
  "The exact place the photo was taken, often within a few meters": "写真が撮影された正確な場所、多くの場合数メートル以内",
  "The file may get larger and look less sharp when magnified.": "ファイルが大きくなり、拡大すると少し粗く見えることがあります。",
  "The four themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.": "4つのテーマは、単に色のパレットが違うだけのものではありません。それぞれが、広く使われている実在のエディタテーマに由来する（または非常に近い）ものであり、見栄えのよいものを選ぶことと同じくらい、読者に馴染みのあるものを選ぶことが重要になりえます。",
- "The free version redacts by rasterization: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "無料版はラスタライズで墨消しします。墨消しボックスのある各ページは画像になり、ボックスの下の内容は完全に削除されます。制約は次のとおりです:",
+ "The free version uses a limited yet still safe and effective redaction process by rasterizing: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "無料版は、制限はあるものの安全で効果的なラスタライズ方式で墨消しします。墨消しボックスのある各ページは画像になり、ボックスの下の内容は完全に削除されます。制約は次のとおりです:",
  "The importance of colors...": "色の重要性…",
  "The little \"i\" on a video": "動画の小さな「i」",
  "The master-copy habit": "マスターコピーの習慣",

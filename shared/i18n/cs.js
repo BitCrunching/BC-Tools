@@ -1470,7 +1470,7 @@ window.BC_I18N = {
  "The exact place the photo was taken, often within a few meters": "Přesné místo pořízení fotky, často s přesností na pár metrů",
  "The file may get larger and look less sharp when magnified.": "Soubor může být větší a při zvětšení méně ostrý.",
  "The four themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.": "Čtyři motivy nejsou jen různé barevné palety pro samotnou změnu — každý pochází z (nebo se úzce řídí) skutečného, široce používaného motivu editoru a výběr motivu, který je vašemu publiku povědomý, může záležet stejně jako výběr motivu, který dobře vypadá.",
- "The free version redacts by rasterization: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "Bezplatná verze začerňuje rastrováním: každá stránka s rámečkem pro začernění se změní na obrázek a obsah pod rámečky se trvale odstraní. Nevýhody:",
+ "The free version uses a limited yet still safe and effective redaction process by rasterizing: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "Bezplatná verze používá omezený, ale stále bezpečný a účinný způsob začerňování rastrováním: každá stránka s rámečkem pro začernění se změní na obrázek a obsah pod rámečky se trvale odstraní. Nevýhody:",
  "The importance of colors...": "Význam barev…",
  "The little \"i\" on a video": "Malé „i“ u videa",
  "The master-copy habit": "Zvyk uchovávat master kopii",

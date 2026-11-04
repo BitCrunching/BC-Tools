@@ -1470,7 +1470,7 @@ window.BC_I18N = {
  "The exact place the photo was taken, often within a few meters": "De exacte plek waar de foto is genomen, vaak tot op enkele meters",
  "The file may get larger and look less sharp when magnified.": "Het bestand kan groter worden en bij inzoomen minder scherp zijn.",
  "The four themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.": "De vier thema's zijn niet zomaar verschillende kleurenpaletten op zich: elk komt van (of volgt nauw) een echt, veelgebruikt editorthema, en een thema kiezen dat je publiek bekend voorkomt kan net zo belangrijk zijn als een thema kiezen dat er goed uitziet.",
- "The free version redacts by rasterization: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "De gratis versie dekt af via rasterisatie: elke pagina met een afdekvak wordt een afbeelding en de inhoud onder de vakken wordt definitief verwijderd. De nadelen:",
+ "The free version uses a limited yet still safe and effective redaction process by rasterizing: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "De gratis versie gebruikt een beperkt maar nog steeds veilig en effectief afdekproces via rasterisatie: elke pagina met een afdekvak wordt een afbeelding en de inhoud onder de vakken wordt definitief verwijderd. De nadelen:",
  "The importance of colors...": "Het belang van kleuren...",
  "The little \"i\" on a video": "De kleine \"i\" bij een video",
  "The master-copy habit": "De mastercopy-gewoonte",

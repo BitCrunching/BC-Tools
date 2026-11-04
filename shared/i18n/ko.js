@@ -1470,7 +1470,7 @@ window.BC_I18N = {
  "The exact place the photo was taken, often within a few meters": "사진을 찍은 정확한 장소, 종종 몇 미터 이내",
  "The file may get larger and look less sharp when magnified.": "파일이 커지고 확대하면 덜 선명해 보일 수 있습니다.",
  "The four themes aren't just different color palettes for their own sake — each comes from (or closely follows) a real, widely-used editor theme, and picking one that looks familiar to your audience can matter as much as picking one that looks good.": "네 가지 테마는 그저 서로 다른 색 팔레트가 아닙니다. 각각이 널리 쓰이는 실제 편집기 테마에서 유래했거나 이를 가깝게 따르고 있으며, 청중에게 익숙해 보이는 것을 고르는 것이 보기 좋은 것을 고르는 것만큼 중요할 수 있습니다.",
- "The free version redacts by rasterization: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "무료 버전은 래스터화 방식으로 가립니다. 가리기 상자가 있는 모든 페이지는 이미지가 되고, 상자 아래의 내용은 영구적으로 제거됩니다. 단점은 다음과 같습니다:",
+ "The free version uses a limited yet still safe and effective redaction process by rasterizing: every page with a redaction box becomes an image, and the content beneath the boxes is permanently removed. The trade-offs:": "무료 버전은 제한적이지만 여전히 안전하고 효과적인 래스터화 방식으로 가립니다. 가리기 상자가 있는 모든 페이지는 이미지가 되고, 상자 아래의 내용은 영구적으로 제거됩니다. 단점은 다음과 같습니다:",
  "The importance of colors...": "색의 중요성...",
  "The little \"i\" on a video": "동영상의 작은 \"i\"",
  "The master-copy habit": "마스터 사본 습관",
