@@ -1781,11 +1781,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeIconSvg(opt.dataset.kind, opt.dataset.outline === "1", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
     if (opt.dataset.kind === "redact"){
       opt.title = bcT("Redaction tool is used to safely hide sensitive data (X)");
-      opt.insertAdjacentHTML("beforeend", "<span>" + label + "</span>");
+      return;
     }
+    opt.innerHTML = shapeIconSvg(opt.dataset.kind, opt.dataset.outline === "1", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
