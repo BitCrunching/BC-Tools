@@ -2657,18 +2657,16 @@
   function redactNoticeDismissed(){
     try { return localStorage.getItem(REDACT_NOTICE_KEY) === "1"; } catch (e) { return false; }
   }
-  function continueAfterRedactNotice(){
+  document.getElementById("ctRedactContinue").addEventListener("click", () => {
+    if (document.getElementById("ctRedactNever").checked){
+      try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
+    }
     redactOverlay.hidden = true;
     redactConfirmed = true;
     downloadBtn.click();
-  }
-  document.getElementById("ctRedactContinue").addEventListener("click", continueAfterRedactNotice);
-  document.getElementById("ctRedactNever").addEventListener("click", () => {
-    try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
-    continueAfterRedactNotice();
   });
-  document.getElementById("ctRedactCancel").addEventListener("click", () => {
-    redactOverlay.hidden = true;
+  redactOverlay.addEventListener("pointerdown", e => {
+    if (e.target === redactOverlay) redactOverlay.hidden = true;
   });
   bcRegisterEscapable(() => !redactOverlay.hidden, () => { redactOverlay.hidden = true; }, 95);
 

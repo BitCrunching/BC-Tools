@@ -1256,6 +1256,31 @@ html[data-theme="light"] .context-signature-modal{
   cursor:pointer;
 }
 
+.context-signature-action-btn--unavailable{
+  background:transparent;
+  border:1px dashed currentColor;
+  color:inherit;
+  cursor:default;
+}
+.context-redact-tradeoffs{
+  margin:0 0 12px;
+  padding-left:20px;
+  font-size:14px;
+  line-height:1.5;
+  opacity:.8;
+}
+.context-redact-tradeoffs li{ margin-top:6px; }
+.context-redact-never{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.context-redact-never input{ width:16px; height:16px; cursor:pointer; }
+
 .context-signature-saved-preview{
   display:block;
   width:100%;
@@ -1870,11 +1895,14 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <div class="context-signature-modal">
         <div class="context-signature-header"><span>Redaction: technical notice</span></div>
         <div class="context-signature-step">
-          <p class="context-signature-hint">Redaction is applied by rasterization. On download, every page that contains a redaction box is rendered to a bitmap image (approximately 200 dpi) with the boxes burned into the pixels, and that image replaces the original page. All original content on the page, including the text, vector graphics and embedded images beneath the boxes, is permanently discarded and cannot be recovered.</p>
-          <p class="context-signature-hint">As a consequence, the text on each rasterized page is no longer machine-readable: it cannot be selected, copied, searched or read by assistive technology, and any links or form fields on that page are removed. The output file may be larger, and the page may appear less sharp when magnified. Pages without a redaction box are not modified. Verify the downloaded file before distributing it.</p>
+          <p class="context-signature-hint">The free version redacts by rasterization: every page that contains a redaction box is converted to an image with the boxes burned in, and the original content beneath them is permanently removed. This is a widely accepted way to guarantee that redacted content cannot be recovered, but it comes with trade-offs:</p>
+          <ul class="context-redact-tradeoffs">
+            <li>The page is no longer machine-readable. Its text, fonts and vector graphics are replaced by an image, so it cannot be selected, copied or searched, and any links or form fields on it are removed.</li>
+            <li>The file may become larger, and the page may appear less sharp when magnified.</li>
+          </ul>
+          <label class="context-redact-never"><input type="checkbox" id="ctRedactNever"> Do not show again</label>
           <button type="button" class="context-signature-action-btn" id="ctRedactContinue">I understand and continue</button>
-          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctRedactNever">Do not show again</button>
-          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctRedactCancel">Go back</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--unavailable" id="ctRedactUpgrade" aria-disabled="true" title="This option is unavailable for now.">Upgrade to PRO version</button>
         </div>
       </div>
     </div>
@@ -2042,6 +2070,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=120" defer></script>
+<script src="/context/context-tool.js?v=121" defer></script>
 </body>
 </html>
