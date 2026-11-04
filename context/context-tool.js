@@ -2107,7 +2107,8 @@
     canvasWrap.style.transform = "";
   }
 
-  const mobileMql = window.matchMedia("(max-width:768px)");
+  const MOBILE_QUERY = "(max-width:768px), (max-height:520px) and (orientation:landscape) and (pointer:coarse)";
+  const mobileMql = window.matchMedia(MOBILE_QUERY);
 
   async function openFullscreen(){
     if (isFullscreen) return;
@@ -3244,7 +3245,7 @@
          desktop download into an unwanted share popup there too. The
          width check matches the pattern already used by the page's
          other share button. */
-      if (window.innerWidth <= 768 && navigator.canShare && navigator.canShare({ files: [outFile] })){
+      if (mobileMql.matches && navigator.canShare && navigator.canShare({ files: [outFile] })){
         try {
           await navigator.share({ files: [outFile] });
           status.textContent = "";
