@@ -626,6 +626,11 @@
     });
   }
 
+  function syncToolbarSelection(){
+    toolbarEl.dataset.sel = overlay.querySelector(".context-text-box.selected") ? "text" : overlay.querySelector(".context-shape-box.selected") ? "shape" : "";
+  }
+  new MutationObserver(syncToolbarSelection).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
+
   function deselectBox(){
     selectedBoxId = null;
     overlay.querySelectorAll(".context-text-box.selected").forEach(elx => elx.classList.remove("selected"));
