@@ -920,6 +920,16 @@
     overlay.querySelectorAll(".context-signature-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
+  function selectSignatureById(id){
+    if (!findSignatureBoxById(id)) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedSigId = id;
+    const el = overlay.querySelector('.context-signature-box[data-box-id="' + id + '"]');
+    if (el) el.classList.add("selected");
+  }
+
   /* Reuses the same visual drag/resize handles as buildBoxEl's text
      boxes, but resizing here scales the whole image uniformly (keeping
      its aspect ratio) instead of just bumping a font size. */
@@ -987,13 +997,7 @@
       });
     }
 
-    el.addEventListener("pointerdown", () => {
-      deselectBox();
-      deselectSignatureBox();
-      deselectShapeBox();
-      selectedSigId = box.id;
-      el.classList.add("selected");
-    });
+    el.addEventListener("pointerdown", () => selectSignatureById(box.id));
 
     startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
@@ -1036,6 +1040,34 @@
   function deselectShapeBox(){
     selectedShapeId = null;
     overlay.querySelectorAll(".context-shape-box.selected").forEach(elx => elx.classList.remove("selected"));
+  }
+
+  function selectShapeById(id){
+    const box = shapeBoxes.find(b => b.id === id);
+    if (!box) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = id;
+    const el = overlay.querySelector('.context-shape-box[data-box-id="' + id + '"]');
+    if (el) el.classList.add("selected");
+    if (box.kind !== "redact"){
+      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
+      activeShapeKind = box.kind;
+      activeShapeOutline = !!box.outline;
+      renderShapeBtnIcon();
+      if (isMarkKind(box.kind)){
+        activeBold = !!box.bold;
+        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      }
+    }
+    activeColor = box.color;
+    const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
+    bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      o.classList.toggle("active", o === opt);
+      o.setAttribute("aria-selected", String(o === opt));
+    });
   }
 
   /* Inline SVG per shape rather than a single reusable markup string —
@@ -1202,30 +1234,7 @@
       });
     }
 
-    el.addEventListener("pointerdown", () => {
-      deselectBox();
-      deselectSignatureBox();
-      deselectShapeBox();
-      selectedShapeId = box.id;
-      el.classList.add("selected");
-      if (!redact){
-        bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
-        activeShapeKind = box.kind;
-        activeShapeOutline = !!box.outline;
-        renderShapeBtnIcon();
-        if (isMarkKind(box.kind)){
-          activeBold = !!box.bold;
-          boldBtn.setAttribute("aria-pressed", String(activeBold));
-        }
-      }
-      activeColor = box.color;
-      const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
-      bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
-      colorMenu.querySelectorAll(".context-color-option").forEach(o => {
-        o.classList.toggle("active", o === opt);
-        o.setAttribute("aria-selected", String(o === opt));
-      });
-    });
+    el.addEventListener("pointerdown", () => selectShapeById(box.id));
 
     startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
@@ -1295,17 +1304,35 @@
   let recentCreated = [];
   let createdOrder = [];
 
+  function selectSubject(type, id){
+    if (type === "text") selectBox(id);
+    else if (type === "shape") selectShapeById(id);
+    else selectSignatureById(id);
+  }
+
   function selectLastCreated(){
     const exists = { text: textBoxes, shape: shapeBoxes, sig: signatureBoxes };
+    if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
     for (let i = createdOrder.length - 1; i >= 0; i--){
       const { type, id } = createdOrder[i];
-      if (!exists[type].some(b => b.id === id)) continue;
-      if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
-      if (type === "text") selectedBoxId = id;
-      else if (type === "shape") selectedShapeId = id;
-      else selectedSigId = id;
+      const b = exists[type].find(x => x.id === id);
+      if (!b || b.page !== currentPage) continue;
+      selectSubject(type, id);
       return;
     }
+  }
+
+  function nearestSubject(x, y, slop){
+    let best = null, bestD = slop + 0.01;
+    overlay.querySelectorAll(".context-text-box, .context-signature-box, .context-shape-box").forEach(el => {
+      const r = el.getBoundingClientRect();
+      const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (d <= bestD){
+        bestD = d;
+        best = { type: el.classList.contains("context-text-box") ? "text" : el.classList.contains("context-shape-box") ? "shape" : "sig", id: Number(el.dataset.boxId) };
+      }
+    });
+    return best;
   }
 
   function noteCreated(type, id){
@@ -2517,6 +2544,11 @@
     if (!e.target.closest) return;
     if (e.target.closest(".context-text-box, .context-signature-box, .context-shape-box, .context-panel-bar")) return;
     if (!e.target.closest("#ctPreviewPanel, .context-fullscreen-canvas-area")) return;
+    const near = nearestSubject(e.clientX, e.clientY, e.pointerType === "mouse" ? 12 : 28);
+    if (near){
+      selectSubject(near.type, near.id);
+      return;
+    }
     deselectBox();
     deselectSignatureBox();
     deselectShapeBox();
@@ -2644,7 +2676,7 @@
     const active = document.activeElement;
     if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
     if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
-    const btn = overlay.querySelector(".context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
+    const btn = overlay.querySelector(".context-text-box.selected .bc-obj-remove-btn, .context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
     if (!btn) return;
     e.preventDefault();
     btn.click();
