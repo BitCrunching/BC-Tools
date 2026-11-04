@@ -94,6 +94,8 @@
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
+  const MOBILE_QUERY = "(max-width:768px), (max-height:520px) and (orientation:landscape) and (pointer:coarse)";
+  const mobileMql = window.matchMedia(MOBILE_QUERY);
   let fsZoom = 1;
   let fsPanX = 0;
   let fsPanY = 0;
@@ -1815,7 +1817,18 @@
   const redactBtn = document.getElementById("ctRedactBtn");
   const dateFmtBtn = document.getElementById("ctDateFmtBtn");
   const shapeOptsBtn = document.getElementById("ctShapeOptsBtn");
-  const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; };
+  const pageNavHome = pageNav.parentElement;
+  const PAGE_NAV_IN_TOOLBAR = new Set(["home", "signature", "date"]);
+  function placePageNav(){
+    const inToolbar = mobileMql.matches && PAGE_NAV_IN_TOOLBAR.has(toolbarEl.dataset.mode);
+    if (inToolbar){
+      if (pageNav.parentElement !== toolbarEl) toolbarEl.insertBefore(pageNav, downloadBtn);
+    } else if (pageNav.parentElement !== pageNavHome){
+      pageNavHome.appendChild(pageNav);
+    }
+  }
+  mobileMql.addEventListener("change", placePageNav);
+  const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; placePageNav(); };
   const chooseNew = (opt) => {
     const mode = opt.dataset.mode;
     if (mode === "signature") document.getElementById("ctSignatureBtn").click();
@@ -2066,6 +2079,7 @@
     currentFileBytes = null;
     redactNoticeAcknowledged = false;
     toolbarEl.dataset.mode = "home";
+    placePageNav();
     clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
@@ -2107,8 +2121,6 @@
     canvasWrap.style.transform = "";
   }
 
-  const MOBILE_QUERY = "(max-width:768px), (max-height:520px) and (orientation:landscape) and (pointer:coarse)";
-  const mobileMql = window.matchMedia(MOBILE_QUERY);
 
   async function openFullscreen(){
     if (isFullscreen) return;
@@ -2124,6 +2136,7 @@
     document.body.appendChild(fullscreenOverlay);
     fullscreenCanvasArea.appendChild(previewPanel);
     fullscreenBar.appendChild(toolbarEl);
+    placePageNav();
     fullscreenOverlay.hidden = false;
     /* Belt-and-suspenders: force the critical positioning inline so a
        stale cached stylesheet (a real, previously-seen failure mode on
@@ -2185,6 +2198,7 @@
     isFullscreen = false;
     resetFsZoom();
     editor.insertBefore(toolbarEl, editor.firstChild);
+    placePageNav();
     editor.appendChild(previewPanel);
     /* Restores original source order: toolbar, then panel, then the
        overlay last — matching the markup this was moved out of in
