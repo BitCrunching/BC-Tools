@@ -506,7 +506,7 @@ window.BC_I18N = {
  "Context – Add Text to a PDF for Free – BC Tools": "Context – PDF에 텍스트 무료로 추가하기 – BC Tools",
  "Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.": "Context의 페이지 탐색은 각 텍스트 상자를 배치한 특정 페이지에 묶어 둡니다. 따라서 긴 문서의 서로 다른 부분을 채우려고 페이지를 오가도 아무것도 섞일 위험이 없습니다. 3페이지에 추가한 상자는 다운로드하기 전에 다른 페이지를 몇 개 방문하든 3페이지에 그대로 있습니다.",
  "Continue where you left off": "중단한 곳에서 이어서 하기",
- "Continue with redaction": "가리기 계속",
+ "Continue with limited redaction": "제한된 가리기 계속",
  "Continue working": "계속 작업하기",
  "Convert": "Convert",
  "Convert a Word document (.docx) to a PDF — right in your browser.": "Word 문서(.docx)를 브라우저에서 바로 PDF로 변환하세요.",

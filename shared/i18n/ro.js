@@ -496,7 +496,7 @@ window.BC_I18N = {
  "Context – Add Text to a PDF for Free – BC Tools": "Context – Adaugă gratuit text într-un PDF – BC Tools",
  "Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.": "Navigarea între pagini din Context ține fiecare casetă de text legată de pagina anume pe care a fost plasată, așa că trecerea de la o pagină la alta pentru a completa secțiuni diferite ale unui document lung nu riscă să amestece nimic — o casetă adăugată pe pagina 3 rămâne pe pagina 3, indiferent câte alte pagini vizitezi înainte de descărcare.",
  "Continue where you left off": "Continuă de unde ai rămas",
- "Continue with redaction": "Continuă cu înnegrirea",
+ "Continue with limited redaction": "Continuă cu înnegrirea limitată",
  "Continue working": "Continuă lucrul",
  "Convert": "Convert",
  "Convert a video between MP4, WebM, MOV and MKV. Pick the format, and download. Files that already fit the new format are just re-packed — instant and lossless — right in your browser, no upload to servers necessary.": "Convertește un video între MP4, WebM, MOV și MKV. Alege formatul și descarcă. Fișierele care se potrivesc deja noului format sunt doar reambalate — instantaneu și fără pierderi — direct în browser, fără încărcare pe servere.",

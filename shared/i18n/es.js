@@ -506,7 +506,7 @@ window.BC_I18N = {
  "Context – Add Text to a PDF for Free – BC Tools": "Context – Añade texto a un PDF gratis – BC Tools",
  "Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.": "La navegación por páginas de Context mantiene cada cuadro de texto vinculado a la página concreta en la que se colocó, así que moverte entre páginas para rellenar secciones distintas de un documento largo no arriesga mezclar nada: un cuadro añadido en la página 3 se queda en la página 3 sea cual sea el número de páginas que visites antes de descargar.",
  "Continue where you left off": "Continuar donde lo dejaste",
- "Continue with redaction": "Continuar con el tachado",
+ "Continue with limited redaction": "Continuar con el tachado limitado",
  "Continue working": "Seguir trabajando",
  "Convert": "Convert",
  "Convert a Word document (.docx) to a PDF — right in your browser.": "Convierte un documento de Word (.docx) en PDF, directamente en tu navegador.",

@@ -506,7 +506,7 @@ window.BC_I18N = {
  "Context – Add Text to a PDF for Free – BC Tools": "Context – PDFに無料でテキストを追加 – BC Tools",
  "Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.": "Contextのページナビゲーションは、各テキストボックスを配置した特定のページに紐づけたままにします。長い文書の異なるセクションを入力するためにページを移動しても、何も混ざる心配はありません。3ページ目に追加したボックスは、ダウンロードするまでに他のページをいくつ訪れても3ページ目のままです。",
  "Continue where you left off": "前回の続きから再開",
- "Continue with redaction": "墨消しを続ける",
+ "Continue with limited redaction": "制限付きの墨消しを続ける",
  "Continue working": "作業を続ける",
  "Convert": "Convert",
  "Convert a Word document (.docx) to a PDF — right in your browser.": "Word文書（.docx）をPDFに、ブラウザ上で変換します。",

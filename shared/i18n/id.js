@@ -506,7 +506,7 @@ window.BC_I18N = {
  "Context – Add Text to a PDF for Free – BC Tools": "Context – Tambahkan Teks ke PDF Gratis – BC Tools",
  "Context's page navigation keeps every text box tied to the specific page it was placed on, so moving between pages to fill in different sections of a long document doesn't risk mixing anything up — a box added on page 3 stays on page 3 regardless of how many other pages you visit before downloading.": "Navigasi halaman Context menjaga setiap kotak teks terikat pada halaman tempat ia diletakkan, sehingga berpindah antarhalaman untuk mengisi bagian berbeda dari dokumen panjang tidak berisiko mengacaukan apa pun — kotak yang ditambahkan di halaman 3 tetap di halaman 3 berapa pun halaman lain yang Anda kunjungi sebelum mengunduh.",
  "Continue where you left off": "Lanjutkan dari terakhir Anda berhenti",
- "Continue with redaction": "Lanjutkan penghitaman",
+ "Continue with limited redaction": "Lanjutkan dengan penghitaman terbatas",
  "Continue working": "Lanjutkan bekerja",
  "Convert": "Convert",
  "Convert a Word document (.docx) to a PDF — right in your browser.": "Ubah dokumen Word (.docx) menjadi PDF — langsung di browser Anda.",
