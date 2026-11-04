@@ -1816,13 +1816,70 @@
   const dateFmtBtn = document.getElementById("ctDateFmtBtn");
   const shapeOptsBtn = document.getElementById("ctShapeOptsBtn");
   const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; };
-  bcRegisterDropdown(newBtn, newMenu, (opt) => {
+  const chooseNew = (opt) => {
     const mode = opt.dataset.mode;
     if (mode === "signature") document.getElementById("ctSignatureBtn").click();
     if (mode === "text") addTextBox();
     if (mode === "date") addTextBox(todayString());
     setToolMode(mode);
+  };
+  const newItems = [...newMenu.querySelectorAll(".ct-new-item")];
+  const newLabel = document.getElementById("ctNewLabel");
+  const NEW_HOLD_MS = 220;
+  let newHoldTimer = null, newHolding = false, newHot = null, newSuppressClick = false;
+  function setNewHot(item){
+    if (newHot === item) return;
+    if (newHot) newHot.classList.remove("ct-hot");
+    newHot = item;
+    if (item) item.classList.add("ct-hot");
+    newLabel.textContent = item ? item.querySelector(".ct-sr").textContent : "";
+    newLabel.classList.toggle("shown", !!item);
+  }
+  function nearestNewItem(x, y){
+    let best = null, bestD = 44;
+    newItems.forEach(it => {
+      const r = it.getBoundingClientRect();
+      const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      if (d < bestD){ best = it; bestD = d; }
+    });
+    return best;
+  }
+  newBtn.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    newHolding = false;
+    clearTimeout(newHoldTimer);
+    newHoldTimer = setTimeout(() => {
+      newHolding = true;
+      bcCloseAllPopups();
+      newMenu.hidden = false;
+      newBtn.setAttribute("aria-expanded", "true");
+    }, NEW_HOLD_MS);
   });
+  newBtn.addEventListener("pointermove", (e) => {
+    if (newHolding) setNewHot(nearestNewItem(e.clientX, e.clientY));
+  });
+  const endNewHold = (e) => {
+    clearTimeout(newHoldTimer);
+    if (!newHolding) return;
+    newHolding = false;
+    newSuppressClick = true;
+    setTimeout(() => { newSuppressClick = false; }, 350);
+    const picked = e.type === "pointerup" ? newHot : null;
+    setNewHot(null);
+    if (picked){
+      chooseNew(picked);
+      bcCloseAllDropdowns();
+    }
+  };
+  newBtn.addEventListener("pointerup", endNewHold);
+  newBtn.addEventListener("pointercancel", endNewHold);
+  newBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+  newBtn.addEventListener("click", (e) => {
+    if (!newSuppressClick) return;
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+  });
+  bcRegisterDropdown(newBtn, newMenu, chooseNew);
   toolBackBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     bcCloseAllPopups();
