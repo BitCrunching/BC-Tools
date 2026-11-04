@@ -1093,6 +1093,7 @@ window.BC_I18N = {
  "OGG": "OGG",
  "OGG (Opus)": "OGG (Opus)",
  "ONE_FILE_OUT": "UN_SEUL_FICHIER_EN_SORTIE",
+ "OR": "OU",
  "OUT": "SORTIE",
  "Old Flash-era players and legacy streaming setups": "Anciens lecteurs de l'ère Flash et installations de streaming héritées",
  "Old players and software that only understand AVI": "Anciens lecteurs et logiciels qui ne comprennent que l'AVI",

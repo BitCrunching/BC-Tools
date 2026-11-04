@@ -1093,6 +1093,7 @@ window.BC_I18N = {
  "OGG": "OGG",
  "OGG (Opus)": "OGG (Opus)",
  "ONE_FILE_OUT": "파일_하나_출력",
+ "OR": "또는",
  "OUT": "출력",
  "Old Flash-era players and legacy streaming setups": "플래시 시절의 오래된 플레이어와 레거시 스트리밍 환경",
  "Old players and software that only understand AVI": "AVI만 이해하는 오래된 플레이어와 소프트웨어",

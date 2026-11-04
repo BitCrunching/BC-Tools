@@ -1093,6 +1093,7 @@ window.BC_I18N = {
  "OGG": "OGG",
  "OGG (Opus)": "OGG (Opus)",
  "ONE_FILE_OUT": "JEDEN_VÝSTUPNÍ_SOUBOR",
+ "OR": "NEBO",
  "OUT": "VÝSTUP",
  "Old Flash-era players and legacy streaming setups": "Staré přehrávače z éry Flash a zděděná streamovací řešení",
  "Old players and software that only understand AVI": "Staré přehrávače a software, které rozumí jen AVI",

@@ -1093,6 +1093,7 @@ window.BC_I18N = {
  "OGG": "OGG",
  "OGG (Opus)": "OGG (Opus)",
  "ONE_FILE_OUT": "SATU_FILE_KELUAR",
+ "OR": "ATAU",
  "OUT": "KELUAR",
  "Old Flash-era players and legacy streaming setups": "Pemutar lama era Flash dan sistem streaming lawas",
  "Old players and software that only understand AVI": "Pemutar dan perangkat lunak lama yang hanya mengerti AVI",
