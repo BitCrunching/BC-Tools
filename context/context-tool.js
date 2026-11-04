@@ -2665,6 +2665,7 @@
   }
 
   const redactOverlay = document.getElementById("ctRedactOverlay");
+  document.body.appendChild(redactOverlay);
   const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
   let redactConfirmed = false;
   function redactNoticeDismissed(){
