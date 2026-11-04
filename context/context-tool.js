@@ -2364,18 +2364,7 @@
     if (!colorMenu.hidden) clampColorMenu();
   });
 
-  colorMenu.addEventListener("click", (e) => {
-    const opt = e.target.closest(".context-color-option");
-    if (!opt) return;
-    activeColor = opt.dataset.color;
-    bcApplyColorOption(colorTriggerDot, colorTriggerLabel, opt);
-    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
-      o.classList.toggle("active", o === opt);
-      o.setAttribute("aria-selected", String(o === opt));
-    });
-    colorMenu.hidden = true;
-    colorTrigger.setAttribute("aria-expanded", "false");
-
+  function applyActiveColorToSelection(){
     if (selectedBoxId){
       const box = findBoxById(selectedBoxId);
       if (box && box.page === currentPage){
@@ -2383,6 +2372,7 @@
         const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
         const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
         if (innerEl) innerEl.style.color = activeColor;
+        schedulePersist();
       }
     } else if (selectedShapeId){
       const shape = findShapeBoxById(selectedShapeId);
@@ -2394,6 +2384,66 @@
         schedulePersist();
       }
     }
+  }
+
+  const customColorBtn = document.getElementById("ctColorCustomBtn");
+  const customColorDot = document.getElementById("ctColorCustomDot");
+  const colorPanelPop = document.createElement("div");
+  colorPanelPop.className = "context-color-panel-pop";
+  colorPanelPop.hidden = true;
+  document.body.appendChild(colorPanelPop);
+  const closeColorPanel = () => { colorPanelPop.hidden = true; };
+  function setCustomColor(hex){
+    activeColor = hex;
+    customColorBtn.dataset.color = hex;
+    customColorBtn.classList.add("has-color");
+    customColorDot.style.background = hex;
+    bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, hex, null);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      const on = o === customColorBtn;
+      o.classList.toggle("active", on);
+      o.setAttribute("aria-selected", String(on));
+    });
+    applyActiveColorToSelection();
+  }
+  const colorPanel = bcCreateColorPanel(colorPanelPop, { value: "#2563eb", onChange: setCustomColor });
+  function openColorPanel(){
+    colorPanel.setValue(customColorBtn.dataset.color || activeColor || "#2563eb");
+    colorPanelPop.hidden = false;
+    const r = colorTrigger.getBoundingClientRect();
+    const w = colorPanelPop.offsetWidth, h = colorPanelPop.offsetHeight;
+    const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+    const above = r.top > h + 16;
+    colorPanelPop.style.left = left + "px";
+    colorPanelPop.style.top = Math.round(above ? r.top - h - 8 : r.bottom + 8) + "px";
+  }
+  bcRegisterPopup(closeColorPanel);
+  document.addEventListener("pointerdown", (e) => {
+    if (colorPanelPop.hidden || colorPanelPop.contains(e.target) || colorTrigger.contains(e.target)) return;
+    closeColorPanel();
+  }, true);
+  bcRegisterEscapable(() => !colorPanelPop.hidden, closeColorPanel, 105);
+
+  colorMenu.addEventListener("click", (e) => {
+    const opt = e.target.closest(".context-color-option");
+    if (!opt) return;
+    if (opt.dataset.custom === "true"){
+      colorMenu.hidden = true;
+      colorTrigger.setAttribute("aria-expanded", "false");
+      if (customColorBtn.dataset.color) setCustomColor(customColorBtn.dataset.color);
+      openColorPanel();
+      return;
+    }
+    closeColorPanel();
+    activeColor = opt.dataset.color;
+    bcApplyColorOption(colorTriggerDot, colorTriggerLabel, opt);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      o.classList.toggle("active", o === opt);
+      o.setAttribute("aria-selected", String(o === opt));
+    });
+    colorMenu.hidden = true;
+    colorTrigger.setAttribute("aria-expanded", "false");
+    applyActiveColorToSelection();
   });
 
   bcRegisterCombo(fontSizeTrigger, fontSizeInput, fontSizeMenu, fontSizeEmpty, (opt) => {
