@@ -1818,15 +1818,13 @@
   const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; };
   bcRegisterDropdown(newBtn, newMenu, (opt) => {
     const mode = opt.dataset.mode;
-    if (mode === "signature"){
-      document.getElementById("ctSignatureBtn").click();
-      return;
-    }
+    if (mode === "signature") document.getElementById("ctSignatureBtn").click();
     if (mode === "text") addTextBox();
     if (mode === "date") addTextBox(todayString());
     setToolMode(mode);
   });
   toolBackBtn.addEventListener("click", () => setToolMode("home"));
+  document.getElementById("ctSigEditBtn").addEventListener("click", () => document.getElementById("ctSignatureBtn").click());
   redactBtn.addEventListener("click", () => addRedactBox());
   shapeOptsBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1851,12 +1849,14 @@
   new MutationObserver(() => {
     const textEl = overlay.querySelector(".context-text-box.selected");
     const shapeEl = textEl ? null : overlay.querySelector(".context-shape-box.selected");
-    const key = textEl ? "t" + textEl.dataset.boxId : shapeEl ? "s" + shapeEl.dataset.boxId : "";
+    const sigEl = textEl || shapeEl ? null : overlay.querySelector(".context-signature-box.selected");
+    const key = textEl ? "t" + textEl.dataset.boxId : shapeEl ? "s" + shapeEl.dataset.boxId : sigEl ? "g" + sigEl.dataset.boxId : "";
     if (key === lastToolSel) return;
     lastToolSel = key;
     const mode = toolbarEl.dataset.mode;
     if (textEl && (mode === "home" || mode === "shape")) setToolMode("text");
     else if (shapeEl && mode !== "shape") setToolMode("shape");
+    else if (sigEl && mode !== "signature") setToolMode("signature");
   }).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
