@@ -3078,7 +3078,7 @@
          other share button. */
       if (window.innerWidth <= 768 && navigator.canShare && navigator.canShare({ files: [outFile] })){
         try {
-          await navigator.share({ files: [outFile], title: fileName });
+          await navigator.share({ files: [outFile] });
           status.textContent = "";
         } catch (shareErr){
           /* AbortError = the user themself dismissed the share sheet —
