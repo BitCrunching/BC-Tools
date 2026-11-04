@@ -501,8 +501,9 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 }
 #ctShapeKindDropdown .bc-dropdown-menu:not([hidden]){
   display:grid;
-  grid-template-columns:repeat(3, 44px);
+  grid-template-columns:repeat(3, minmax(44px, 1fr));
   gap:4px;
+  max-width:min(92vw, 280px);
 }
 #ctShapeKindDropdown .bc-dropdown-option{
   display:flex;
@@ -514,8 +515,14 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 #ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]{
   grid-column:1 / -1;
   gap:8px;
+  height:auto;
+  min-height:40px;
+  padding:8px 16px;
   font-size:14px;
   font-weight:700;
+  line-height:1.25;
+  text-align:center;
+  text-wrap:balance;
   border:var(--border-bold) solid var(--btn-fill);
   background:var(--btn-fill);
   color:var(--btn-fill-text);
@@ -1765,7 +1772,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-kind="cross" data-outline="1" data-label="Kříž (obrys)" role="option" aria-selected="false">Kříž (obrys)</button>
               <button type="button" class="bc-dropdown-option" data-kind="check" data-outline="1" data-label="Zatržítko (obrys)" role="option" aria-selected="false">Zatržítko (obrys)</button>
               <button type="button" class="bc-dropdown-option" data-kind="xmark" data-outline="1" data-label="Křížek (obrys)" role="option" aria-selected="false">Křížek (obrys)</button>
-              <button type="button" class="bc-dropdown-option" data-kind="redact" data-outline="0" data-label="Bezpečně začernit" role="option" aria-selected="false">Bezpečně začernit</button>
+              <button type="button" class="bc-dropdown-option" data-kind="redact" data-outline="0" data-label="Začernit" role="option" aria-selected="false">Začernit</button>
             </div>
           </div>
         </div>
@@ -1911,7 +1918,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     <div class="context-signature-overlay" id="ctRedactOverlay" hidden>
       <div class="context-signature-modal">
         <div class="context-signature-header">
-          <span>Upozornění k začernění</span>
+          <span>Oznámení o začernění</span>
           <div class="context-signature-header-actions">
             <button type="button" class="context-signature-close bc-file-remove-btn" id="ctRedactClose" aria-label="Zavřít" title="Zavřít">&times;</button>
           </div>
@@ -1938,7 +1945,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
         <div class="context-signature-step">
-          <p class="context-signature-hint">Chceme mít jistotu, že víte, že tady dostupné tvary nejsou určeny k začernění ani skrytí citlivých údajů. K tomu použijte tlačítko Bezpečně začernit dole v nabídce tvarů.</p>
+          <p class="context-signature-hint">Chceme mít jistotu, že víte, že tady dostupné tvary nejsou určeny k začernění ani skrytí citlivých údajů. K tomu použijte tlačítko Začernit dole v nabídce tvarů.</p>
           <label class="context-redact-never"><input type="checkbox" id="ctShapeNoticeNever"> Příště nezobrazovat</label>
           <button type="button" class="context-signature-action-btn" id="ctShapeNoticeContinue">Rozumím</button>
         </div>
