@@ -1894,7 +1894,12 @@
     else if (mode === "signature") document.getElementById("ctSignatureBtn").click();
     else if (mode === "shape") activeShapeKind === "redact" ? addRedactBox() : addShapeBox();
   });
-  document.getElementById("ctSigEditBtn").addEventListener("click", () => document.getElementById("ctSignatureBtn").click());
+  const sigEditBtn = document.getElementById("ctSigEditBtn");
+  sigEditBtn.disabled = true;
+  sigEditBtn.addEventListener("click", () => {
+    const box = selectedSigId != null && findSignatureBoxById(selectedSigId);
+    if (box) editSignatureBox(box);
+  });
   redactBtn.addEventListener("click", () => addRedactBox());
   shapeOptsBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1923,6 +1928,7 @@
     const key = textEl ? "t" + textEl.dataset.boxId : shapeEl ? "s" + shapeEl.dataset.boxId : sigEl ? "g" + sigEl.dataset.boxId : "";
     if (key === lastToolSel) return;
     lastToolSel = key;
+    sigEditBtn.disabled = !sigEl;
     const mode = toolbarEl.dataset.mode;
     if (textEl){ if (mode !== "text" && mode !== "date") setToolMode("text"); }
     else if (shapeEl){ if (mode !== "shape") setToolMode("shape"); }
