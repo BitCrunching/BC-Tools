@@ -18,6 +18,7 @@
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
     ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
+    ["REDACT_IT", "Pick Redact at the bottom of the shape menu (or press X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
     ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
@@ -122,6 +123,7 @@
      can become an ellipse), holding Shift keeps the aspect ratio locked
      — see buildShapeBoxEl's resizeHandle drag callback. */
   let shapeBoxes = [];
+  let redactNoticeAcknowledged = false;
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
   let selectedSigId = null;
@@ -1055,6 +1057,9 @@
     cross: '<polygon points="39,6 61,6 61,39 94,39 94,61 61,61 61,94 39,94 39,61 6,61 6,39 39,39" />'
   };
   function shapeSvg(kind, color, bold, outline){
+    if (kind === "redact"){
+      return '<svg viewBox="0 0 100 100" fill="' + color + '" preserveAspectRatio="none"><rect width="100" height="100" /></svg>';
+    }
     if (outline){
       const mark = isMarkKind(kind);
       const body = mark
@@ -1074,14 +1079,17 @@
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
+  const redactIconSvg = '<svg viewBox="0 0 100 100" fill="currentColor"><rect x="4" y="32" width="92" height="36" rx="4" /></svg>';
+  const shapeIconSvg = (kind, outline, bold) =>
+    kind === "redact" ? redactIconSvg : shapeSvg(kind, "currentColor", bold, outline);
   const shapeOptionFor = (kind, outline) =>
     shapeKindMenu.querySelector('[data-kind="' + kind + '"][data-outline="' + (outline ? "1" : "0") + '"]');
 
   /* The shape button shows the currently chosen shape (not a fixed
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
-    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor", false, activeShapeOutline).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
+    shapeBtn.innerHTML = shapeIconSvg(activeShapeKind, activeShapeOutline, false).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    const kindLabels = { check: "Checkmark", xmark: "Crossmark", redact: "Redact" };
     const kindLabel = kindLabels[activeShapeKind] || bcT(activeShapeKind);
     shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [activeShapeOutline ? kindLabel + " " + bcT("outline") : kindLabel]);
   }
@@ -1132,6 +1140,8 @@
     const el = document.createElement("div");
     el.className = "context-shape-box";
     if (box.id === selectedShapeId) el.classList.add("selected");
+    const redact = box.kind === "redact";
+    if (redact) el.classList.add("context-redact-box");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -1187,13 +1197,15 @@
       deselectShapeBox();
       selectedShapeId = box.id;
       el.classList.add("selected");
-      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
-      activeShapeKind = box.kind;
-      activeShapeOutline = !!box.outline;
-      renderShapeBtnIcon();
-      if (isMarkKind(box.kind)){
-        activeBold = !!box.bold;
-        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      if (!redact){
+        bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
+        activeShapeKind = box.kind;
+        activeShapeOutline = !!box.outline;
+        renderShapeBtnIcon();
+        if (isMarkKind(box.kind)){
+          activeBold = !!box.bold;
+          boldBtn.setAttribute("aria-pressed", String(activeBold));
+        }
       }
       activeColor = box.color;
       const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
@@ -1310,6 +1322,10 @@
   });
 
   function addShapeBox(){
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     /* The two form marks land small, sized for ticking a checkbox. */
     const mark = isMarkKind(activeShapeKind);
     const widthPt = mark ? 16 : 100;
@@ -1325,6 +1341,29 @@
       outline: activeShapeOutline,
       color: activeColor,
       bold: mark && activeBold
+    };
+    shapeBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = box.id;
+    renderTextBoxes();
+    noteCreated("shape", box.id);
+    showShapeNotice();
+  }
+
+  function placeRedactBox(){
+    const widthPt = 160;
+    const heightPt = 22;
+    const box = {
+      id: ++shapeBoxIdSeq,
+      page: currentPage,
+      xPt: (overlay.clientWidth / scale / 2) - (widthPt / 2),
+      topPt: (overlay.clientHeight / scale / 2) - (heightPt / 2),
+      widthPt,
+      heightPt,
+      kind: "redact",
+      color: activeColor
     };
     shapeBoxes.push(box);
     deselectBox();
@@ -1742,7 +1781,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true, opt.dataset.outline === "1").replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    if (opt.dataset.kind === "redact"){
+      opt.title = bcT("Redaction tool is used to safely hide sensitive data (X)");
+      return;
+    }
+    opt.innerHTML = shapeIconSvg(opt.dataset.kind, opt.dataset.outline === "1", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
@@ -1825,12 +1868,16 @@
     activeShapeKind = opt.dataset.kind;
     activeShapeOutline = opt.dataset.outline === "1";
     renderShapeBtnIcon();
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     if (!selectedShapeId){
       addShapeBox();
       return;
     }
     const shape = findShapeBoxById(selectedShapeId);
-    if (!shape || shape.page !== currentPage){
+    if (!shape || shape.page !== currentPage || shape.kind === "redact"){
       addShapeBox();
       return;
     }
@@ -1856,6 +1903,7 @@
   function resetEditor(){
     currentFile = null;
     currentFileBytes = null;
+    redactNoticeAcknowledged = false;
     clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
@@ -2252,9 +2300,10 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden || !shapeNoticeOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
+  bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) addRedactBox(); } });
 
   document.addEventListener("pointerdown", e => {
     if (!e.target.closest) return;
@@ -2556,6 +2605,115 @@
     return { u: box.xPt + o.du / pageScale, v: box.topPt + o.dv / pageScale };
   }
 
+  /* A black rectangle drawn over text leaves the text in the file, so
+     every page with a redaction is re-rendered to a picture with the boxes
+     burned in; the other pages are copied across untouched. Runs on the
+     finished PDF so text boxes and shapes under a redaction go too. */
+  const REDACT_DPI = 200;
+  const REDACT_MAX_SIDE = 4500;
+  const REDACT_MAX_PIXELS = 16e6;
+  async function flattenRedactedPages(bytes, redactions){
+    const { PDFDocument } = PDFLib;
+    const byPage = new Map();
+    redactions.forEach(b => {
+      if (!byPage.has(b.page)) byPage.set(b.page, []);
+      byPage.get(b.page).push(b);
+    });
+    const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const viewDoc = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+    const out = await PDFDocument.create();
+    const total = src.getPageCount();
+    let done = 0;
+    try {
+      for (let n = 1; n <= total; n++){
+        const boxes = byPage.get(n);
+        if (!boxes){
+          const [copied] = await out.copyPages(src, [n - 1]);
+          out.addPage(copied);
+          continue;
+        }
+        status.textContent = bcT("Redacting page {0} of {1}...", [++done, byPage.size]);
+        const page = await viewDoc.getPage(n);
+        const base = page.getViewport({ scale: 1 });
+        const s = Math.max(1, Math.min(
+          REDACT_DPI / 72,
+          REDACT_MAX_SIDE / Math.max(base.width, base.height),
+          Math.sqrt(REDACT_MAX_PIXELS / (base.width * base.height))
+        ));
+        const viewport = page.getViewport({ scale: s });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        boxes.forEach(b => {
+          ctx.save();
+          ctx.fillStyle = b.color || "#000000";
+          ctx.translate((b.xPt + b.widthPt / 2) * s, (b.topPt + b.heightPt / 2) * s);
+          ctx.rotate((b.rotation || 0) * Math.PI / 180);
+          ctx.fillRect(-b.widthPt * s / 2 - 1, -b.heightPt * s / 2 - 1, b.widthPt * s + 2, b.heightPt * s + 2);
+          ctx.restore();
+        });
+        const image = await out.embedPng(dataUrlToBytes(canvas.toDataURL("image/png")));
+        canvas.width = canvas.height = 0;
+        const outPage = out.addPage([base.width, base.height]);
+        outPage.drawImage(image, { x: 0, y: 0, width: base.width, height: base.height });
+      }
+    } finally {
+      viewDoc.destroy();
+    }
+    return out.save();
+  }
+
+  const redactOverlay = document.getElementById("ctRedactOverlay");
+  document.body.appendChild(redactOverlay);
+  const shapeNoticeOverlay = document.getElementById("ctShapeNoticeOverlay");
+  document.body.appendChild(shapeNoticeOverlay);
+  const SHAPE_NOTICE_KEY = "bctools_ctx_shape_notice_dismissed";
+  function showShapeNotice(){
+    try { if (localStorage.getItem(SHAPE_NOTICE_KEY) === "1") return; } catch (e) {}
+    shapeNoticeOverlay.hidden = false;
+  }
+  document.getElementById("ctShapeNoticeContinue").addEventListener("click", () => {
+    if (document.getElementById("ctShapeNoticeNever").checked){
+      try { localStorage.setItem(SHAPE_NOTICE_KEY, "1"); } catch (e) {}
+    }
+    shapeNoticeOverlay.hidden = true;
+  });
+  document.getElementById("ctShapeNoticeClose").addEventListener("click", () => { shapeNoticeOverlay.hidden = true; });
+  shapeNoticeOverlay.addEventListener("pointerdown", e => {
+    if (e.target === shapeNoticeOverlay) shapeNoticeOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !shapeNoticeOverlay.hidden, () => { shapeNoticeOverlay.hidden = true; }, 96);
+
+  const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
+  function redactNoticeDismissed(){
+    try { return localStorage.getItem(REDACT_NOTICE_KEY) === "1"; } catch (e) { return false; }
+  }
+  function addRedactBox(){
+    if (redactNoticeAcknowledged || redactNoticeDismissed()){
+      placeRedactBox();
+      return;
+    }
+    document.getElementById("ctRedactNever").checked = false;
+    redactOverlay.hidden = false;
+  }
+  document.getElementById("ctRedactContinue").addEventListener("click", () => {
+    if (document.getElementById("ctRedactNever").checked){
+      try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
+    }
+    redactNoticeAcknowledged = true;
+    redactOverlay.hidden = true;
+    placeRedactBox();
+  });
+  document.getElementById("ctRedactClose").addEventListener("click", () => { redactOverlay.hidden = true; });
+  redactOverlay.addEventListener("pointerdown", e => {
+    if (e.target === redactOverlay) redactOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !redactOverlay.hidden, () => { redactOverlay.hidden = true; }, 95);
+
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
     downloadBtn.disabled = true;
@@ -2678,6 +2836,7 @@
       }
 
       shapeBoxes.forEach(box => {
+        if (box.kind === "redact") return;
         const page = pages[box.page - 1];
         if (!page) return;
         const { rot, toPdf } = pageFrame(page);
@@ -2749,7 +2908,9 @@
         }
       });
 
-      const outBytes = await pdfDoc.save();
+      let outBytes = await pdfDoc.save();
+      const redactions = shapeBoxes.filter(b => b.kind === "redact" && b.page >= 1 && b.page <= pages.length);
+      if (redactions.length) outBytes = await flattenRedactedPages(outBytes, redactions);
       const blob = new Blob([outBytes], { type: "application/pdf" });
       const chosenName = filenameInput.value.trim() || currentFile.name.replace(/\.pdf$/i, "") + "-context";
       const fileName = chosenName.replace(/\.pdf$/i, "") + ".pdf";

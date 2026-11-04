@@ -3636,3 +3636,31 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
 @media (hover:none){
   .bc-hover-reveal{ opacity:1; pointer-events:auto; }
 }
+
+/* ===== .bc-paid-btn — the one "paid version" button. Every place that
+   will offer the paid version uses this class plus data-bc-paid, so the
+   link can later be wired in one spot. While aria-disabled="true" it is
+   an unavailable control: dashed outline, no fill, no pointer. Geometry
+   (size, padding, radius) stays with the local class it sits next to. */
+.bc-paid-btn{
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+.bc-paid-btn:hover{ background:rgba(255,255,255,.45); }
+html[data-theme="dark"] .bc-paid-btn{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .bc-paid-btn:hover{ background:rgba(0,0,0,.35); }
+.bc-paid-btn[aria-disabled="true"],
+.bc-paid-btn[aria-disabled="true"]:hover,
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"],
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"]:hover{
+  background:transparent;
+  border:1px dashed currentColor;
+  color:inherit;
+  cursor:default;
+}

@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=259">
+<link rel="stylesheet" href="/shared/site.css?v=260">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 .cs-shape{ background:#ffde89; }
@@ -511,6 +511,19 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   height:40px;
   padding:0;
 }
+#ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]{
+  grid-column:1 / -1;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  border:var(--border-bold) solid var(--btn-fill);
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+#ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]:hover{
+  background:transparent;
+  color:var(--btn-fill);
+}
 .ct-shape-opt-icon{
   width:20px;
   height:20px;
@@ -598,6 +611,15 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   }
   :is(#page-context, .context-fullscreen-overlay) .context-text-box.selected .context-text-resize-handle{
     display:flex;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-text-box > .context-text-remove{
+    position:absolute;
+    top:-12px;
+    right:-32px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-text-box .context-text-resize-handle{
+    right:-32px;
+    bottom:-12px;
   }
   :is(#page-context, .context-fullscreen-overlay) .context-page-btn{
     width:27px;
@@ -974,8 +996,8 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    above), position offset, and cursor direction. */
 .context-text-resize-handle{
   display:none;
-  right:-10px;
-  bottom:-10px;
+  right:0;
+  bottom:-30px;
   cursor:nwse-resize;
   user-select:none;
   -webkit-touch-callout:none;
@@ -1256,6 +1278,25 @@ html[data-theme="light"] .context-signature-modal{
   font-size:15px;
   cursor:pointer;
 }
+
+.context-redact-tradeoffs{
+  margin:0 0 12px;
+  padding-left:20px;
+  font-size:14px;
+  line-height:1.5;
+  opacity:.8;
+}
+.context-redact-tradeoffs li{ margin-top:6px; }
+.context-redact-never{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.context-redact-never input{ width:16px; height:16px; cursor:pointer; }
 
 .context-signature-saved-preview{
   display:block;
@@ -1686,9 +1727,9 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     <div class="context-editor" id="ctEditor" hidden>
       <div class="context-toolbar">
         <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Text hinzufügen (T)"><span class="ct-desktop-only">Text hinzufügen</span><span class="ct-mobile-only">Neu</span></button>
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Add date (E)"><span class="ct-desktop-only">Add date</span><span class="ct-mobile-only">Date</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Add date (E)"><span class="ct-desktop-only">Add date</span><span class="ct-mobile-only">D</span></button>
 
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Unterschrift (S)"><span class="ct-desktop-only">Unterschrift</span><span class="ct-mobile-only">S</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Create signature (S)"><span class="ct-desktop-only">Unterschrift</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
           <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
@@ -1724,6 +1765,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-kind="cross" data-outline="1" data-label="Cross outline" role="option" aria-selected="false">Cross outline</button>
               <button type="button" class="bc-dropdown-option" data-kind="check" data-outline="1" data-label="Checkmark outline" role="option" aria-selected="false">Checkmark outline</button>
               <button type="button" class="bc-dropdown-option" data-kind="xmark" data-outline="1" data-label="Crossmark outline" role="option" aria-selected="false">Crossmark outline</button>
+              <button type="button" class="bc-dropdown-option" data-kind="redact" data-outline="0" data-label="Redact safely" role="option" aria-selected="false">Redact safely</button>
             </div>
           </div>
         </div>
@@ -1862,6 +1904,43 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           <p class="context-signature-hint">Five items were just added in a fraction of a second. Do you want to keep them and continue?</p>
           <button type="button" class="context-signature-action-btn" id="ctBurstKeep">Yes, continue</button>
           <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctBurstUndo">Remove those 5</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="context-signature-overlay" id="ctRedactOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header">
+          <span>Redaction: technical notice</span>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctRedactClose" aria-label="Schließen" title="Schließen">&times;</button>
+          </div>
+        </div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">The free version redacts by rasterization: every page that contains a redaction box is converted to an image with the boxes burned in, and the original content beneath them is permanently removed. This is a widely accepted way to guarantee that redacted content cannot be recovered, but it comes with trade-offs:</p>
+          <ul class="context-redact-tradeoffs">
+            <li>The page is no longer machine-readable. Its text, fonts and vector graphics are replaced by an image, so it cannot be selected, copied or searched, and any links or form fields on it are removed.</li>
+            <li>The file may become larger, and the page may appear less sharp when magnified.</li>
+          </ul>
+          <label class="context-redact-never"><input type="checkbox" id="ctRedactNever"> Do not show again</label>
+          <button type="button" class="context-signature-action-btn" id="ctRedactContinue">Continue with redaction</button>
+          <button type="button" class="context-signature-action-btn bc-paid-btn" id="ctRedactUpgrade" data-bc-paid aria-disabled="true" title="This option is unavailable for now.">Upgrade to PRO version</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="context-signature-overlay" id="ctShapeNoticeOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header">
+          <span>Shapes are not a redaction tool</span>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctShapeNoticeClose" aria-label="Schließen" title="Schließen">&times;</button>
+          </div>
+        </div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">We want to make sure you know that the shapes available here are not intended to redact or hide any sensitive information. For that, use the Redact button at the bottom of the shape menu.</p>
+          <label class="context-redact-never"><input type="checkbox" id="ctShapeNoticeNever"> Do not show again</label>
+          <button type="button" class="context-signature-action-btn" id="ctShapeNoticeContinue">I understand</button>
         </div>
       </div>
     </div>
@@ -2029,6 +2108,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=115" defer></script>
+<script src="/context/context-tool.js?v=129" defer></script>
 </body>
 </html>
