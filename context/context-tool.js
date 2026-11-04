@@ -1823,7 +1823,13 @@
     if (mode === "date") addTextBox(todayString());
     setToolMode(mode);
   });
-  toolBackBtn.addEventListener("click", () => setToolMode("home"));
+  toolBackBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    bcCloseAllPopups();
+    setToolMode("home");
+    newMenu.hidden = false;
+    newBtn.setAttribute("aria-expanded", "true");
+  });
   document.getElementById("ctAddMoreBtn").addEventListener("click", () => {
     const mode = toolbarEl.dataset.mode;
     if (mode === "text") addTextBox();
