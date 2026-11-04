@@ -2394,11 +2394,6 @@
 
   const customColorBtn = document.getElementById("ctColorCustomBtn");
   const customColorDot = document.getElementById("ctColorCustomDot");
-  const colorPanelPop = document.createElement("div");
-  colorPanelPop.className = "context-color-panel-pop";
-  colorPanelPop.hidden = true;
-  document.body.appendChild(colorPanelPop);
-  const closeColorPanel = () => { colorPanelPop.hidden = true; };
   function setCustomColor(hex){
     activeColor = hex;
     customColorBtn.dataset.color = hex;
@@ -2412,23 +2407,9 @@
     });
     applyActiveColorToSelection();
   }
-  const colorPanel = bcCreateColorPanel(colorPanelPop, { value: "#2563eb", onChange: setCustomColor });
-  function openColorPanel(){
-    colorPanel.setValue(customColorBtn.dataset.color || activeColor || "#2563eb");
-    colorPanelPop.hidden = false;
-    const r = colorTrigger.getBoundingClientRect();
-    const w = colorPanelPop.offsetWidth, h = colorPanelPop.offsetHeight;
-    const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
-    const above = r.top > h + 16;
-    colorPanelPop.style.left = left + "px";
-    colorPanelPop.style.top = Math.round(above ? r.top - h - 8 : r.bottom + 8) + "px";
-  }
-  bcRegisterPopup(closeColorPanel);
-  document.addEventListener("pointerdown", (e) => {
-    if (colorPanelPop.hidden || colorPanelPop.contains(e.target) || colorTrigger.contains(e.target)) return;
-    closeColorPanel();
-  }, true);
-  bcRegisterEscapable(() => !colorPanelPop.hidden, closeColorPanel, 105);
+  const colorPopover = bcCreateColorPopover(colorTrigger, { value: "#2563eb", onChange: setCustomColor });
+  const closeColorPanel = colorPopover.close;
+  const openColorPanel = () => colorPopover.open(customColorBtn.dataset.color || activeColor || "#2563eb");
 
   colorMenu.addEventListener("click", (e) => {
     const opt = e.target.closest(".context-color-option");

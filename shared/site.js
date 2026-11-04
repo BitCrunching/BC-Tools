@@ -1533,6 +1533,34 @@ function bcCreateColorPanel(container, { value = "#2563EB", swatches = BC_COLOR_
   return { setValue };
 }
 
+/* Floating color picker anchored to a button: a bc-color-panel in a fixed
+   popover that opens above the anchor (below when there's no room), clamps
+   on-screen, and closes on outside press, Esc, or any other popup opening.
+   open(hex) shows it preset to hex; onChange(hex) fires while dragging. */
+function bcCreateColorPopover(anchor, { value = "#2563EB", onChange } = {}){
+  const pop = document.createElement("div");
+  pop.className = "bc-color-popover";
+  pop.hidden = true;
+  document.body.appendChild(pop);
+  const panel = bcCreateColorPanel(pop, { value, onChange });
+  const close = () => { pop.hidden = true; };
+  function open(hex){
+    panel.setValue(hex || value);
+    pop.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + "px";
+    pop.style.top = Math.round(r.top > h + 16 ? r.top - h - 8 : r.bottom + 8) + "px";
+  }
+  bcRegisterPopup(close);
+  document.addEventListener("pointerdown", (e) => {
+    if (pop.hidden || pop.contains(e.target) || anchor.contains(e.target)) return;
+    close();
+  }, true);
+  bcRegisterEscapable(() => !pop.hidden, close, 105);
+  return { open, close, setValue: panel.setValue, isOpen: () => !pop.hidden };
+}
+
 /* Built-in menus/tooltips: any open dropdown, combo or info tooltip. */
 bcRegisterEscapable(
   () => bcDropdowns.some(d => !d.menu.hidden) || bcCombos.some(c => !c.menu.hidden) || bcInfoTooltips.some(o => !o.tooltip.hidden),
