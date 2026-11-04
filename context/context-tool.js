@@ -626,11 +626,6 @@
     });
   }
 
-  function syncToolbarSelection(){
-    toolbarEl.dataset.sel = overlay.querySelector(".context-text-box.selected") ? "text" : overlay.querySelector(".context-shape-box.selected") ? "shape" : "";
-  }
-  new MutationObserver(syncToolbarSelection).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
-
   function deselectBox(){
     selectedBoxId = null;
     overlay.querySelectorAll(".context-text-box.selected").forEach(elx => elx.classList.remove("selected"));
@@ -1813,6 +1808,56 @@
 
   addTextBtn.addEventListener("click", () => addTextBox());
   addDateBtn.addEventListener("click", () => addTextBox(todayString()));
+
+  const newBtn = document.getElementById("ctNewBtn");
+  const newMenu = document.getElementById("ctNewMenu");
+  const toolBackBtn = document.getElementById("ctToolBackBtn");
+  const redactBtn = document.getElementById("ctRedactBtn");
+  const dateFmtBtn = document.getElementById("ctDateFmtBtn");
+  const shapeOptsBtn = document.getElementById("ctShapeOptsBtn");
+  const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; };
+  bcRegisterDropdown(newBtn, newMenu, (opt) => {
+    const mode = opt.dataset.mode;
+    if (mode === "signature"){
+      document.getElementById("ctSignatureBtn").click();
+      return;
+    }
+    if (mode === "text") addTextBox();
+    if (mode === "date") addTextBox(todayString());
+    setToolMode(mode);
+  });
+  toolBackBtn.addEventListener("click", () => setToolMode("home"));
+  redactBtn.addEventListener("click", () => addRedactBox());
+  shapeOptsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (shapeKindMenu.hidden) openShapeMenu(); else closeShapeHover();
+  });
+  function renderDateFmtBtn(){ dateFmtBtn.textContent = dateFormat; }
+  renderDateFmtBtn();
+  dateFmtBtn.addEventListener("click", () => {
+    const before = todayString();
+    dateFormat = DATE_FORMATS[(DATE_FORMATS.indexOf(dateFormat) + 1) % DATE_FORMATS.length];
+    try { localStorage.setItem(DATE_FORMAT_KEY, dateFormat); } catch (err) { /* skip */ }
+    renderDateFmtBtn();
+    const box = selectedBoxId && findBoxById(selectedBoxId);
+    const inner = box && overlay.querySelector('.context-text-box[data-box-id="' + box.id + '"] .context-text-inner');
+    if (box && inner && box.text === before){
+      box.text = todayString();
+      inner.textContent = box.text;
+      schedulePersist();
+    }
+  });
+  let lastToolSel = "";
+  new MutationObserver(() => {
+    const textEl = overlay.querySelector(".context-text-box.selected");
+    const shapeEl = textEl ? null : overlay.querySelector(".context-shape-box.selected");
+    const key = textEl ? "t" + textEl.dataset.boxId : shapeEl ? "s" + shapeEl.dataset.boxId : "";
+    if (key === lastToolSel) return;
+    lastToolSel = key;
+    const mode = toolbarEl.dataset.mode;
+    if (textEl && (mode === "home" || mode === "shape")) setToolMode("text");
+    else if (shapeEl && mode !== "shape") setToolMode("shape");
+  }).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
      tooltip and accessible label. */
@@ -1943,6 +1988,7 @@
     currentFile = null;
     currentFileBytes = null;
     redactNoticeAcknowledged = false;
+    toolbarEl.dataset.mode = "home";
     clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];

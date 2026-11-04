@@ -622,9 +622,6 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
     font-size:13px;
   }
   /* Font-size nav replaced by dragging each box's own resize handle. */
-  :is(#page-context, .context-fullscreen-overlay) .context-font-size-combo{
-    display:none;
-  }
   :is(#page-context, .context-fullscreen-overlay) .context-text-box.selected .context-text-resize-handle{
     display:flex;
   }
@@ -1638,15 +1635,73 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     justify-content:center;
   }
 }
-.context-toolbar-break{ display:none; }
+#ctShapeKindDropdown .ct-shape-opts-btn{ display:none; }
+.ct-new-menu{
+  transform-origin:bottom left;
+  transition:opacity .18s ease, transform .22s cubic-bezier(.22,1,.36,1), display .22s allow-discrete;
+}
+@starting-style{
+  .ct-new-menu:not([hidden]){ opacity:0; transform:translateY(10px) scale(.85); }
+}
 @media (max-width:768px){
-  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{ flex-wrap:wrap; row-gap:8px; }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{ flex-wrap:nowrap; gap:0; justify-content:flex-start; row-gap:0; }
   :is(#page-context, .context-fullscreen-overlay) .bc-toggle-btn-group{ display:contents; }
-  :is(#page-context, .context-fullscreen-overlay) :is(#ctFontDropdown, #ctUnderlineBtn, #ctItalicBtn, #ctBoldBtn, #ctColorDropdown){ order:-2; }
-  :is(#page-context, .context-fullscreen-overlay) .context-toolbar-break{ order:-1; flex:0 0 100%; height:0; }
-  :is(#page-context, .context-fullscreen-overlay) .context-toolbar:not([data-sel="text"]) :is(#ctFontDropdown, #ctUnderlineBtn, #ctItalicBtn, #ctBoldBtn){ display:none; }
-  :is(#page-context, .context-fullscreen-overlay) .context-toolbar:not([data-sel="text"]):not([data-sel="shape"]) #ctColorDropdown{ display:none; }
-  :is(#page-context, .context-fullscreen-overlay) .context-toolbar:is([data-sel="text"], [data-sel="shape"]) .context-toolbar-break{ display:block; }
+  :is(#page-context, .context-fullscreen-overlay) :is(#ctAddTextBtn, #ctAddDateBtn, #ctSignatureBtn){ display:none; }
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{ margin-left:auto; flex-shrink:0; }
+  :is(#page-context, .context-fullscreen-overlay) #ctToolBackBtn{ --w:34px; order:0; }
+  :is(#page-context, .context-fullscreen-overlay) #ctNewWrap{ --w:72px; order:1; position:relative; }
+  :is(#page-context, .context-fullscreen-overlay) #ctNewBtn{ width:100%; padding:0 8px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeDropdown{ --w:76px; order:2; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeTrigger{ height:34px; padding:0 8px; border-radius:10px; font-size:13px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeMenu{ top:auto; bottom:calc(100% + 6px); width:100%; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontDropdown{ --w:27px; order:3; }
+  :is(#page-context, .context-fullscreen-overlay) #ctUnderlineBtn{ --w:27px; order:4; }
+  :is(#page-context, .context-fullscreen-overlay) #ctItalicBtn{ --w:27px; order:5; }
+  :is(#page-context, .context-fullscreen-overlay) #ctBoldBtn{ --w:27px; order:6; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown{ --w:62px; order:7; display:flex; gap:4px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .ct-shape-opts-btn{ display:flex; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .bc-dropdown-menu{ left:0; right:auto; }
+  :is(#page-context, .context-fullscreen-overlay) #ctRedactBtn{ --w:84px; --pad:10px; order:8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctDateFmtBtn{ --w:106px; --pad:10px; order:9; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorDropdown{ --w:34px; order:10; }
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{ order:11; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-menu{ left:0; right:auto; bottom:calc(100% + 14px); top:auto; min-width:150px; padding:8px; border-radius:22px; margin:0; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-menu::after{ content:""; position:absolute; left:26px; bottom:-7px; width:14px; height:14px; background:inherit; border-radius:0 0 4px 0; transform:rotate(45deg); }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-menu .bc-dropdown-option{ height:44px; padding:0 14px; display:flex; align-items:center; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-m{
+    box-sizing:border-box;
+    flex-shrink:0;
+    width:0;
+    min-width:0;
+    margin:0;
+    padding-left:0;
+    padding-right:0;
+    border-width:0;
+    opacity:0;
+    overflow:hidden;
+    visibility:hidden;
+    pointer-events:none;
+    transition:width .26s cubic-bezier(.22,1,.36,1), margin .26s cubic-bezier(.22,1,.36,1), padding .26s cubic-bezier(.22,1,.36,1), border-width .26s, opacity .18s ease, visibility 0s linear .26s;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="home"] .ct-m-home,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="text"] .ct-m-text,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="shape"] .ct-m-shape,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="date"] .ct-m-date,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar:not([data-mode="home"]) .ct-m-sub{
+    width:var(--w);
+    margin:0 2px;
+    padding-left:var(--pad, 0);
+    padding-right:var(--pad, 0);
+    border-width:1px;
+    opacity:1;
+    overflow:visible;
+    visibility:visible;
+    pointer-events:auto;
+    transition:width .26s cubic-bezier(.22,1,.36,1), margin .26s cubic-bezier(.22,1,.36,1), padding .26s cubic-bezier(.22,1,.36,1), border-width .26s, opacity .2s ease .06s, visibility 0s;
+  }
+}
+@media (max-width:340px){
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar .ct-m{ --w:auto; }
 }
 </style>
 </head>
@@ -1777,15 +1832,24 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     <button type="button" class="tool-primary-btn tool-continue-btn" id="ctContinueBtn" hidden>Continuar donde lo dejaste</button>
 
     <div class="context-editor" id="ctEditor" hidden>
-      <div class="context-toolbar">
-        <span class="context-toolbar-break" aria-hidden="true"></span>
+      <div class="context-toolbar" data-mode="home">
+        <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-back-btn ct-m ct-m-sub ct-mobile-only" id="ctToolBackBtn" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg></button>
+        <div class="bc-dropdown ct-new-wrap ct-m ct-m-home ct-mobile-only" id="ctNewWrap">
+          <button type="button" class="context-tool-btn" id="ctNewBtn" aria-haspopup="menu" aria-expanded="false">Nuevo</button>
+          <div class="bc-dropdown-menu ct-new-menu" id="ctNewMenu" role="menu" hidden>
+            <button type="button" class="bc-dropdown-option" data-mode="text" role="menuitem">Text</button>
+            <button type="button" class="bc-dropdown-option" data-mode="date" role="menuitem">Date</button>
+            <button type="button" class="bc-dropdown-option" data-mode="signature" role="menuitem">Firma</button>
+            <button type="button" class="bc-dropdown-option" data-mode="shape" role="menuitem">Shape</button>
+          </div>
+        </div>
         <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Añadir texto (T)"><span class="ct-desktop-only">Añadir texto</span><span class="ct-mobile-only">Nuevo</span></button>
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Añadir fecha (E)"><span class="ct-desktop-only">Añadir fecha</span><span class="ct-mobile-only">D</span></button>
 
         <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Crear firma (S)"><span class="ct-desktop-only">Firma</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
-          <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
+          <div class="bc-dropdown context-font-dropdown ct-m ct-m-text" id="ctFontDropdown">
             <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctFontBtn" title="Fuente" aria-label="Fuente" aria-haspopup="listbox" aria-expanded="false">F</button>
             <div class="bc-dropdown-menu" id="ctFontMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-font="arial" data-label="Arial" role="option" aria-selected="false">Arial</button>
@@ -1799,12 +1863,13 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-font="playfair" data-label="Playfair Display" role="option" aria-selected="false">Playfair Display</button>
             </div>
           </div>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Subrayado (U)" aria-label="Subrayado" aria-pressed="false"><u>U</u></button>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Cursiva (I)" aria-label="Cursiva" aria-pressed="false"><i>I</i></button>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Negrita (B)" aria-label="Negrita" aria-pressed="false"><b>B</b></button>
-          <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctUnderlineBtn" title="Subrayado (U)" aria-label="Subrayado" aria-pressed="false"><u>U</u></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctItalicBtn" title="Cursiva (I)" aria-label="Cursiva" aria-pressed="false"><i>I</i></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctBoldBtn" title="Negrita (B)" aria-label="Negrita" aria-pressed="false"><b>B</b></button>
+          <div class="bc-dropdown context-shape-kind-dropdown ct-m ct-m-shape" id="ctShapeKindDropdown">
             <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Añadir forma (H)" aria-label="Añadir forma" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
             <button type="button" class="ct-shape-arrow" id="ctShapeArrow" tabindex="-1" aria-label="Elegir forma" title="Elegir forma"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-shape-opts-btn ct-mobile-only" id="ctShapeOptsBtn" title="Elegir forma" aria-label="Elegir forma"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-kind="circle" data-outline="0" data-label="Círculo" role="option" aria-selected="false">Círculo</button>
               <button type="button" class="bc-dropdown-option" data-kind="square" data-outline="0" data-label="Cuadrado" role="option" aria-selected="false">Cuadrado</button>
@@ -1823,7 +1888,10 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
 
-        <div class="context-color-dropdown" id="ctColorDropdown">
+        <button type="button" class="context-color-trigger bc-dropdown-trigger ct-m ct-m-shape ct-mobile-only" id="ctRedactBtn" title="La herramienta de tachado sirve para ocultar datos sensibles de forma segura (X)">Tachar</button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger ct-m ct-m-date ct-mobile-only" id="ctDateFmtBtn" title="Cambiar formato de fecha">DD-MM-YYYY</button>
+
+        <div class="context-color-dropdown ct-m ct-m-text ct-m-shape" id="ctColorDropdown">
           <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctColorTrigger" aria-haspopup="listbox" aria-expanded="false">
             <span class="context-color-dot bc-color-dot" id="ctColorTriggerDot" style="background:#000000"></span>
             <span id="ctColorTriggerLabel">Negro</span>
@@ -1848,7 +1916,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
           </div>
         </div>
 
-        <div class="bc-combo context-font-size-combo" id="ctFontSizeDropdown">
+        <div class="bc-combo context-font-size-combo ct-m ct-m-text" id="ctFontSizeDropdown">
           <div class="bc-combo-trigger context-font-size-trigger" id="ctFontSizeTrigger" aria-haspopup="listbox" aria-expanded="false">
             <input class="bc-combo-input" id="ctFontSizeInput" value="16px" readonly aria-label="Buscar tamaños de fuente">
             <span class="bc-combo-chevron" aria-hidden="true"></span>
@@ -2162,6 +2230,6 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <script src="/shared/site.js?v=99" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
-<script src="/context/context-tool.js?v=137" defer></script>
+<script src="/context/context-tool.js?v=139" defer></script>
 </body>
 </html>
