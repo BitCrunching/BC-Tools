@@ -1854,9 +1854,10 @@
     if (key === lastToolSel) return;
     lastToolSel = key;
     const mode = toolbarEl.dataset.mode;
-    if (textEl && (mode === "home" || mode === "shape")) setToolMode("text");
-    else if (shapeEl && mode !== "shape") setToolMode("shape");
-    else if (sigEl && mode !== "signature") setToolMode("signature");
+    if (textEl){ if (mode !== "text" && mode !== "date") setToolMode("text"); }
+    else if (shapeEl){ if (mode !== "shape") setToolMode("shape"); }
+    else if (sigEl){ if (mode !== "signature") setToolMode("signature"); }
+    else setToolMode("home");
   }).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
