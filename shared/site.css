@@ -23,14 +23,14 @@
    height/padding, the light/dark flip, its responsive sizing) lives in
    nav.css so both this file and index.html point at one real source —
    see nav.css's own header comment. */
-@import url("nav.css?v=3");
+@import url("nav.css?v=1");
 /* Same reasoning: the 4 category texture recipes (image/video/sound/
    code) live in textures.css so any tool's own .tool-app banner can opt
    into the same treatment its homepage card uses via data-category,
    instead of that logic staying private to index.html's card grid.
    Versioned for the same cache-busting reason as icons.css above. */
-@import url("textures.css?v=4");
-@import url("buttons.css?v=61");
+@import url("textures.css?v=2");
+@import url("buttons.css?v=59");
 
 /* ===== TOKENS ===== */
 :root{
@@ -3368,9 +3368,15 @@ html[data-theme="dark"] video{
   gap:12px;
   border-radius:16px;
   border:1px solid var(--border-strong);
-  background:var(--bg);
+  background:#1d2436;
   color:var(--text);
 }
+html[data-theme="light"] .bc-color-panel{ background:#e4e9f5; }
+.bc-color-popover{
+  position:fixed;
+  z-index:100000;
+}
+.bc-color-popover[hidden]{ display:none; }
 .bc-cp-swatches{
   display:grid;
   grid-template-columns:repeat(6, 1fr);
@@ -3635,4 +3641,32 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
 }
 @media (hover:none){
   .bc-hover-reveal{ opacity:1; pointer-events:auto; }
+}
+
+/* ===== .bc-paid-btn — the one "paid version" button. Every place that
+   will offer the paid version uses this class plus data-bc-paid, so the
+   link can later be wired in one spot. While aria-disabled="true" it is
+   an unavailable control: dashed outline, no fill, no pointer. Geometry
+   (size, padding, radius) stays with the local class it sits next to. */
+.bc-paid-btn{
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+.bc-paid-btn:hover{ background:rgba(255,255,255,.45); }
+html[data-theme="dark"] .bc-paid-btn{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .bc-paid-btn:hover{ background:rgba(0,0,0,.35); }
+.bc-paid-btn[aria-disabled="true"],
+.bc-paid-btn[aria-disabled="true"]:hover,
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"],
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"]:hover{
+  background:transparent;
+  border:1px dashed currentColor;
+  color:inherit;
+  cursor:default;
 }

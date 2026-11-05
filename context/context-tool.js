@@ -18,6 +18,7 @@
     ["STYLE_IT_YOUR_WAY", "Pick a color, size, and bold/italic/underline from the toolbar. Click an item to select it and its handles appear: drag the item to move it, the blue handle to resize, the yellow one on a shape to rotate it, and the red × (or Backspace) to remove it."],
     ["COPY_AND_UNDO", "Press Ctrl/Cmd+C, then Ctrl/Cmd+V, to copy a selected text box, shape, or signature — the copy lands right next to it. Ctrl/Cmd+Z undoes and Shift+Z redoes, or use the arrows above the page."],
     ["SIGN_IT", "Upload a photo of your signature, take one, or draw it — crop to the signature, then fine-tune: brush away leftovers, slide Fade to drop faint marks, undo/redo, and pick any ink color. Double-click a placed signature to edit it again."],
+    ["REDACT_IT", "Pick Redact at the bottom of the shape menu (or press X) to drop a box over anything private, then drag, resize or rotate it and pick any color. On download, every page with a redaction box becomes a picture with the boxes burned in, so the covered text is removed for good."],
     ["MULTI_PAGE_SUPPORT", "Use the page arrows at the top left of the page to move between pages — everything stays exactly where you placed it."],
     ["BIG_FILE", "If the PDF is over 10 MB, a Compress file button appears under the editor. It shrinks the images just enough to make the file easy to email or upload."],
     ["YOU_ARE_SET", "Hit the Download button (D) when you're done, Rename file (R) to name it first, and press Esc to close any open panel. Close this with the red dot and we won't show it again."]
@@ -93,6 +94,8 @@
   let scale = 1;
   let isFullscreen = false;
   let lastKnownWidth = window.innerWidth;
+  const MOBILE_QUERY = "(max-width:768px) and (orientation:portrait)";
+  const mobileMql = window.matchMedia(MOBILE_QUERY);
   let fsZoom = 1;
   let fsPanX = 0;
   let fsPanY = 0;
@@ -122,6 +125,7 @@
      can become an ellipse), holding Shift keeps the aspect ratio locked
      — see buildShapeBoxEl's resizeHandle drag callback. */
   let shapeBoxes = [];
+  let redactNoticeAcknowledged = false;
   let shapeBoxIdSeq = 0;
   let selectedShapeId = null;
   let selectedSigId = null;
@@ -471,6 +475,15 @@
     }
     const wrapMaxWidth = Math.min(760, availableWidth);
     scale = Math.min(wrapMaxWidth / baseViewport.width, 1.4);
+    if (isFullscreen){
+      const areaStyle = getComputedStyle(fullscreenCanvasArea);
+      const bar = previewPanel.querySelector(".context-panel-bar");
+      const availableHeight = fullscreenCanvasArea.clientHeight
+        - parseFloat(areaStyle.paddingTop) - parseFloat(areaStyle.paddingBottom)
+        - (bar ? bar.offsetHeight + 24 : 60);
+      const fitHeight = availableHeight / baseViewport.height;
+      if (fitHeight > scale * 0.5) scale = Math.min(scale, fitHeight);
+    }
     const viewport = page.getViewport({ scale });
 
     /* Canvas backing resolution was previously 1 device pixel per CSS
@@ -633,7 +646,7 @@
     opensans: { label: "Open Sans", family: "BC Open Sans", fallback: "sans-serif", files: { r: "OpenSans_400Regular.ttf", b: "OpenSans_700Bold.ttf", i: "OpenSans_400Regular_Italic.ttf", bi: "OpenSans_700Bold_Italic.ttf" } },
     comicneue: { label: "Comic Neue", family: "BC Comic Neue", fallback: "cursive", files: { r: "ComicNeue_400Regular.ttf", b: "ComicNeue_700Bold.ttf", i: "ComicNeue_400Regular_Italic.ttf", bi: "ComicNeue_700Bold_Italic.ttf" } },
     anton: { label: "Anton", family: "BC Anton", fallback: "Impact, sans-serif", files: { r: "Anton_400Regular.ttf" } },
-    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" } },
+    caveat: { label: "Caveat", family: "BC Caveat", fallback: "cursive", files: { r: "Caveat_400Regular.ttf", b: "Caveat_700Bold.ttf" }, embed: { subset: false, features: { calt: false } }, embedBytes: 260000 },
     playfair: { label: "Playfair Display", family: "BC Playfair Display", fallback: "serif", files: { r: "PlayfairDisplay_400Regular.ttf", b: "PlayfairDisplay_700Bold.ttf", i: "PlayfairDisplay_400Regular_Italic.ttf", bi: "PlayfairDisplay_700Bold_Italic.ttf" } }
   };
   const fontOf = id => CTX_FONTS[id] || CTX_FONTS.arial;
@@ -907,6 +920,16 @@
     overlay.querySelectorAll(".context-signature-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
+  function selectSignatureById(id){
+    if (!findSignatureBoxById(id)) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedSigId = id;
+    const el = overlay.querySelector('.context-signature-box[data-box-id="' + id + '"]');
+    if (el) el.classList.add("selected");
+  }
+
   /* Reuses the same visual drag/resize handles as buildBoxEl's text
      boxes, but resizing here scales the whole image uniformly (keeping
      its aspect ratio) instead of just bumping a font size. */
@@ -974,13 +997,7 @@
       });
     }
 
-    el.addEventListener("pointerdown", () => {
-      deselectBox();
-      deselectSignatureBox();
-      deselectShapeBox();
-      selectedSigId = box.id;
-      el.classList.add("selected");
-    });
+    el.addEventListener("pointerdown", () => selectSignatureById(box.id));
 
     startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
@@ -1025,6 +1042,34 @@
     overlay.querySelectorAll(".context-shape-box.selected").forEach(elx => elx.classList.remove("selected"));
   }
 
+  function selectShapeById(id){
+    const box = shapeBoxes.find(b => b.id === id);
+    if (!box) return;
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = id;
+    const el = overlay.querySelector('.context-shape-box[data-box-id="' + id + '"]');
+    if (el) el.classList.add("selected");
+    if (box.kind !== "redact"){
+      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
+      activeShapeKind = box.kind;
+      activeShapeOutline = !!box.outline;
+      renderShapeBtnIcon();
+      if (isMarkKind(box.kind)){
+        activeBold = !!box.bold;
+        boldBtn.setAttribute("aria-pressed", String(activeBold));
+      }
+    }
+    activeColor = box.color;
+    const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
+    bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      o.classList.toggle("active", o === opt);
+      o.setAttribute("aria-selected", String(o === opt));
+    });
+  }
+
   /* Inline SVG per shape rather than a single reusable markup string —
      each kind needs different child geometry (circle/rect/polygon), and
      an SVG scales with its box's own width/height for free the same way
@@ -1055,6 +1100,9 @@
     cross: '<polygon points="39,6 61,6 61,39 94,39 94,61 61,61 61,94 39,94 39,61 6,61 6,39 39,39" />'
   };
   function shapeSvg(kind, color, bold, outline){
+    if (kind === "redact"){
+      return '<svg viewBox="0 0 100 100" fill="' + color + '" preserveAspectRatio="none"><rect width="100" height="100" /></svg>';
+    }
     if (outline){
       const mark = isMarkKind(kind);
       const body = mark
@@ -1074,14 +1122,17 @@
     };
     return `<svg viewBox="0 0 100 100" fill="${color}" preserveAspectRatio="none">${shapes[kind] || shapes.circle}</svg>`;
   }
+  const redactIconSvg = '<svg viewBox="0 0 100 100" fill="currentColor"><rect x="4" y="32" width="92" height="36" rx="4" /></svg>';
+  const shapeIconSvg = (kind, outline, bold) =>
+    kind === "redact" ? redactIconSvg : shapeSvg(kind, "currentColor", bold, outline);
   const shapeOptionFor = (kind, outline) =>
     shapeKindMenu.querySelector('[data-kind="' + kind + '"][data-outline="' + (outline ? "1" : "0") + '"]');
 
   /* The shape button shows the currently chosen shape (not a fixed
      letter), on desktop and mobile alike. */
   function renderShapeBtnIcon(){
-    shapeBtn.innerHTML = shapeSvg(activeShapeKind, "currentColor", false, activeShapeOutline).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
-    const kindLabels = { check: "Checkmark", xmark: "Crossmark" };
+    shapeBtn.innerHTML = shapeIconSvg(activeShapeKind, activeShapeOutline, false).replace("<svg ", '<svg class="ct-shape-btn-icon" aria-hidden="true" ');
+    const kindLabels = { check: "Checkmark", xmark: "Crossmark", redact: "Redact" };
     const kindLabel = kindLabels[activeShapeKind] || bcT(activeShapeKind);
     shapeBtn.title = bcT("Add shape (H) — {0}. Hold to pick another shape.", [activeShapeOutline ? kindLabel + " " + bcT("outline") : kindLabel]);
   }
@@ -1132,6 +1183,8 @@
     const el = document.createElement("div");
     el.className = "context-shape-box";
     if (box.id === selectedShapeId) el.classList.add("selected");
+    const redact = box.kind === "redact";
+    if (redact) el.classList.add("context-redact-box");
     el.dataset.boxId = box.id;
     el.style.left = (box.xPt * scale) + "px";
     el.style.top = (box.topPt * scale) + "px";
@@ -1181,28 +1234,7 @@
       });
     }
 
-    el.addEventListener("pointerdown", () => {
-      deselectBox();
-      deselectSignatureBox();
-      deselectShapeBox();
-      selectedShapeId = box.id;
-      el.classList.add("selected");
-      bcSetDropdownActive(shapeKindMenu, shapeOptionFor(box.kind, box.outline));
-      activeShapeKind = box.kind;
-      activeShapeOutline = !!box.outline;
-      renderShapeBtnIcon();
-      if (isMarkKind(box.kind)){
-        activeBold = !!box.bold;
-        boldBtn.setAttribute("aria-pressed", String(activeBold));
-      }
-      activeColor = box.color;
-      const opt = colorMenu.querySelector('[data-color="' + box.color + '"]');
-      bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, box.color, opt ? opt.dataset.label : null);
-      colorMenu.querySelectorAll(".context-color-option").forEach(o => {
-        o.classList.toggle("active", o === opt);
-        o.setAttribute("aria-selected", String(o === opt));
-      });
-    });
+    el.addEventListener("pointerdown", () => selectShapeById(box.id));
 
     startDrag(el, (dx, dy, start) => {
       const zoom = isFullscreen ? fsZoom : 1;
@@ -1272,17 +1304,35 @@
   let recentCreated = [];
   let createdOrder = [];
 
+  function selectSubject(type, id){
+    if (type === "text") selectBox(id);
+    else if (type === "shape") selectShapeById(id);
+    else selectSignatureById(id);
+  }
+
   function selectLastCreated(){
     const exists = { text: textBoxes, shape: shapeBoxes, sig: signatureBoxes };
+    if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
     for (let i = createdOrder.length - 1; i >= 0; i--){
       const { type, id } = createdOrder[i];
-      if (!exists[type].some(b => b.id === id)) continue;
-      if (selectedBoxId != null || selectedShapeId != null || selectedSigId != null) return;
-      if (type === "text") selectedBoxId = id;
-      else if (type === "shape") selectedShapeId = id;
-      else selectedSigId = id;
+      const b = exists[type].find(x => x.id === id);
+      if (!b || b.page !== currentPage) continue;
+      selectSubject(type, id);
       return;
     }
+  }
+
+  function nearestSubject(x, y, slop){
+    let best = null, bestD = slop + 0.01;
+    overlay.querySelectorAll(".context-text-box, .context-signature-box, .context-shape-box").forEach(el => {
+      const r = el.getBoundingClientRect();
+      const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (d <= bestD){
+        bestD = d;
+        best = { type: el.classList.contains("context-text-box") ? "text" : el.classList.contains("context-shape-box") ? "shape" : "sig", id: Number(el.dataset.boxId) };
+      }
+    });
+    return best;
   }
 
   function noteCreated(type, id){
@@ -1310,6 +1360,10 @@
   });
 
   function addShapeBox(){
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     /* The two form marks land small, sized for ticking a checkbox. */
     const mark = isMarkKind(activeShapeKind);
     const widthPt = mark ? 16 : 100;
@@ -1325,6 +1379,29 @@
       outline: activeShapeOutline,
       color: activeColor,
       bold: mark && activeBold
+    };
+    shapeBoxes.push(box);
+    deselectBox();
+    deselectSignatureBox();
+    deselectShapeBox();
+    selectedShapeId = box.id;
+    renderTextBoxes();
+    noteCreated("shape", box.id);
+    showShapeNotice();
+  }
+
+  function placeRedactBox(){
+    const widthPt = 160;
+    const heightPt = 22;
+    const box = {
+      id: ++shapeBoxIdSeq,
+      page: currentPage,
+      xPt: (overlay.clientWidth / scale / 2) - (widthPt / 2),
+      topPt: (overlay.clientHeight / scale / 2) - (heightPt / 2),
+      widthPt,
+      heightPt,
+      kind: "redact",
+      color: activeColor
     };
     shapeBoxes.push(box);
     deselectBox();
@@ -1400,7 +1477,9 @@
   /* Terminal line under the editor: the estimated size of the downloaded PDF
      (original plus add-ons). Text/shapes are estimates
      (a few bytes of drawing commands each); signatures are the real
-     image bytes. */
+     image bytes. A page with a redaction box is exported as a picture, so
+     it counts as that picture (measured) instead of the original page's
+     share of the file, and its other add-ons are dropped. */
   const sizeStatus = document.getElementById("ctSizeStatus");
   let sizeTimer = null;
   let sizeToken = 0;
@@ -1417,13 +1496,36 @@
       return;
     }
     let total = currentFile.size;
-    const texts = textBoxes.filter(b => b.text);
+    const flat = new Set(shapeBoxes.filter(b => b.kind === "redact").map(b => b.page));
+    const texts = textBoxes.filter(b => b.text && !flat.has(b.page));
     total += texts.reduce((n, b) => n + 90 + b.text.length, 0);
-    total += shapeBoxes.length * 130;
-    total += new Set(texts.filter(b => fontOf(b.font).files).map(b => (b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic))).size * 4000;
-    if (signatureBoxes.length){
-      for (const [dataUrl, w] of signatureTargetWidths()) total += await signatureEmbeddedSize(dataUrl, w);
+    total += shapeBoxes.filter(b => b.kind !== "redact" && !flat.has(b.page)).length * 130;
+    const faces = new Map();
+    texts.filter(b => fontOf(b.font).files).forEach(b => faces.set((b.font || "arial") + fontFaceKey(fontOf(b.font), !!b.bold, !!b.italic), fontOf(b.font).embedBytes || 4000));
+    faces.forEach(bytes => { total += bytes; });
+    const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/gu;
+    const emojis = new Set();
+    let needsFallback = false;
+    texts.forEach(b => {
+      const plain = b.text.replace(EMOJI_RE, m => { emojis.add(m); return ""; });
+      if (b.font !== "roboto" && b.font !== "opensans" && /[^\x00-\xFF‘’“”–—•…€™]/.test(plain)) needsFallback = true;
+    });
+    if (needsFallback) total += 22000;
+    total += emojis.size * 3000;
+    const sigWidths = new Map();
+    signatureBoxes.filter(b => !flat.has(b.page)).forEach(b => {
+      sigWidths.set(b.dataUrl, Math.max(sigWidths.get(b.dataUrl) || 0, Math.ceil(b.widthPt * 4)));
+    });
+    for (const [dataUrl, w] of sigWidths){
+      total += await signatureEmbeddedSize(dataUrl, w);
       if (token !== sizeToken) return;
+    }
+    if (flat.size && pdfjsDoc){
+      const perPage = currentFile.size / pageCount;
+      for (const n of flat){
+        try { total += Math.max(0, await flattenedPageSize(n) - perPage); } catch (err) { /* keep the estimate without this page */ }
+        if (token !== sizeToken) return;
+      }
     }
     if (token !== sizeToken) return;
     sizeStatus.textContent = "File size: ~" + bcFormatFileSize(total);
@@ -1735,6 +1837,144 @@
 
   addTextBtn.addEventListener("click", () => addTextBox());
   addDateBtn.addEventListener("click", () => addTextBox(todayString()));
+
+  const newBtn = document.getElementById("ctNewBtn");
+  const newMenu = document.getElementById("ctNewMenu");
+  const toolBackBtn = document.getElementById("ctToolBackBtn");
+  const redactBtn = document.getElementById("ctRedactBtn");
+  const dateFmtBtn = document.getElementById("ctDateFmtBtn");
+  const shapeOptsBtn = document.getElementById("ctShapeOptsBtn");
+  const pageNavHome = pageNav.parentElement;
+  const PAGE_NAV_IN_TOOLBAR = new Set(["home", "signature", "date"]);
+  function placePageNav(){
+    const inToolbar = mobileMql.matches && PAGE_NAV_IN_TOOLBAR.has(toolbarEl.dataset.mode);
+    if (inToolbar){
+      if (pageNav.parentElement !== toolbarEl) toolbarEl.insertBefore(pageNav, downloadBtn);
+    } else if (pageNav.parentElement !== pageNavHome){
+      pageNavHome.appendChild(pageNav);
+    }
+  }
+  mobileMql.addEventListener("change", placePageNav);
+  const setToolMode = (mode) => { toolbarEl.dataset.mode = mode; placePageNav(); };
+  const chooseNew = (opt) => {
+    const mode = opt.dataset.mode;
+    if (mode === "signature") document.getElementById("ctSignatureBtn").click();
+    if (mode === "text") addTextBox();
+    if (mode === "date") addTextBox(todayString());
+    setToolMode(mode);
+  };
+  const newItems = [...newMenu.querySelectorAll(".ct-new-item")];
+  const newLabel = document.getElementById("ctNewLabel");
+  const NEW_HOLD_MS = 220;
+  let newHoldTimer = null, newHolding = false, newHot = null, newSuppressClick = false;
+  function setNewHot(item){
+    if (newHot === item) return;
+    if (newHot) newHot.classList.remove("ct-hot");
+    newHot = item;
+    if (item) item.classList.add("ct-hot");
+    newLabel.textContent = item ? item.querySelector(".ct-sr").textContent : "";
+    newLabel.classList.toggle("shown", !!item);
+  }
+  function nearestNewItem(x, y){
+    let best = null, bestD = 44;
+    newItems.forEach(it => {
+      const r = it.getBoundingClientRect();
+      const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      if (d < bestD){ best = it; bestD = d; }
+    });
+    return best;
+  }
+  newBtn.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    newHolding = false;
+    clearTimeout(newHoldTimer);
+    newHoldTimer = setTimeout(() => {
+      newHolding = true;
+      bcCloseAllPopups();
+      newMenu.hidden = false;
+      newBtn.setAttribute("aria-expanded", "true");
+    }, NEW_HOLD_MS);
+  });
+  newBtn.addEventListener("pointermove", (e) => {
+    if (newHolding) setNewHot(nearestNewItem(e.clientX, e.clientY));
+  });
+  const endNewHold = (e) => {
+    clearTimeout(newHoldTimer);
+    if (!newHolding) return;
+    newHolding = false;
+    newSuppressClick = true;
+    setTimeout(() => { newSuppressClick = false; }, 350);
+    const picked = e.type === "pointerup" ? newHot : null;
+    setNewHot(null);
+    if (picked){
+      chooseNew(picked);
+      bcCloseAllDropdowns();
+    }
+  };
+  newBtn.addEventListener("pointerup", endNewHold);
+  newBtn.addEventListener("pointercancel", endNewHold);
+  newBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+  newBtn.addEventListener("click", (e) => {
+    if (!newSuppressClick) return;
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+  });
+  bcRegisterDropdown(newBtn, newMenu, chooseNew);
+  toolBackBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    bcCloseAllPopups();
+    setToolMode("home");
+    newMenu.hidden = false;
+    newBtn.setAttribute("aria-expanded", "true");
+  });
+  document.getElementById("ctAddMoreBtn").addEventListener("click", () => {
+    const mode = toolbarEl.dataset.mode;
+    if (mode === "text") addTextBox();
+    else if (mode === "date") addTextBox(todayString());
+    else if (mode === "signature") document.getElementById("ctSignatureBtn").click();
+    else if (mode === "shape") activeShapeKind === "redact" ? addRedactBox() : addShapeBox();
+  });
+  const sigEditBtn = document.getElementById("ctSigEditBtn");
+  sigEditBtn.disabled = true;
+  sigEditBtn.addEventListener("click", () => {
+    const box = selectedSigId != null && findSignatureBoxById(selectedSigId);
+    if (box) editSignatureBox(box);
+  });
+  redactBtn.addEventListener("click", () => addRedactBox());
+  shapeOptsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (shapeKindMenu.hidden) openShapeMenu(); else closeShapeHover();
+  });
+  function renderDateFmtBtn(){ dateFmtBtn.textContent = dateFormat; }
+  renderDateFmtBtn();
+  dateFmtBtn.addEventListener("click", () => {
+    const before = todayString();
+    dateFormat = DATE_FORMATS[(DATE_FORMATS.indexOf(dateFormat) + 1) % DATE_FORMATS.length];
+    try { localStorage.setItem(DATE_FORMAT_KEY, dateFormat); } catch (err) { /* skip */ }
+    renderDateFmtBtn();
+    const box = selectedBoxId && findBoxById(selectedBoxId);
+    const inner = box && overlay.querySelector('.context-text-box[data-box-id="' + box.id + '"] .context-text-inner');
+    if (box && inner && box.text === before){
+      box.text = todayString();
+      inner.textContent = box.text;
+      schedulePersist();
+    }
+  });
+  let lastToolSel = "";
+  new MutationObserver(() => {
+    const textEl = overlay.querySelector(".context-text-box.selected");
+    const shapeEl = textEl ? null : overlay.querySelector(".context-shape-box.selected");
+    const sigEl = textEl || shapeEl ? null : overlay.querySelector(".context-signature-box.selected");
+    const key = textEl ? "t" + textEl.dataset.boxId : shapeEl ? "s" + shapeEl.dataset.boxId : sigEl ? "g" + sigEl.dataset.boxId : "";
+    if (key === lastToolSel) return;
+    lastToolSel = key;
+    sigEditBtn.disabled = !sigEl;
+    const mode = toolbarEl.dataset.mode;
+    if (textEl){ if (mode !== "text" && mode !== "date") setToolMode("text"); }
+    else if (shapeEl){ if (mode !== "shape") setToolMode("shape"); }
+    else if (sigEl){ if (mode !== "signature") setToolMode("signature"); }
+    else setToolMode("home");
+  }).observe(overlay, { attributes: true, attributeFilter: ["class"], childList: true, subtree: true });
   /* The shape menu shows the shapes themselves, not their names — the name
      (already in the markup, translated on the language pages) stays as the
      tooltip and accessible label. */
@@ -1742,7 +1982,11 @@
     const label = opt.textContent.trim();
     opt.title = label;
     opt.setAttribute("aria-label", label);
-    opt.innerHTML = shapeSvg(opt.dataset.kind, "currentColor", true, opt.dataset.outline === "1").replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
+    if (opt.dataset.kind === "redact"){
+      opt.title = bcT("Redaction tool is used to safely hide sensitive data (X)");
+      return;
+    }
+    opt.innerHTML = shapeIconSvg(opt.dataset.kind, opt.dataset.outline === "1", true).replace("<svg ", '<svg class="ct-shape-opt-icon" aria-hidden="true" ');
   });
   bcSetComboDisplay(fontSizeMenu, fontSizeInput, "size", String(activeSize));
   renderShapeBtnIcon();
@@ -1825,12 +2069,16 @@
     activeShapeKind = opt.dataset.kind;
     activeShapeOutline = opt.dataset.outline === "1";
     renderShapeBtnIcon();
+    if (activeShapeKind === "redact"){
+      addRedactBox();
+      return;
+    }
     if (!selectedShapeId){
       addShapeBox();
       return;
     }
     const shape = findShapeBoxById(selectedShapeId);
-    if (!shape || shape.page !== currentPage){
+    if (!shape || shape.page !== currentPage || shape.kind === "redact"){
       addShapeBox();
       return;
     }
@@ -1856,6 +2104,9 @@
   function resetEditor(){
     currentFile = null;
     currentFileBytes = null;
+    redactNoticeAcknowledged = false;
+    toolbarEl.dataset.mode = "home";
+    placePageNav();
     clearPageCache();
     pdfjsDoc = null;
     textBoxes = [];
@@ -1897,7 +2148,6 @@
     canvasWrap.style.transform = "";
   }
 
-  const mobileMql = window.matchMedia("(max-width:768px)");
 
   async function openFullscreen(){
     if (isFullscreen) return;
@@ -1913,6 +2163,7 @@
     document.body.appendChild(fullscreenOverlay);
     fullscreenCanvasArea.appendChild(previewPanel);
     fullscreenBar.appendChild(toolbarEl);
+    placePageNav();
     fullscreenOverlay.hidden = false;
     /* Belt-and-suspenders: force the critical positioning inline so a
        stale cached stylesheet (a real, previously-seen failure mode on
@@ -1969,11 +2220,12 @@
     history.pushState({ ctFullscreen: true }, "");
   }
 
-  function closeFullscreen(fromPopstate){
+  function closeFullscreen(fromPopstate, keepEditor){
     if (!isFullscreen) return;
     isFullscreen = false;
     resetFsZoom();
     editor.insertBefore(toolbarEl, editor.firstChild);
+    placePageNav();
     editor.appendChild(previewPanel);
     /* Restores original source order: toolbar, then panel, then the
        overlay last — matching the markup this was moved out of in
@@ -1993,11 +2245,22 @@
        plain in-page editor to fall back to — closing it (via the × or
        the back gesture) means leaving the editor, same as removing the
        file. */
-    resetEditor();
+    if (!keepEditor) resetEditor();
     if (!fromPopstate && history.state && history.state.ctFullscreen){
       history.back();
     }
   }
+
+  mobileMql.addEventListener("change", async () => {
+    placePageNav();
+    if (!currentFileBytes || editor.hidden) return;
+    if (mobileMql.matches){
+      if (!isFullscreen) await openFullscreen();
+    } else if (isFullscreen){
+      closeFullscreen(false, true);
+    }
+    if (pdfjsDoc) renderPage();
+  });
 
   window.addEventListener("popstate", () => {
     if (isFullscreen) closeFullscreen(true);
@@ -2160,18 +2423,7 @@
     if (!colorMenu.hidden) clampColorMenu();
   });
 
-  colorMenu.addEventListener("click", (e) => {
-    const opt = e.target.closest(".context-color-option");
-    if (!opt) return;
-    activeColor = opt.dataset.color;
-    bcApplyColorOption(colorTriggerDot, colorTriggerLabel, opt);
-    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
-      o.classList.toggle("active", o === opt);
-      o.setAttribute("aria-selected", String(o === opt));
-    });
-    colorMenu.hidden = true;
-    colorTrigger.setAttribute("aria-expanded", "false");
-
+  function applyActiveColorToSelection(){
     if (selectedBoxId){
       const box = findBoxById(selectedBoxId);
       if (box && box.page === currentPage){
@@ -2179,6 +2431,7 @@
         const boxEl = overlay.querySelector('[data-box-id="' + selectedBoxId + '"]');
         const innerEl = boxEl && boxEl.querySelector(".context-text-inner");
         if (innerEl) innerEl.style.color = activeColor;
+        schedulePersist();
       }
     } else if (selectedShapeId){
       const shape = findShapeBoxById(selectedShapeId);
@@ -2190,6 +2443,47 @@
         schedulePersist();
       }
     }
+  }
+
+  const customColorBtn = document.getElementById("ctColorCustomBtn");
+  const customColorDot = document.getElementById("ctColorCustomDot");
+  function setCustomColor(hex){
+    activeColor = hex;
+    customColorBtn.dataset.color = hex;
+    customColorBtn.classList.add("has-color");
+    customColorDot.style.background = hex;
+    bcSetColorSwatch(colorTriggerDot, colorTriggerLabel, hex, null);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      const on = o === customColorBtn;
+      o.classList.toggle("active", on);
+      o.setAttribute("aria-selected", String(on));
+    });
+    applyActiveColorToSelection();
+  }
+  const colorPopover = bcCreateColorPopover(colorTrigger, { value: "#2563eb", onChange: setCustomColor });
+  const closeColorPanel = colorPopover.close;
+  const openColorPanel = () => colorPopover.open(customColorBtn.dataset.color || activeColor || "#2563eb");
+
+  colorMenu.addEventListener("click", (e) => {
+    const opt = e.target.closest(".context-color-option");
+    if (!opt) return;
+    if (opt.dataset.custom === "true"){
+      colorMenu.hidden = true;
+      colorTrigger.setAttribute("aria-expanded", "false");
+      if (customColorBtn.dataset.color) setCustomColor(customColorBtn.dataset.color);
+      openColorPanel();
+      return;
+    }
+    closeColorPanel();
+    activeColor = opt.dataset.color;
+    bcApplyColorOption(colorTriggerDot, colorTriggerLabel, opt);
+    colorMenu.querySelectorAll(".context-color-option").forEach(o => {
+      o.classList.toggle("active", o === opt);
+      o.setAttribute("aria-selected", String(o === opt));
+    });
+    colorMenu.hidden = true;
+    colorTrigger.setAttribute("aria-expanded", "false");
+    applyActiveColorToSelection();
   });
 
   bcRegisterCombo(fontSizeTrigger, fontSizeInput, fontSizeMenu, fontSizeEmpty, (opt) => {
@@ -2252,14 +2546,20 @@
   /* "S" opens the signature editor, "H" opens the shape menu — both
      ignored while the signature modal itself is already open (S would
      otherwise reset it back to the first step mid-edit). */
-  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden;
+  const sigModalOpen = () => !document.getElementById("ctSigOverlay").hidden || !burstOverlay.hidden || !redactOverlay.hidden || !shapeNoticeOverlay.hidden;
   bcRegisterKeyShortcut("s", { click(){ if (!sigModalOpen()) document.getElementById("ctSignatureBtn").click(); } });
   bcRegisterKeyShortcut("h", { click(){ if (!sigModalOpen()) shapeBtn.click(); } });
+  bcRegisterKeyShortcut("x", { click(){ if (!sigModalOpen()) addRedactBox(); } });
 
   document.addEventListener("pointerdown", e => {
     if (!e.target.closest) return;
     if (e.target.closest(".context-text-box, .context-signature-box, .context-shape-box, .context-panel-bar")) return;
     if (!e.target.closest("#ctPreviewPanel, .context-fullscreen-canvas-area")) return;
+    const near = nearestSubject(e.clientX, e.clientY, e.pointerType === "mouse" ? 12 : 28);
+    if (near){
+      selectSubject(near.type, near.id);
+      return;
+    }
     deselectBox();
     deselectSignatureBox();
     deselectShapeBox();
@@ -2387,7 +2687,7 @@
     const active = document.activeElement;
     if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
     if (!currentFileBytes || editor.hidden || sigModalOpen()) return;
-    const btn = overlay.querySelector(".context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
+    const btn = overlay.querySelector(".context-text-box.selected .bc-obj-remove-btn, .context-shape-box.selected .bc-obj-remove-btn, .context-signature-box.selected .bc-obj-remove-btn");
     if (!btn) return;
     e.preventDefault();
     btn.click();
@@ -2556,6 +2856,145 @@
     return { u: box.xPt + o.du / pageScale, v: box.topPt + o.dv / pageScale };
   }
 
+  /* A black rectangle drawn over text leaves the text in the file, so
+     every page with a redaction is re-rendered to a picture with the boxes
+     burned in; the other pages are copied across untouched. Runs on the
+     finished PDF so text boxes and shapes under a redaction go too. */
+  const REDACT_DPI = 200;
+  const REDACT_MAX_SIDE = 4500;
+  const REDACT_MAX_PIXELS = 16e6;
+  const redactRenderScale = base => Math.max(1, Math.min(
+    REDACT_DPI / 72,
+    REDACT_MAX_SIDE / Math.max(base.width, base.height),
+    Math.sqrt(REDACT_MAX_PIXELS / (base.width * base.height))
+  ));
+  const flatPageSizeCache = new Map();
+  async function flattenedPageSize(pageNo){
+    const key = currentFile.name + "|" + currentFile.size + "|" + pageNo;
+    if (flatPageSizeCache.has(key)) return flatPageSizeCache.get(key);
+    const doc = pdfjsDoc;
+    const page = await doc.getPage(pageNo);
+    const viewport = page.getViewport({ scale: redactRenderScale(page.getViewport({ scale: 1 })) });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    canvas.width = canvas.height = 0;
+    let size = blob ? blob.size : 0;
+    if (blob){
+      try {
+        const probe = await PDFLib.PDFDocument.create();
+        const empty = (await probe.save()).length;
+        await probe.embedPng(new Uint8Array(await blob.arrayBuffer()));
+        size = (await probe.save()).length - empty;
+      } catch (err) { /* keep the PNG's own size */ }
+    }
+    if (doc === pdfjsDoc) flatPageSizeCache.set(key, size);
+    return size;
+  }
+
+  async function flattenRedactedPages(bytes, redactions){
+    const { PDFDocument } = PDFLib;
+    const byPage = new Map();
+    redactions.forEach(b => {
+      if (!byPage.has(b.page)) byPage.set(b.page, []);
+      byPage.get(b.page).push(b);
+    });
+    const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const viewDoc = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+    const out = await PDFDocument.create();
+    const total = src.getPageCount();
+    let done = 0;
+    try {
+      for (let n = 1; n <= total; n++){
+        const boxes = byPage.get(n);
+        if (!boxes){
+          const [copied] = await out.copyPages(src, [n - 1]);
+          out.addPage(copied);
+          continue;
+        }
+        status.textContent = bcT("Redacting page {0} of {1}...", [++done, byPage.size]);
+        const page = await viewDoc.getPage(n);
+        const base = page.getViewport({ scale: 1 });
+        const s = redactRenderScale(base);
+        const viewport = page.getViewport({ scale: s });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        boxes.forEach(b => {
+          ctx.save();
+          ctx.fillStyle = b.color || "#000000";
+          ctx.translate((b.xPt + b.widthPt / 2) * s, (b.topPt + b.heightPt / 2) * s);
+          ctx.rotate((b.rotation || 0) * Math.PI / 180);
+          ctx.fillRect(-b.widthPt * s / 2 - 1, -b.heightPt * s / 2 - 1, b.widthPt * s + 2, b.heightPt * s + 2);
+          ctx.restore();
+        });
+        const image = await out.embedPng(dataUrlToBytes(canvas.toDataURL("image/png")));
+        canvas.width = canvas.height = 0;
+        const outPage = out.addPage([base.width, base.height]);
+        outPage.drawImage(image, { x: 0, y: 0, width: base.width, height: base.height });
+      }
+    } finally {
+      viewDoc.destroy();
+    }
+    return out.save();
+  }
+
+  const redactOverlay = document.getElementById("ctRedactOverlay");
+  document.body.appendChild(redactOverlay);
+  const shapeNoticeOverlay = document.getElementById("ctShapeNoticeOverlay");
+  document.body.appendChild(shapeNoticeOverlay);
+  const SHAPE_NOTICE_KEY = "bctools_ctx_shape_notice_dismissed";
+  function showShapeNotice(){
+    try { if (localStorage.getItem(SHAPE_NOTICE_KEY) === "1") return; } catch (e) {}
+    shapeNoticeOverlay.hidden = false;
+  }
+  document.getElementById("ctShapeNoticeContinue").addEventListener("click", () => {
+    if (document.getElementById("ctShapeNoticeNever").checked){
+      try { localStorage.setItem(SHAPE_NOTICE_KEY, "1"); } catch (e) {}
+    }
+    shapeNoticeOverlay.hidden = true;
+  });
+  document.getElementById("ctShapeNoticeClose").addEventListener("click", () => { shapeNoticeOverlay.hidden = true; });
+  shapeNoticeOverlay.addEventListener("pointerdown", e => {
+    if (e.target === shapeNoticeOverlay) shapeNoticeOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !shapeNoticeOverlay.hidden, () => { shapeNoticeOverlay.hidden = true; }, 96);
+
+  const REDACT_NOTICE_KEY = "bctools_ctx_redact_notice_dismissed";
+  function redactNoticeDismissed(){
+    try { return localStorage.getItem(REDACT_NOTICE_KEY) === "1"; } catch (e) { return false; }
+  }
+  function addRedactBox(){
+    if (redactNoticeAcknowledged || redactNoticeDismissed()){
+      placeRedactBox();
+      return;
+    }
+    document.getElementById("ctRedactNever").checked = false;
+    redactOverlay.hidden = false;
+  }
+  document.getElementById("ctRedactContinue").addEventListener("click", () => {
+    if (document.getElementById("ctRedactNever").checked){
+      try { localStorage.setItem(REDACT_NOTICE_KEY, "1"); } catch (e) {}
+    }
+    redactNoticeAcknowledged = true;
+    redactOverlay.hidden = true;
+    placeRedactBox();
+  });
+  document.getElementById("ctRedactClose").addEventListener("click", () => { redactOverlay.hidden = true; });
+  redactOverlay.addEventListener("pointerdown", e => {
+    if (e.target === redactOverlay) redactOverlay.hidden = true;
+  });
+  bcRegisterEscapable(() => !redactOverlay.hidden, () => { redactOverlay.hidden = true; }, 95);
+
   downloadBtn.addEventListener("click", async () => {
     if (!currentFile) return;
     downloadBtn.disabled = true;
@@ -2609,12 +3048,69 @@
           fontkitReady = true;
         }
         const res = await fetch(FONT_DIR + f.files[fontFaceKey(f, bold, italic)]);
-        const font = await pdfDoc.embedFont(await res.arrayBuffer(), { subset: true });
+        const font = await pdfDoc.embedFont(await res.arrayBuffer(), f.embed || { subset: true });
         embeddedFonts.set(faceKey, font);
         return font;
       }
       await Promise.all([...new Set(textBoxes.filter(b => b.text).map(b => b.font || "arial"))].map(id => ensureFont(id)));
       const pages = pdfDoc.getPages();
+
+      /* The PDF's own fonts only cover Western characters, and the shipped
+         fonts each cover a different range, so text is split into runs: each
+         character stays in the chosen font when it has the glyph, otherwise
+         it moves to the first Unicode fallback that does; emoji are drawn as
+         small pictures; anything left becomes "?". Text the chosen font can
+         fully draw keeps the single drawText call. */
+      const charSets = new Map();
+      const supports = (f, cp) => {
+        let set = charSets.get(f);
+        if (!set){ set = new Set(f.getCharacterSet()); charSets.set(f, set); }
+        return set.has(cp);
+      };
+      const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u;
+      const graphemes = text => (typeof Intl !== "undefined" && Intl.Segmenter)
+        ? [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].map(x => x.segment)
+        : Array.from(text);
+      async function layoutTextRuns(box, primary){
+        const runs = [];
+        for (const g of graphemes(box.text)){
+          if (EMOJI_RE.test(g)){ runs.push({ emoji: g }); continue; }
+          const cps = Array.from(g).map(c => c.codePointAt(0));
+          let f = cps.every(cp => supports(primary, cp)) ? primary : null;
+          for (const id of ["roboto", "opensans"]){
+            if (f) break;
+            const cand = await embedFontFor(id, !!box.bold, !!box.italic);
+            if (cps.every(cp => supports(cand, cp))) f = cand;
+          }
+          const chunk = f ? g : "?";
+          const use = f || primary;
+          const last = runs[runs.length - 1];
+          if (last && last.font === use) last.text += chunk; else runs.push({ font: use, text: chunk });
+        }
+        return runs;
+      }
+      const emojiImages = new Map();
+      async function embedEmoji(g){
+        if (emojiImages.has(g)) return emojiImages.get(g);
+        let img = null;
+        try {
+          const size = 160;
+          const c = document.createElement("canvas");
+          c.width = c.height = size;
+          const x = c.getContext("2d");
+          x.font = '128px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+          x.textBaseline = "alphabetic";
+          const w = x.measureText(g).width;
+          x.fillText(g, (size - w) / 2, 124);
+          const blank = !x.getImageData(0, 0, size, size).data.some((v, i) => i % 4 === 3 && v > 0);
+          if (!blank){
+            const blob = await new Promise(resolve => c.toBlob(resolve, "image/png"));
+            img = await pdfDoc.embedPng(new Uint8Array(await blob.arrayBuffer()));
+          }
+        } catch (err) { img = null; }
+        emojiImages.set(g, img);
+        return img;
+      }
 
       /* Box coordinates are measured on the page as displayed (pdf.js applies
          the page's /Rotate), but pdf-lib draws in the unrotated page space —
@@ -2645,10 +3141,32 @@
         const { u, v } = origin;
         const { x, y } = toPdf(u, v);
 
-        page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
+        const runs = await layoutTextRuns(box, font);
+        let textWidth;
+        if (runs.length === 1 && runs[0].font === font){
+          page.drawText(box.text, { x, y, size: box.sizePt, font, color, rotate: degrees(rot) });
+          textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
+        } else {
+          let cursor = 0;
+          for (const run of runs){
+            if (run.emoji){
+              const img = await embedEmoji(run.emoji);
+              const side = box.sizePt * 1.15;
+              if (img){
+                const at = toPdf(u + cursor, v + box.sizePt * 0.2);
+                page.drawImage(img, { x: at.x, y: at.y, width: side, height: side, rotate: degrees(rot) });
+              }
+              cursor += side;
+            } else {
+              const at = toPdf(u + cursor, v);
+              page.drawText(run.text, { x: at.x, y: at.y, size: box.sizePt, font: run.font, color, rotate: degrees(rot) });
+              cursor += run.font.widthOfTextAtSize(run.text, box.sizePt);
+            }
+          }
+          textWidth = cursor;
+        }
 
         if (box.underline){
-          const textWidth = font.widthOfTextAtSize(box.text, box.sizePt);
           page.drawLine({
             start: toPdf(u, v + box.sizePt * 0.1),
             end: toPdf(u + textWidth, v + box.sizePt * 0.1),
@@ -2678,6 +3196,7 @@
       }
 
       shapeBoxes.forEach(box => {
+        if (box.kind === "redact") return;
         const page = pages[box.page - 1];
         if (!page) return;
         const { rot, toPdf } = pageFrame(page);
@@ -2749,7 +3268,9 @@
         }
       });
 
-      const outBytes = await pdfDoc.save();
+      let outBytes = await pdfDoc.save();
+      const redactions = shapeBoxes.filter(b => b.kind === "redact" && b.page >= 1 && b.page <= pages.length);
+      if (redactions.length) outBytes = await flattenRedactedPages(outBytes, redactions);
       const blob = new Blob([outBytes], { type: "application/pdf" });
       const chosenName = filenameInput.value.trim() || currentFile.name.replace(/\.pdf$/i, "") + "-context";
       const fileName = chosenName.replace(/\.pdf$/i, "") + ".pdf";
@@ -2781,9 +3302,9 @@
          desktop download into an unwanted share popup there too. The
          width check matches the pattern already used by the page's
          other share button. */
-      if (window.innerWidth <= 768 && navigator.canShare && navigator.canShare({ files: [outFile] })){
+      if (mobileMql.matches && navigator.canShare && navigator.canShare({ files: [outFile] })){
         try {
-          await navigator.share({ files: [outFile], title: fileName });
+          await navigator.share({ files: [outFile] });
           status.textContent = "";
         } catch (shareErr){
           /* AbortError = the user themself dismissed the share sheet —
