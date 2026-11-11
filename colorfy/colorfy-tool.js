@@ -630,6 +630,7 @@
     navigator.clipboard.writeText(value).then(() => {
       sw.classList.add("copied");
       setTimeout(() => sw.classList.remove("copied"), 1000);
+      bcCountDownload();
       flashPaletteStatus(`Copied ${value}`);
     }).catch(() => {
       if (paletteStatus) paletteStatus.textContent = "Couldn't copy — your browser may not allow clipboard access here.";
@@ -741,6 +742,7 @@
     navigator.clipboard.writeText(value).then(() => {
       btn.classList.add("copied");
       setTimeout(() => btn.classList.remove("copied"), 1200);
+      bcCountDownload();
       flashStatus(bcT("Copied {0}", [value]));
     }).catch(() => {
       status.textContent = bcT("Couldn't copy — your browser may not allow clipboard access here.");

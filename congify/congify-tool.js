@@ -286,8 +286,16 @@
      downloads automatically (see the "finished" handler below), this is
      the only thing that does. Re-wraps the already-held result bytes
      rather than needing the original blob in scope. */
+  const settingsSig = () => JSON.stringify([bcFileKey(currentFile), trimStart, trimEnd, outputWidth, fps, cropMode, orderMode, playbackSpeed, captions], (k, v) => (v instanceof Element || typeof v === "function") ? undefined : v);
+  const gate = bcDownloadGate(settingsSig);
+  const syncLock = () => {
+    bcSetLocked([downloadBtn, resultsDownloadBtn], gate.resultLocked());
+    bcSetLocked(convertBtn, gate.runLocked());
+  };
+  setInterval(syncLock, 300);
   function downloadGifResult(){
     if (!lastResultBytes) return;
+    if (gate.resultLocked()){ bcLockedNotice(statusEl); return; }
     /* Its own start/finish pair, separate from convertBtn's — Congify
        is a two-step convert-then-download flow, so the badge should
        report whichever step just actually happened rather than always
@@ -295,6 +303,8 @@
     startPrivacyCheck();
     const outName = (doneFileName.value.trim() || scrubberFileName.value.trim() || "converted") + ".gif";
     downloadBlob(new Blob([lastResultBytes], { type: lastResultType || "image/gif" }), outName);
+    gate.downloaded();
+    syncLock();
     finishPrivacyCheck(document.getElementById("gifPrivacyBadge"));
   }
   downloadBtn.addEventListener("click", downloadGifResult);
@@ -1645,6 +1655,8 @@
   /* ===== conversion ===== */
   convertBtn.addEventListener("click", async () => {
     if (!video.src || trimEnd <= trimStart) return;
+    if (gate.runLocked()){ bcLockedNotice(statusEl); return; }
+    const sigAtRun = settingsSig();
     stopPreviewPlayback();
     convertBtn.disabled = true;
     statusEl.textContent = bcT("Loading encoder...");
@@ -1735,6 +1747,7 @@
         try { localStorage.setItem(RECENT_WIDTH_KEY, String(outputWidth)); } catch (err) { /* skip */ }
 
         renderResult(blob);
+        gate.ran(sigAtRun);
         lastResultType = blob.type || "image/gif";
         lastResultBytes = await blob.arrayBuffer();
         doneFileName.value = scrubberFileName.value;

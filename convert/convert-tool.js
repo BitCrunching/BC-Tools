@@ -1072,8 +1072,14 @@
     }
   }
 
+  const gate = bcDownloadGate(() => JSON.stringify([files.map(bcFileKey), selectedFormat]));
+  setInterval(() => {
+    bcSetLocked(convertBtn, gate.runLocked() || (files.length === 0 && lastOutputs.length > 0 && gate.resultLocked()));
+  }, 300);
+
   convertBtn.addEventListener("click", async () => {
     if (files.length === 0 && lastOutputs.length > 0){
+      if (gate.resultLocked()){ bcLockedNotice(status); return; }
       await redownloadOutputs();
       return;
     }
@@ -1086,6 +1092,8 @@
       return;
     }
 
+    if (gate.runLocked()){ bcLockedNotice(status); return; }
+    const sigAtRun = JSON.stringify([files.map(bcFileKey), selectedFormat]);
     const inputIsPdf = files.every(isPdfFile);
     const outputIsPdf = selectedFormat === "application/pdf";
 
@@ -1275,6 +1283,8 @@
       // after removing a result card (result cards only remove themselves
       // from view, they never represented the source files anymore).
       lastDoneText = status.textContent;
+      gate.ran(sigAtRun);
+      gate.downloaded();
       files = [];
       bcDbClear(CV_DB_NAME, CV_DB_STORE);
     } catch (err){

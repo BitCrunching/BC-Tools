@@ -735,8 +735,14 @@
   nameTitle.innerHTML = '<span class="nav-terminal-prompt">&gt;</span> ' + bcT("Output name") + ":";
   document.querySelector(".combine-option-name .bc-name-field").appendChild(nameTitle);
 
+  const setupSig = () => JSON.stringify([files.map(f => bcFileKey(f) + "@" + rotationOf(f)), pageSize, imageQuality, pageMargin, pageOrientation]);
+  const gate = bcDownloadGate(setupSig);
+  setInterval(() => bcSetLocked(combineBtn, gate.runLocked()), 300);
+
   combineBtn.addEventListener("click", async () => {
     if (!files.length) return;
+    if (gate.runLocked()){ bcLockedNotice(status); return; }
+    const sigAtRun = setupSig();
     combineBtn.disabled = true;
     status.textContent = bcT("Combining PDFs…");
 
@@ -776,6 +782,9 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      bcCountDownload();
+      gate.ran(sigAtRun);
+      gate.downloaded();
 
       status.textContent = bcT("Done. Combined {0} files into one PDF.", [files.length]);
     } catch (err) {

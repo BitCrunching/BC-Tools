@@ -569,13 +569,23 @@
     if (currentEntry && currentEntry.conversion) currentEntry.conversion.cancel().catch(() => {});
   }
 
+  const gateOf = entry => entry.gate || (entry.gate = bcDownloadGate(() => formatKey));
+  setInterval(() => {
+    const ready = entries.filter(e => e.info);
+    bcSetLocked(convertBtn, !running && ready.length > 0 && ready.every(e => gateOf(e).runLocked()));
+  }, 300);
+
   async function convertAll(){
-    const queue = entries.filter(e => e.info);
-    if (!queue.length) return;
+    const queue = entries.filter(e => e.info && !gateOf(e).runLocked());
+    if (!queue.length){
+      if (entries.some(e => e.info)) bcLockedNotice(status);
+      return;
+    }
     running = true;
     cancelRequested = false;
     startPrivacyCheck();
-    let done = 0, failed = 0;
+    let done = 0, failed = 0, zipSaved = false;
+    const finished = [];
     const useZip = effectiveUseZip(queue.length);
     const zip = useZip ? new JSZip() : null;
     const usedNames = new Set();
@@ -594,6 +604,7 @@
           await new Promise(resolve => setTimeout(resolve, 300));
         }
         done++;
+        finished.push(entry);
         renderEntry(entry);
       } catch (err){
         const canceled = err && /cancel/i.test(err.name || err.message || "");
@@ -608,7 +619,9 @@
     if (useZip && done && !cancelRequested){
       status.textContent = bcT("Building ZIP file...");
       downloadBlob(await zip.generateAsync({ type: "blob" }), "bcconvido-videos.zip");
+      zipSaved = true;
     }
+    if (!useZip || zipSaved) finished.forEach(e => { gateOf(e).ran(); gateOf(e).downloaded(); });
     currentEntry = null;
     running = false;
     convertBtn.classList.remove("cn-convert-btn-working");

@@ -410,6 +410,8 @@
         showLoadedStatus();
       });
 
+      bcSetLocked([...el.querySelectorAll(".ex-row-download-btn, .ex-row-clean-download-btn, .ex-row-clean-anyways-btn")], gateOf(item).runLocked());
+
       const downloadBtn = el.querySelector(".ex-row-download-btn");
       if (downloadBtn) downloadBtn.addEventListener("click", () => downloadEntry(item));
 
@@ -714,6 +716,7 @@
      Download button stays clickable for as many re-downloads as wanted.
      The only step in this flow that gets a privacy-check pair — cleaning
      itself never touches the network. */
+  const gateOf = item => item.gate || (item.gate = bcDownloadGate(() => item.heicFormat));
   const pendingBases = new WeakMap();
   function defaultBaseOf(item){
     return item.file.name.replace(/\.[^.]+$/, "");
@@ -724,9 +727,12 @@
   }
 
   function downloadEntry(item){
+    if (gateOf(item).runLocked()){ bcLockedNotice(status); return; }
     startPrivacyCheck();
     const name = finalNameOf(item);
     downloadBlob(item.strippedBlob, name);
+    gateOf(item).ran();
+    gateOf(item).downloaded();
     status.textContent = bcT("Downloaded {0}.", [name]);
     finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     renderList();

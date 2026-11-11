@@ -176,7 +176,879 @@ async function bcFillGoldenRules(box){
     });
     box.appendChild(art);
   });
+  const challenge = bcAddChallengeBanner(box);
+  bcAddGuideReward(box, challenge);
 }
+
+const GR_ACCENT = { convert:"#B84CFF", compress:"#3FBFE8", combine:"#FF6961", exif:"#7ED321", context:"#F6D44A", colorfy:"#FF8A4C", gif:"#22D3D0", coudio:"#18C98A", codify:"#C81C86", comprio:"#3B6CF6", convido:"#B84CFF" };
+const GR_TOOL_NAME = { convert:"Convert", compress:"Compress", combine:"Combine", exif:"Cleanly", context:"Context", colorfy:"Colorfy", gif:"Congify", coudio:"Coudio", codify:"Codify", comprio:"Comprio", convido:"Convido" };
+function bcAddChallengeBanner(box){
+  const tool = GR_TOOL_NAME[box.dataset.tool] || "this tool";
+  const flagKey = "bc-gr-challenge-" + box.dataset.tool;
+  let on = false;
+  try { on = localStorage.getItem(flagKey) === "1" || !!localStorage.getItem("bc-gr-progress-" + box.dataset.tool); } catch (e) {}
+  const listeners = [];
+  const el = document.createElement("div");
+  el.className = "gr-say";
+  el.style.setProperty("--gr-accent", GR_ACCENT[box.dataset.tool] || "#3FBFE8");
+  el.innerHTML = '<div class="gr-buddy-face gr-say-face"><span aria-hidden="true"></span></div>' +
+    '<div class="gr-say-slot"><div class="gr-say-bubble"><span class="gr-buddy-text" aria-hidden="true"></span></div></div>' +
+    '<button type="button" class="gr-challenge-btn gr-say-btn" hidden></button>';
+  const face = el.querySelector(".gr-say-face span");
+  face.innerHTML = GR_AVATAR;
+  const art = face.querySelector("svg");
+  bcDressAvatar(art);
+  art.dataset.mood = on ? "good" : "start";
+  const bubble = el.querySelector(".gr-say-bubble");
+  const textEl = el.querySelector(".gr-buddy-text");
+  const btn = el.querySelector(".gr-say-btn");
+  btn.textContent = bcT("START THE CHALLENGE");
+  const intro = bcT("Take up on a Challenge! Gain all the knowledge there is about {tool}. Finish it and receive a reward.", { tool });
+  const startedText = bcT("Challenge started. Read each guide, and take your time.");
+  let typeTimer = 0;
+  const setText = text => {
+    clearInterval(typeTimer);
+    el.classList.remove("typing");
+    bubble.setAttribute("aria-label", text);
+    textEl.textContent = text;
+  };
+  const say = (text, done) => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches){ setText(text); if (done) done(); return; }
+    clearInterval(typeTimer);
+    bubble.setAttribute("aria-label", text);
+    textEl.textContent = "";
+    el.classList.add("typing");
+    let i = 0;
+    typeTimer = setInterval(() => {
+      i += 2;
+      textEl.textContent = text.slice(0, i);
+      if (i >= text.length){
+        clearInterval(typeTimer);
+        el.classList.remove("typing");
+        if (done) done();
+      }
+    }, 30);
+  };
+  const item = GR_ITEMS[box.dataset.tool];
+  let teaseTimer = 0;
+  if (item){
+    const rw = document.createElement("div");
+    rw.className = "gr-say-reward";
+    rw.setAttribute("aria-hidden", "true");
+    rw.innerHTML = '<div class="gr-buddy-face gr-say-rface"><span></span></div><span class="gr-say-rname"></span>';
+    rw.querySelector(".gr-say-rface span").innerHTML = GR_AVATAR;
+    const rsvg = rw.querySelector("svg");
+    rsvg.dataset.mood = "good";
+    rsvg.querySelector(".av-item").innerHTML = item.svg;
+    rw.querySelector(".gr-say-rname").textContent = bcT("It's {item} for your avatar!", { item: ((item.det ? item.det + " " : "") + bcT(item.name).toLowerCase()) });
+    bubble.appendChild(rw);
+  }
+  const stopTease = () => {
+    clearTimeout(teaseTimer);
+    el.classList.remove("rewarding");
+    bubble.style.minHeight = "";
+  };
+  const startTease = () => {
+    if (!item || on) return;
+    let round = 0;
+    const showReward = () => {
+      if (on) return;
+      bubble.style.minHeight = bubble.offsetHeight + "px";
+      el.classList.remove("typing");
+      el.classList.add("rewarding");
+      teaseTimer = setTimeout(() => {
+        if (on) return;
+        el.classList.remove("rewarding");
+        say(intro, () => {
+          if (++round < 3) teaseTimer = setTimeout(showReward, 3000);
+        });
+      }, 4000);
+    };
+    teaseTimer = setTimeout(showReward, 3000);
+  };
+  btn.addEventListener("click", () => {
+    if (on) return;
+    on = true;
+    stopTease();
+    try { localStorage.setItem(flagKey, "1"); } catch (e) {}
+    btn.hidden = true;
+    art.dataset.mood = "good";
+    say(startedText);
+    listeners.forEach(f => f());
+  });
+  if (on) setText(startedText);
+  else {
+    const reveal = () => say(intro, () => { btn.hidden = false; startTease(); });
+    if ("IntersectionObserver" in window){
+      const io = new IntersectionObserver(entries => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        io.disconnect();
+        reveal();
+      }, { threshold: 0.6 });
+      io.observe(el);
+    } else reveal();
+  }
+  box.insertBefore(el, box.firstChild);
+  return {
+    active: () => on,
+    onStart: f => { listeners.push(f); },
+    complete: () => { btn.hidden = true; art.dataset.mood = "done"; setText(bcT("Challenge complete! Reward unlocked.")); }
+  };
+}
+const bcJoinList = list => list.length < 2 ? String(list[0]) : list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+async function bcSendRating(tool, vote, reason){
+  const url = window.BC_REPORT_ENDPOINT;
+  if (!url) throw new Error("no endpoint");
+  const form = new FormData();
+  form.append("type", "feedback");
+  form.append("lang", document.documentElement.lang || "en");
+  const name = GR_TOOL_NAME[tool] || tool;
+  const why = (reason || "").trim();
+  const icon = vote === "up" ? "\uD83D\uDC4D" : "\uD83D\uDC4E";
+  form.append("message", why ? (icon + " " + name + ": " + why).slice(0, 100) : icon + " " + name + " guide");
+  form.append("page", location.pathname || "/");
+  form.append("screen", innerWidth + "x" + innerHeight);
+  form.append("browser", navigator.userAgent.slice(0, 200));
+  const res = await fetch(url, { method: "POST", body: form });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+}
+function bcAddGuideReward(box, ch){
+  const arts = [...box.querySelectorAll(".gr-article")];
+  if (!arts.length) return;
+  const IDLE_MS = 30000, STEP_MS = 500;
+  const MS_PER_WORD = 143, MIN_NEED_MS = 20000, MAX_NEED_MS = 40000;
+  const need = arts.map(a => {
+    const words = (a.textContent || "").trim().split(/\s+/).length;
+    return Math.max(MIN_NEED_MS, Math.min(MAX_NEED_MS, Math.round(words * MS_PER_WORD)));
+  });
+  const key = "bc-gr-progress-" + box.dataset.tool;
+  let reached = new Set();
+  const spent = arts.map(() => 0);
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    reached = new Set(saved.r || []);
+    (saved.t || []).forEach((v, i) => { if (i < spent.length) spent[i] = Number(v) || 0; });
+  } catch (e) {}
+  const isRead = i => reached.has(i) && spent[i] >= need[i];
+  const readCount = () => arts.filter((a, i) => isRead(i)).length;
+  const missing = () => arts.map((a, i) => i).filter(i => !isRead(i));
+  const api = { isRead, count: readCount, missing, onUnlock: null, active: ch.active, onStart: ch.onStart };
+  const save = () => { try { localStorage.setItem(key, JSON.stringify({ r: [...reached], t: spent.map(Math.round) })); } catch (e) {} };
+  const toc = document.querySelector(".gr-toc");
+  const tocLinks = toc ? [...toc.querySelectorAll("a")] : [];
+  if (toc) toc.style.setProperty("--gr-accent", GR_ACCENT[box.dataset.tool] || "#3FBFE8");
+  const card = document.createElement("div");
+  card.className = "gr-reward gr-challenge engine-status-card";
+  card.style.setProperty("--gr-accent", GR_ACCENT[box.dataset.tool] || "#3FBFE8");
+  card.innerHTML = '<div class="gr-challenge-head"><span class="gr-challenge-dot" aria-hidden="true"></span><button type="button" class="gr-challenge-dot gr-challenge-dot-yellow" aria-expanded="true"></button><span class="gr-challenge-dot" aria-hidden="true"></span><span class="engine-status-title"></span></div>' +
+    '<div class="engine-status-body gr-reward-body"><div class="gr-reward-main"><div class="engine-status-row gr-reward-title-row">&gt; <span class="gr-reward-title"></span></div>' +
+    '<div class="engine-status-row">&gt; <span class="gr-reward-sub"></span></div>' +
+    '<div class="engine-status-row">&gt; <span class="gr-reward-dots"></span></div>' +
+    '<div class="engine-status-row gr-dl-row">&gt; <span class="gr-dl-label"></span><span class="gr-dl-tiers"></span></div>' +
+    '<div class="gr-reward-rate"><div class="engine-status-row">&gt; <span class="gr-rate-label"></span> <span class="gr-rate-votes"></span> <span class="gr-rate-why" hidden><input type="text" class="gr-rate-why-input" autocomplete="off"><button type="button" class="gr-challenge-btn gr-rate-send"></button></span></div><div class="engine-status-row gr-rate-note" hidden>&gt; <span></span></div></div></div>' +
+    '<div class="gr-reward-prize" hidden><div class="gr-buddy-face gr-prize-face"><span aria-hidden="true"></span></div><div class="gr-prize-name"></div><button type="button" class="gr-challenge-btn gr-prize-btn"></button></div></div>';
+  card.querySelector(".engine-status-title").textContent = bcT("CHALLENGE REWARD");
+  const dot = card.querySelector(".gr-challenge-dot-yellow");
+  dot.setAttribute("aria-label", bcT("Minimize or restore the reward"));
+  dot.addEventListener("click", () => {
+    const min = card.classList.toggle("min");
+    dot.setAttribute("aria-expanded", String(!min));
+  });
+  const title = card.querySelector(".gr-reward-title");
+  const sub = card.querySelector(".gr-reward-sub");
+  const dots = [...arts].map(() => card.querySelector(".gr-reward-dots").appendChild(document.createElement("span")));
+  const rateKey = "bc-gr-rated-" + box.dataset.tool;
+  let rated = "", sending = false;
+  try { rated = localStorage.getItem(rateKey) || ""; } catch (e) {}
+  const voteBox = card.querySelector(".gr-rate-votes");
+  const noteRow = card.querySelector(".gr-rate-note");
+  const note = noteRow.querySelector("span");
+  const setNote = text => { note.textContent = text; noteRow.hidden = !text; };
+  card.querySelector(".gr-rate-label").textContent = bcT("Rate this guide:");
+  const THUMB = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zM7 11l4-8a2.5 2.5 0 0 1 2.5 2.5V9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/></svg>';
+  const votes = ["up", "down"].map(v => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "gr-rate-vote gr-rate-" + v;
+    b.setAttribute("aria-label", bcT(v === "up" ? "Yes, helpful" : "No, not helpful"));
+    b.title = b.getAttribute("aria-label");
+    b.innerHTML = THUMB;
+    voteBox.appendChild(b);
+    return b;
+  });
+  const paintVotes = v => votes.forEach((b, i) => b.classList.toggle("on", (i === 0 ? "up" : "down") === v));
+  const thanks = () => setNote(bcT("Thanks for your feedback!"));
+  if (rated){ paintVotes(rated); thanks(); }
+  else setNote("");
+  const whyBox = card.querySelector(".gr-rate-why");
+  const whyInput = card.querySelector(".gr-rate-why-input");
+  const whySend = card.querySelector(".gr-rate-send");
+  const whyPrefixLen = ("\uD83D\uDC4E " + (GR_TOOL_NAME[box.dataset.tool] || box.dataset.tool) + ": ").length;
+  whyInput.maxLength = 100 - whyPrefixLen;
+  whyInput.placeholder = bcT("Tell us why");
+  whyInput.setAttribute("aria-label", bcT("Tell us why"));
+  whySend.textContent = bcT("SEND");
+  const closeWhy = () => { whyBox.hidden = true; whyInput.value = ""; };
+  const submit = async (v, reason) => {
+    if (rated || sending) return;
+    sending = true;
+    paintVotes(v);
+    setNote(bcT("Sending..."));
+    try {
+      await bcSendRating(box.dataset.tool, v, reason);
+      rated = v;
+      try { localStorage.setItem(rateKey, rated); } catch (e) {}
+      closeWhy();
+      thanks();
+    } catch (e) {
+      if (v === "up") paintVotes("");
+      setNote(bcT("Could not send. Please try again in a minute."));
+    }
+    sending = false;
+  };
+  votes[0].addEventListener("click", () => {
+    if (rated || sending) return;
+    closeWhy();
+    submit("up");
+  });
+  votes[1].addEventListener("click", () => {
+    if (rated || sending) return;
+    if (!whyBox.hidden){ closeWhy(); paintVotes(""); return; }
+    paintVotes("down");
+    setNote("");
+    whyBox.hidden = false;
+    whyInput.focus();
+  });
+  whySend.addEventListener("click", () => submit("down", whyInput.value));
+  whyInput.addEventListener("keydown", e => {
+    if (e.key === "Enter"){ e.preventDefault(); submit("down", whyInput.value); }
+    else if (e.key === "Escape"){ closeWhy(); paintVotes(""); votes[1].focus(); }
+  });
+  const tool = box.dataset.tool;
+  const prize = card.querySelector(".gr-reward-prize");
+  const prizeBtn = card.querySelector(".gr-prize-btn");
+  if (GR_ITEMS[tool]){
+    prize.hidden = false;
+    const pf = prize.querySelector(".gr-prize-face span");
+    pf.innerHTML = GR_AVATAR;
+    const psvg = pf.querySelector("svg");
+    psvg.dataset.mood = "good";
+    psvg.setAttribute("viewBox", "4 -14 68 84");
+    psvg.querySelector(".av-item").innerHTML = GR_ITEMS[tool].svg;
+    prize.querySelector(".gr-prize-name").textContent = bcT(GR_ITEMS[tool].name);
+    prizeBtn.addEventListener("click", () => {
+      const st = bcAvatarState();
+      if (!st.won.includes(tool)) st.won.push(tool);
+      bcAvatarSave({ won: st.won, on: st.on === tool ? "" : tool });
+    });
+  }
+  const renderPrize = () => {
+    if (!GR_ITEMS[tool]) return;
+    const open = card.classList.contains("earned");
+    prize.classList.toggle("locked", !open);
+    prizeBtn.disabled = !open;
+    prizeBtn.textContent = bcT(!open ? "LOCKED" : bcAvatarState().on === tool ? "UNEQUIP" : "EQUIP");
+  };
+  document.addEventListener("bc-gr-avatar", renderPrize);
+  const dlLabel = card.querySelector(".gr-dl-label");
+  const dlTiers = card.querySelector(".gr-dl-tiers");
+  const tierBtns = GR_TOOL_NAME[tool] ? GR_TIERS.map(n => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "gr-challenge-btn gr-dl-tier";
+    b.dataset.key = tool + "#" + n;
+    b.textContent = n;
+    b.addEventListener("click", () => {
+      const st = bcAvatarState();
+      if (!st.won.includes(b.dataset.key)) return;
+      bcAvatarSave({ won: st.won, on: st.on === b.dataset.key ? "" : b.dataset.key });
+    });
+    dlTiers.appendChild(b);
+    return b;
+  }) : [];
+  const renderDownloads = () => {
+    if (!tierBtns.length) return;
+    const count = Number(bcDownloadCounts()[tool]) || 0;
+    const st = bcAvatarState();
+    const next = GR_TIERS.find(n => count < n);
+    dlLabel.textContent = next ? bcCountWord(tool) + ": " + count + ". " + bcT("Next reward at {n}.", { n: next }) : bcCountWord(tool) + ": " + count + ". " + bcT("Every reward is yours.");
+    tierBtns.forEach((b, i) => {
+      const got = st.won.includes(b.dataset.key);
+      b.disabled = !got;
+      b.classList.toggle("on", st.on === b.dataset.key);
+      b.title = got ? bcT(GR_ITEMS[b.dataset.key].name) + " — " + bcT(st.on === b.dataset.key ? "Unequip" : "Equip") : bcT("Locked — {n} downloads in {tool}", { n: GR_TIERS[i], tool: GR_TOOL_NAME[tool] });
+    });
+  };
+  document.addEventListener("bc-gr-avatar", renderDownloads);
+  document.addEventListener("bc-gr-downloads", renderDownloads);
+  renderDownloads();
+  const paint = () => {
+    const k = readCount();
+    const left = missing().map(i => i + 1);
+    const done = k >= arts.length;
+    card.classList.toggle("earned", done);
+    title.textContent = done ? bcT("Well done!") : bcT("Your reward is waiting");
+    if (!ch.active()) sub.textContent = bcT("Start the challenge above to earn it.");
+    else if (done) sub.textContent = bcT("You have read every guide. You are now ready.");
+    else if (k > 0 && left.length === 1) sub.textContent = bcT("Still waiting: guide {list}.", { list: left[0] });
+    else if (k > 0 && left.length <= 3) sub.textContent = bcT("Still waiting: guides {list}.", { list: bcJoinList(left) });
+    else sub.textContent = bcT("Take your time with each guide to unlock it. {k} of {n} done.", { n: arts.length, k });
+    dots.forEach((d, i) => d.classList.toggle("on", isRead(i)));
+    tocLinks.forEach((a, i) => a.classList.toggle("done", isRead(i)));
+    if (done && GR_ITEMS[tool]){
+      const st = bcAvatarState();
+      if (!st.won.includes(tool)){
+        st.won.push(tool);
+        if (!st.on) st.on = tool;
+        bcAvatarSave(st);
+      }
+    }
+    renderPrize();
+    if (done) ch.complete();
+    return done;
+  };
+  box.appendChild(card);
+  bcAddGuideBuddy(box, card, arts, api);
+  if (paint()) return;
+  let lastActive = Date.now(), timer = 0, io = null;
+  const celebrate = (i, all) => setTimeout(() => { if (api.onUnlock) api.onUnlock(i, all); }, 1000 + Math.random() * 1500);
+  const finish = () => {
+    clearInterval(timer);
+    if (io) io.disconnect();
+    if (typeof gtag === "function") gtag("event", "guides_completed", { tool: box.dataset.tool });
+  };
+  ["scroll", "wheel", "pointermove", "pointerdown", "keydown", "touchstart"].forEach(ev =>
+    addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true }));
+  timer = setInterval(() => {
+    if (!ch.active() || document.visibilityState !== "visible" || Date.now() - lastActive > IDLE_MS) return;
+    const mid = innerHeight / 2;
+    const cur = arts.findIndex(a => { const q = a.getBoundingClientRect(); return q.top <= mid && q.bottom >= mid; });
+    if (cur === -1 || spent[cur] >= need[cur]) return;
+    const before = isRead(cur);
+    spent[cur] += STEP_MS;
+    if (spent[cur] % 2000 === 0 || spent[cur] >= need[cur]) save();
+    if (!before && isRead(cur)){
+      const all = paint();
+      celebrate(cur, all);
+      if (all) finish();
+    }
+  }, STEP_MS);
+  io = new IntersectionObserver(entries => {
+    if (!ch.active()) return;
+    const before = arts.map((a, i) => isRead(i));
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      reached.add(Number(en.target.dataset.i));
+    });
+    save();
+    const all = paint();
+    arts.forEach((a, i) => { if (!before[i] && isRead(i)) celebrate(i, all); });
+    if (all) finish();
+  });
+  const ends = [];
+  arts.forEach((a, i) => {
+    const end = document.createElement("div");
+    end.className = "gr-end-sentinel";
+    end.dataset.i = i;
+    a.appendChild(end);
+    ends.push(end);
+    io.observe(end);
+  });
+  ch.onStart(() => {
+    io.disconnect();
+    ends.forEach(e => io.observe(e));
+    paint();
+  });
+}
+const GR_ITEMS = {
+  convert:  { name: "Party hat", det: "a", svg: '<g transform="rotate(-14 28 3)"><path d="M19 3 L37 3 L28 -17Z" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/><path d="M23 -3 L33 -3" stroke="#fff" stroke-width="2" fill="none"/><circle cx="28" cy="-18" r="2.6" fill="#F6D44A" stroke="#1d2437" stroke-width="1.5"/></g>' },
+  compress: { name: "Cool shades", det: "", svg: '<rect x="14" y="16" width="20" height="15" rx="6" fill="#1d2437"/><rect x="42" y="16" width="20" height="15" rx="6" fill="#1d2437"/><path d="M34 21 H42" stroke="#1d2437" stroke-width="3" fill="none"/><path d="M18 20 L23 20 M46 20 L51 20" stroke="#fff" stroke-width="2" opacity=".45" fill="none"/>' },
+  exif:     { name: "Shower cap", det: "a", svg: '<path d="M10 14 C12 -6 64 -6 66 14 C55 9 21 9 10 14Z" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/><circle cx="24" cy="-9" r="3.4" fill="none" stroke="#1d2437" stroke-width="1.6"/><circle cx="33" cy="-14" r="2.4" fill="none" stroke="#1d2437" stroke-width="1.6"/><circle cx="16" cy="-14" r="2" fill="none" stroke="#1d2437" stroke-width="1.6"/>' },
+  combine:  { name: "Bow tie", det: "a", svg: '<path d="M38 66 L27 59 L27 73Z M38 66 L49 59 L49 73Z" fill="#FF6961" stroke="#1d2437" stroke-width="2"/><circle cx="38" cy="66" r="3.2" fill="#FF6961" stroke="#1d2437" stroke-width="2"/>' },
+  context:  { name: "Reading glasses", det: "", svg: '<circle cx="24" cy="25" r="10.5" fill="#fff" fill-opacity=".3" stroke="#1d2437" stroke-width="2.6"/><circle cx="53" cy="25" r="10.5" fill="#fff" fill-opacity=".3" stroke="#1d2437" stroke-width="2.6"/><path d="M34.5 24 Q38.5 20 42.5 24" fill="none" stroke="#1d2437" stroke-width="2.6"/><path d="M13.5 24 L9 21 M63.5 24 L68 21" fill="none" stroke="#1d2437" stroke-width="2.6"/>' },
+  colorfy:  { name: "Painter beret", det: "a", svg: '<g transform="rotate(-10 38 4)"><path d="M10 9 C8 -6 48 -12 62 -2 C70 5 60 12 40 11 C22 11 11 13 10 9Z" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/><path d="M37 -9 L39 -15" stroke="#1d2437" stroke-width="3" fill="none"/></g>' },
+  gif:      { name: "Film headband", det: "a", svg: '<g transform="translate(0 -6)"><path d="M10 14 Q38 -2 66 14 L66 21 Q38 5 10 21Z" fill="#1d2437"/><g fill="#fff"><rect x="14" y="14.5" width="4" height="3" rx="1"/><rect x="25" y="9.5" width="4" height="3" rx="1"/><rect x="36" y="7.5" width="4" height="3" rx="1"/><rect x="47" y="9.5" width="4" height="3" rx="1"/><rect x="58" y="14.5" width="4" height="3" rx="1"/></g></g>' },
+  coudio:   { name: "Headphones", det: "", svg: '<path d="M12 30 C9 -8 67 -8 64 30" fill="none" stroke="#1d2437" stroke-width="6"/><path d="M12 30 C9 -8 67 -8 64 30" fill="none" stroke="var(--gr-accent)" stroke-width="2.6"/><rect x="4" y="25" width="10" height="18" rx="4.5" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/><rect x="62" y="25" width="10" height="18" rx="4.5" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/>' },
+  codify:   { name: "Code brackets", det: "", svg: '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 -3 L9 -11 L18 -19 M27 -2 L23 -20 M32 -3 L41 -11 L32 -19" stroke="#1d2437" stroke-width="6"/><path d="M18 -3 L9 -11 L18 -19 M27 -2 L23 -20 M32 -3 L41 -11 L32 -19" stroke="var(--gr-accent)" stroke-width="2.6"/></g>' },
+  comprio:  { name: "Play cap", det: "a", svg: '<path d="M10 10 C10 -6 62 -6 66 10 L74 12 C74 16 60 15 40 14 C24 13 10 14 10 10Z" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2"/><path d="M31 -2 L31 8 L40 3Z" fill="#fff"/>' },
+  convido:  { name: "Popcorn bucket", det: "a", svg: '<g transform="translate(0 -2)"><circle cx="28" cy="-13" r="4.2" fill="#fff6d6" stroke="#1d2437" stroke-width="1.6"/><circle cx="36" cy="-16" r="4.2" fill="#fff6d6" stroke="#1d2437" stroke-width="1.6"/><circle cx="44" cy="-13" r="4.2" fill="#fff6d6" stroke="#1d2437" stroke-width="1.6"/><path d="M22 6 L54 6 L50 -10 L26 -10Z" fill="#fff" stroke="#1d2437" stroke-width="2"/><path d="M30 6 L31 -10 M38 6 L38 -10 M46 6 L45 -10" stroke="var(--gr-accent)" stroke-width="3.4" fill="none"/></g>' }
+};
+const GR_TIERS = [10, 50, 100, 200];
+const GR_PATH_TOOL = { convert:"convert", compress:"compress", combine:"combine", cleanly:"exif", context:"context", colorfy:"colorfy", congify:"gif", coudio:"coudio", codify:"codify", comprio:"comprio", convido:"convido" };
+const GR_STAR = "M20,-2L22,4L28,6L22,8L20,14L18,8L12,6L18,4L20,-2Z";
+const GR_TIER_ITEMS = [
+  { name: "Bronze star", det: "a", svg: '<g transform="translate(18 -12.6) scale(1.1)"><path d="' + GR_STAR + '" fill="#cd7f32" stroke="#1d2437" stroke-width="1.8"/><circle cx="20" cy="6" r="1.6" fill="var(--gr-accent)"/></g>' },
+  { name: "Silver halo", det: "a", svg: '<ellipse cx="40" cy="-7" rx="19" ry="5.5" fill="none" stroke="#1d2437" stroke-width="6.5"/><ellipse cx="40" cy="-7" rx="19" ry="5.5" fill="none" stroke="#cfd6e4" stroke-width="3.2"/>' },
+  { name: "Gold crown", det: "a", svg: '<path d="M26,2L28,-12L34,-4L40,-14L46,-4L52,-12L54,2Z" fill="#f6c744" stroke="#1d2437" stroke-width="2"/><circle cx="40" cy="-3" r="2.6" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="1.2"/>' },
+  { name: "Platinum sparkles", det: "", svg: '<g fill="#bff3f7" stroke="#1d2437" stroke-width="1.6"><path d="' + GR_STAR + '" transform="translate(-10 -1.4) scale(.9)"/><path d="' + GR_STAR + '" transform="translate(50 .6) scale(.9)"/><path d="' + GR_STAR + '" transform="translate(16 -19.2) scale(1.2)"/></g>' }
+];
+Object.keys(GR_TOOL_NAME).forEach(tool => GR_TIERS.forEach((n, i) => { GR_ITEMS[tool + "#" + n] = GR_TIER_ITEMS[i]; }));
+function bcPageTool(){
+  const seg = location.pathname.split("/").filter(Boolean);
+  for (const part of seg) if (GR_PATH_TOOL[part]) return GR_PATH_TOOL[part];
+  return "";
+}
+function bcDownloadCounts(){
+  try {
+    const v = JSON.parse(localStorage.getItem("bc-gr-downloads") || "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch (e) { return {}; }
+}
+function bcCountDownload(tool){
+  tool = tool || bcPageTool();
+  if (!GR_TOOL_NAME[tool]) return;
+  const counts = bcDownloadCounts();
+  const total = (Number(counts[tool]) || 0) + 1;
+  counts[tool] = total;
+  try { localStorage.setItem("bc-gr-downloads", JSON.stringify(counts)); } catch (e) {}
+  const st = bcAvatarState();
+  const fresh = GR_TIERS.filter(n => total >= n && !st.won.includes(tool + "#" + n));
+  fresh.forEach(n => st.won.push(tool + "#" + n));
+  if (fresh.length) bcAvatarSave(st);
+  document.dispatchEvent(new Event("bc-gr-downloads"));
+  if (fresh.length) bcShowRewardToast(tool + "#" + fresh[fresh.length - 1], fresh[fresh.length - 1]);
+}
+function bcShowRewardToast(key, tier){
+  const item = GR_ITEMS[key];
+  if (!item) return;
+  const tool = key.split("#")[0];
+  document.querySelectorAll(".gr-toast").forEach(t => t.remove());
+  const el = document.createElement("div");
+  el.className = "gr-toast engine-status-card";
+  el.setAttribute("role", "status");
+  el.style.setProperty("--gr-accent", GR_ACCENT[tool] || "#3FBFE8");
+  el.innerHTML = '<div class="gr-buddy-face gr-toast-face"><span aria-hidden="true"></span></div><div class="gr-toast-main"><div class="engine-status-row">&gt; <span class="engine-status-value gr-toast-title"></span></div><div class="engine-status-row gr-toast-sub"></div><div class="gr-toast-actions"><button type="button" class="gr-challenge-btn gr-toast-equip"></button><button type="button" class="gr-challenge-btn gr-toast-close"></button></div></div>';
+  const face = el.querySelector(".gr-toast-face span");
+  face.innerHTML = GR_AVATAR;
+  const svg = face.querySelector("svg");
+  svg.dataset.mood = "good";
+  svg.querySelector(".av-item").innerHTML = item.svg;
+  el.querySelector(".gr-toast-title").textContent = bcT("Reward unlocked: {item}", { item: bcT(item.name) });
+  el.querySelector(".gr-toast-sub").textContent = bcT("{n} downloads in {tool}.", { n: tier, tool: GR_TOOL_NAME[tool] });
+  const equip = el.querySelector(".gr-toast-equip");
+  const close = el.querySelector(".gr-toast-close");
+  close.textContent = bcT("CLOSE");
+  const paint = () => { equip.textContent = bcT(bcAvatarState().on === key ? "UNEQUIP" : "EQUIP"); };
+  paint();
+  equip.addEventListener("click", () => {
+    const st = bcAvatarState();
+    bcAvatarSave({ won: st.won, on: st.on === key ? "" : key });
+    paint();
+  });
+  let timer = 0;
+  const dismiss = () => { clearTimeout(timer); el.remove(); };
+  close.addEventListener("click", dismiss);
+  timer = setTimeout(dismiss, 14000);
+  document.body.appendChild(el);
+}
+const GR_COUNT_WORD = { colorfy: "Copies" };
+function bcCountWord(tool){ return bcT(GR_COUNT_WORD[tool] || "Downloads"); }
+function bcFileKey(f){ return f ? f.name + ":" + f.size + ":" + (f.lastModified || 0) : ""; }
+function bcDownloadGate(getSig){
+  let runSig = null;
+  let saved = false;
+  return {
+    ran(sig){ runSig = sig === undefined ? getSig() : sig; saved = false; },
+    downloaded(){ saved = true; },
+    resultLocked(){ return saved; },
+    runLocked(){ return saved && runSig !== null && getSig() === runSig; }
+  };
+}
+function bcSetLocked(buttons, locked){
+  [].concat(buttons).forEach(b => {
+    if (!b) return;
+    if (b.dataset.bcTitle === undefined) b.dataset.bcTitle = b.title || "";
+    b.classList.toggle("bc-locked", locked);
+    b.setAttribute("aria-disabled", locked ? "true" : "false");
+    b.title = locked ? bcT("Already downloaded. Change the file or the settings to unlock.") : b.dataset.bcTitle;
+  });
+}
+function bcLockedNotice(statusEl){
+  if (statusEl) statusEl.textContent = bcT("Already downloaded. Change the file or the settings to unlock.");
+}
+function bcSetupUsageBar(){
+  const tool = bcPageTool();
+  const wrap = document.querySelector(".tool-wrap");
+  if (!tool || !wrap || !wrap.querySelector(".tool-app") || wrap.querySelector(".bc-usage-bar")) return;
+  const bar = document.createElement("div");
+  bar.className = "bc-usage-bar";
+  bar.style.setProperty("--gr-accent", GR_ACCENT[tool] || "#3FBFE8");
+  bar.innerHTML = '<span class="bc-usage-label"></span><div class="bc-usage-track" role="progressbar" aria-valuemin="0"><span class="bc-usage-fill"></span></div><span class="bc-usage-next"></span>';
+  const label = bar.querySelector(".bc-usage-label");
+  const track = bar.querySelector(".bc-usage-track");
+  const fill = bar.querySelector(".bc-usage-fill");
+  const next = bar.querySelector(".bc-usage-next");
+  const marks = GR_TIERS.map((n, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "bc-usage-mark";
+    b.dataset.key = tool + "#" + n;
+    b.style.left = ((i + 1) / GR_TIERS.length * 100) + "%";
+    b.textContent = n;
+    b.addEventListener("click", () => {
+      const st = bcAvatarState();
+      if (!st.won.includes(b.dataset.key)) return;
+      bcAvatarSave({ won: st.won, on: st.on === b.dataset.key ? "" : b.dataset.key });
+    });
+    track.appendChild(b);
+    return b;
+  });
+  let shown = null;
+  const render = () => {
+    const count = Number(bcDownloadCounts()[tool]) || 0;
+    const st = bcAvatarState();
+    let frac = 0;
+    for (let i = 0; i < GR_TIERS.length; i++){
+      const lo = i ? GR_TIERS[i - 1] : 0;
+      if (count >= GR_TIERS[i]) frac = i + 1;
+      else { frac = i + Math.max(0, count - lo) / (GR_TIERS[i] - lo); break; }
+    }
+    fill.style.width = (frac / GR_TIERS.length * 100) + "%";
+    const nextTier = GR_TIERS.find(n => count < n);
+    label.textContent = bcCountWord(tool).toUpperCase() + " " + count;
+    next.textContent = nextTier
+      ? bcT("Next reward at {n}", { n: nextTier })
+      : bcT("All rewards unlocked");
+    track.setAttribute("aria-valuemax", GR_TIERS[GR_TIERS.length - 1]);
+    track.setAttribute("aria-valuenow", Math.min(count, GR_TIERS[GR_TIERS.length - 1]));
+    track.setAttribute("aria-valuetext", label.textContent + ". " + next.textContent);
+    const unlocked = marks.filter(b => st.won.includes(b.dataset.key)).map(b => b.dataset.key);
+    marks.forEach((b, i) => {
+      const got = unlocked.includes(b.dataset.key);
+      b.disabled = !got;
+      b.classList.toggle("got", got);
+      b.classList.toggle("on", st.on === b.dataset.key);
+      if (got && shown && !shown.includes(b.dataset.key)){
+        b.classList.remove("pop");
+        void b.offsetWidth;
+        b.classList.add("pop");
+      }
+      b.title = got
+        ? bcT(GR_ITEMS[b.dataset.key].name) + " — " + bcT(st.on === b.dataset.key ? "Unequip" : "Equip")
+        : bcT("Locked — {n} downloads in {tool}", { n: GR_TIERS[i], tool: GR_TOOL_NAME[tool] });
+    });
+    shown = unlocked;
+  };
+  document.addEventListener("bc-gr-downloads", render);
+  document.addEventListener("bc-gr-avatar", render);
+  render();
+  wrap.appendChild(bar);
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bcSetupUsageBar);
+else bcSetupUsageBar();
+function bcAvatarState(){
+  try {
+    const v = JSON.parse(localStorage.getItem("bc-gr-avatar") || "{}");
+    return { won: Array.isArray(v.won) ? v.won : [], on: typeof v.on === "string" ? v.on : "" };
+  } catch (e) { return { won: [], on: "" }; }
+}
+function bcAvatarSave(state){
+  try { localStorage.setItem("bc-gr-avatar", JSON.stringify(state)); } catch (e) {}
+  document.dispatchEvent(new Event("bc-gr-avatar"));
+}
+function bcDressAvatar(svg){
+  const layer = svg && svg.querySelector(".av-item");
+  if (layer) layer.innerHTML = (GR_ITEMS[bcAvatarState().on] || {}).svg || "";
+}
+document.addEventListener("bc-gr-avatar", () => document.querySelectorAll(".gr-buddy-face svg").forEach(bcDressAvatar));
+const GR_AVATAR = '<svg viewBox="4 -20 68 88" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="ant ant-a"><path d="M40,6L40,-3" transform="matrix(0.754,-0.435,0.545,0.945,6.223,11.077)" fill="none" stroke="var(--gr-accent)" stroke-width="3"/><circle class="av-tip" cx="40" cy="-6" r="4" transform="matrix(0.754,-0.435,0.545,0.945,6.223,11.077)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2.5"/></g>' +
+  '<g class="ant ant-b"><path d="M40,6L40,-3" transform="matrix(0.754,0.435,-0.545,0.945,10.972,-22.185)" fill="none" stroke="var(--gr-accent)" stroke-width="3"/><circle class="av-tip" cx="40" cy="-6" r="4" transform="matrix(0.754,0.435,-0.545,0.945,10.972,-22.185)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2.5"/></g>' +
+  '<path d="M40,6C60,6 74,20 72,38C70,54 54,66 40,66C26,66 10,54 8,38C6,20 20,6 40,6Z" transform="matrix(0.871,0,0,1.091,3.227,-7.214)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3"/>' +
+  '<g class="f f-start"><g class="av-hand"><path d="M10,44L26,42" transform="matrix(0.941,0,0,0.941,50.209,-4.824)" fill="none" stroke="var(--gr-accent)" stroke-width="3"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0.491,0,0,0.491,-11.176,-66.384)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0.347,-0.347,0.347,0.347,-58.169,24.385)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0,-0.491,0.491,0,-27.351,123.515)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><circle cx="28" cy="42" r="5" transform="matrix(0.941,0,0,0.941,50.209,-4.824)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2.5"/></g><g class="av-eyes"><path d="M401.668,158.117C401.633,158.556 401.615,159.001 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C404.063,150.546 403.694,151.169 403.358,151.855C402.897,151.757 402.406,151.704 401.896,151.704C399.241,151.704 397.085,153.142 397.085,154.912C397.085,156.632 399.118,158.037 401.668,158.117Z" transform="matrix(0,1.024,-1.024,0,188.914,-382.081)" fill="#d4dbee"/><path d="M401.628,158.781C401.62,159.003 401.615,159.226 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C403.951,150.704 403.482,151.537 403.074,152.467C402.876,152.451 402.675,152.442 402.471,152.442C399.815,152.442 397.659,153.874 397.659,155.636C397.659,157.208 399.374,158.517 401.628,158.781Z" transform="matrix(0,1.024,-1.024,0,214.452,-382.081)" fill="#1d2437"/><path d="M49.542,35.85C49.573,35.671 49.638,35.504 49.729,35.355C49.981,34.944 50.434,34.67 50.95,34.67C51.739,34.67 52.38,35.311 52.38,36.1C52.38,36.161 52.376,36.221 52.369,36.279C51.557,36.043 50.58,35.877 49.542,35.85Z" transform="matrix(2.287,0,0,3.445,-61.435,-94.344)" fill="#d4dbee"/><path d="M49.587,36.534C49.544,36.397 49.52,36.251 49.52,36.1C49.52,35.311 50.161,34.67 50.95,34.67C51.716,34.67 52.343,35.274 52.378,36.032C51.338,36.086 50.37,36.278 49.587,36.534Z" transform="matrix(-2.297,0,0,3.445,147.328,-94.933)" fill="#1d2437"/></g><g class="av-mouth"><path d="M443.949,225.733L479.149,225.733C467.415,241.733 455.682,241.733 443.949,225.733Z" transform="matrix(0.588,0,0,0.833,-233.444,-143.745)" fill="#1d2437" stroke="#1d2437" stroke-width="4.8"/></g></g>' +
+  '<g class="f f-good"><g class="av-eyes"><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-157.779,-37.967)" fill="#1d2437"/><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-182.444,-37.953)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(2.287,0,0,3.445,-60.63,-102.005)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(-2.297,0,0,3.445,148.133,-102.594)" fill="#1d2437"/></g><g class="av-mouth"><path d="M30.571,27.185C35.76,36.005 44.102,35.905 49.931,27.587C49.963,27.541 49.995,27.495 50.027,27.448" transform="matrix(1.235,0,0,1.045,-11.65,17.241)" fill="none" stroke="#1d2437" stroke-width="3"/></g></g>' +
+  '<g class="f f-mid"><g class="av-eyes"><circle cx="52.25" cy="37.9" r="4.2" transform="matrix(2.287,0,0,3.445,-65.658,-102.944)" fill="#1d2437"/><circle cx="52.25" cy="37.9" r="4.2" transform="matrix(-2.297,0,0,3.445,143.515,-102.944)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(2.287,0,0,3.445,-59.187,-102.356)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(-2.297,0,0,3.445,143.515,-102.944)" fill="#1d2437"/></g><g class="av-mouth"><path d="M33,33C38.333,34.333 43.667,33 49,29" transform="matrix(0.941,0,0,0.941,0.408,20.078)" fill="none" stroke="#1d2437" stroke-width="3"/></g></g>' +
+  '<g class="f f-almost"><g class="av-eyes"><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-158.102,-35.578)" fill="#1d2437"/><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-182.767,-35.564)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(2.287,0,0,3.445,-60.954,-99.616)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(-2.297,0,0,3.445,147.809,-100.205)" fill="#1d2437"/></g><g class="av-mouth"><ellipse cx="283" cy="224.983" rx="16" ry="4.25" transform="matrix(0.533,0,0,1.519,-113.132,-293.777)" fill="#1d2437"/></g><path d="M20,-2L22,4L28,6L22,8L20,14L18,8L12,6L18,4L20,-2Z" transform="matrix(0.941,0,0,0.941,43.466,-16.087)" fill="#f6d44a" stroke="#1d2437" stroke-width="1.8"/></g>' +
+  '<g class="f f-last"><g class="av-eyes"><path d="M401.668,158.117C401.633,158.556 401.615,159.001 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C404.063,150.546 403.694,151.169 403.358,151.855C402.897,151.757 402.406,151.704 401.896,151.704C399.241,151.704 397.085,153.142 397.085,154.912C397.085,156.632 399.118,158.037 401.668,158.117Z" transform="matrix(0,1.024,-1.024,0,188.556,-382.554)" fill="#d4dbee"/><path d="M401.628,158.781C401.62,159.003 401.615,159.226 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C403.951,150.704 403.482,151.537 403.074,152.467C402.876,152.451 402.675,152.442 402.471,152.442C399.815,152.442 397.659,153.874 397.659,155.636C397.659,157.208 399.374,158.517 401.628,158.781Z" transform="matrix(0,1.024,-1.024,0,214.094,-382.554)" fill="#1d2437"/><path d="M49.542,35.85C49.573,35.671 49.638,35.504 49.729,35.355C49.981,34.944 50.434,34.67 50.95,34.67C51.739,34.67 52.38,35.311 52.38,36.1C52.38,36.161 52.376,36.221 52.369,36.279C51.557,36.043 50.58,35.877 49.542,35.85Z" transform="matrix(2.287,0,0,3.445,-61.793,-94.817)" fill="#d4dbee"/><path d="M49.587,36.534C49.544,36.397 49.52,36.251 49.52,36.1C49.52,35.311 50.161,34.67 50.95,34.67C51.716,34.67 52.343,35.274 52.378,36.032C51.338,36.086 50.37,36.278 49.587,36.534Z" transform="matrix(-2.297,0,0,3.445,146.97,-95.405)" fill="#1d2437"/></g><g class="av-mouth"><path d="M443.949,225.733L479.149,225.733C467.415,241.733 455.682,241.733 443.949,225.733Z" transform="matrix(0.588,0,0,0.833,-233.802,-144.218)" fill="#1d2437" stroke="#1d2437" stroke-width="4.8"/></g><path d="M20,-2L22,4L28,6L22,8L20,14L18,8L12,6L18,4L20,-2Z" transform="matrix(0.941,0,0,0.941,39.123,-16.617)" fill="#f6d44a" stroke="#1d2437" stroke-width="1.8"/></g>' +
+  '<g class="f f-done"><g class="av-horn"><path d="M1070.31,222C1072.899,222 1075,224.913 1075,228.5L1075,241.5C1075,245.087 1072.899,248 1070.31,248L1015.69,248C1013.101,248 1011,245.087 1011,241.5L1011,228.5C1011,224.913 1013.101,222 1015.69,222L1070.31,222Z" transform="matrix(0.533,0,0,0.385,-489.123,-37.741)" fill="none" stroke="#1d2437" stroke-width="8.86" stroke-linecap="square"/><path d="M1070.31,222C1072.899,222 1075,224.913 1075,228.5L1075,241.5C1075,245.087 1072.899,248 1070.31,248L1015.69,248C1013.101,248 1011,245.087 1011,241.5L1011,228.5C1011,224.913 1013.101,222 1015.69,222L1070.31,222Z" transform="matrix(0.533,0,0,0.385,-489.123,-37.741)" fill="none" stroke="#fbc442" stroke-width="3.8" stroke-linecap="square"/><path d="M1040.75,250C1040.888,250 1041,250.371 1041,250.827L1041,269.173C1041,269.629 1040.888,270 1040.75,270L1040.25,270C1040.112,270 1040,269.629 1040,269.173L1040,250.827C1040,250.371 1040.112,250 1040.25,250L1040.75,250Z" transform="matrix(2.628,0,0,0.794,-2673.042,-156.18)" fill="#fbc442" stroke="#1d2437" stroke-width="0.3" stroke-linecap="square"/><path d="M1040.75,250C1040.888,250 1041,250.371 1041,250.827L1041,269.173C1041,269.629 1040.888,270 1040.75,270L1040.25,270C1040.112,270 1040,269.629 1040,269.173L1040,250.827C1040,250.371 1040.112,250 1040.25,250L1040.75,250Z" transform="matrix(2.628,0,0,0.794,-2670.217,-156.199)" fill="#fbc442" stroke="#1d2437" stroke-width="0.3" stroke-linecap="square"/><path d="M1040.75,250C1040.888,250 1041,250.371 1041,250.827L1041,269.173C1041,269.629 1040.888,270 1040.75,270L1040.25,270C1040.112,270 1040,269.629 1040,269.173L1040,250.827C1040,250.371 1040.112,250 1040.25,250L1040.75,250Z" transform="matrix(2.628,0,0,0.794,-2667.22,-156.269)" fill="#fbc442" stroke="#1d2437" stroke-width="0.3" stroke-linecap="square"/><path d="M1073,215C1075.208,215 1077,217.689 1077,221C1077,224.311 1075.208,227 1073,227L998,227C995.792,227 994,224.311 994,221C994,217.689 995.792,215 998,215L1073,215Z" transform="matrix(0.588,0,0,0.392,-546.65,-39.023)" fill="#fbc442" stroke="#1d2437" stroke-width="3.53" stroke-linecap="square"/><ellipse cx="1087" cy="231" rx="11" ry="20" transform="matrix(0.588,0,0,0.588,-548.994,-88.239)" fill="#fbc442" stroke="#1d2437" stroke-width="3" stroke-linecap="square"/><ellipse cx="1087" cy="231" rx="11" ry="20" transform="matrix(0.16,0,0,0.14,-88.094,15.317)" fill="#fbc442" stroke="#1d2437" stroke-width="11.72" stroke-linecap="square"/><ellipse cx="1058.5" cy="212.5" rx="3.5" ry="2.5" transform="matrix(0.588,0,0,0.294,-561.062,-19.71)" fill="#fbc442" stroke="#1d2437" stroke-width="1.26" stroke-linecap="square"/><ellipse cx="1058.5" cy="212.5" rx="3.5" ry="2.5" transform="matrix(0.588,0,0,0.294,-558.258,-20.48)" fill="#fbc442" stroke="#1d2437" stroke-width="1.26" stroke-linecap="square"/><ellipse cx="1058.5" cy="212.5" rx="3.5" ry="2.5" transform="matrix(0.588,0,0,0.294,-555.315,-19.745)" fill="#fbc442" stroke="#1d2437" stroke-width="1.26" stroke-linecap="square"/></g><g class="av-conf"><circle cx="12" cy="8" r="2.5" transform="matrix(0.941,0,0,0.941,1.655,-23.811)" fill="#ff6961"/><circle cx="74" cy="10" r="2.5" transform="matrix(0.941,0,0,0.941,1.655,-23.811)" fill="#f6d44a"/><circle cx="3" cy="40" r="2.5" transform="matrix(0.941,0,0,0.941,1.655,-23.811)" fill="#3fbfe8"/><circle cx="77" cy="52" r="2.5" transform="matrix(0.941,0,0,0.941,1.655,-23.811)" fill="#b84cff"/><rect x="12" y="-4" width="5" height="5" transform="matrix(0.853,0.398,-0.398,0.853,2.094,-29.556)" fill="#7ed321"/></g><g class="av-eyes"><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-158.102,-34.89)" fill="#1d2437"/><path d="M339.336,115.283C337.806,112.633 337,109.627 337,106.567C337,96.945 344.812,89.134 354.433,89.134C364.055,89.134 371.866,96.945 371.866,106.567C371.866,109.627 371.061,112.633 369.531,115.283L339.336,115.283Z" transform="matrix(0.588,0,0,0.588,-182.767,-34.876)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(2.287,0,0,3.445,-60.954,-98.929)" fill="#d4dbee"/><circle cx="50.95" cy="36.1" r="1.43" transform="matrix(-2.297,0,0,3.445,147.809,-99.517)" fill="#1d2437"/></g><path d="M20,-2L22,4L28,6L22,8L20,14L18,8L12,6L18,4L20,-2Z" transform="matrix(0.941,0,0,0.941,40.184,-13.532)" fill="#f6d44a" stroke="#1d2437" stroke-width="1.8"/></g>' +
+  '<g class="f f-point"><g class="av-point"><path d="M10,44L26,42" transform="matrix(0.941,0,0,0.941,52.577,-7.078)" fill="none" stroke="var(--gr-accent)" stroke-width="3"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0.491,0,0,0.491,-8.841,-69.579)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0.491,0,0,0.491,-11.3,-73.467)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><path d="M201,203C203.76,203 206,205.24 206,208C206,210.76 203.76,213 201,213L187,213C184.24,213 182,210.76 182,208C182,205.24 184.24,203 187,203L201,203Z" transform="matrix(0.491,0,0,0.491,-10.787,-65.269)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="3.6" stroke-linecap="square"/><circle cx="28" cy="42" r="5" transform="matrix(0.941,0,0,0.941,52.577,-7.078)" fill="var(--gr-accent)" stroke="#1d2437" stroke-width="2.5"/></g><g class="av-eyes"><path d="M401.668,158.117C401.633,158.556 401.615,159.001 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C404.063,150.546 403.694,151.169 403.358,151.855C402.897,151.757 402.406,151.704 401.896,151.704C399.241,151.704 397.085,153.142 397.085,154.912C397.085,156.632 399.118,158.037 401.668,158.117Z" transform="matrix(0,1.024,-1.024,0,190.043,-381.687)" fill="#d4dbee"/><path d="M401.628,158.781C401.62,159.003 401.615,159.226 401.615,159.45C401.615,163.22 402.886,166.695 404.45,168.9C399.235,168.9 395,164.666 395,159.45C395,154.235 399.235,150 404.45,150C403.951,150.704 403.482,151.537 403.074,152.467C402.876,152.451 402.675,152.442 402.471,152.442C399.815,152.442 397.659,153.874 397.659,155.636C397.659,157.208 399.374,158.517 401.628,158.781Z" transform="matrix(0,1.024,-1.024,0,215.581,-381.687)" fill="#1d2437"/><path d="M49.542,35.85C49.573,35.671 49.638,35.504 49.729,35.355C49.981,34.944 50.434,34.67 50.95,34.67C51.739,34.67 52.38,35.311 52.38,36.1C52.38,36.161 52.376,36.221 52.369,36.279C51.557,36.043 50.58,35.877 49.542,35.85Z" transform="matrix(2.287,0,0,3.445,-60.306,-93.95)" fill="#d4dbee"/><path d="M49.587,36.534C49.544,36.397 49.52,36.251 49.52,36.1C49.52,35.311 50.161,34.67 50.95,34.67C51.716,34.67 52.343,35.274 52.378,36.032C51.338,36.086 50.37,36.278 49.587,36.534Z" transform="matrix(-2.297,0,0,3.445,148.457,-94.538)" fill="#1d2437"/></g><g class="av-mouth"><path d="M30.571,27.185C35.76,36.005 44.102,35.905 49.931,27.587C49.963,27.541 49.995,27.495 50.027,27.448" transform="matrix(-0.479,0,0,0.897,57.376,22.768)" fill="none" stroke="#1d2437" stroke-width="3"/></g></g><g class="av-item"></g></svg>';
+function bcAddGuideBuddy(box, card, arts, api){
+  const SHOW_MS = [3000, 2000];
+  const el = document.createElement("div");
+  el.className = "gr-buddy";
+  el.innerHTML = '<div class="gr-buddy-bubble"><span class="gr-buddy-text" aria-hidden="true"></span></div><div class="gr-buddy-spin"><button type="button" class="gr-buddy-face"><span aria-hidden="true"></span></button></div>';
+  el.style.setProperty("--gr-accent", GR_ACCENT[box.dataset.tool] || "#3FBFE8");
+  const btn = el.querySelector(".gr-buddy-face");
+  const face = btn.querySelector("span");
+  face.innerHTML = GR_AVATAR;
+  bcDressAvatar(face.querySelector("svg"));
+  const art = face.querySelector("svg");
+  const text = el.querySelector(".gr-buddy-text");
+  document.body.appendChild(el);
+  const n = arts.length;
+  const armed = new Array(n + 1).fill(true);
+  const wow = [...box.querySelectorAll("figure[data-wow]")];
+  const pointedAt = new Set();
+  let activeFig = null;
+  let sayTimer = 0;
+  let mini = false, shown = false, active = -1, hideTimer = 0, queueTimer = 0, ticking = false, wasEarned = card.classList.contains("earned");
+  try { mini = localStorage.getItem("bc-gr-buddy-mini") === "1"; } catch (e) {}
+  const earned = () => card.classList.contains("earned");
+  const LINES = {
+    start:  ["Hi, ready to learn?", "Welcome! Let's start with the basics.", "Hey there! This will be quick."],
+    second: ["Moving to the next one.", "Nice. On to the next guide.", "Keep going, it gets better."],
+    mid:    ["This part gets interesting.", "Here comes the good stuff.", "Stay with me. This one matters."],
+    almost: ["Almost there!", "Just a little more.", "You're nearly done."],
+    last:   ["Last one. You've got this.", "Final stretch!", "One more and you're done."],
+    done:   ["You did it! Well done.", "All done. You're ready to try it.", "Great job! You are now ready."],
+    locked: ["Read every guide to unlock your reward.", "Your reward is waiting. Keep reading.", "A few guides left to unlock your reward."],
+    point:  ["Look at this chart! How cool?", "Now this is worth a look!"],
+    backStart: ["Are you leaving already?", "Back to the start?"],
+    back:      ["Going back? Good idea.", "Back again? Take your time."],
+    seen:      ["You already finished this one.", "This one is done. Nice!", "Already covered. Want a recap?"],
+    unlock:    ["Guide {g} done!", "Nice, that one counts!", "Got it! {k} of {n} done."],
+    allDone:   ["That's every guide! Your reward is below.", "All {n} done. Go claim your reward!", "You finished them all!"],
+    left1:     ["Just guide {list} to go!", "One more: guide {list}.", "Guide {list} is all that's left."],
+    leftMany:  ["Still waiting: guides {list}.", "{m} guides to go: {list}.", "Guides {list} are next."],
+    intro:     ["Hi, I'm your guide! Hit the challenge button above to start.", "Hello! Press START THE CHALLENGE above and I'll cheer you on.", "Hey there! Ready for a challenge? The button is above."],
+    arrived:   ["Here you go.", "Arrived!", "You're at your destination.", "Nice reading."],
+    accepted:  ["Challenge accepted! Let's go.", "You're in! Take your time with each guide.", "Game on! Read every guide and I'll keep score."]
+  };
+  const FACE = { start:"start", second:"good", mid:"mid", almost:"almost", last:"last", done:"done", locked:"good", point:"point", backStart:"mid", back:"mid", seen:"good", unlock:"good", allDone:"done", left1:"almost", leftMany:"mid", intro:"start", accepted:"good", arrived:"good" };
+  const lastLine = {};
+  let dir = 1, lastY = scrollY;
+  const roleFor = i => {
+    if (!api.active()) return "intro";
+    if (i >= n){
+      if (earned()) return "done";
+      const left = api.missing().length;
+      if (api.count() === 0) return "locked";
+      return left === 1 ? "left1" : left <= 3 ? "leftMany" : "locked";
+    }
+    if (dir < 0) return i === 0 ? "backStart" : "back";
+    if (api.isRead(i)) return "seen";
+    if (i === 0) return "start";
+    if (i === n - 1) return "last";
+    if (i === 1) return "second";
+    if (i === n - 2) return "almost";
+    return "mid";
+  };
+  const pick = (role, vars) => {
+    const lines = LINES[role];
+    let k = 0;
+    if (lastLine[role] !== undefined){
+      k = Math.floor(Math.random() * (lines.length - 1));
+      if (k >= lastLine[role]) k++;
+    }
+    lastLine[role] = k;
+    return bcT(lines[k], vars);
+  };
+  const setMini = value => {
+    mini = value;
+    el.classList.toggle("mini", mini);
+    el.classList.toggle("talk", shown && !mini);
+    const label = bcT(mini ? "Show helper" : "Minimize helper");
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
+    try { mini ? localStorage.setItem("bc-gr-buddy-mini", "1") : localStorage.removeItem("bc-gr-buddy-mini"); } catch (e) {}
+  };
+  const hide = () => {
+    activeFig = null;
+    clearTimeout(hideTimer);
+    clearTimeout(sayTimer);
+    shown = false;
+    el.classList.remove("show", "talk");
+  };
+  const burst = big => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const host = el.querySelector(".gr-buddy-spin");
+    const wrap = document.createElement("div");
+    wrap.className = "gr-burst";
+    const colors = big ? ["#B84CFF", "#3FBFE8", "#FF6961", "#7ED321", "#F6D44A", "#FF8A4C", "#22D3D0", "#18C98A"] : ["var(--gr-accent)", "#F6D44A"];
+    const count = big ? 22 : 9;
+    for (let k = 0; k < count; k++){
+      const p = document.createElement("i");
+      const ang = (k / count) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = (big ? 70 : 46) + Math.random() * (big ? 50 : 24);
+      p.style.cssText = "--dx:" + Math.cos(ang) * dist + "px;--dy:" + Math.sin(ang) * dist + "px;--c:" + colors[k % colors.length] + ";--r:" + Math.round(Math.random() * 360) + "deg";
+      wrap.appendChild(p);
+    }
+    host.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 1300);
+  };
+  const reveal = (i, force, more, guide) => {
+    active = i;
+    clearTimeout(sayTimer);
+    const role = force || roleFor(i);
+    art.dataset.mood = FACE[role];
+    const left = api.missing().map(x => x + 1);
+    text.textContent = pick(role, { n, k: api.count(), g: (guide === undefined ? i : guide) + 1, list: left.length === 1 ? left[0] : bcJoinList(left), m: left.length });
+    shown = true;
+    el.classList.add("show");
+    el.classList.toggle("talk", !mini);
+    clearTimeout(hideTimer);
+    onMove();
+    if (force && more){
+      sayTimer = setTimeout(() => {
+        text.textContent = bcT(more);
+        text.classList.remove("swap");
+        void text.offsetWidth;
+        text.classList.add("swap");
+      }, 2200);
+    }
+    hideTimer = setTimeout(hide, role === "intro" ? 4500 : force === "accepted" || force === "arrived" ? 3000 : force === "unlock" ? 3000 : force === "allDone" ? 5000 : force ? (more ? 7000 : 3500) : i >= n ? 3000 : (SHOW_MS[i] || 2000));
+  };
+  const trigger = i => {
+    armed[i] = false;
+    clearTimeout(queueTimer);
+    if (shown){
+      hide();
+      queueTimer = setTimeout(() => { if (cur === i) reveal(i); }, 450);
+    } else reveal(i);
+  };
+  const pointAt = fig => {
+    pointedAt.add(fig);
+    clearTimeout(queueTimer);
+    const go = () => { if (cur === -1) return; activeFig = fig; reveal(cur, "point", fig.dataset.wowSay); activeFig = fig; };
+    if (shown){
+      hide();
+      queueTimer = setTimeout(go, 450);
+    } else go();
+  };
+  let cur = -1, jumping = false, jumpTimer = 0, jumpTarget = null, quietUntil = 0;
+  const arrive = () => {
+    clearTimeout(jumpTimer);
+    update();
+    jumping = false;
+    quietUntil = Date.now() + 3600;
+    if (cur !== -1 && cur < n && api.active()){ armed[cur] = false; clearTimeout(queueTimer); hide(); reveal(cur, "arrived"); }
+  };
+  const settle = () => {
+    clearTimeout(jumpTimer);
+    if (jumpTarget && Math.abs(jumpTarget.getBoundingClientRect().top) < 80) return arrive();
+    jumpTimer = setTimeout(arrive, 120);
+  };
+  document.addEventListener("bc-gr-jump", e => { jumping = true; jumpTarget = e.detail; clearTimeout(queueTimer); hide(); settle(); });
+  api.onUnlock = (guide, all) => {
+    if (cur === -1) return;
+    clearTimeout(queueTimer);
+    const go = () => { if (cur === -1) return; reveal(cur, all ? "allDone" : "unlock", null, guide); burst(all); };
+    if (shown){
+      hide();
+      queueTimer = setTimeout(go, 450);
+    } else go();
+  };
+  api.onStart(() => { clearTimeout(queueTimer); hide(); reveal(-1, "accepted"); });
+  const update = () => {
+    ticking = false;
+    const dy = scrollY - lastY;
+    if (Math.abs(dy) >= 4){ dir = dy > 0 ? 1 : -1; lastY = scrollY; }
+    const mid = innerHeight * 0.5;
+    const probe = innerHeight * 0.6;
+    cur = -1;
+    for (let i = 0; i < n && cur === -1; i++){
+      const q = arts[i].getBoundingClientRect();
+      if (q.top <= probe && q.bottom >= probe) cur = i;
+    }
+    if (cur === -1){
+      const q = card.getBoundingClientRect();
+      if (q.top <= probe && q.bottom >= probe) cur = n;
+    }
+    for (let i = 0; i <= n; i++) if (i !== cur) armed[i] = true;
+    const nowEarned = earned();
+    if (nowEarned !== wasEarned){ wasEarned = nowEarned; armed[n] = true; }
+    if (shown && cur !== active) hide();
+    if (shown && activeFig){
+      const q = activeFig.getBoundingClientRect();
+      if (mid < q.top - innerHeight * 0.25 || mid > q.bottom + innerHeight * 0.25) hide();
+    }
+    const live = api.active();
+    if (live && !jumping && Date.now() > quietUntil && cur !== -1 && dir > 0 && pointedAt.size < 2){
+      for (const fig of wow){
+        if (pointedAt.has(fig)) continue;
+        const q = fig.getBoundingClientRect();
+        const c = q.top + q.height / 2;
+        if (c >= innerHeight * 0.38 && c <= innerHeight * 0.62){ pointAt(fig); break; }
+      }
+    }
+    if (!jumping && cur !== -1 && armed[cur] && live){
+      const anchor = cur === n ? card : arts[cur].querySelector("h3");
+      const q = anchor && anchor.getBoundingClientRect();
+      const c = q ? q.top + q.height / 2 : -1;
+      if (q && c >= innerHeight * 0.3 && c <= innerHeight * 0.6)trigger(cur);
+    }
+    if (!shown) return;
+    const r = box.getBoundingClientRect();
+    const side = r.left >= 160;
+    el.classList.toggle("side", side);
+    el.classList.toggle("left", side);
+    el.classList.toggle("corner", !side);
+    el.style.setProperty("--gr-bubble", Math.max(140, Math.min(260, side ? r.left - 32 : innerWidth - 90)) + "px");
+    if (side){
+      el.style.top = (mid - (el.offsetHeight - btn.offsetHeight / 2)) + "px";
+      el.style.bottom = "";
+      el.style.left = (r.left - 16) + "px";
+    } else {
+      el.style.top = "";
+      el.style.bottom = "18px";
+      el.style.left = "10px";
+    }
+  };
+  const onMove = () => { if (jumping) settle(); if (!ticking){ ticking = true; requestAnimationFrame(update); } };
+  addEventListener("scroll", onMove, { passive: true });
+  addEventListener("resize", onMove);
+  new MutationObserver(onMove).observe(card, { attributes: true, attributeFilter: ["class"] });
+  btn.addEventListener("click", () => setMini(!mini));
+  setMini(mini);
+  update();
+}
+function bcSetupTocBuddy(){
+  const list = document.querySelector(".gr-toc");
+  if (!list || !matchMedia("(hover: hover)").matches) return;
+  const tool = document.querySelector(".gr-inline[data-tool]");
+  const el = document.createElement("div");
+  el.className = "gr-buddy gr-toc-buddy side left";
+  el.innerHTML = '<div class="gr-buddy-bubble"><span class="gr-buddy-text" aria-hidden="true"></span></div><div class="gr-buddy-spin"><div class="gr-buddy-face"><span aria-hidden="true"></span></div></div>';
+  el.style.setProperty("--gr-accent", GR_ACCENT[tool && tool.dataset.tool] || "#3FBFE8");
+  const face = el.querySelector(".gr-buddy-face span");
+  face.innerHTML = GR_AVATAR;
+  bcDressAvatar(face.querySelector("svg"));
+  const art = face.querySelector("svg");
+  const MOODS = ["start", "good", "mid", "almost", "last"];
+  const links = [...list.querySelectorAll("a[data-tip]")];
+  art.dataset.mood = "good";
+  const text = el.querySelector(".gr-buddy-text");
+  const faceBox = el.querySelector(".gr-buddy-face");
+  document.body.appendChild(el);
+  const last = new WeakMap();
+  let current = null;
+  const hide = () => { current = null; el.classList.remove("show", "talk"); };
+  const show = a => {
+    const r = list.getBoundingClientRect();
+    if (r.left < 160) return;
+    const tips = (a.dataset.tip || "").split("|").filter(Boolean);
+    if (!tips.length) return;
+    if (a === current) return;
+    const wasShown = el.classList.contains("show");
+    current = a;
+    art.dataset.mood = MOODS[Math.max(0, links.indexOf(a)) % MOODS.length];
+    let k = 0;
+    if (last.has(a)){
+      k = Math.floor(Math.random() * (tips.length - 1));
+      if (k >= last.get(a)) k++;
+    }
+    last.set(a, k);
+    text.textContent = bcT(tips[k]);
+    if (wasShown){
+      text.classList.remove("swap");
+      void text.offsetWidth;
+      text.classList.add("swap");
+    }
+    el.style.setProperty("--gr-bubble", Math.max(140, Math.min(260, r.left - 32)) + "px");
+    el.style.left = (r.left - 16) + "px";
+    el.classList.add("show", "talk");
+    const q = a.getBoundingClientRect();
+    el.style.top = (q.top + q.height / 2 - (el.offsetHeight - faceBox.offsetHeight / 2)) + "px";
+  };
+  list.addEventListener("mouseover", e => { const a = e.target.closest("a[data-tip]"); if (a) show(a); });
+  list.addEventListener("focusin", e => { const a = e.target.closest("a[data-tip]"); if (a) show(a); });
+  list.addEventListener("mouseleave", hide);
+  list.addEventListener("focusout", hide);
+  list.addEventListener("click", hide);
+  addEventListener("scroll", () => { if (current) hide(); }, { passive: true });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bcSetupTocBuddy);
+else bcSetupTocBuddy();
 function bcLoadGoldenRules(){
   const box = document.querySelector(".gr-inline[data-tool]");
   if (!box) return null;
@@ -191,7 +1063,10 @@ document.addEventListener("click", async (e) => {
   e.preventDefault();
   await bcLoadGoldenRules();
   const art = document.getElementById(link.getAttribute("href").slice(1));
-  if (art) art.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (art){
+    document.dispatchEvent(new CustomEvent("bc-gr-jump", { detail: art }));
+    art.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 });
 
 /* ===== GA4 click tracking ===== */
@@ -226,6 +1101,7 @@ function downloadBlob(blob, fileName){
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  bcCountDownload();
 }
 
 /* ===== Whole-banner drop target ===== Shared by every tool's own

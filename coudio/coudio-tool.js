@@ -757,8 +757,12 @@
      row's own Output format/Bitrate/filename, the moment its own
      Convert button is clicked — no shared batch loop, no waiting on
      any other file. */
+  const gateOf = entry => entry.gate || (entry.gate = bcDownloadGate(() => entry.outputFormat + "|" + ((entry.outputFormat === "mp3" || entry.outputFormat === "ogg") ? entry.bitrate : "")));
+  setInterval(() => loaded.forEach(e => bcSetLocked(e.row.querySelector(".cd-row-convert-btn"), gateOf(e).runLocked())), 300);
+
   async function convertEntry(entry){
     const btn = entry.row.querySelector(".cd-row-convert-btn");
+    if (gateOf(entry).runLocked()){ bcLockedNotice(statusEl); return; }
     btn.disabled = true;
     entry.row.classList.remove("cd-file-row-error");
     entry.row.removeAttribute("title");
@@ -769,6 +773,8 @@
       const { blob, ext } = await convertOneFile(entry.file, entry.outputFormat, entry.bitrate);
       const outName = (entry.outputName.trim() || "converted") + "." + ext;
       downloadBlob(blob, outName);
+      gateOf(entry).ran();
+      gateOf(entry).downloaded();
       statusEl.textContent = bcT("Done — {0} converted successfully.", [outName]);
     } catch (err){
       console.error(err);

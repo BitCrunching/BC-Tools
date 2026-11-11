@@ -147,6 +147,11 @@
   function renderAll(){ entries.forEach(renderEntry); }
 
   function settingsKey(entry){ return levelKey + "|" + entry.targetHeight; }
+  const gateOf = entry => entry.gate || (entry.gate = bcDownloadGate(() => settingsKey(entry)));
+  setInterval(() => {
+    const ready = entries.filter(e => e.info);
+    bcSetLocked(compressBtn, !running && ready.length > 0 && ready.every(e => gateOf(e).runLocked()));
+  }, 300);
 
   function renderStatus(){
     if (!entries.length){ status.textContent = ""; return; }
@@ -458,8 +463,11 @@
   }
 
   async function compressAll(){
-    const queue = entries.filter(e => e.info);
-    if (!queue.length) return;
+    const queue = entries.filter(e => e.info && !gateOf(e).runLocked());
+    if (!queue.length){
+      if (entries.some(e => e.info)) bcLockedNotice(status);
+      return;
+    }
     running = true;
     cancelRequested = false;
     startPrivacyCheck();
@@ -474,6 +482,8 @@
       try {
         await compressEntry(entry);
         done++;
+        gateOf(entry).ran();
+        gateOf(entry).downloaded();
         renderEntry(entry);
       } catch (err){
         const canceled = err && /cancel/i.test(err.name || err.message || "");

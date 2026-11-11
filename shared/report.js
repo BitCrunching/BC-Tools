@@ -5,6 +5,7 @@
   /* The Cloudflare Worker that forwards reports to Discord (workers/report.js).
      */
   const ENDPOINT = "https://bc-report.lukasbrzlinekbusiness.workers.dev";
+  window.BC_REPORT_ENDPOINT = ENDPOINT;
   const TABS = {
     bug: { label: () => bcT("Bug"), title: () => bcT("Report a bug"), max: 100, ph: () => bcT("What went wrong? (max {n} characters)", { n: 100 }), aria: () => bcT("Describe the bug"), done: () => bcT("Thank you for your help!") },
     translation: { label: () => bcT("Translation"), title: () => bcT("Suggest a translation"), max: 200, ph: () => bcT("Which wording is wrong, and what should it say? (max {n} characters)", { n: 200 }), aria: () => bcT("Describe the translation issue"), done: () => bcT("Thank you for your help!") },

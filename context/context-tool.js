@@ -2764,6 +2764,7 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        bcCountDownload();
         status.textContent = bcT("Done. Downloaded your edited PDF.");
       }
 
@@ -2784,6 +2785,7 @@
       if (window.innerWidth <= 768 && navigator.canShare && navigator.canShare({ files: [outFile] })){
         try {
           await navigator.share({ files: [outFile], title: fileName });
+          bcCountDownload();
           status.textContent = "";
         } catch (shareErr){
           /* AbortError = the user themself dismissed the share sheet —

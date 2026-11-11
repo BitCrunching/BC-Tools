@@ -689,6 +689,9 @@
     });
   }
 
+  const gate = bcDownloadGate(() => JSON.stringify([files.map(bcFileKey), selectedQuality]));
+  setInterval(() => bcSetLocked(compressBtn, gate.runLocked()), 300);
+
   compressBtn.addEventListener("click", async () => {
     if (files.length === 0){
       status.textContent = bcT("Please select at least one image first.");
@@ -698,6 +701,8 @@
       status.textContent = bcT("Please select a compression level first.");
       return;
     }
+    if (gate.runLocked()){ bcLockedNotice(status); return; }
+    const sigAtRun = JSON.stringify([files.map(bcFileKey), selectedQuality]);
 
     compressBtn.disabled = true;
     status.textContent = bcT("Compressing... 0 of {0}", [files.length]);
@@ -752,6 +757,8 @@
         status.textContent = bcT("Done. Downloaded {0} compressed {1}.", [files.length, word]);
       }
 
+      gate.ran(sigAtRun);
+      gate.downloaded();
       files = [];
       bcDbClear(CP_DB_NAME, CP_DB_STORE);
     } catch (err){

@@ -40,46 +40,48 @@ async function sniffImage(file){
   return IMAGE_TYPES.find(t => t.test(head)) || null;
 }
 
-function cors(origin){
+function cors(origin, allowed = ALLOWED_ORIGINS){
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Vary": "Origin"
   };
 }
 
-function reply(status, body, origin){
-  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...cors(origin) } });
+function reply(status, body, origin, allowed){
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...cors(origin, allowed) } });
 }
 
 export default {
   async fetch(request, env){
     const origin = request.headers.get("Origin") || "";
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
-    if (request.method !== "POST") return reply(405, { error: "POST only" }, origin);
-    if (!ALLOWED_ORIGINS.includes(origin)) return reply(403, { error: "Origin not allowed" }, origin);
+    // Optional plain-text variable EXTRA_ORIGINS (comma-separated), for testing from a dev server. Delete it when done.
+    const allowed = [...ALLOWED_ORIGINS, ...String(env.EXTRA_ORIGINS || "").split(",").map(o => o.trim()).filter(Boolean)];
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin, allowed) });
+    if (request.method !== "POST") return reply(405, { error: "POST only" }, origin, allowed);
+    if (!allowed.includes(origin)) return reply(403, { error: "Origin not allowed" }, origin, allowed);
 
     // Rate limits first, before reading the body: one report per IP per minute and
     // MAX_REPORTS_PER_HOUR reports in total per hour. Fail closed if KV isn't bound.
-    if (!env.RATE) return reply(503, { error: "Rate limiter not configured" }, origin);
+    if (!env.RATE) return reply(503, { error: "Rate limiter not configured" }, origin, allowed);
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
     const ipKey = "ip:" + ip;
     const hourKey = "hour:" + Math.floor(Date.now() / 3600000);
-    if (await env.RATE.get(ipKey)) return reply(429, { error: "Too many reports, try again in a minute" }, origin);
+    if (await env.RATE.get(ipKey)) return reply(429, { error: "Too many reports, try again in a minute" }, origin, allowed);
     const hourCount = parseInt(await env.RATE.get(hourKey) || "0", 10);
-    if (hourCount >= MAX_REPORTS_PER_HOUR) return reply(429, { error: "Reports are paused for a while, try again later" }, origin);
+    if (hourCount >= MAX_REPORTS_PER_HOUR) return reply(429, { error: "Reports are paused for a while, try again later" }, origin, allowed);
 
     let form;
-    try { form = await request.formData(); } catch (err) { return reply(400, { error: "Bad form" }, origin); }
+    try { form = await request.formData(); } catch (err) { return reply(400, { error: "Bad form" }, origin, allowed); }
 
     const type = TYPES[String(form.get("type") || "bug")];
-    if (!type) return reply(400, { error: "Unknown type" }, origin);
+    if (!type) return reply(400, { error: "Unknown type" }, origin, allowed);
     const webhook = env[type.secret];
-    if (!webhook) return reply(500, { error: "Not configured" }, origin);
+    if (!webhook) return reply(500, { error: "Not configured" }, origin, allowed);
 
     const message = String(form.get("message") || "").trim().slice(0, type.max);
-    if (!message) return reply(400, { error: "Empty message" }, origin);
+    if (!message) return reply(400, { error: "Empty message" }, origin, allowed);
     const page = String(form.get("page") || "").slice(0, 120);
     const screen = String(form.get("screen") || "").slice(0, 60);
     const browser = String(form.get("browser") || "").slice(0, 200);
@@ -100,11 +102,11 @@ export default {
     const out = new FormData();
     const shots = form.getAll("screenshot").filter(f => f && typeof f !== "string").slice(0, MAX_SHOTS);
     const total = shots.reduce((n, f) => n + f.size, 0);
-    if (total > MAX_TOTAL_BYTES) return reply(400, { error: "Bad screenshot" }, origin);
+    if (total > MAX_TOTAL_BYTES) return reply(400, { error: "Bad screenshot" }, origin, allowed);
     const names = [];
     for (let i = 0; i < shots.length; i++){
       const kind = await sniffImage(shots[i]);
-      if (!kind) return reply(400, { error: "Bad screenshot" }, origin);
+      if (!kind) return reply(400, { error: "Bad screenshot" }, origin, allowed);
       const name = "screenshot-" + (i + 1) + "." + kind.ext;
       names.push(name);
       out.append("files[" + i + "]", new Blob([shots[i]], { type: kind.mime }), name);
@@ -117,9 +119,9 @@ export default {
     const res = await fetch(webhook, { method: "POST", body: out });
     if (!res.ok){
       await env.RATE.delete(ipKey);
-      return reply(502, { error: "Discord rejected the report" }, origin);
+      return reply(502, { error: "Discord rejected the report" }, origin, allowed);
     }
     await env.RATE.put(hourKey, String(hourCount + 1), { expirationTtl: 7200 });
-    return reply(200, { ok: true }, origin);
+    return reply(200, { ok: true }, origin, allowed);
   }
 };
