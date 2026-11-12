@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/colorfy/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/colorfy/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/colorfy/">
-<script src="/shared/i18n/pt.js?v=10"></script>
+<script src="/shared/i18n/pt.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Colorfy – Escolha uma cor de qualquer imagem – BC Tools">
@@ -74,9 +74,8 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
-.cs-shape{ background:#ff9a62; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
 /* Just a fun easter egg on double-click — not a functional cue, so it's
@@ -791,14 +790,110 @@ html[data-theme="dark"] .colorfy-palette-name-input{
 
 <div class="content-section-convert" data-tool="colorfy">
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-2"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>Novo em escolher cores de imagens?</h3>
     <p>Solte qualquer imagem e o Colorfy começa com dois seletores que já amostram dois pontos diferentes — arraste qualquer anel para qualquer ponto da imagem (ou simplesmente clique em um ponto) para amostrar em outro lugar, e o código abaixo atualiza ao vivo. O + adiciona até 4 seletores de uma vez, cada um com sua própria linha abaixo. Alterne entre HEX, RGB, HSB e HSL no menu suspenso e clique em qualquer código para copiá-lo direto para a área de transferência.</p>
-    <p>Quer saber mais? Leia na íntegra: <a class="golden-rules-link-inline go-to-golden-rules" data-tool="colorfy" href="/golden-rules/?tool=colorfy">a apenas um clique de distância.</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. HEX, RGB, HSB e HSL: o que cada código de cor realmente significa</a></li>
+      <li><a href="#gr-article-2">2. Copiando uma cor de uma captura de tela, foto ou referência de design</a></li>
+      <li><a href="#gr-article-3">3. Montando uma paleta reutilizável enquanto você trabalha</a></li>
+      <li><a href="#gr-article-4">4. Comparando cores lado a lado com vários seletores</a></li>
+      <li><a href="#gr-article-5">5. Erros comuns ao escolher cores (e como evitá-los)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="colorfy">
+<div class="gr-article" id="gr-article-1"><h3>1. HEX, RGB, HSB e HSL: o que cada código de cor realmente significa</h3>
+          <p>Toda cor em uma tela se resume aos mesmos valores subjacentes de luz vermelha/verde/azul: HEX, RGB, HSB e HSL são apenas quatro jeitos diferentes de escrever a mesma cor, cada um adequado a um tipo de trabalho diferente.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Formato</th><th>Ideal para</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formato">HEX (<code>#FF8A4C</code>)</td><td data-label="Ideal para">CSS, ferramentas de design, em qualquer lugar onde se espere um único código compacto</td></tr>
+              <tr><td data-label="Formato">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="Ideal para">Código que monta cores a partir de números separados, ou que mistura/calcula sobre canais</td></tr>
+              <tr><td data-label="Formato">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="Ideal para">Ajustando o brilho ou a saturação de uma cor mantendo o mesmo matiz</td></tr>
+              <tr><td data-label="Formato">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="Ideal para">Clarear ou escurecer uma cor de forma previsível para estados de hover/ativo</td></tr>
+            </tbody>
+          </table>
+
+          <h4>HEX: o padrão compacto e aceito em todo lugar</h4>
+          <p>Um código HEX empacota vermelho, verde e azul em uma única sequência de seis dígitos, e é por isso que é o formato que quase toda ferramenta de design, folha de estilo CSS e editor de imagens espera por padrão. É compacto e fácil de colar, mas os números dentro dele (pares em base 16) não são algo que a maioria das pessoas lê de relance como números decimais comuns.</p>
+
+          <h4>RGB: os mesmos valores, escritos por extenso</h4>
+          <p>O RGB escreve os mesmos três canais que o HEX codifica, só que como três números simples de 0–255 em vez de pares hexadecimais empacotados: mais fácil de raciocinar se você está ajustando um canal à mão ou escrevendo código que monta uma cor a partir de entradas separadas de vermelho/verde/azul.</p>
+
+          <h4>HSB e HSL: construídos em torno de como a cor realmente é percebida</h4>
+          <p>Ambos dividem a cor em matiz (a cor em si, como uma posição numa roda de cores) e duas outras dimensões que descrevem o quão vívida ou clara ela é: o HSB usa saturação e brilho, o HSL usa saturação e luminosidade. Qualquer um é muito mais fácil de raciocinar quando você quer «a mesma cor, só que mais escura» ou «a mesma cor, só que mais apagada»: você deixa o matiz intocado e ajusta só o outro número, em vez de recalcular à mão três canais RGB separados.</p>
+
+          <h4>Escolhendo um formato no Colorfy</h4>
+          <p>A lista de formatos do Colorfy se aplica de uma vez à leitura de todo seletor e cor salva: mude para a que combina com o lugar onde você vai colar (HEX para CSS, HSB/HSL se for ajustar um tom à mão), em vez de converter você mesmo um código copiado depois.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Copiando uma cor de uma captura de tela, foto ou referência de design</h3>
+          <p>Tentar igualar uma cor no olho (o azul exato de uma marca, um tom de uma foto de moodboard, uma cor do site de um concorrente) de memória ou chutando um código HEX raramente acerta em cheio. Amostrar o pixel real é a única forma de obter o valor preciso.</p>
+
+          <h4>Por que «perto o bastante» muitas vezes não basta</h4>
+          <p>Duas cores que parecem quase idênticas lado a lado ainda podem ser mensuravelmente diferentes quando você compara seus códigos reais: um tom diferente em apenas um canal RGB costuma ser invisível ao olho isoladamente, mas fica óbvio no momento em que é colocado diretamente ao lado da referência real. A amostragem elimina o palpite por completo: o seletor lê de volta exatamente o que está no arquivo, não uma aproximação.</p>
+
+          <h4>Trabalhando a partir de uma captura de tela</h4>
+          <p>Uma captura de tela de uma página web, de um aplicativo ou do design de outra pessoa é tratada exatamente como qualquer outra imagem: solte-a, arraste o seletor até o pixel exato que quer copiar e copie o código. É a forma mais confiável de extrair uma cor de marca ou de interface de uma referência da qual você não tem o arquivo-fonte original.</p>
+
+          <h4>Fique atento a artefatos de compressão e iluminação</h4>
+          <p>Um JPEG muito comprimido ou uma foto tirada sob luz colorida/quente pode deslocar os valores reais de pixel de uma cor para longe da cor «verdadeira» pretendida: o código HEX real de um logotipo fotografado sob luz amarela de interior será lido um pouco mais quente do que o logotipo realmente é. Quando a exatidão importa (combinar uma cor oficial de marca, por exemplo), prefira amostrar de uma captura limpa ou de uma fonte sem compressão em vez de uma foto, sempre que disponível.</p>
+
+          <h4>Amostrar mais de um ponto para verificar a consistência</h4>
+          <p>Uma única foto frequentemente tem mais variação de cor numa área supostamente «sólida» do que parece à primeira vista: compressão JPEG, gradientes sutis e iluminação introduzem pequenas diferenças de pixel para pixel. Usar dois ou três seletores em pontos diferentes da mesma área, em vez de confiar em uma única amostra, dá uma noção melhor de se você está vendo variação real de cor ou só ruído.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Montando uma paleta reutilizável enquanto você trabalha</h3>
+          <p>A paleta de cores salvas do Colorfy existe exatamente para a situação em que você tira mais de uma cor de uma imagem e precisa voltar a todas depois, sem reabrir o arquivo e escolher cada uma de novo do zero.</p>
+
+          <h4>Salvando conforme você avança</h4>
+          <p>Clicar em «Salvar» ao lado de qualquer cor amostrada a adiciona a uma paleta que permanece no seu navegador, separada da imagem em si: ela continua lá na próxima vez que você abrir o Colorfy, mesmo com outra imagem carregada ou nenhuma imagem. Até 20 cores podem ser mantidas de uma vez, o suficiente para uma paleta completa tirada de várias imagens de referência sem precisar copiar os códigos para outro lugar primeiro.</p>
+
+          <h4>Dando nome a uma cor salva</h4>
+          <p>Clicar duas vezes em uma cor salva permite dar a ela um nome curto (até 25 caracteres), útil quando uma paleta passa de algumas entradas e «o terceiro laranja» deixa de ser uma forma confiável de distingui-las. O nome aparece como dica ao passar o mouse, de modo que as amostras ficam visualmente limpas e ainda assim fáceis de identificar pelo nome quando necessário.</p>
+
+          <h4>Esvaziando uma paleta</h4>
+          <p>Remover uma cor salva por vez funciona com o mesmo botão «×» que toda lista de arquivos deste site usa. Segurar Shift enquanto clica nesse botão limpa todas as cores salvas de uma vez, inclusive a clicada: o caminho mais rápido quando a paleta de um projeto concluído não é mais necessária e você prefere começar o próximo vazio a remover cada entrada individualmente.</p>
+
+          <h4>Quando vale a pena manter uma paleta aberta</h4>
+          <p>Uma paleta salva é mais útil para um projeto em andamento (montar um conjunto consistente de cores de marca ou de interface ao longo de várias sessões) do que para uma consulta de cor única, em que copiar o código direto e seguir em frente é mais simples do que salvar.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Comparando cores lado a lado com vários seletores</h3>
+          <p>Um único seletor basta para pegar uma cor, mas comparar duas ou mais cores da mesma imagem (verificar contraste, combinar as pontas de um gradiente, amostrar uma paleta espalhada por uma foto) é muito mais fácil com vários seletores ativos ao mesmo tempo.</p>
+
+          <h4>Adicionando um segundo (ou terceiro, ou quarto) seletor</h4>
+          <p>Até 4 seletores podem estar ativos na mesma imagem ao mesmo tempo, cada um numerado para que a linha de resultado dele abaixo seja fácil de associar ao anel na imagem. Adicione um com o botão «+» abaixo da lista de seletores, ou segure Shift e clique em qualquer lugar da imagem para soltar um novo seletor numerado diretamente naquele ponto: a opção mais rápida quando você já sabe mais ou menos onde quer amostrar.</p>
+
+          <h4>Lendo os resultados em conjunto</h4>
+          <p>Cada seletor ativo recebe sua própria linha, com seu próprio código e botão Salvar, todos visíveis ao mesmo tempo: útil para ver se duas áreas que parecem da mesma cor na imagem realmente têm o mesmo código, ou para montar uma pequena paleta de várias cores de uma imagem em uma única passada, em vez de amostrar, salvar e reamostrar uma por vez.</p>
+
+          <h4>Reposicionar sem adicionar mais</h4>
+          <p>Um clique simples (sem Shift) move o seletor que estava ativo mais recentemente, em vez de adicionar um novo: útil para ajustar um ponto de amostra sem precisar remover e readicionar um seletor só para empurrá-lo um pouco. Arrastar um seletor diretamente, ou usar as setas do teclado depois de focado, funciona da mesma forma para ajuste fino em nível de pixel.</p>
+
+          <h4>Quando um seletor ainda é a escolha certa</h4>
+          <p>Para pegar uma única cor rapidamente, adicionar seletores extras é custo desnecessário: eles se justificam especialmente quando você precisa comparar, contrastar ou coletar mais de uma cor da mesma imagem em uma sessão.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Erros comuns ao escolher cores (e como evitá-los)</h3>
+          <p>A maioria das escolhas imprecisas de cor remonta a um punhado de hábitos evitáveis, quase todos sobre exatamente onde o seletor pousa e não sobre algo errado com a ferramenta em si.</p>
+
+          <h4>Amostrar bem na borda</h4>
+          <p>Um pixel na fronteira entre duas cores costuma ser uma cor intermediária mesclada por suavização, não uma amostra limpa de nenhum dos lados: isso é especialmente fácil de acontecer com zoom reduzido e clicando perto do contorno de uma forma. Aproxime (aumente a prévia) e mire no interior sólido da área que você realmente quer, bem longe de qualquer borda.</p>
+
+          <h4>Confiar em uma imagem muito comprimida</h4>
+          <p>A compressão JPEG pode deslocar levemente valores individuais de pixel para longe da cor original, especialmente em áreas agitadas ou detalhadas de uma foto: uma área de cor «sólida» pode ter pequeno ruído de pixel para pixel que não estava na cena original. Quando a exatidão importa, prefira um PNG ou outra fonte sem perda a um JPEG comprimido, se disponível.</p>
+
+          <h4>Não levar em conta a própria tela</h4>
+          <p>O código que o Colorfy lê de volta é o valor exato armazenado no arquivo de imagem, mas como aquela cor realmente aparece depende da tela que a exibe, e as telas variam em calibração. Se uma cor amostrada precisa corresponder exatamente a uma referência física (material impresso, um produto físico), trate o código amostrado como o ponto de partida preciso e espere verificar o resultado final contra a própria referência física, não só contra como parece no seu monitor.</p>
+
+          <h4>Esquecer que as cores salvas persistem entre imagens</h4>
+          <p>Como a paleta salva não está atrelada a nenhuma imagem carregada, é fácil acabar com cores de vários projetos sem relação misturadas na mesma paleta se você não a limpar de vez em quando. Shift+clique no botão de remover de qualquer cor salva para limpar a paleta inteira de uma vez ao começar um projeto novo e sem relação, em vez de deixar cores antigas e novas se acumularem juntas.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -820,21 +915,21 @@ html[data-theme="dark"] .colorfy-palette-name-input{
       <h3>Primeiros passos com</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pt/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pt/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pt/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pt/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pt/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pt/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pt/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pt/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pt/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pt/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pt/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -851,7 +946,7 @@ html[data-theme="dark"] .colorfy-palette-name-input{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/colorfy/colorfy-tool.js?v=41" defer></script>
 </body>

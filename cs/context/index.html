@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/cs.js?v=10"></script>
+<script src="/shared/i18n/cs.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Zdarma přidání textu do PDF – BC Tools">
@@ -76,10 +76,9 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
-.cs-shape{ background:#ffde89; }
 
 /* Every other tool's banner floor is 1100×322.5px (border-box: 250.5px
    of content height + the shared 72px vertical padding) — this was
@@ -2232,14 +2231,120 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <div class="content-section-convert" data-tool="context">
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-2"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>Přidáváte text do PDF poprvé?</h3>
     <p>Přidání textu do PDF vypadá, že by mělo fungovat jako v každém textovém editoru, ale stránka PDF nemá žádné vestavěné „prázdné místo k psaní“ jako dokument Wordu — je spíš jako vytištěný list. Tady je, co se opravdu děje, když na stránku vložíte textové pole, a jak docílit, aby vypadalo záměrně a ne nalepeně.</p>
-    <p>Chcete vědět víc? Přečtěte si celý článek — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="context" href="/golden-rules/?tool=context">stačí jedno kliknutí.</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Jak přidávání textu do PDF doopravdy funguje</a></li>
+      <li><a href="#gr-article-2">2. Výběr správné velikosti písma a umístění pro různé dokumenty</a></li>
+      <li><a href="#gr-article-3">3. Vyplňování formulářů a podepisování dokumentů bez tiskárny</a></li>
+      <li><a href="#gr-article-4">4. Práce s vícestránkovými PDF: jednotnost a úpravy stranu po straně</a></li>
+      <li><a href="#gr-article-5">5. Časté chyby při přidávání textu do PDF (a jak se jim vyhnout)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. Jak přidávání textu do PDF doopravdy funguje</h3>
+          <p>Strana PDF není textový dokument, do kterého můžete jen kliknout a psát — je blíž vytištěnému listu, pevnému obrazu textu a grafiky rozmístěných na přesných pozicích. Pochopení tohoto rozdílu vysvětluje, co Context dělá i proč funguje tak, jak funguje.</p>
+
+          <h4>Strana je obraz, ne dokument</h4>
+          <p>Většina PDF (cokoli, co není výslovně vytvořeno jako vyplnitelný formulář) nezná pojem „prázdné místo, do kterého lze psát“. To, co vidíte jako čáru, rámeček nebo prázdné pole, je ve skutečnosti jen barva umístěná na pevných souřadnicích — pod tím není žádné textové pole čekající na váš vstup, jako ve Wordu nebo webovém formuláři. Když vám Context umožní „přidat text“ do PDF, nenajde skryté pole a nevyplní ho; umístí zcela novou, nezávislou vrstvu textu na existující stranu, kamkoli ji přetáhnete.</p>
+
+          <h4>Překrytí vs. úpravy</h4>
+          <p>Tento přístup přes překrytí používá v podstatě každý nástroj na anotace PDF, nejen tento — skutečná úprava původního textu PDF (změna věty, která je už vytištěna na straně) vyžaduje specializovaný software a často není vůbec možná, pokud původní soubor nezachoval upravitelné textové vrstvy. Context dělá něco jednoduššího a mnohem univerzálnějšího: přidá nový, samostatný kus textu, který vizuálně leží nad stranou, což je přesně to, co chcete pro popisky, poznámky, iniciály nebo vyplnění prázdné čáry ve formuláři.</p>
+
+          <h4>Body, ne pixely</h4>
+          <p>Strany PDF měří pozici v bodech (1/72 palce), ne v pixelech na obrazovce, které přetahujete prstem nebo kurzorem. Context tento převod obstará za vás — to, co vidíte na obrazovce, při jakémkoli přiblížení, se vždy přesně promítne na správnou pevnou pozici ve skutečném PDF, takže textové pole umístěné nahoře na straně zůstane nahoře bez ohledu na to, na jakém zařízení nebo při jakém přiblížení ho někdo jiný později otevře.</p>
+
+          <h4>Co se stane při stažení</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Výběr správné velikosti písma a umístění pro různé dokumenty</h3>
+          <p>Správná velikost textu a pozice závisí zcela na tom, jaký dokument označujete a kdo ho bude číst dál. Takto o tom přemýšlet podle scénáře.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Typ dokumentu</th><th>Doporučený postup</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Typ dokumentu">Vyplňování prázdných řádků formuláře</td><td data-label="Doporučený postup">Odpovídat velikosti tištěného popisku, umístit těsně nad čáru</td></tr>
+              <tr><td data-label="Typ dokumentu">Přidání poznámky nebo komentáře</td><td data-label="Doporučený postup">Použít kontrastní barvu, držet ji jasně odděleně od původního textu</td></tr>
+              <tr><td data-label="Typ dokumentu">Podpis nebo parafování</td><td data-label="Doporučený postup">Mírně větší než okolní text, vystředěné na čáře</td></tr>
+              <tr><td data-label="Typ dokumentu">Popisky v PDF plném obrázků</td><td data-label="Doporučený postup">Jednotná velikost všech popisků na všech stranách</td></tr>
+              <tr><td data-label="Typ dokumentu">Formální nebo právní dokumenty</td><td data-label="Doporučený postup">Přesně odpovídat velikosti písma dokumentu, použít černou</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Přizpůsobení stávajícímu textu dokumentu</h4>
+          <p>Nejdůležitější věcí, díky které přidaný řádek vypadá záměrně a ne nalepeně, je přizpůsobení jeho velikosti tomu, co je už vytištěno poblíž. Pokud jsou popisky formuláře vytištěny zhruba 11–12bodovým písmem, přidání odpovědi 24bodovým písmem působí, jako by tam nepatřila, i když je pozice dokonalá. Nejdřív si přiblížte okolní tištěný text, udělejte si hrubou představu o jeho velikosti a zvolte podobnou — Context si pamatuje poslední použitou velikost, takže jakmile ji jednou přizpůsobíte, každé další pole začíná automaticky na stejné velikosti.</p>
+
+          <h4>Zůstat uvnitř čar — doslova</h4>
+          <p>Prázdné řádky a políčka ve formulářích jsou obvykle dimenzovány na konkrétní množství textu o konkrétní velikosti. Než do krátkého řádku napíšete dlouhou odpověď, zvažte, zda se nemá mírně zmenšit, aby se vešla, protože text přesahující konec tištěné čáry vypadá jako chyba pro každého, kdo hotový dokument čte dál, ačkoli technicky není nic porušeno.</p>
+
+          <h4>Výběr barvy, která působí jako „přidaná“, ne „skrytá“</h4>
+          <p>Černý text je obvykle nejbezpečnější výchozí volba, protože odpovídá tomu, jak je většina formulářů a dokumentů vytištěna, a neupozorňuje na sebe jako na dodatek. Barevný text je skutečně užitečný pro poznámky, opravy nebo cokoli, co se má od původního obsahu výrazně odlišit — jen se ujistěte, že zvolená barva má skutečný kontrast proti straně pod ní; světlé barvy jako žlutá snadno zaniknou na bílé straně.</p>
+
+          <h4>Ponechání okraje pro nečekané</h4>
+          <p>Umístění textu přímo na samý okraj strany riskuje jeho oříznutí, pokud se dokument později vytiskne na trochu jiný formát papíru nebo s jiným nastavením okrajů, než se čekalo. Ponechání malé rezervy mezi textem a okrajem strany — i mezi textem a okolním tištěným obsahem — udrží výsledek čistý bez ohledu na to, jak se nakonec vytiskne nebo zobrazí.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Vyplňování formulářů a podepisování dokumentů bez tiskárny</h3>
+          <p>Vytisknout, podepsat, naskenovat a poslat zpět e-mailem je stále způsob, jakým se řeší spousta papírování — a téměř vždy je to zbytečné. Takto to přeskočit pouze s prohlížečem.</p>
+
+          <h4>Nahrazení cyklu tisk–podpis–sken</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>Psané podpisy a iniciály</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>Zarovnání odpovědí s tištěnými popisky</h4>
+          <p>Většina formulářů tiskne popisek („Jméno:“, „Datum:“) a za ním prázdný řádek nebo políčko pro odpověď. Přetáhněte textové pole tak, aby leželo těsně nad čárou, ne přímo na ní — text umístěný přímo na tištěné čáře je po překrytí obtížně čitelný, zatímco text vznášející se těsně nad ní zůstává jasně čitelný a pro každého, kdo hotovou stranu vidí, stále vypadá jako „odpověď k tomu popisku“.</p>
+
+          <h4>Dvojitá kontrola před odesláním</h4>
+          <p>Jakmile je každé pole vyplněno, vyplatí se projít každou stranu ve skutečné velikosti (ne jen v náhledu, do kterého jste psali) a ověřit, že se nic nepřekrývá, nic nepřesahuje okraj čáry a každé povinné pole je skutečně vyplněno — textové pole, které vypadá dobře při aktivní úpravě, může při pohledu na hotovou stranu jako celek občas sedět trochu jinak.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Práce s vícestránkovými PDF: jednotnost a úpravy stranu po straně</h3>
+          <p>Vícestránkové smlouvy, zprávy a formuláře vyžadují trochu jiný přístup než rychlá úprava jedné strany — hlavně v udržení jednotnosti při postupu dokumentem.</p>
+
+          <h4>Pohyb mezi stranami bez ztráty orientace</h4>
+          <p>Navigace stranami v Contextu udržuje každé textové pole vázané na konkrétní stranu, na kterou bylo umístěno, takže přecházení mezi stranami při vyplňování různých částí dlouhého dokumentu neriskuje žádné promíchání — pole přidané na straně 3 zůstane na straně 3, bez ohledu na to, kolik dalších stran před stažením navštívíte.</p>
+
+          <h4>Udržení jednotné velikosti a barvy napříč stranami</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>Plánování průchodu před začátkem psaní</h4>
+          <p>U delších dokumentů se vyplatí rychle projít každou stranu — jen se dívat, ještě nepsat — abyste viděli celý rozsah toho, co je třeba vyplnit, dřív než se zavážete k velikosti a pozici na první straně. Velikost, která vypadá správně na řídké první straně, se může ukázat jako příliš velká na hustší stranu dále v dokumentu a včasné zachycení ušetří návrat a změnu velikosti polí, která už jste umístili.</p>
+
+          <h4>Kontrola celého dokumentu před stažením</h4>
+          <p>Protože se každá strana vykresluje a upravuje samostatně, snadno se soustředíte na stranu, se kterou právě pracujete, a ztratíte přehled o dokumentu jako celku. Před stažením se vraťte od začátku — je to jediný způsob, jak zachytit zcela přeskočenou stranu nebo pole, které skončilo odlišně od ostatních, aniž byste si toho při práci všimli.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Časté chyby při přidávání textu do PDF (a jak se jim vyhnout)</h3>
+          <p>Většina problémů s upraveným PDF vychází z malé sady snadno přehlédnutelných chyb. Na co si dát pozor.</p>
+
+          <h4>Text příliš malý po oddálení</h4>
+          <p>Snadno napíšete text velikostí, která při přiblížení a soustředění na jedno pole vypadá dokonale čitelně, jen abyste zjistili, že je znatelně malá, když se strana zobrazí v běžné plné velikosti. Před stažením oddalte (nebo zkontrolujte hotové PDF v samostatné čtečce) a ověřte, že je každé pole čitelné ve skutečné velikosti, ne jen ve velikosti při úpravách.</p>
+
+          <h4>Umístění textu přes existující obsah místo vedle něj</h4>
+          <p>Umístění textového pole přímo na tištěný text nebo čáru způsobí, že obojí je po překrytí špatně čitelné — podkladový obsah se neuhne. Posuňte nový text do skutečně prázdného místa poblíž, místo abyste ho kladli přímo na něco, co už je tam vytištěno.</p>
+
+          <h4>Úprava špatné strany</h4>
+          <p>U delšího dokumentu snadno ztratíte přehled, která strana je právě aktivní, zejména po přiblížení nebo posunu, a skončíte s textem přidaným na úplně špatnou stranu. U dokumentu delšího než jedna strana zkontrolujte před přidáním pole indikátor strany, zejména hned po přechodu na novou stranu.</p>
+
+          <h4>Použití barvy se slabým kontrastem</h4>
+          <p>Světlé barvy — zejména bledě žlutá — mohou vypadat dobře při úpravách na jasné obrazovce a pak být skutečně špatně čitelné po vytištění nebo na jiném displeji. U všeho, co se má skutečně přečíst, a ne jen zaznamenat, zůstaňte u barev se silným kontrastem proti bílé, jako černá nebo sytá barva.</p>
+
+          <h4>Zapomenutí přejmenovat soubor před sdílením</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -2262,21 +2367,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>Začínáme s</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/cs/convert/">Convert</a>
+          <a class="footer-dash-link" href="/cs/compress/">Compress</a>
+          <a class="footer-dash-link" href="/cs/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cs/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/cs/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/cs/congify/">Congify</a>
+          <a class="footer-dash-link" href="/cs/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/cs/codify/">Codify</a>
+          <a class="footer-dash-link" href="/cs/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/cs/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/cs/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2293,7 +2398,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/context/context-tool.js?v=155" defer></script>
 </body>
