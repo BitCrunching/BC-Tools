@@ -74,7 +74,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -552,7 +552,112 @@
       <li><a href="#gr-article-4" data-tip="Compress it or leave it alone? Quick test inside.|Some images should never be compressed."><span class="gr-toc-title">4. When to Compress vs When to Leave an Image Alone</span><span class="gr-toc-note">Which images to compress, and which to leave alone.</span></a></li>
       <li><a href="#gr-article-5" data-tip="Compress twice and nothing happens. Curious?|Mistakes to dodge, with a chart!"><span class="gr-toc-title">5. Common Compression Mistakes (and How to Avoid Them)</span><span class="gr-toc-note">Five easy mistakes, and how to avoid them.</span></a></li>
     </ul>
-    <div class="gr-inline" data-tool="compress"></div>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. How Image Compression Actually Works</h3>
+          <p>Compression makes a file smaller in one of two ways. Compress uses the lossy way for photos.</p>
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Type</th><th>Formats</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Type">Lossy</td><td data-label="Formats">JPG, WEBP</td><td data-label="What happens">Removes detail your eyes barely notice. The file shrinks to a fraction of its size. The removed detail is gone for good, and compressing again removes more.</td></tr>
+              <tr><td data-label="Type">Lossless</td><td data-label="Formats">PNG</td><td data-label="What happens">Stores the same pixels more efficiently, like a ZIP file. Nothing is lost, but photos stay large.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Why PNG photos become JPG.</strong> A photo saved as PNG barely shrinks. As a JPG it can be a fraction of the size, with no visible difference. Screenshots, logos and sharp text are different: lossy compression blurs their edges. Keep those as PNG.</p>
+          <p><strong>The quality slider.</strong> Compress has three levels: Low, Medium and High. Low removes the least detail and High removes the most. The first steps down from top quality save the most, and later steps save little. Most of the saving comes early, so the highest level is rarely worth it.</p>
+          <p><strong>How to judge the result.</strong> Open the compressed file at the size you will actually use it. Lost detail shows first in smooth areas such as sky and skin, as blockiness and color banding.</p>
+          <figure class="gr-chart">
+            <svg viewBox="0 0 480 300" role="img" aria-label="Line chart: file size of one photo saved at quality settings from 10 to 100. The size drops steeply at first and then flattens.">
+              <line x1="56" y1="250.0" x2="456" y2="250.0" class="gr-chart-grid"/><text x="48" y="255.0" text-anchor="end">0</text><line x1="56" y1="176.7" x2="456" y2="176.7" class="gr-chart-grid"/><text x="48" y="181.7" text-anchor="end">2</text><line x1="56" y1="103.3" x2="456" y2="103.3" class="gr-chart-grid"/><text x="48" y="108.3" text-anchor="end">4</text><line x1="56" y1="30.0" x2="456" y2="30.0" class="gr-chart-grid"/><text x="48" y="35.0" text-anchor="end">6</text><text x="100.4" y="272" text-anchor="middle">20</text><text x="189.3" y="272" text-anchor="middle">40</text><text x="278.2" y="272" text-anchor="middle">60</text><text x="367.1" y="272" text-anchor="middle">80</text><text x="456.0" y="272" text-anchor="middle">100</text>
+              <polyline points="56.0,239.0 78.2,234.7 100.4,230.6 122.7,226.6 144.9,223.0 167.1,219.5 189.3,216.8 211.6,213.5 233.8,210.7 256.0,208.1 278.2,204.3 300.4,200.1 322.7,194.5 344.9,189.4 367.1,179.0 389.3,169.1 411.6,139.7 433.8,109.0 456.0,41.9" class="gr-chart-line"/>
+              <circle cx="411.6" cy="139.7" r="6" class="gr-chart-dot"/><text x="401.6" y="127.7" text-anchor="end" class="gr-chart-mark">Low · 3.0 MB</text><circle cx="278.2" cy="204.3" r="6" class="gr-chart-dot"/><text x="268.2" y="192.3" text-anchor="end" class="gr-chart-mark">Medium · 1.2 MB</text><circle cx="189.3" cy="216.8" r="6" class="gr-chart-dot"/><text x="199.3" y="240.8" text-anchor="start" class="gr-chart-mark">High · 0.9 MB</text>
+              <text x="256" y="294" text-anchor="middle">Quality setting</text>
+              <text x="12" y="140" text-anchor="middle" transform="rotate(-90 12 140)">File size (MB)</text>
+            </svg>
+            <figcaption>One 12-megapixel photo (3024 × 4032, 3.8 MB) saved at every quality with the encoder Compress uses. The first ten points off save 2.7 MB; going from 60 to 50 saves 0.2 MB. Dots mark Low, Medium and High.</figcaption>
+          </figure>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Choosing the Right Compression Level for Your Use Case</h3>
+          <p>Choose the level by where the image is going. On one 3.8 MB photo, Low saves about a fifth, Medium about two thirds and High about three quarters. Results vary by photo.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars gr-bars-wide" role="img" aria-label="Bar chart: one 3.8 MB photo after Low, Medium and High compression, at 3.0, 1.2 and 0.9 MB.">
+              <div class="gr-bar-row"><span class="gr-bar-label">Original</span><span class="gr-bar-track"><span class="gr-bar gr-bar-muted" style="--v:100%"></span></span><span class="gr-bar-value">3.8 MB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">Low</span><span class="gr-bar-track"><span class="gr-bar" style="--v:78%"></span></span><span class="gr-bar-value">3.0 MB · 22% smaller</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">Medium</span><span class="gr-bar-track"><span class="gr-bar" style="--v:32%"></span></span><span class="gr-bar-value">1.2 MB · 68% smaller</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">High</span><span class="gr-bar-track"><span class="gr-bar" style="--v:24%"></span></span><span class="gr-bar-value">0.9 MB · 76% smaller</span></div>
+            </div>
+            <figcaption>The same 3.8 MB photo at each Compress level. Results differ from photo to photo.</figcaption>
+          </figure>
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destination</th><th>Level</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destination">Social media / messaging apps</td><td data-label="Level">Medium</td><td data-label="Why">The app compresses it again anyway.</td></tr>
+              <tr><td data-label="Destination">Your own website or online store</td><td data-label="Level">Medium to High</td><td data-label="Why">Smaller files load faster.</td></tr>
+              <tr><td data-label="Destination">Print or professional client delivery</td><td data-label="Level">Low, or skip compression</td><td data-label="Why">Print shows flaws a screen hides.</td></tr>
+              <tr><td data-label="Destination">Long-term archiving</td><td data-label="Level">Low</td><td data-label="Why">Lost detail never comes back.</td></tr>
+              <tr><td data-label="Destination">Email attachment size limits</td><td data-label="Level">High</td><td data-label="Why">Many providers cap attachments around 25 MB.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Rule of thumb.</strong> Social apps and messengers compress again, so Medium is enough. For print and archives, keep a full-quality master, because removed detail cannot come back.</p>
+          <p><strong>If you are unsure,</strong> start with Medium. Check the result, then go one level up or down.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compression for the Web: Speed Without Sacrificing Quality</h3>
+          <p>Resize first, then compress. The same photo at Medium is 1.2 MB at full size and 97 KB at 800 pixels wide.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="Bar chart: file size of one photo at Medium quality when resized to 3024, 1600, 800 and 400 pixels wide.">
+              <div class="gr-bar-row"><span class="gr-bar-label">3024 px</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">1.2 MB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">1600 px</span><span class="gr-bar-track"><span class="gr-bar" style="--v:31%"></span></span><span class="gr-bar-value">391 KB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">800 px</span><span class="gr-bar-track"><span class="gr-bar" style="--v:8%"></span></span><span class="gr-bar-value">97 KB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">400 px</span><span class="gr-bar-track"><span class="gr-bar" style="--v:1.3%"></span></span><span class="gr-bar-value">17 KB</span></div>
+            </div>
+            <figcaption>The same photo at Medium, resized before saving. A 400-pixel copy is about 1% of the full-size file.</figcaption>
+          </figure>
+          <p><strong>Match the width to the display size.</strong> A picture shown 400 pixels wide does not need 3000. Resize it to about the size it appears, then compress. Sharp screens show about twice as many pixels as the space they fill, so a 400-pixel slot looks best with an 800-pixel image.</p>
+          <p><strong>Pick the format.</strong> Photos: JPG or WEBP at Medium or High. WEBP is often smaller than JPG at the same look, and every modern browser opens it. Graphics, screenshots and text: PNG.</p>
+          <p><strong>Stop at the sweet spot.</strong> Past Medium, each step saves little and the damage grows. Check the result at its real display size.</p>
+          <p><strong>Use one level per batch.</strong> The same level for the same type of image keeps the whole site consistent.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. When to Compress vs When to Leave an Image Alone</h3>
+          <p>Compress when the file is too big for where it is going. Skip it when quality matters more.</p>
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Situation</th><th>What to do</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situation">Camera photo for web, email or chat</td><td data-label="What to do">Compress</td><td data-label="Why">It carries far more detail than those places show.</td></tr>
+              <tr><td data-label="Situation">File over an upload or email size limit</td><td data-label="What to do">Compress</td><td data-label="Why">It gets under the limit without cropping.</td></tr>
+              <tr><td data-label="Situation">Screenshot, logo, diagram or scan with text</td><td data-label="What to do">Leave as PNG, or compress very lightly</td><td data-label="Why">Lossy compression blurs edges and text.</td></tr>
+              <tr><td data-label="Situation">A JPG that is already compressed</td><td data-label="What to do">Do not compress it again</td><td data-label="Why">It barely shrinks and gains more artifacts.</td></tr>
+              <tr><td data-label="Situation">The only copy of a photo</td><td data-label="What to do">Keep a master copy first</td><td data-label="Why">A lost original cannot be recreated.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Rule of thumb.</strong> Keep one high-quality original and compress copies of it, one for each use. Give each copy its own name, such as photo-small.jpg, so you never overwrite the original.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Common Compression Mistakes (and How to Avoid Them)</h3>
+          <p><strong>Compressing the same file again and again.</strong> Each pass can remove more detail. In our test the size stayed at 1.2 MB through ten passes, so repeating gains nothing. Always start from the original.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="Bar chart: file size stays at 1.2 MB after 1, 2, 3 and 10 compression passes at Medium.">
+              <div class="gr-bar-row"><span class="gr-bar-label">Pass 1</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">1.2 MB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">Pass 2</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">1.2 MB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">Pass 3</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">1.2 MB</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">Pass 10</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">1.2 MB</span></div>
+            </div>
+            <figcaption>One photo compressed again and again at Medium. The size never drops below the first pass.</figcaption>
+          </figure>
+          <p><strong>Overwriting your only copy.</strong> Compress makes a new file and leaves your original alone. The risk is saving the new file over the old one, or deleting the original afterwards. Keep it until you are sure you will not need it at higher quality.</p>
+          <p><strong>Treating graphics like photos.</strong> Text and logos smudge under photo compression. Use a light level, or keep PNG.</p>
+          <p><strong>Not checking the result.</strong> Maximum compression often adds visible artifacts. Check the output at the size it will be viewed.</p>
+          <p><strong>Over-preparing for apps that compress again.</strong> Instagram and WhatsApp recompress every image, so a huge file only slows your upload.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -574,21 +679,21 @@
       <h3>Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/convert/">Convert</a>
+          <a class="footer-dash-link" href="/compress/">Compress</a>
+          <a class="footer-dash-link" href="/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/congify/">Congify</a>
+          <a class="footer-dash-link" href="/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/codify/">Codify</a>
+          <a class="footer-dash-link" href="/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -605,8 +710,8 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/compress/compress-tool.js?v=54" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/compress/compress-tool.js?v=167" defer></script>
 </body>
 </html>

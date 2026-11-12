@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/de.js?v=8"></script>
+<script src="/shared/i18n/de.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Text kostenlos zu einem PDF hinzufügen – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 
@@ -218,6 +218,15 @@
   position:relative;
 }
 
+.context-toolbar{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+.context-toolbar input{
+  -webkit-user-select:text;
+  user-select:text;
+}
 #ctShapeBtn{
   touch-action:manipulation;
   user-select:none;
@@ -318,6 +327,12 @@ html[data-theme="light"] .context-fullscreen-brand{
 }
 .context-fullscreen-actions{
   margin-left:auto;
+}
+.context-fullscreen-theme-btn{
+  display:none;
+}
+@media (max-width:768px) and (orientation:portrait){
+  .context-fullscreen-theme-btn{ display:flex; }
 }
 .context-fullscreen-brand{
   font-size:30px;
@@ -441,7 +456,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 #ctFontDropdown .bc-dropdown-option{
   font-size:15px;
 }
-@media (max-width:768px){
+@media (max-width:768px) and (orientation:portrait){
   #ctFontDropdown .bc-dropdown-menu{
     top:auto;
     bottom:calc(100% + 6px);
@@ -500,8 +515,9 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 }
 #ctShapeKindDropdown .bc-dropdown-menu:not([hidden]){
   display:grid;
-  grid-template-columns:repeat(3, 44px);
+  grid-template-columns:repeat(3, minmax(44px, 1fr));
   gap:4px;
+  max-width:min(92vw, 280px);
 }
 #ctShapeKindDropdown .bc-dropdown-option{
   display:flex;
@@ -509,6 +525,25 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   justify-content:center;
   height:40px;
   padding:0;
+}
+#ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]{
+  grid-column:1 / -1;
+  gap:8px;
+  height:auto;
+  min-height:40px;
+  padding:8px 16px;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.25;
+  text-align:center;
+  text-wrap:balance;
+  border:var(--border-bold) solid var(--btn-fill);
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+#ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]:hover{
+  background:transparent;
+  color:var(--btn-fill);
 }
 .ct-shape-opt-icon{
   width:20px;
@@ -518,7 +553,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 }
 /* On mobile the toolbar sits at the bottom of the screen, so the menu
    opens upward — below it would be off-screen. */
-@media (max-width:768px){
+@media (max-width:768px) and (orientation:portrait){
   #ctShapeKindDropdown .bc-dropdown-menu{
     top:auto;
     bottom:calc(100% + 6px);
@@ -549,7 +584,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
    "Rename file" keeps its text since only the color picker was asked
    to go icon-only. (Remove isn't touched — it's already a small circle
    on the preview panel, separate from this toolbar.) */
-@media (max-width:768px){
+@media (max-width:768px) and (orientation:portrait){
   :is(#page-context, .context-fullscreen-overlay) .ct-desktop-only{ display:none; }
   :is(#page-context, .context-fullscreen-overlay) .ct-mobile-only{ display:inline-flex; align-items:center; justify-content:center; }
 
@@ -592,11 +627,17 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
     font-size:13px;
   }
   /* Font-size nav replaced by dragging each box's own resize handle. */
-  :is(#page-context, .context-fullscreen-overlay) .context-font-size-combo{
-    display:none;
-  }
   :is(#page-context, .context-fullscreen-overlay) .context-text-box.selected .context-text-resize-handle{
     display:flex;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-text-box > .context-text-remove{
+    position:absolute;
+    top:-12px;
+    right:-32px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-text-box .context-text-resize-handle{
+    right:-32px;
+    bottom:-12px;
   }
   :is(#page-context, .context-fullscreen-overlay) .context-page-btn{
     width:27px;
@@ -763,7 +804,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   align-items:center;
   justify-content:center;
   gap:8px;
-  color:var(--text);
+  color:inherit;
   font-size:14px;
   font-weight:700;
 }
@@ -803,7 +844,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
   color:var(--btn-fill-text);
 }
 .context-panel-bar .context-name-field input::placeholder{ color:inherit; opacity:.55; }
-@media (max-width:768px){
+@media (max-width:768px) and (orientation:portrait){
   .context-panel-bar .context-name-field{ width:150px; }
 }
 .context-history-btn{
@@ -825,7 +866,7 @@ html[data-theme="light"] .context-fullscreen-overlay .context-preview-panel{
 #page-context .context-panel-bar .context-page-btn:hover:not(:disabled){
   color:var(--btn-fill-text);
 }
-@media (min-width:769px){
+@media (min-width:769px), (orientation:landscape){
   #page-context .context-panel-bar{
     display:contents;
   }
@@ -888,7 +929,7 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    PDF is actually loaded and the canvas is showing — before that,
    #ctDrop should keep the same default .tool-app padding every other
    tool's drop zone uses, so it renders at the same size/position. */
-@media (max-width:768px){
+@media (max-width:768px) and (orientation:portrait){
   #page-context .tool-app:has(#ctEditor:not([hidden])){
     /* Left/right/bottom stay tight (that's the space the canvas eats
        into) — only top grows, so the logo/header drop down closer to
@@ -973,8 +1014,8 @@ html[data-theme="dark"] .context-page-btn:disabled:hover{
    above), position offset, and cursor direction. */
 .context-text-resize-handle{
   display:none;
-  right:-10px;
-  bottom:-10px;
+  right:0;
+  bottom:-30px;
   cursor:nwse-resize;
   user-select:none;
   -webkit-touch-callout:none;
@@ -1255,6 +1296,33 @@ html[data-theme="light"] .context-signature-modal{
   font-size:15px;
   cursor:pointer;
 }
+
+.context-redact-tradeoffs{
+  margin:0 0 12px;
+  padding-left:20px;
+  font-size:14px;
+  line-height:1.5;
+  opacity:.8;
+}
+.context-redact-tradeoffs li{ margin-top:6px; }
+.context-redact-or{
+  margin:10px 0 0;
+  text-align:center;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.04em;
+  opacity:.7;
+}
+.context-redact-never{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.context-redact-never input{ width:16px; height:16px; cursor:pointer; }
 
 .context-signature-saved-preview{
   display:block;
@@ -1554,6 +1622,157 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 }
 
 
+/* Narrow phones (iPhone mini, SE): the single mobile toolbar row is a few
+   points wider than the screen, so trim its padding and wrap below 340. */
+@media (max-width:380px){
+  .context-fullscreen-bar .context-toolbar{
+    padding-left:4px;
+    padding-right:4px;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-tool-btn,
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{
+    padding:0 6px;
+  }
+}
+@media (max-width:340px){
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+}
+#ctShapeKindDropdown .ct-shape-opts-btn{ display:none; }
+.ct-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.ct-new-menu{
+  transform-origin:16px 100%;
+  transition:opacity .2s ease, transform .34s cubic-bezier(.34,1.3,.64,1), display .2s allow-discrete;
+}
+.ct-new-item{
+  transition:transform .36s cubic-bezier(.34,1.56,.64,1), background-color .12s, color .12s;
+  transition-delay:calc(var(--i) * 28ms), 0s, 0s;
+}
+.ct-new-label{
+  position:absolute;
+  left:0;
+  top:-38px;
+  padding:6px 12px;
+  border-radius:14px;
+  background:var(--btn-fill);
+  color:var(--btn-fill-text);
+  font-size:13px;
+  font-weight:800;
+  white-space:nowrap;
+  opacity:0;
+  transition:opacity .12s;
+  pointer-events:none;
+}
+.ct-new-label.shown{ opacity:1; }
+@starting-style{
+  .ct-new-menu:not([hidden]){ opacity:0; transform:rotate(-40deg) scale(.6); }
+  .ct-new-menu:not([hidden]) .ct-new-item{ transform:translate(-50%, -50%) rotate(var(--a)) translateX(0px) rotate(calc(var(--a) * -1)) scale(.3); }
+}
+@media (max-width:768px) and (orientation:portrait){
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar{ flex-wrap:nowrap; gap:0; justify-content:flex-start; row-gap:0; }
+  :is(#page-context, .context-fullscreen-overlay) .bc-toggle-btn-group{ display:contents; }
+  :is(#page-context, .context-fullscreen-overlay) :is(#ctAddTextBtn, #ctAddDateBtn, #ctSignatureBtn){ display:none; }
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{ margin-left:auto; flex-shrink:0; }
+  :is(#page-context, .context-fullscreen-overlay) #ctToolBackBtn{ --w:30px; order:0; }
+  :is(#page-context, .context-fullscreen-overlay) #ctAddMoreBtn{ --w:30px; order:1; }
+  :is(#page-context, .context-fullscreen-overlay) #ctNewWrap{ --w:72px; order:1; position:relative; }
+  :is(#page-context, .context-fullscreen-overlay) #ctNewBtn{ width:100%; padding:0 8px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeDropdown{ --w:72px; order:2; }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorDropdown #ctColorTrigger{ width:100%; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontBtn{ width:100%; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeTrigger{ height:34px; padding:0 6px; gap:2px; border-radius:10px; font-size:13px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontSizeMenu{ top:auto; bottom:calc(100% + 6px); width:100%; }
+  :is(#page-context, .context-fullscreen-overlay) #ctFontDropdown{ --w:50px; order:3; }
+  :is(#page-context, .context-fullscreen-overlay) #ctUnderlineBtn{ --w:26px; order:4; }
+  :is(#page-context, .context-fullscreen-overlay) #ctItalicBtn{ --w:26px; order:5; }
+  :is(#page-context, .context-fullscreen-overlay) #ctBoldBtn{ --w:26px; order:6; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown{ --w:30px; order:7; display:flex; gap:4px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .ct-shape-opts-btn{ display:flex; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown #ctShapeBtn{ display:none; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .ct-shape-opts-btn{ width:30px; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .bc-dropdown-menu{ left:0; right:auto; }
+  :is(#page-context, .context-fullscreen-overlay) #ctShapeKindDropdown .bc-dropdown-option[data-kind="redact"]{ display:none; }
+  :is(#page-context, .context-fullscreen-overlay) #ctRedactBtn{ --w:84px; --pad:10px; order:8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctSigEditBtn:disabled{ opacity:1; background:transparent; border-style:dashed; cursor:default; }
+  :is(#page-context, .context-fullscreen-overlay) #ctSigEditBtn{ --w:96px; --pad:10px; order:9; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctDateFmtBtn{ --w:106px; --pad:10px; order:9; white-space:nowrap; }
+  :is(#page-context, .context-fullscreen-overlay) #ctColorDropdown{ --w:32px; order:10; }
+  :is(#page-context, .context-fullscreen-overlay) .context-download-btn{ order:11; }
+  :is(#page-context, .context-fullscreen-overlay) #ctNewBtn{ touch-action:none; -webkit-touch-callout:none; position:relative; z-index:2; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-menu{ left:20px; right:auto; bottom:22px; top:auto; width:120px; height:120px; min-width:0; padding:0; margin:0; border-radius:0; background:none; border:0; box-shadow:none; overflow:visible; z-index:1; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item{ position:absolute; left:16px; top:100%; width:38px; height:38px; padding:0; margin:0; border-radius:50%; border:1.5px solid rgba(255,255,255,.35); background:#1d2436; color:#fff; display:flex; align-items:center; justify-content:center; transform:translate(-50%, -50%) rotate(var(--a)) translateX(84px) rotate(calc(var(--a) * -1)) scale(1); }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item.active:not(.ct-hot){ background:#1d2436; color:#fff; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item.ct-hot{ background:#e4e9f5; color:#1d2436; border-color:#fff; transform:translate(-50%, -50%) rotate(var(--a)) translateX(84px) rotate(calc(var(--a) * -1)) scale(1.22); }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item:nth-child(1){ --a:-88deg; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item:nth-child(2){ --a:-59deg; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item:nth-child(3){ --a:-30deg; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-new-item:nth-child(4){ --a:-2deg; }
+  :is(#page-context, .context-fullscreen-overlay) .ct-m{
+    box-sizing:border-box;
+    flex-shrink:0;
+    width:0;
+    min-width:0;
+    margin:0;
+    padding-left:0;
+    padding-right:0;
+    border-width:0;
+    opacity:0;
+    overflow:hidden;
+    visibility:hidden;
+    pointer-events:none;
+    transition:width .26s cubic-bezier(.22,1,.36,1), margin .26s cubic-bezier(.22,1,.36,1), padding .26s cubic-bezier(.22,1,.36,1), border-width .26s, opacity .18s ease, visibility 0s linear .26s;
+  }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="home"] .ct-m-home,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="text"] .ct-m-text,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="shape"] .ct-m-shape,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="date"] .ct-m-date,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="signature"] .ct-m-signature,
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar:not([data-mode="home"]) .ct-m-sub{
+    width:var(--w);
+    margin:0 1px;
+    padding-left:var(--pad, 0);
+    padding-right:var(--pad, 0);
+    border-width:1px;
+    opacity:1;
+    overflow:visible;
+    visibility:visible;
+    pointer-events:auto;
+    transition:width .26s cubic-bezier(.22,1,.36,1), margin .26s cubic-bezier(.22,1,.36,1), padding .26s cubic-bezier(.22,1,.36,1), border-width .26s, opacity .2s ease .06s, visibility 0s;
+  }
+}
+@media (max-width:340px){
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar .ct-m{ --w:auto; }
+}
+.context-color-custom-dot{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  border:1.5px dashed currentColor;
+  background:transparent;
+  font-size:13px;
+  font-weight:800;
+  line-height:1;
+}
+.context-color-custom.has-color .context-color-custom-dot{
+  border-style:solid;
+  color:transparent;
+}
+@media (max-width:0px){
+  .context-fullscreen-header{ display:none; }
+  .context-fullscreen-canvas-area{ padding:8px 16px; padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
+  .context-fullscreen-bar .context-toolbar{ padding-top:6px; padding-bottom:calc(6px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width:768px) and (orientation:portrait){
+  .context-toolbar > .context-page-nav{ order:11; margin-left:auto; margin-right:auto; flex-shrink:0; gap:4px; white-space:nowrap; color:#fff; }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="home"]{ position:relative; }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="home"] > .context-page-nav{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); margin:0; }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar[data-mode="home"] > .context-page-nav + .context-download-btn{ margin-left:auto; }
+  :is(#page-context, .context-fullscreen-overlay) .context-toolbar > .context-page-nav + .context-download-btn{ margin-left:0; }
+  .context-toolbar > .context-page-nav .context-page-btn{ color:#fff; font-family:var(--bc-mono); font-weight:700; }
+}
 </style>
 </head>
 <body>
@@ -1683,15 +1902,27 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     <button type="button" class="tool-primary-btn tool-continue-btn" id="ctContinueBtn" hidden>Dort weitermachen, wo du aufgehört hast</button>
 
     <div class="context-editor" id="ctEditor" hidden>
-      <div class="context-toolbar">
+      <div class="context-toolbar" data-mode="home">
+        <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-back-btn ct-m ct-m-sub ct-mobile-only" id="ctToolBackBtn" title="Zurück" aria-label="Zurück"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg></button>
+        <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-add-more-btn ct-m ct-m-text ct-m-date ct-m-shape ct-m-signature ct-mobile-only" id="ctAddMoreBtn" title="Neu hinzufügen" aria-label="Neu hinzufügen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+        <div class="bc-dropdown ct-new-wrap ct-m ct-m-home ct-mobile-only" id="ctNewWrap">
+          <button type="button" class="context-tool-btn" id="ctNewBtn" aria-haspopup="menu" aria-expanded="false">Neu</button>
+          <div class="bc-dropdown-menu ct-new-menu" id="ctNewMenu" role="menu" hidden>
+            <button type="button" class="bc-dropdown-option ct-new-item" data-mode="text" style="--i:0" role="menuitem"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14"/><path d="M12 6v13"/></svg><span class="ct-sr">Text</span></button>
+            <button type="button" class="bc-dropdown-option ct-new-item" data-mode="date" style="--i:1" role="menuitem"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/></svg><span class="ct-sr">Datum</span></button>
+            <button type="button" class="bc-dropdown-option ct-new-item" data-mode="signature" style="--i:2" role="menuitem"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16c3-6 4-9 6-9s0 8 3 8 3-5 5-5 2 3 4 3"/><path d="M3 20h18"/></svg><span class="ct-sr">Unterschrift</span></button>
+            <button type="button" class="bc-dropdown-option ct-new-item" data-mode="shape" style="--i:3" role="menuitem"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/></svg><span class="ct-sr">Form</span></button>
+            <span class="ct-new-label" id="ctNewLabel" aria-hidden="true"></span>
+          </div>
+        </div>
         <button type="button" class="context-tool-btn" id="ctAddTextBtn" title="Text hinzufügen (T)"><span class="ct-desktop-only">Text hinzufügen</span><span class="ct-mobile-only">Neu</span></button>
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Add date (E)"><span class="ct-desktop-only">Add date</span><span class="ct-mobile-only">Date</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctAddDateBtn" title="Datum hinzufügen (E)"><span class="ct-desktop-only">Datum hinzufügen</span><span class="ct-mobile-only">D</span></button>
 
-        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Unterschrift (S)"><span class="ct-desktop-only">Unterschrift</span><span class="ct-mobile-only">S</span></button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctSignatureBtn" title="Unterschrift erstellen (S)"><span class="ct-desktop-only">Unterschrift</span><span class="ct-mobile-only">S</span></button>
 
         <div class="bc-toggle-btn-group">
-          <div class="bc-dropdown context-font-dropdown" id="ctFontDropdown">
-            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctFontBtn" title="Schriftart" aria-label="Schriftart" aria-haspopup="listbox" aria-expanded="false">F</button>
+          <div class="bc-dropdown context-font-dropdown ct-m ct-m-text" id="ctFontDropdown">
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctFontBtn" title="Schriftart" aria-label="Schriftart" aria-haspopup="listbox" aria-expanded="false"><span class="ct-desktop-only">F</span><span class="ct-mobile-only">Schriftart</span></button>
             <div class="bc-dropdown-menu" id="ctFontMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-font="arial" data-label="Arial" role="option" aria-selected="false">Arial</button>
               <button type="button" class="bc-dropdown-option" data-font="times" data-label="Times" role="option" aria-selected="false">Times</button>
@@ -1704,12 +1935,13 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-font="playfair" data-label="Playfair Display" role="option" aria-selected="false">Playfair Display</button>
             </div>
           </div>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctUnderlineBtn" title="Unterstrichen (U)" aria-label="Unterstrichen" aria-pressed="false"><u>U</u></button>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctItalicBtn" title="Kursiv (I)" aria-label="Kursiv" aria-pressed="false"><i>I</i></button>
-          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctBoldBtn" title="Fett (B)" aria-label="Fett" aria-pressed="false"><b>B</b></button>
-          <div class="bc-dropdown context-shape-kind-dropdown" id="ctShapeKindDropdown">
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctUnderlineBtn" title="Unterstrichen (U)" aria-label="Unterstrichen" aria-pressed="false"><u>U</u></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctItalicBtn" title="Kursiv (I)" aria-label="Kursiv" aria-pressed="false"><i>I</i></button>
+          <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-m ct-m-text" id="ctBoldBtn" title="Fett (B)" aria-label="Fett" aria-pressed="false"><b>B</b></button>
+          <div class="bc-dropdown context-shape-kind-dropdown ct-m ct-m-shape" id="ctShapeKindDropdown">
             <button type="button" class="bc-toggle-btn bc-toggle-btn-icon" id="ctShapeBtn" title="Form hinzufügen (H)" aria-label="Form hinzufügen" aria-haspopup="listbox" aria-expanded="false"><svg class="ct-shape-btn-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><polygon points="50,4 96,96 4,96"/></svg></button>
-            <button type="button" class="ct-shape-arrow" id="ctShapeArrow" tabindex="-1" aria-label="Choose shape" title="Choose shape"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <button type="button" class="ct-shape-arrow" id="ctShapeArrow" tabindex="-1" aria-label="Form wählen" title="Form wählen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <button type="button" class="bc-toggle-btn bc-toggle-btn-icon ct-shape-opts-btn ct-mobile-only" id="ctShapeOptsBtn" title="Form wählen" aria-label="Form wählen"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="bc-dropdown-menu" id="ctShapeKindMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-kind="circle" data-outline="0" data-label="Kreis" role="option" aria-selected="false">Kreis</button>
               <button type="button" class="bc-dropdown-option" data-kind="square" data-outline="0" data-label="Quadrat" role="option" aria-selected="false">Quadrat</button>
@@ -1717,17 +1949,22 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
               <button type="button" class="bc-dropdown-option" data-kind="cross" data-outline="0" data-label="Kreuz" role="option" aria-selected="false">Kreuz</button>
               <button type="button" class="bc-dropdown-option" data-kind="check" data-outline="0" data-label="Häkchen" role="option" aria-selected="false">Häkchen</button>
               <button type="button" class="bc-dropdown-option" data-kind="xmark" data-outline="0" data-label="Kreuz" role="option" aria-selected="false">Kreuz</button>
-              <button type="button" class="bc-dropdown-option" data-kind="circle" data-outline="1" data-label="Circle outline" role="option" aria-selected="false">Circle outline</button>
-              <button type="button" class="bc-dropdown-option" data-kind="square" data-outline="1" data-label="Square outline" role="option" aria-selected="false">Square outline</button>
-              <button type="button" class="bc-dropdown-option" data-kind="triangle" data-outline="1" data-label="Triangle outline" role="option" aria-selected="false">Triangle outline</button>
-              <button type="button" class="bc-dropdown-option" data-kind="cross" data-outline="1" data-label="Cross outline" role="option" aria-selected="false">Cross outline</button>
-              <button type="button" class="bc-dropdown-option" data-kind="check" data-outline="1" data-label="Checkmark outline" role="option" aria-selected="false">Checkmark outline</button>
-              <button type="button" class="bc-dropdown-option" data-kind="xmark" data-outline="1" data-label="Crossmark outline" role="option" aria-selected="false">Crossmark outline</button>
+              <button type="button" class="bc-dropdown-option" data-kind="circle" data-outline="1" data-label="Kreis (Kontur)" role="option" aria-selected="false">Kreis (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="square" data-outline="1" data-label="Quadrat (Kontur)" role="option" aria-selected="false">Quadrat (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="triangle" data-outline="1" data-label="Dreieck (Kontur)" role="option" aria-selected="false">Dreieck (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="cross" data-outline="1" data-label="Kreuz (Kontur)" role="option" aria-selected="false">Kreuz (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="check" data-outline="1" data-label="Häkchen (Kontur)" role="option" aria-selected="false">Häkchen (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="xmark" data-outline="1" data-label="Kreuzchen (Kontur)" role="option" aria-selected="false">Kreuzchen (Kontur)</button>
+              <button type="button" class="bc-dropdown-option" data-kind="redact" data-outline="0" data-label="Schwärzen" role="option" aria-selected="false">Schwärzen</button>
             </div>
           </div>
         </div>
 
-        <div class="context-color-dropdown" id="ctColorDropdown">
+        <button type="button" class="context-color-trigger bc-dropdown-trigger ct-m ct-m-shape ct-mobile-only" id="ctRedactBtn" title="Das Schwärzungswerkzeug dient dazu, sensible Daten sicher zu verbergen (X)">Schwärzen</button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger ct-m ct-m-signature ct-mobile-only" id="ctSigEditBtn" title="Unterschrift bearbeiten">Bearbeiten</button>
+        <button type="button" class="context-color-trigger bc-dropdown-trigger ct-m ct-m-date ct-mobile-only" id="ctDateFmtBtn" title="Datumsformat ändern">DD-MM-YYYY</button>
+
+        <div class="context-color-dropdown ct-m ct-m-text ct-m-shape" id="ctColorDropdown">
           <button type="button" class="context-color-trigger bc-dropdown-trigger" id="ctColorTrigger" aria-haspopup="listbox" aria-expanded="false">
             <span class="context-color-dot bc-color-dot" id="ctColorTriggerDot" style="background:#000000"></span>
             <span id="ctColorTriggerLabel">Schwarz</span>
@@ -1749,10 +1986,13 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
             <button type="button" class="context-color-option bc-color-option" data-color="#eab308" data-label="Gelb" role="option" aria-selected="false">
               <span class="context-color-dot bc-color-dot" style="background:#eab308"></span><span class="ct-option-label"> Gelb</span>
             </button>
+            <button type="button" class="context-color-option bc-color-option context-color-custom" id="ctColorCustomBtn" data-custom="true" title="Beliebige Farbe wählen" role="option" aria-selected="false">
+              <span class="context-color-dot bc-color-dot context-color-custom-dot" id="ctColorCustomDot">+</span><span class="ct-option-label"> Eigene</span>
+            </button>
           </div>
         </div>
 
-        <div class="bc-combo context-font-size-combo" id="ctFontSizeDropdown">
+        <div class="bc-combo context-font-size-combo ct-m ct-m-text" id="ctFontSizeDropdown">
           <div class="bc-combo-trigger context-font-size-trigger" id="ctFontSizeTrigger" aria-haspopup="listbox" aria-expanded="false">
             <input class="bc-combo-input" id="ctFontSizeInput" value="16px" readonly aria-label="Schriftgrößen suchen">
             <span class="bc-combo-chevron" aria-hidden="true"></span>
@@ -1807,7 +2047,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
             <button type="button" class="context-page-btn context-history-btn" id="ctUndoBtn" title="Rückgängig (Strg+Z)" aria-label="Rückgängig" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
             </button>
-            <button type="button" class="context-page-btn context-history-btn" id="ctRedoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Wiederholen" disabled>
+            <button type="button" class="context-page-btn context-history-btn" id="ctRedoBtn" title="Wiederholen (Strg+Umschalt+Z)" aria-label="Wiederholen" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
             </button>
           </div>
@@ -1826,7 +2066,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
             <span class="context-fullscreen-brand">BC Tools</span>
           </button>
           <div class="nav-right context-fullscreen-actions">
-            <button type="button" class="nav-theme-btn context-fullscreen-nav-btn" data-theme-toggle aria-label="Zwischen hellem und dunklem Modus wechseln" title="Zwischen hellem und dunklem Modus wechseln">
+            <button type="button" class="nav-theme-btn context-fullscreen-nav-btn context-fullscreen-theme-btn" data-theme-toggle aria-label="Toggle light and dark mode" title="Toggle light and dark mode">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
@@ -1848,19 +2088,57 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
     <div class="context-size-row">
       <div class="tool-status" id="ctSizeStatus"></div>
       <div class="context-compress-wrap" id="ctCompressWrap" hidden>
-        <button type="button" class="tool-primary-btn context-compress-btn" id="ctCompressBtn">Compress file</button>
-        <button type="button" class="bc-info-btn" id="ctCompressInfoBtn" aria-expanded="false" aria-label="About Compress file">i</button>
-        <div class="bc-info-tooltip" id="ctCompressInfoTip" hidden><b>Recommended</b> — this PDF is over 10 MB, which many email servers, upload portals and galleries reject. Compress file shrinks the images inside it just enough to get under 10 MB. Text stays sharp, nothing leaves your device.<ul class="context-compress-why" id="ctCompressWhy"></ul><span class="context-compress-better"><b>Better still:</b> if you still have the original (Word, a scanner app, a photo editor), export it again at 150 dpi or with a “reduce file size” option. That usually looks cleaner than compressing afterwards.</span></div>
+        <button type="button" class="tool-primary-btn context-compress-btn" id="ctCompressBtn">Datei komprimieren</button>
+        <button type="button" class="bc-info-btn" id="ctCompressInfoBtn" aria-expanded="false" aria-label="Über Datei komprimieren">i</button>
+        <div class="bc-info-tooltip" id="ctCompressInfoTip" hidden><b>Empfohlen</b> — dieses PDF ist größer als 10 MB, was viele E-Mail-Server, Upload-Portale und Galerien ablehnen. Datei komprimieren verkleinert die Bilder darin gerade so weit, dass es unter 10 MB passt. Text bleibt scharf, nichts verlässt Ihr Gerät.<ul class="context-compress-why" id="ctCompressWhy"></ul><span class="context-compress-better"><b>Noch besser:</b> wenn Sie noch das Original haben (Word, eine Scanner-App, einen Bildeditor), exportieren Sie es erneut mit 150 dpi oder mit der Option „Dateigröße reduzieren“. Das sieht meist sauberer aus als nachträgliches Komprimieren.</span></div>
       </div>
     </div>
 
     <div class="context-signature-overlay" id="ctBurstOverlay" hidden>
       <div class="context-signature-modal">
-        <div class="context-signature-header"><span>Everything okay?</span></div>
+        <div class="context-signature-header"><span>Alles in Ordnung?</span></div>
         <div class="context-signature-step">
-          <p class="context-signature-hint">Five items were just added in a fraction of a second. Do you want to keep them and continue?</p>
-          <button type="button" class="context-signature-action-btn" id="ctBurstKeep">Yes, continue</button>
-          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctBurstUndo">Remove those 5</button>
+          <p class="context-signature-hint">Gerade wurden in Sekundenbruchteilen fünf Elemente hinzugefügt. Möchten Sie sie behalten und fortfahren?</p>
+          <button type="button" class="context-signature-action-btn" id="ctBurstKeep">Ja, fortfahren</button>
+          <button type="button" class="context-signature-action-btn context-signature-action-btn--ghost" id="ctBurstUndo">Diese 5 entfernen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="context-signature-overlay" id="ctRedactOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header">
+          <span>Hinweis zur Schwärzung</span>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctRedactClose" aria-label="Schließen" title="Schließen">&times;</button>
+          </div>
+        </div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">Die kostenlose Version nutzt ein eingeschränktes, aber dennoch sicheres und wirksames Schwärzungsverfahren per Rasterung: Jede Seite mit einem Schwärzungsfeld wird zu einem Bild, und der Inhalt unter den Feldern wird dauerhaft entfernt. Die Nachteile:</p>
+          <ul class="context-redact-tradeoffs">
+            <li>Die Seite lässt sich nicht mehr markieren, kopieren oder durchsuchen, und Links und Formularfelder werden entfernt.</li>
+            <li>Die Datei kann größer werden und beim Vergrößern weniger scharf wirken.</li>
+          </ul>
+          <label class="context-redact-never"><input type="checkbox" id="ctRedactNever"> Nicht mehr anzeigen</label>
+          <button type="button" class="context-signature-action-btn" id="ctRedactContinue">Mit eingeschränkter Schwärzung fortfahren</button>
+          <p class="context-redact-or">ODER</p>
+          <button type="button" class="context-signature-action-btn bc-paid-btn" id="ctRedactUpgrade" data-bc-paid aria-disabled="true" title="Diese Option ist vorerst nicht verfügbar.">PRO werden</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="context-signature-overlay" id="ctShapeNoticeOverlay" hidden>
+      <div class="context-signature-modal">
+        <div class="context-signature-header">
+          <span>Formen sind kein Schwärzungswerkzeug</span>
+          <div class="context-signature-header-actions">
+            <button type="button" class="context-signature-close bc-file-remove-btn" id="ctShapeNoticeClose" aria-label="Schließen" title="Schließen">&times;</button>
+          </div>
+        </div>
+        <div class="context-signature-step">
+          <p class="context-signature-hint">Wir möchten sicherstellen, dass Sie wissen: Die hier verfügbaren Formen sind nicht dafür gedacht, sensible Informationen zu schwärzen oder zu verbergen. Verwenden Sie dafür das Werkzeug Schwärzen.</p>
+          <label class="context-redact-never"><input type="checkbox" id="ctShapeNoticeNever"> Nicht mehr anzeigen</label>
+          <button type="button" class="context-signature-action-btn" id="ctShapeNoticeContinue">Verstanden</button>
         </div>
       </div>
     </div>
@@ -1975,7 +2253,110 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <li><a href="#gr-article-4">4. Mit mehrseitigen PDFs arbeiten: Einheitlichkeit und seitenweises Bearbeiten</a></li>
       <li><a href="#gr-article-5">5. Häufige Fehler beim Hinzufügen von Text zu PDFs (und wie du sie vermeidest)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="context"></div>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. Wie das Hinzufügen von Text zu einem PDF wirklich funktioniert</h3>
+          <p>Eine PDF-Seite ist kein Textdokument, in das man einfach klicken und tippen kann – sie ähnelt eher einem gedruckten Blatt, einem festen Bild aus Text und Grafiken an exakten Positionen. Diesen Unterschied zu verstehen erklärt sowohl, was Context tut, als auch, warum es so funktioniert, wie es funktioniert.</p>
+
+          <h4>Die Seite ist ein Bild, kein Dokument</h4>
+          <p>Die meisten PDFs (alles, was nicht gezielt als ausfüllbares Formular gebaut wurde) kennen kein Konzept von „freiem Platz, in den man tippen kann“. Was du als Linie, Kasten oder leeres Feld siehst, ist in Wahrheit nur Tinte an festen Koordinaten – dahinter wartet kein Textfeld auf deine Eingabe, wie in einem Word-Dokument oder einem Webformular. Wenn Context dir erlaubt, einem PDF „Text hinzuzufügen“, findet es kein verstecktes Feld und füllt es aus; es legt eine völlig neue, unabhängige Textebene über die bestehende Seite, positioniert dort, wohin du sie ziehst.</p>
+
+          <h4>Überlagern vs. Bearbeiten</h4>
+          <p>Dieser Überlagerungsansatz wird von im Grunde jedem PDF-Anmerkungstool verwendet, nicht nur von diesem – den Originaltext eines PDFs wirklich zu bearbeiten (einen bereits gedruckten Satz auf der Seite zu ändern) erfordert Spezialsoftware und ist oft gar nicht möglich, wenn die Originaldatei keine bearbeitbaren Textebenen enthält. Context tut stattdessen etwas Einfacheres und viel breiter Nützliches: Es fügt ein neues, separates Textstück hinzu, das optisch über der Seite liegt – genau das, was du für Beschriftungen, Notizen, Initialen oder das Ausfüllen einer leeren Zeile in einem Formular willst.</p>
+
+          <h4>Punkte, nicht Pixel</h4>
+          <p>PDF-Seiten messen Positionen in Punkten (1/72 Zoll), nicht in den Bildschirmpixeln, die du mit Finger oder Cursor ziehst. Context übernimmt diese Umrechnung für dich – was du auf dem Bildschirm siehst, bei jeder Zoomstufe, entspricht immer der richtigen festen Position im eigentlichen PDF, sodass ein Textfeld, das du oben auf einer Seite platzierst, oben bleibt, unabhängig davon, auf welchem Gerät oder mit welcher Zoomstufe jemand anderes es später öffnet.</p>
+
+          <h4>Was beim Herunterladen passiert</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Die richtige Schriftgröße und Platzierung für verschiedene Dokumente wählen</h3>
+          <p>Die richtige Textgröße und -position hängt ganz davon ab, welche Art von Dokument du beschriftest und wer es als Nächstes liest. Hier eine Denkweise nach Szenarien.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Dokumenttyp</th><th>Empfohlenes Vorgehen</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Dokumenttyp">Leere Zeilen eines Formulars ausfüllen</td><td data-label="Empfohlenes Vorgehen">An die Größe der gedruckten Beschriftung anpassen, knapp über der Linie platzieren</td></tr>
+              <tr><td data-label="Dokumenttyp">Eine Notiz oder einen Kommentar hinzufügen</td><td data-label="Empfohlenes Vorgehen">Kontrastfarbe verwenden, klar vom Originaltext abgesetzt halten</td></tr>
+              <tr><td data-label="Dokumenttyp">Unterschreiben oder abzeichnen</td><td data-label="Empfohlenes Vorgehen">Etwas größer als der umgebende Text, auf der Linie zentriert</td></tr>
+              <tr><td data-label="Dokumenttyp">Ein bildlastiges PDF beschriften</td><td data-label="Empfohlenes Vorgehen">Einheitliche Größe bei jeder Beschriftung auf jeder Seite</td></tr>
+              <tr><td data-label="Dokumenttyp">Formelle oder rechtliche Dokumente</td><td data-label="Empfohlenes Vorgehen">Der Schriftgröße des Dokuments selbst eng folgen, Schwarz verwenden</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Den vorhandenen Text des Dokuments angleichen</h4>
+          <p>Das Wichtigste, das eine hinzugefügte Zeile gewollt statt aufgeklebt wirken lässt, ist, ihre Größe an das anzupassen, was in der Nähe bereits gedruckt ist. Sind die Beschriftungen des Formulars mit etwa 11–12 pt gedruckt, wirkt deine Antwort mit 24 pt fehl am Platz, selbst bei perfekter Position. Zoome zuerst in den umgebenden gedruckten Text, verschaffe dir ein ungefähres Gefühl für seine Größenordnung und wähle eine ähnliche Größe – Context merkt sich die zuletzt verwendete Größe, sodass jedes folgende Feld automatisch mit derselben Größe beginnt, sobald du sie einmal angepasst hast.</p>
+
+          <h4>Innerhalb der Linien bleiben – buchstäblich</h4>
+          <p>Leere Zeilen und Kästchen in Formularen sind meist für eine bestimmte Textmenge in einer bestimmten Größe bemessen. Überlege, bevor du eine lange Antwort in eine kurze Zeile tippst, ob sie etwas schrumpfen muss, damit sie passt, denn Text, der über das Ende einer gedruckten Linie hinausläuft, sieht für jeden, der das fertige Dokument später liest, wie ein Fehler aus, obwohl technisch nichts defekt ist.</p>
+
+          <h4>Eine Farbe wählen, die „hinzugefügt“ wirkt, nicht „versteckt“</h4>
+          <p>Schwarzer Text ist meist die sicherste Standardwahl, da er der Art entspricht, wie die meisten Formulare und Dokumente gedruckt sind, und nicht als Ergänzung auffällt. Farbiger Text ist wirklich nützlich für Notizen, Korrekturen oder alles, was sich bewusst vom Originalinhalt abheben soll – achte nur darauf, dass die gewählte Farbe echten Kontrast zur Seite dahinter hat; helle Farben wie Gelb gehen auf einer weißen Seite leicht verloren.</p>
+
+          <h4>Rand für Unerwartetes lassen</h4>
+          <p>Text direkt am äußersten Seitenrand zu platzieren birgt das Risiko, dass er abgeschnitten wird, wenn das Dokument später auf einem etwas anderen Papierformat oder mit anderen Randeinstellungen als erwartet gedruckt wird. Ein kleiner Puffer zwischen Text und Seitenrand – und zwischen Text und nahem gedrucktem Inhalt – sorgt dafür, dass das Ergebnis sauber aussieht, egal wie es letztlich gedruckt oder betrachtet wird.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Formulare ausfüllen und Dokumente ohne Drucker unterschreiben</h3>
+          <p>Ausdrucken, unterschreiben, scannen und zurückmailen ist immer noch die Art, wie viel Papierkram erledigt wird – und es ist fast immer unnötig. So überspringst du das mit nichts als einem Browser.</p>
+
+          <h4>Die Schleife aus Drucken, Unterschreiben und Scannen ersetzen</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>Getippte Unterschriften und Initialen</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>Antworten an gedruckten Beschriftungen ausrichten</h4>
+          <p>Die meisten Formulare drucken eine Beschriftung („Name:“, „Datum:“) gefolgt von einer leeren Zeile oder einem Kasten für die Antwort. Ziehe dein Textfeld so, dass es knapp über der Linie sitzt statt darauf – Text direkt auf einer gedruckten Linie wird schwer lesbar, sobald sich beides überlappt, während knapp darüber schwebender Text klar lesbar bleibt und für jeden, der die fertige Seite ansieht, weiterhin als „die Antwort auf diese Beschriftung“ erkennbar ist.</p>
+
+          <h4>Vor dem Senden nochmals prüfen</h4>
+          <p>Sobald jedes Feld ausgefüllt ist, lohnt es sich, jede Seite in echter Größe durchzugehen (nicht nur die Miniatur, in die du getippt hast), um zu bestätigen, dass sich nichts überlappt, nichts über den Rand einer Linie hinausläuft und jedes Pflichtfeld wirklich ausgefüllt wurde – ein Textfeld, das beim aktiven Bearbeiten gut aussieht, kann beim Betrachten der fertigen Seite im Ganzen gelegentlich etwas anders sitzen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Mit mehrseitigen PDFs arbeiten: Einheitlichkeit und seitenweises Bearbeiten</h3>
+          <p>Mehrseitige Verträge, Berichte und Formulare erfordern einen etwas anderen Ansatz als eine schnelle Einzelseiten-Bearbeitung – vor allem, um die Einheitlichkeit beim Durchgehen des Dokuments zu wahren.</p>
+
+          <h4>Zwischen Seiten wechseln, ohne die Orientierung zu verlieren</h4>
+          <p>Die Seitennavigation von Context bindet jedes Textfeld an die Seite, auf der es platziert wurde. Das Wechseln zwischen Seiten, um verschiedene Abschnitte eines langen Dokuments auszufüllen, riskiert also keine Vermischung – ein auf Seite 3 hinzugefügtes Feld bleibt auf Seite 3, egal wie viele andere Seiten du vor dem Herunterladen besuchst.</p>
+
+          <h4>Größe und Farbe über Seiten hinweg einheitlich halten</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>Einen Durchgang planen, bevor du zu tippen beginnst</h4>
+          <p>Bei längeren Dokumenten lohnt sich ein schneller erster Durchgang durch alle Seiten – nur ansehen, noch nicht tippen –, um den vollen Umfang dessen zu sehen, was auszufüllen ist, bevor du dich auf Größe und Position auf der ersten Seite festlegst. Eine Größe, die auf einer lockeren ersten Seite passt, kann sich auf einer dichteren Seite weiter hinten als zu groß erweisen, und das früh zu bemerken erspart es, zurückzugehen und bereits platzierte Felder anzupassen.</p>
+
+          <h4>Das ganze Dokument vor dem Herunterladen prüfen</h4>
+          <p>Da jede Seite unabhängig gerendert und bearbeitet wird, konzentriert man sich leicht auf die Seite, an der man gerade arbeitet, und verliert das Dokument als Ganzes aus den Augen. Blättere vor dem Herunterladen von Anfang an durch – nur so fällt eine komplett übersprungene Seite auf oder ein Feld, das anders aussieht als die anderen, ohne dass du es beim Durcharbeiten der Datei bemerkt hast.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Häufige Fehler beim Hinzufügen von Text zu PDFs (und wie du sie vermeidest)</h3>
+          <p>Die meisten Probleme mit einem bearbeiteten PDF gehen auf eine kleine Gruppe leicht zu übersehender Fehler zurück. Darauf solltest du achten.</p>
+
+          <h4>Text, der nach dem Herauszoomen zu klein ist</h4>
+          <p>Man tippt leicht in einer Größe, die beim Hineinzoomen und Fokussieren auf ein einzelnes Feld völlig lesbar aussieht, nur um festzustellen, dass sie deutlich klein ist, sobald die Seite in normaler Vollgröße angezeigt wird. Zoome wieder heraus (oder prüfe das fertige PDF in einem separaten Viewer), bevor du herunterlädst, um zu bestätigen, dass jedes Feld in echter Größe lesbar ist, nicht nur in der Bearbeitungsgröße.</p>
+
+          <h4>Text über vorhandenen Inhalt statt daneben platzieren</h4>
+          <p>Ein Textfeld direkt auf gedruckten Text oder eine Linie zu setzen macht beides schwer lesbar, sobald sie sich überlappen – der darunterliegende Inhalt weicht nicht aus. Schiebe neuen Text lieber in wirklich freien Platz in der Nähe, statt ihn direkt auf etwas zu stapeln, das dort schon gedruckt ist.</p>
+
+          <h4>Die falsche Seite bearbeiten</h4>
+          <p>In einem längeren Dokument verliert man leicht den Überblick, welche Seite gerade aktiv ist, besonders nach dem Zoomen oder Scrollen, und fügt am Ende Text auf einer ganz falschen Seite hinzu. Prüfe den Seitenindikator, bevor du bei einem Dokument mit mehr als einer Seite ein Feld hinzufügst, besonders direkt nach dem Wechsel auf eine neue Seite.</p>
+
+          <h4>Eine Farbe mit schlechtem Kontrast verwenden</h4>
+          <p>Helle Farben – besonders blasses Gelb – können in Bearbeitungsgröße auf einem hellen Bildschirm gut aussehen und dann schwer lesbar werden, sobald sie gedruckt oder auf einem anderen Display betrachtet werden. Bleib bei Farben mit starkem Kontrast zu Weiß, wie Schwarz oder einer gesättigten Farbe, für alles, was tatsächlich gelesen und nicht nur bemerkt werden soll.</p>
+
+          <h4>Vergessen, die Datei vor dem Teilen umzubenennen</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -1998,21 +2379,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>Erste Schritte mit</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/de/convert/">Convert</a>
+          <a class="footer-dash-link" href="/de/compress/">Compress</a>
+          <a class="footer-dash-link" href="/de/combine/">Combine</a>
+          <a class="footer-dash-link" href="/de/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/de/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/de/congify/">Congify</a>
+          <a class="footer-dash-link" href="/de/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/de/codify/">Codify</a>
+          <a class="footer-dash-link" href="/de/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/de/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/de/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2029,8 +2410,8 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/context/context-tool.js?v=116" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/context/context-tool.js?v=167" defer></script>
 </body>
 </html>

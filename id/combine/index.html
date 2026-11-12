@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/combine/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/combine/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/combine/">
-<script src="/shared/i18n/id.js?v=8"></script>
+<script src="/shared/i18n/id.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Combine – Gabungkan Gambar atau PDF Menjadi Satu PDF – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#FF6961); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -672,7 +672,7 @@ html[data-theme="dark"] .combine-file-index{
     </button>
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Hapus semua file">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Klik</span><span class="tool-drop-or-drop"> atau letakkan </span><span class="tool-drop-rest">PDFs or JPG images</span></div>
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Klik</span><span class="tool-drop-or-drop"> atau letakkan </span><span class="tool-drop-rest">PDF atau gambar JPG</span></div>
     <input type="file" id="cbInput" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Lanjutkan dari terakhir Anda berhenti</button>
 
@@ -681,37 +681,37 @@ html[data-theme="dark"] .combine-file-index{
 
       <div class="combine-options" id="cbOptions">
         <div class="combine-option">
-          <span class="bc-label">Image page size</span>
-          <button type="button" class="option-change-btn" id="cbSizeBtn" title="Image page size">
-            <span class="option-change-btn-label" id="cbSizeBtnLabel">Fit to A4</span>
+          <span class="bc-label">Ukuran halaman gambar</span>
+          <button type="button" class="option-change-btn" id="cbSizeBtn" title="Ukuran halaman gambar">
+            <span class="option-change-btn-label" id="cbSizeBtnLabel">Sesuaikan ke A4</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
-          <span class="bc-label">Page orientation</span>
-          <button type="button" class="option-change-btn" id="cbOrientBtn" title="Page orientation">
-            <span class="option-change-btn-label" id="cbOrientBtnLabel">Portrait</span>
+          <span class="bc-label">Orientasi halaman</span>
+          <button type="button" class="option-change-btn" id="cbOrientBtn" title="Orientasi halaman">
+            <span class="option-change-btn-label" id="cbOrientBtnLabel">Potret</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
           <span class="bc-label">Margin</span>
-          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
-            <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
+          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Margin halaman">
+            <span class="option-change-btn-label" id="cbMarginBtnLabel">Tanpa margin</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
-          <span class="bc-label">Image quality</span>
-          <button type="button" class="option-change-btn" id="cbQualityBtn" title="Image quality">
-            <span class="option-change-btn-label" id="cbQualityBtnLabel">Original</span>
+          <span class="bc-label">Kualitas gambar</span>
+          <button type="button" class="option-change-btn" id="cbQualityBtn" title="Kualitas gambar">
+            <span class="option-change-btn-label" id="cbQualityBtnLabel">Asli</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option combine-option-name">
-          <span class="bc-label">Combined file name</span>
+          <span class="bc-label">Nama berkas gabungan</span>
           <div class="bc-name-field">
-            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Combined file name" spellcheck="false" autocomplete="off">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Nama berkas gabungan" spellcheck="false" autocomplete="off">
             <span class="bc-name-ext">.pdf</span>
           </div>
         </div>
@@ -736,7 +736,109 @@ html[data-theme="dark"] .combine-file-index{
       <li><a href="#gr-article-4">4. Kapan Menggabungkan dan Kapan Memisahkan File</a></li>
       <li><a href="#gr-article-5">5. Kesalahan Penggabungan yang Umum (dan Cara Menghindarinya)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="combine"></div>
+    <div class="gr-inline" data-tool="combine">
+<div class="gr-article" id="gr-article-1"><h3>1. Cara Menggabungkan PDF dengan Urutan yang Benar Setiap Saat</h3>
+          <p>Seluruh tugas Combine tampak sederhana — mengambil beberapa file dan menggabungkannya menjadi satu PDF — tetapi detail yang paling sering membuat orang tersandung bukan penggabungannya, melainkan memastikan halaman berada dalam urutan yang Anda maksudkan.</p>
+
+          <h4>Bagaimana Combine menentukan urutan halaman</h4>
+          <p>Combine merges your files in the exact order shown in its list, top to bottom. It doesn't try to guess a "correct" order from file names, dates, or content, because there's no universal rule for what you want. The list is also fully in your hands: drag any file up or down (by touch on a phone) and the merged PDF follows. PDFs are added as they are, and every JPG or PNG becomes one page.</p>
+
+          <h4>Mengapa nama file bisa menipu</h4>
+          <p>A common assumption is that files will merge in alphabetical or numerical order automatically. If your file picker happens to list them that way and you select them all at once, the list often starts in that order, but that's a side effect of the picker, not a promise. Files added one at a time land in the order you added them, whatever their names say. Either way, the list is what counts, and you can fix it by dragging.</p>
+
+          <h4>Pemeriksaan awal yang andal sebelum menggabungkan</h4>
+          <p>Each file in the list shows a preview of its page, and the list is the real order the merge will use. If something's out of place, drag it to the right spot. This thirty-second check is far faster than downloading a merged PDF, discovering page 4 is actually supposed to be page 2, and starting over.</p>
+
+          <h4>Menamai file agar urutan anti-salah</h4>
+          <p>If you regularly merge multi-file sets — scanned pages, multi-part reports, sequential chapters — prefix the file names with numbers: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Adding them all at once will then usually give you the right order from the start, and any stragglers are a quick drag away.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Combine untuk Lamaran Kerja: Surat Lamaran, CV, Portofolio</h3>
+          <p>Lamaran kerja dan magang adalah salah satu alasan paling umum orang menggunakan alat penggabung PDF, dan struktur yang tepat benar-benar dapat memengaruhi bagaimana lamaran Anda diterima.</p>
+
+          <h4>Mengapa pemberi kerja lebih suka satu PDF daripada beberapa lampiran</h4>
+          <p>Manajer perekrutan atau perekrut sering meninjau puluhan hingga ratusan lamaran, kerap di ponsel atau dengan membaca sekilas di sela rapat. Lamaran yang datang sebagai tiga atau empat lampiran terpisah (surat lamaran, CV, portofolio, referensi) memaksa mereka membuka dan mengurus banyak file hanya untuk mendapat gambaran lengkap, dan mudah bagi satu lampiran terlewat, salah simpan, atau tidak dibuka sama sekali. Satu PDF yang tertata baik menghilangkan hambatan itu sepenuhnya — satu klik membuka semuanya, dalam urutan yang Anda maksudkan untuk dibaca.</p>
+
+          <h4>Urutan yang cocok untuk kebanyakan lamaran</h4>
+          <p>Urutan bawaan yang masuk akal: surat lamaran dahulu (paling singkat dan memberi konteks), CV kedua (inti yang paling diinginkan kebanyakan peninjau), lalu materi pendukung — contoh portofolio, sertifikat, referensi — terakhir. Ini mencerminkan cara kebanyakan orang secara alami ingin membaca lamaran: konteks, lalu isi, lalu bukti pendukung, bukan memulai dengan portofolio sebelum tahu posisi apa yang dilamar.</p>
+
+          <h4>Menggabungkan file yang awalnya berformat berbeda</h4>
+          <p>It's common for a cover letter to exist as a Word-exported PDF, a resume as a separate PDF, and portfolio samples as image files (photos of physical work, screenshots of digital projects, scanned certificates). Combine takes all of that in one go: drop the PDFs and the JPG or PNG images together, and each image becomes its own page. Only images in other formats, such as WEBP or HEIC, need a quick trip through Convert first.</p>
+
+          <h4>Menjaga ukuran file tetap wajar</h4>
+          <p>Portfolio images, especially camera photos of physical work or high-resolution screenshots, can be unnecessarily large. Switch the image quality option to Smaller or Smallest and Combine shrinks the images inside the PDF, showing the new size of each file as you go. A large, slow-to-open attachment is a small but real point of friction for anyone reviewing it under time pressure.</p>
+
+          <h4>Memeriksa ulang sebelum mengirim</h4>
+          <p>Setelah digabung, buka PDF akhir dan gulir sekali dari awal sampai akhir. Ini menangkap halaman yang tidak berurutan, versi draf yang tidak sengaja ikut, atau gambar portofolio yang tidak terkonversi seperti yang diharapkan — kesalahan kecil yang tak terlihat sampai Anda benar-benar melihat, dan jauh lebih memalukan jika baru ditemukan setelah pemberi kerja membukanya.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Menggabungkan Dokumen Pindaian Tanpa Kehilangan Urutan Halaman</h3>
+          <p>Berkas pindaian — kontrak, formulir, dokumen identitas, surat multi-halaman — membawa tantangan urutan tersendiri, terutama karena cara pemindaian itu sendiri biasanya berlangsung.</p>
+
+          <h4>Mengapa halaman pindaian lebih sering tidak berurutan daripada file lain</h4>
+          <p>Many scanners and scanning apps save each page as a separate file with a generic, auto-generated name (scan001.pdf, IMG_2024.jpg, and so on), sometimes numbered by the order pages were physically fed into the scanner and sometimes not. If you scanned a stack of pages out of physical order, or a multi-function printer numbered them unexpectedly, the file names won't reliably reflect the document's true reading order, so a list sorted by name can silently produce a document with pages out of sequence.</p>
+
+          <h4>Pendekatan teraman: periksa isi, bukan hanya nama file</h4>
+          <p>Before merging, glance at each page's preview in the list rather than trusting the file name alone. It only takes a few seconds to confirm page one is really the top of the document and page two follows it, and it's the most reliable way to avoid sending a scrambled document to a bank, government office, or landlord.</p>
+
+          <h4>Pindaian campuran: sebagian halaman difoto, sebagian dipindai</h4>
+          <p>It's common to have a proper scan for most pages and a phone photo for one or two (a page that didn't fit on the scanner bed, or was scanned later as an afterthought). Combine takes PDFs and JPG or PNG images side by side, so this isn't a problem technically. A photographed page often looks different in lighting and framing from a true scan, though, so if the document's appearance matters, re-scan the odd one out.
+
+          <h4>Sideways or upside-down pages</h4>
+          <p>Phone photos and scans often come in rotated. Use the rotate button on that file to turn the picture a quarter at a time; the page keeps its shape and the previews update straight away, so you can see the fix before you download.</p></p>
+
+          <h4>Kontrak multi-halaman dan halaman tanda tangan</h4>
+          <p>Untuk kontrak atau formulir dengan halaman tanda tangan, halaman itu harus berada di posisi yang tepat terhadap bagian lain dokumen, karena halaman tanda tangan yang digabung ke tempat yang salah dapat membuat dokumen hukum tampak tidak sah atau tidak lengkap. Perlakukan ini sebagai kasus berat untuk pemeriksaan pratinjau sebelum menggabungkan di atas — inilah situasi di mana lima detik melihat daftar pratinjau berurutan menyelamatkan Anda dari dokumen yang harus ditandatangani dan dikirim ulang.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Kapan Menggabungkan dan Kapan Memisahkan File</h3>
+          <p>Menggabungkan semuanya menjadi satu PDF tidak selalu pilihan yang lebih baik — kadang file terpisah benar-benar lebih melayani penerima, dan ada baiknya tahu Anda berada dalam situasi yang mana.</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situasi</th><th>Gabungkan atau pisahkan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situasi">Lamaran atau laporan multi-halaman yang dibaca berurutan</td><td data-label="Gabungkan atau pisahkan">Combine</td></tr>
+              <tr><td data-label="Situasi">Platform secara eksplisit meminta satu PDF</td><td data-label="Gabungkan atau pisahkan">Combine</td></tr>
+              <tr><td data-label="Situasi">Penerima perlu menindaklanjuti tiap file secara terpisah</td><td data-label="Gabungkan atau pisahkan">Pisahkan</td></tr>
+              <tr><td data-label="Situasi">Sekumpulan besar file referensi yang tidak terkait</td><td data-label="Gabungkan atau pisahkan">Pisahkan, atau ZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Kapan menggabungkan jelas pilihan yang tepat</h4>
+          <p>Apa pun yang dimaksudkan dibaca dalam urutan tertentu — lamaran multi-halaman, kontrak pindaian, laporan dengan pendahuluan diikuti data pendukung — sangat diuntungkan menjadi satu file, karena menjamin pembaca menemui semuanya dalam urutan yang Anda maksudkan dan tidak bisa tanpa sengaja membuka halaman di luar urutan atau melewatkan sesuatu. Di mana pun formulir atau platform secara eksplisit meminta "satu PDF" juga keputusan mudah: gabungkan dan kirim persis seperti yang diminta.</p>
+
+          <h4>Kapan file terpisah lebih melayani penerima</h4>
+          <p>Jika penerima perlu menindaklanjuti dokumen secara terpisah — misalnya, meneruskan hanya faktur ke bagian akuntansi sambil menyimpan surat jalan untuk arsipnya sendiri — menggabungkannya menjadi satu file justru mempersulit pekerjaan mereka, karena harus mengekstrak atau mencetak ulang bagian yang dibutuhkan saja. Demikian pula, jika Anda mengirim beberapa dokumen yang benar-benar tidak terkait kepada seseorang yang akan mengarsipkannya di tempat berbeda, file terpisah memungkinkan mereka menangani masing-masing sesuai kebutuhan, alih-alih berkutat dengan PDF gabungan.</p>
+
+          <h4>Koleksi besar materi referensi</h4>
+          <p>Jika Anda mengirim sekumpulan besar gambar atau dokumen yang berkaitan longgar dan tidak dimaksudkan dibaca berurutan — misalnya banyak foto referensi — arsip ZIP berisi file terpisah bisa lebih berguna daripada satu PDF raksasa, karena penerima dapat menelusuri dan membuka item satu per satu alih-alih menggulir satu dokumen sangat besar untuk menemukan satu foto.</p>
+
+          <h4>Cara cepat memutuskan</h4>
+          <p>Tanyakan apakah file-file itu mewakili satu hal utuh yang dibaca dari awal sampai akhir (gabungkan), atau beberapa hal independen yang kebetulan dikirim bersama (pisahkan, atau ZIP). Kebanyakan lamaran kerja, kontrak, dan dokumen pindaian multi-halaman jelas masuk kategori pertama; kebanyakan materi referensi, hasil kerja massal, dan dokumen yang bisa ditindaklanjuti sendiri-sendiri masuk kategori kedua.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Kesalahan Penggabungan yang Umum (dan Cara Menghindarinya)</h3>
+          <p>Combine adalah alat sederhana, tetapi segelintir kesalahan yang bisa dihindari menyebabkan sebagian besar frustrasi yang dialami orang.</p>
+
+          <h4>Mengandalkan nama file untuk urutan, bukan memeriksa pratinjau</h4>
+          <p>File names don't always reflect the order you want, especially for scans and downloads with auto-generated names. Look at the list before you download rather than assuming it came out right.</p>
+
+          <h4>Mencampur dokumen tak terkait dalam satu file "demi kemudahan"</h4>
+          <p>Combining unrelated documents just to have fewer files often backfires: the recipient has to scroll through a large merged file to find the one section they need. Reserve combining for documents that belong together as one read.</p>
+
+          <h4>Tidak memeriksa file akhir sebelum mengirim</h4>
+          <p>Open the merged PDF and skim it once before it goes anywhere important. That catches an out-of-order page, a duplicated document, or a page that didn't render the way you expected.</p>
+
+          <h4>Leaving a page sideways</h4>
+          <p>A photo taken with the phone turned, or a page scanned the wrong way up, ends up sideways in the merged PDF and is a hassle to fix afterwards. Rotate it in the list before you download; the preview shows the result at once.</p>
+
+          <h4>Mengirim file gabungan yang terlalu besar tanpa perlu</h4>
+          <p>Merging several already-large PDFs or high-resolution scans produces a combined file that inherits all of their weight. Before downloading, set the image quality to Smaller or Smallest and check the size shown on each file. A slow-to-open, oversized PDF is a common complaint from recipients on slower connections or older devices.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -758,21 +860,21 @@ html[data-theme="dark"] .combine-file-index{
       <h3>Memulai dengan</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/id/convert/">Convert</a>
+          <a class="footer-dash-link" href="/id/compress/">Compress</a>
+          <a class="footer-dash-link" href="/id/combine/">Combine</a>
+          <a class="footer-dash-link" href="/id/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/id/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/id/congify/">Congify</a>
+          <a class="footer-dash-link" href="/id/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/id/codify/">Codify</a>
+          <a class="footer-dash-link" href="/id/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/id/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/id/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -789,8 +891,8 @@ html[data-theme="dark"] .combine-file-index{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/combine/combine-tool.js?v=73" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/combine/combine-tool.js?v=167" defer></script>
 </body>
 </html>

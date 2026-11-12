@@ -2010,40 +2010,6 @@ html[data-theme="light"] .engine-status-error{
   line-height:1.7;
 }
 
-.golden-rules-link{
-  display:block;
-  margin:24px auto 0;
-  background:none;
-  border:none;
-  padding:0;
-  color:var(--accent2);
-  font-family:inherit;
-  font-size:15px;
-  font-weight:600;
-  text-align:center;
-  text-decoration:underline;
-  text-underline-offset:3px;
-  cursor:pointer;
-}
-
-.golden-rules-link-inline{
-  color:var(--accent2);
-  font-weight:600;
-  text-decoration:underline;
-  text-underline-offset:3px;
-  cursor:pointer;
-}
-
-.golden-rules-link-inline:hover,
-.golden-rules-link-inline:focus-visible{
-  color:var(--text);
-}
-
-.golden-rules-link:hover,
-.golden-rules-link:focus-visible{
-  color:var(--text);
-}
-
 /* ===== Cleanly-specific (exif) tool CSS ===== */
 /* ===== EXIF STRIPPER TAB ===== */
 .exif-file-list{
@@ -3307,9 +3273,15 @@ html[data-theme="dark"] video{
   gap:12px;
   border-radius:16px;
   border:1px solid var(--border-strong);
-  background:var(--bg);
+  background:#1d2436;
   color:var(--text);
 }
+html[data-theme="light"] .bc-color-panel{ background:#e4e9f5; }
+.bc-color-popover{
+  position:fixed;
+  z-index:100000;
+}
+.bc-color-popover[hidden]{ display:none; }
 .bc-cp-swatches{
   display:grid;
   grid-template-columns:repeat(6, 1fr);
@@ -3576,8 +3548,35 @@ ins.adsbygoogle{ max-width:100%; overflow:hidden; }
   .bc-hover-reveal{ opacity:1; pointer-events:auto; }
 }
 
-/* ===== Golden Rules articles shown on each tool page, filled by
-   shared/site.js (bcFillGoldenRules); the topic list links to them. ===== */
+/* ===== .bc-paid-btn — the one "paid version" button. Every place that
+   will offer the paid version uses this class plus data-bc-paid, so the
+   link can later be wired in one spot. While aria-disabled="true" it is
+   an unavailable control: dashed outline, no fill, no pointer. Geometry
+   (size, padding, radius) stays with the local class it sits next to. */
+.bc-paid-btn{
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.35);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+.bc-paid-btn:hover{ background:rgba(255,255,255,.45); }
+html[data-theme="dark"] .bc-paid-btn{
+  border-color:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .bc-paid-btn:hover{ background:rgba(0,0,0,.35); }
+.bc-paid-btn[aria-disabled="true"],
+.bc-paid-btn[aria-disabled="true"]:hover,
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"],
+html[data-theme="dark"] .bc-paid-btn[aria-disabled="true"]:hover{
+  background:transparent;
+  border:1px dashed currentColor;
+  color:inherit;
+  cursor:default;
+}
+
+/* ===== Golden Rules articles on each tool page; the topic list links to them. ===== */
 .gr-topics-lead{ margin:20px 0 6px; }
 .gr-topics{
   list-style:none;
@@ -3711,17 +3710,17 @@ html[data-theme="light"] .gr-buddy-bubble{
   .gr-buddy-face, .gr-buddy-face span.pop, .av-eyes, .av-hand, .av-conf, .av-point, .gr-buddy.talk .av-mouth, .gr-say.typing .av-mouth, .gr-say-btn, .gr-say-rface, .gr-buddy-text.swap, .gr-buddy-text::after{ animation:none; }
   .gr-buddy-spin, .gr-buddy.show .gr-buddy-spin{ transform:none; transition:opacity .25s; }
 }
-.gr-inline[data-tool="convert"], .golden-rules-articles[data-tool="convert"]{ --gr-accent:#B84CFF; }
-.gr-inline[data-tool="compress"], .golden-rules-articles[data-tool="compress"]{ --gr-accent:#3FBFE8; }
-.gr-inline[data-tool="combine"], .golden-rules-articles[data-tool="combine"]{ --gr-accent:#FF6961; }
-.gr-inline[data-tool="exif"], .golden-rules-articles[data-tool="exif"]{ --gr-accent:#7ED321; }
-.gr-inline[data-tool="context"], .golden-rules-articles[data-tool="context"]{ --gr-accent:#F6D44A; }
-.gr-inline[data-tool="colorfy"], .golden-rules-articles[data-tool="colorfy"]{ --gr-accent:#FF8A4C; }
-.gr-inline[data-tool="gif"], .golden-rules-articles[data-tool="gif"]{ --gr-accent:#22D3D0; }
-.gr-inline[data-tool="coudio"], .golden-rules-articles[data-tool="coudio"]{ --gr-accent:#18C98A; }
-.gr-inline[data-tool="codify"], .golden-rules-articles[data-tool="codify"]{ --gr-accent:#C81C86; }
-.gr-inline[data-tool="comprio"], .golden-rules-articles[data-tool="comprio"]{ --gr-accent:#3B6CF6; }
-.gr-inline[data-tool="convido"], .golden-rules-articles[data-tool="convido"]{ --gr-accent:#B84CFF; }
+.gr-inline[data-tool="convert"]{ --gr-accent:#B84CFF; }
+.gr-inline[data-tool="compress"]{ --gr-accent:#3FBFE8; }
+.gr-inline[data-tool="combine"]{ --gr-accent:#FF6961; }
+.gr-inline[data-tool="exif"]{ --gr-accent:#7ED321; }
+.gr-inline[data-tool="context"]{ --gr-accent:#F6D44A; }
+.gr-inline[data-tool="colorfy"]{ --gr-accent:#FF8A4C; }
+.gr-inline[data-tool="gif"]{ --gr-accent:#22D3D0; }
+.gr-inline[data-tool="coudio"]{ --gr-accent:#18C98A; }
+.gr-inline[data-tool="codify"]{ --gr-accent:#C81C86; }
+.gr-inline[data-tool="comprio"]{ --gr-accent:#3B6CF6; }
+.gr-inline[data-tool="convido"]{ --gr-accent:#B84CFF; }
 .gr-swatch{ display:inline-block; width:16px; height:16px; margin-right:8px; border:2px solid rgba(160,160,160,.9); border-radius:50%; vertical-align:-3px; }
 .gr-burst{ position:absolute; inset:0; pointer-events:none; }
 .gr-burst i{ position:absolute; left:50%; top:50%; width:7px; height:7px; margin:-3px 0 0 -3px; border-radius:2px; background:var(--c); opacity:0; animation:gr-burst .9s cubic-bezier(.15,.7,.3,1) forwards; }
@@ -3813,8 +3812,6 @@ html[data-theme="light"] .gr-prize-name{ color:#1d2436; }
 .gr-toc a:hover{ text-decoration:none; background:rgba(128,128,128,.12); }
 .gr-toc-title{ display:block; font-size:16px; font-weight:800; }
 .gr-toc-note{ display:block; margin-top:2px; font-size:14px; font-weight:400; opacity:.75; }
-
-.golden-rules-body table,
 .gr-article table{
   width:100%;
   margin:6px 0 22px;
@@ -3828,15 +3825,12 @@ html[data-theme="light"] .gr-prize-name{ color:#1d2436; }
   line-height:1.5;
   text-align:left;
 }
-.golden-rules-body th,
-.golden-rules-body td,
 .gr-article th,
 .gr-article td{
   padding:10px 16px;
   text-align:left;
   vertical-align:top;
 }
-.golden-rules-body th,
 .gr-article th{
   background:rgba(128,128,128,.14);
   font-weight:800;
@@ -3844,11 +3838,8 @@ html[data-theme="light"] .gr-prize-name{ color:#1d2436; }
   letter-spacing:.04em;
   text-transform:uppercase;
 }
-.golden-rules-body td + td,
-.golden-rules-body th + th,
 .gr-article td + td,
 .gr-article th + th{ border-left:1px solid rgba(128,128,128,.22); }
-.golden-rules-body tbody tr + tr td,
 .gr-article tbody tr + tr td{ border-top:1px solid rgba(128,128,128,.22); }
 
 .gr-chart{
@@ -3882,8 +3873,6 @@ html[data-theme="light"] .gr-prize-name{ color:#1d2436; }
   .gr-bar-row{ grid-template-columns:58px 1fr var(--val); gap:8px; font-size:13px; }
 }
 @media (max-width:600px){
-  .golden-rules-body th,
-  .golden-rules-body td,
   .gr-article th,
   .gr-article td{ padding:8px 10px; }
 }

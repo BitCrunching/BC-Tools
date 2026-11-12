@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/colorfy/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/colorfy/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/colorfy/">
-<script src="/shared/i18n/pl.js?v=8"></script>
+<script src="/shared/i18n/pl.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Colorfy – Wybierz kolor z dowolnego obrazu – BC Tools">
@@ -74,7 +74,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
 
@@ -800,7 +800,100 @@ html[data-theme="dark"] .colorfy-palette-name-input{
       <li><a href="#gr-article-4">4. Porównywanie kolorów obok siebie za pomocą wielu próbników</a></li>
       <li><a href="#gr-article-5">5. Częste błędy przy pobieraniu kolorów (i jak ich unikać)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="colorfy"></div>
+    <div class="gr-inline" data-tool="colorfy">
+<div class="gr-article" id="gr-article-1"><h3>1. HEX, RGB, HSB i HSL: co naprawdę oznacza każdy kod koloru</h3>
+          <p>Każdy kolor na ekranie sprowadza się do tych samych wartości światła czerwonego/zielonego/niebieskiego — HEX, RGB, HSB i HSL to tylko cztery różne sposoby zapisu tego samego koloru, każdy dopasowany do innego rodzaju pracy.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Format</th><th>Najlepszy do</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Format">HEX (<code>#FF8A4C</code>)</td><td data-label="Najlepszy do">CSS, narzędzia projektowe, wszędzie tam, gdzie oczekiwany jest jeden zwarty kod</td></tr>
+              <tr><td data-label="Format">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="Najlepszy do">Kod budujący kolory z oddzielnych liczb lub mieszanie/obliczenia na kanałach</td></tr>
+              <tr><td data-label="Format">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="Najlepszy do">Zmiana jasności lub nasycenia koloru przy zachowaniu tego samego odcienia</td></tr>
+              <tr><td data-label="Format">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="Najlepszy do">Przewidywalne rozjaśnianie lub przyciemnianie koloru dla stanów najechania/aktywności</td></tr>
+            </tbody>
+          </table>
+
+          <h4>HEX: zwarta, wszędzie obsługiwana wartość domyślna</h4>
+          <p>Kod HEX pakuje czerwień, zieleń i błękit w jeden sześciocyfrowy ciąg, dlatego jest to format, jakiego domyślnie oczekuje niemal każde narzędzie projektowe, arkusz stylów CSS i edytor obrazów. Jest zwarty i łatwo go wklejać, ale właściwych liczb w nim (pary w systemie szesnastkowym) większość ludzi nie czyta na pierwszy rzut oka tak jak zwykłych liczb dziesiętnych.</p>
+
+          <h4>RGB: te same wartości, rozpisane</h4>
+          <p>RGB zapisuje te same trzy kanały, które koduje HEX, tylko jako trzy zwykłe liczby 0–255 zamiast upakowanych par szesnastkowych — łatwiej się o tym myśli, gdy ręcznie dostosowujesz jeden kanał lub piszesz kod budujący kolor z oddzielnych wartości czerwieni/zieleni/błękitu.</p>
+
+          <h4>HSB i HSL: zbudowane wokół tego, jak kolor faktycznie odbieramy</h4>
+          <p>Oba dzielą kolor na odcień (sam kolor, jako pozycję na kole barw) oraz dwa inne wymiary opisujące, jak jest żywy lub jasny — HSB używa nasycenia i jasności, HSL nasycenia i jasności względnej. Którykolwiek z nich dużo łatwiej ogarnąć, gdy chcesz „ten sam kolor, ale ciemniejszy” albo „ten sam kolor, ale bardziej stonowany”: zostawiasz odcień bez zmian i zmieniasz tylko drugą liczbę, zamiast ręcznie przeliczać trzy osobne kanały RGB.</p>
+
+          <h4>Wybór formatu w Colorfy</h4>
+          <p>Lista formatów w Colorfy dotyczy odczytu każdego próbnika i zapisanego koloru naraz — przełącz na ten, który pasuje do miejsca, gdzie będziesz wklejać (HEX dla CSS, HSB/HSL, jeśli zamierzasz ręcznie dostroić odcień), zamiast samemu konwertować skopiowany kod później.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Dopasowanie koloru ze zrzutu ekranu, zdjęcia lub wzoru projektu</h3>
+          <p>Próba dopasowania koloru na oko — dokładnego błękitu marki, odcienia ze zdjęcia z moodboardu, koloru ze strony konkurencji — z pamięci lub przez zgadywanie kodu HEX rzadko trafia dokładnie. Pobranie próbki rzeczywistego piksela to jedyny sposób na uzyskanie dokładnej wartości.</p>
+
+          <h4>Dlaczego „prawie tak samo” często nie wystarcza</h4>
+          <p>Dwa kolory, które obok siebie wyglądają niemal identycznie, mogą mierzalnie się różnić, gdy porównasz ich rzeczywiste kody — odcień różniący się tylko w jednym kanale RGB jest często niewidoczny dla oka osobno, ale staje się oczywisty, gdy tylko umieścisz go tuż obok prawdziwego wzorca. Próbkowanie całkowicie usuwa zgadywanie: próbnik odczytuje dokładnie to, co jest w pliku, a nie przybliżenie.</p>
+
+          <h4>Praca ze zrzutu ekranu</h4>
+          <p>Zrzut ekranu strony internetowej, aplikacji lub cudzego projektu jest traktowany dokładnie jak każdy inny obraz — wrzuć go, przeciągnij próbnik na dokładny piksel, który chcesz dopasować, i skopiuj kod. To najpewniejszy sposób na pobranie koloru marki lub interfejsu ze wzorca, do którego nie masz oryginalnego pliku źródłowego.</p>
+
+          <h4>Uważaj na artefakty kompresji i oświetlenia</h4>
+          <p>Mocno skompresowany JPEG lub zdjęcie zrobione przy kolorowym/ciepłym oświetleniu może odsunąć rzeczywiste wartości pikseli od „prawdziwego” zamierzonego koloru — prawdziwy kod HEX logo sfotografowanego pod żółtym oświetleniem wnętrza da próbkę nieco cieplejszą, niż logo faktycznie jest. Gdy liczy się dokładność (na przykład dopasowanie oficjalnego koloru marki), wybieraj próbkowanie z czystego zrzutu ekranu lub nieskompresowanego źródła zamiast zdjęcia, kiedy tylko jest dostępne.</p>
+
+          <h4>Próbkowanie więcej niż jednego miejsca dla sprawdzenia spójności</h4>
+          <p>Pojedyncze zdjęcie ma często większą zmienność koloru w rzekomo „jednolitym” obszarze, niż wygląda na pierwszy rzut oka — kompresja JPEG, subtelne gradienty i oświetlenie wprowadzają drobne różnice między pikselami. Użycie dwóch lub trzech próbników w różnych punktach tego samego obszaru, zamiast zaufania jednej próbce, daje lepsze wyczucie, czy patrzysz na prawdziwą zmienność koloru, czy tylko na szum.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Budowanie palety wielokrotnego użytku w trakcie pracy</h3>
+          <p>Paleta zapisanych kolorów w Colorfy istnieje dokładnie na sytuację, gdy wyciągasz z obrazu więcej niż jeden kolor i musisz później wrócić do wszystkich, bez ponownego otwierania pliku i wybierania każdego od zera.</p>
+
+          <h4>Zapisywanie na bieżąco</h4>
+          <p>Kliknięcie „Zapisz” obok dowolnego próbkowanego koloru dodaje go do palety, która pozostaje w Twojej przeglądarce — oddzielnie od samego obrazu, więc jest nadal dostępna przy następnym otwarciu Colorfy, nawet z innym wczytanym obrazem lub bez żadnego. Można trzymać naraz do 20 kolorów, co wystarcza na pełną paletę pobraną z kilku różnych obrazów referencyjnych bez konieczności wcześniejszego kopiowania kodów gdzie indziej.</p>
+
+          <h4>Nazywanie zapisanego koloru</h4>
+          <p>Dwukrotne kliknięcie zapisanego koloru pozwala nadać mu krótką nazwę (do 25 znaków) — przydatne, gdy paleta ma więcej niż kilka pozycji i „trzeci pomarańczowy” przestaje być wiarygodnym sposobem ich odróżniania. Nazwa pojawia się jako podpowiedź po najechaniu, więc same próbki pozostają wizualnie czyste, a jednocześnie łatwo je rozpoznać po nazwie, gdy trzeba.</p>
+
+          <h4>Czyszczenie palety</h4>
+          <p>Usuwanie jednego zapisanego koloru naraz działa tym samym przyciskiem „×”, którego używa każda lista plików na tej stronie. Przytrzymanie Shift podczas klikania tego przycisku czyści natomiast wszystkie zapisane kolory naraz, łącznie z klikniętym — szybsza droga, gdy paleta z ukończonego projektu nie jest już potrzebna i wolisz zacząć następną pustą, niż usuwać każdą pozycję osobno.</p>
+
+          <h4>Kiedy warto trzymać paletę otwartą</h4>
+          <p>Zapisana paleta jest najprzydatniejsza w trwającym projekcie — budowaniu spójnego zestawu kolorów marki lub interfejsu przez kilka sesji — a nie przy jednorazowym sprawdzeniu koloru, gdzie skopiowanie kodu wprost i pójście dalej jest prostsze niż w ogóle zapisywanie.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Porównywanie kolorów obok siebie za pomocą wielu próbników</h3>
+          <p>Jeden próbnik wystarcza do pobrania jednego koloru, ale porównywanie dwóch lub więcej kolorów z tego samego obrazu — sprawdzanie kontrastu, dopasowywanie końców gradientu, próbkowanie palety rozproszonej po jednym zdjęciu — jest znacznie łatwiejsze z kilkoma aktywnymi próbnikami naraz.</p>
+
+          <h4>Dodawanie drugiego (trzeciego lub czwartego) próbnika</h4>
+          <p>Na jednym obrazie może być aktywnych naraz do 4 próbników, każdy ponumerowany, aby wiersz wyniku poniżej łatwo było dopasować do jego kółka na obrazie. Dodaj jeden przyciskiem „+” pod listą próbników lub przytrzymaj Shift i kliknij w dowolnym miejscu obrazu, aby umieścić nowy ponumerowany próbnik dokładnie w tym punkcie — szybsza opcja, gdy już z grubsza wiesz, gdzie chcesz pobrać próbkę.</p>
+
+          <h4>Czytanie wyników razem</h4>
+          <p>Każdy aktywny próbnik ma własny wiersz z własnym kodem i przyciskiem Zapisz, wszystkie widoczne jednocześnie — przydatne do sprawdzenia, czy dwa obszary, które na obrazie wyglądają jak ten sam kolor, faktycznie mają ten sam kod, lub do zbudowania małej wielokolorowej palety z jednego obrazu jednym przejściem zamiast próbkowania, zapisywania i ponownego próbkowania po jednym.</p>
+
+          <h4>Przesuwanie bez dodawania kolejnych</h4>
+          <p>Zwykłe kliknięcie (bez Shift) przesuwa próbnik, który był ostatnio aktywny, zamiast dodawać nowy — przydatne do dostrajania punktu próbki bez usuwania i ponownego dodawania próbnika tylko po to, by go lekko przesunąć. Bezpośrednie przeciąganie próbnika lub użycie strzałek po jego aktywacji działa tak samo przy precyzyjnym dostrajaniu na poziomie pikseli.</p>
+
+          <h4>Kiedy jeden próbnik to nadal właściwy wybór</h4>
+          <p>Przy jednym szybkim pobraniu koloru dodawanie kolejnych próbników to zbędny narzut — przydają się właśnie wtedy, gdy musisz porównać, zestawić lub zebrać więcej niż jeden kolor z tego samego obrazu w jednej sesji.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Częste błędy przy pobieraniu kolorów (i jak ich unikać)</h3>
+          <p>Większość niedokładnych próbek kolorów wynika z kilku możliwych do uniknięcia nawyków, głównie związanych z tym, gdzie dokładnie ląduje próbnik, a nie z błędem samego narzędzia.</p>
+
+          <h4>Próbkowanie dokładnie na krawędzi</h4>
+          <p>Piksel leżący na granicy dwóch kolorów jest często zmieszanym, wygładzonym kolorem pośrednim, a nie czystą próbką żadnej ze stron — łatwo to zrobić zwłaszcza po oddaleniu widoku i kliknięciu blisko konturu kształtu. Przybliż (powiększ podgląd) i celuj w jednolite wnętrze obszaru, który naprawdę chcesz, z dala od jakiejkolwiek krawędzi.</p>
+
+          <h4>Zaufanie mocno skompresowanemu obrazowi</h4>
+          <p>Kompresja JPEG może nieznacznie odsunąć wartości poszczególnych pikseli od oryginalnego koloru, zwłaszcza w ruchliwych lub szczegółowych obszarach zdjęcia — „jednolity” kolorowy obszar może nieść drobny szum między pikselami, którego nie było w oryginalnej scenie. Gdy liczy się dokładność, wybierz PNG lub inne bezstratne źródło zamiast skompresowanego JPEG, jeśli jest dostępne.</p>
+
+          <h4>Nieuwzględnianie własnego ekranu</h4>
+          <p>Kod odczytany przez Colorfy to dokładna wartość zapisana w pliku obrazu — ale to, jak ten kolor faktycznie wygląda, zależy od ekranu, który go wyświetla, a wyświetlacze różnią się kalibracją. Jeśli próbkowany kolor musi dokładnie odpowiadać fizycznemu wzorcowi (materiał drukowany, fizyczny produkt), traktuj próbkowany kod jako dokładny punkt wyjścia i spodziewaj się weryfikacji końcowego wyniku względem samego fizycznego wzorca, a nie tylko tego, jak wygląda na monitorze.</p>
+
+          <h4>Zapominanie, że zapisane kolory przetrwają między obrazami</h4>
+          <p>Ponieważ zapisana paleta nie jest związana z żadnym wczytanym obrazem, łatwo skończyć z kolorami z kilku niepowiązanych projektów wymieszanymi w tej samej palecie, jeśli nie czyścisz jej okresowo. Kliknij z Shift przycisk usuwania dowolnego zapisanego koloru, aby wyczyścić całą paletę naraz przy rozpoczęciu nowego, niepowiązanego projektu, zamiast pozwalać, by stare i nowe kolory się gromadziły.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -822,21 +915,21 @@ html[data-theme="dark"] .colorfy-palette-name-input{
       <h3>Pierwsze kroki z</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pl/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pl/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pl/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pl/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pl/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pl/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pl/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pl/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pl/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pl/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pl/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -853,8 +946,8 @@ html[data-theme="dark"] .colorfy-palette-name-input{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/colorfy/colorfy-tool.js?v=42" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=167" defer></script>
 </body>
 </html>

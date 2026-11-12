@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cleanly/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cleanly/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cleanly/">
-<script src="/shared/i18n/cs.js?v=8"></script>
+<script src="/shared/i18n/cs.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Cleanly – Zdarma odstranění metadat z fotek – BC Tools">
@@ -74,7 +74,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:#7ED321; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -469,7 +469,131 @@
       <li><a href="#gr-article-5">5. Časté chyby lidí v ochraně soukromí u fotek</a></li>
       <li><a href="#gr-article-6">6. Cleanly pro SVG: odstranění metadat editoru, ne EXIF</a></li>
     </ul>
-    <div class="gr-inline" data-tool="exif"></div>
+    <div class="gr-inline" data-tool="exif">
+<div class="gr-article" id="gr-article-1"><h3>1. Co o vás metadata EXIF skutečně prozrazují</h3>
+          <p>Každá fotka z telefonu nebo fotoaparátu nese mnohem víc než samotný obraz. Uvnitř souboru je ukrytý blok metadat — data EXIF — který tiše zaznamenává překvapivé množství podrobností o tom, kdy, kde a jak byla fotka pořízena.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Typ metadat</th><th>Co prozrazuje</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Typ metadat">Poloha GPS</td><td data-label="Co prozrazuje">Přesné místo pořízení fotky, často s přesností na pár metrů</td></tr>
+              <tr><td data-label="Typ metadat">Značka a model zařízení</td><td data-label="Co prozrazuje">Konkrétní použitý fotoaparát nebo telefon</td></tr>
+              <tr><td data-label="Typ metadat">Časové razítko</td><td data-label="Co prozrazuje">Přesné datum a čas, na vteřinu přesně</td></tr>
+              <tr><td data-label="Typ metadat">Nastavení fotoaparátu</td><td data-label="Co prozrazuje">Clona, expoziční čas, ISO, ohnisková vzdálenost</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Poloha: ta nejdůležitější</h4>
+          <p>Pokud byly při pořízení fotky zapnuté služby určování polohy, většina telefonů vloží přesné souřadnice GPS místa, kde snímek vznikl, často s přesností na pár metrů. Kdokoli, kdo originální soubor otevře ve vhodné prohlížečce nebo ho projde čtečkou metadat, může toto místo vykreslit na mapě — což znamená, že fotka pořízená doma, v práci nebo ve škole dítěte může přesně prozradit, kde to místo je, aniž byste kamkoli napsali adresu.</p>
+
+          <h4>Podrobnosti o zařízení</h4>
+          <p>EXIF obvykle obsahuje přesnou značku a model fotoaparátu nebo telefonu, který snímek pořídil, někdy až po konkrétní verzi softwaru. Samo o sobě to vypadá neškodně, ale v kombinaci s dalšími metadaty to přidává další identifikační údaj a v některých souvislostech (inzeráty, anonymní účty) to může být další nitka, která propojí fotku se známými zařízeními konkrétního člověka.</p>
+
+          <h4>Časová razítka</h4>
+          <p>Přesné datum a čas pořízení fotky se zaznamenává na vteřinu přesně, což je přesnější, než si většina lidí uvědomuje — „jen tak“ zveřejněná fotka může prozradit, kdy přesně byl někdo na určitém místě, což je důležité pro každého, kdo přemýšlí o tom, že by se jeho denní rutina nebo místa pobytu daly poskládat ze vzorce zveřejněných fotek v čase.</p>
+
+          <h4>Nastavení fotoaparátu a někdy i víc</h4>
+          <p>Ukládají se i technické údaje jako clona, expoziční čas a ISO, které zajímají fotografy při hodnocení vlastního focení, ale jinak samy o sobě nejsou z hlediska soukromí citlivé. Některá zařízení a editační aplikace navíc podle nastavení vkládají náhled, historii softwaru či úprav nebo i pole s autorským právem či jménem autora — konkrétní pole se liší podle zařízení a aplikace, ale údaje o poloze a časové razítko jsou dvě, které mají z hlediska soukromí největší váhu.</p>
+
+          <h4>Proč to záleží i u „nedůležitých“ fotek</h4>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Jak odstranit metadata před prodejem nebo zveřejněním fotek</h3>
+          <p>Dvě nejčastější situace, kdy data EXIF tiše způsobují skutečné problémy, jsou online prodej věcí a veřejné zveřejňování fotek — v obou případech fotky míří k cizím lidem, a právě tehdy skrytá metadata záleží nejvíc.</p>
+
+          <h4>Prodej na bazarech</h4>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
+
+          <h4>Zveřejňování na sociálních sítích a fórech</h4>
+          <p>Většina velkých sociálních platforem odstraňuje metadata automaticky při nahrání, což je dobrá zpráva, ale ne každá platforma to dělá a přeposlané nebo stažené kopie vaší fotky (snímky obrazovky, uložení, sdílení) tímto odstraněním spolehlivě neprojdou. Pokud je fotka někdy stažena z místa, kde jste ji zveřejnili, a sdílena jinde, veškerá metadata, která přežila původní nahrání, putují s ní. Odstranění metadat ještě před zveřejněním je jediný způsob, jak zaručit, že nikde v řetězci nebudou.</p>
+
+          <h4>Jednoduchý zvyk před zveřejněním</h4>
+          <p>Než nahrajete fotky kamkoli, kde je uvidí lidé, které osobně neznáte — inzerát na bazaru, veřejný příspěvek, fórum, seznamovací profil — nejdřív je protáhněte přes Cleanly. Zabere to vteřiny, funguje to na celou dávku fotek najednou a vytvoří to vizuálně identické kopie bez jakýchkoli skrytých dat. Pokud z toho uděláte výchozí krok, a ne něco, co si vybavíte jen u „citlivých“ fotek, nikdy vás nezaskočí fotka, nad kterou jste neuvažovali.</p>
+
+          <h4>iPhone photos (HEIC)</h4>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
+
+          <h4>Co odstranění nezmění</h4>
+          <p>Stojí za to jasně říct, co Cleanly dělá a nedělá: odstraní ze souboru skrytá metadata, ale nemůže odstranit informace viditelné přímo v obrázku — ceduli s názvem ulice v pozadí, viditelné číslo domu, odraz prozrazující vaši polohu. Odstranění metadat řeší neviditelnou vrstvu; vše, co je ve fotce viditelné, je samostatná věc, kterou musíte před zveřejněním stále zkontrolovat vlastníma očima.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Cleanly pro fotografy: soukromí bez ztráty kvality</h3>
+          <p>Fotografové mají k metadatům trochu jiný vztah než běžní uživatelé telefonů — část z nich je skutečně užitečné uchovat pro vlastní záznamy, takže „odstranit všechno, vždy“ není tak úplně správný instinkt.</p>
+
+          <h4>Proč mohou chtít fotografové některá metadata lokálně zachovat</h4>
+          <p>Nastavení fotoaparátu — clona, expoziční čas, ISO, ohnisková vzdálenost — je cenné při pozdějším hodnocení vlastních snímků: pochopení, jaké nastavení vytvořilo snímek, který se vám líbil, pomáhá ho zopakovat. U vlastních pracovních kopií, uchovávaných soukromě, není důvod tyto informace odstraňovat, protože jde o skutečně užitečná referenční data, která nenesou riziko pro soukromí, dokud soubory zůstávají u vás.</p>
+
+          <h4>Proč jsou dodané nebo zveřejněné kopie věc jiná</h4>
+          <p>V okamžiku, kdy je fotka dodána klientovi, zveřejněna na webu s portfoliem nebo veřejně, se situace mění — zejména údaje o poloze nemají v souboru určeném klientovi nebo veřejnosti co dělat, protože mohou prozradit místa focení, která měla zůstat soukromá (domov klienta při rodinném focení, soukromé prostory, přesná adresa ateliéru, pokud nemá být veřejná). Cleanly je určen právě pro tento krok: finální exporty určené ven jím před dodáním či zveřejněním protáhněte a vlastní pracovní soubory s plnými metadaty si nechte pro vlastní potřebu.</p>
+
+          <h4>What actually changes in the image</h4>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
+
+          <h4>Zařazení do postupu dodání</h4>
+          <p>Pro fotografy, kteří pravidelně dodávají galerie nebo exportují dávky, je nejjednodušší považovat odstranění metadat za poslední krok před exportem, aplikovaný na celou dávku najednou, ne fotku po fotce. Tak se z něj stane rutinní součást dokončení zakázky, podobně jako závěrná kontrola kvality, místo něčeho, na co je třeba pamatovat zvlášť u každého klienta nebo každé platformy, kam se galerie sdílí.</p>
+
+          <h4>Ochrana klientů stejně jako sebe</h4>
+          <p>Je dobré pamatovat, že údaje o poloze a zařízení, které jsou v klientových fotkách v ohrožení, se často týkají života klienta, ne vašeho — rodinné focení u nich doma, zásnubní fotky páru na smysluplném soukromém místě. Odstranění metadat před dodáním chrání soukromí vašich klientů stejně jako vaši profesní pověst někoho, kdo s jejich snímky zachází pečlivě.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Kdy na odstranění metadat záleží nejvíc</h3>
+          <p>Ne každá fotka nese stejné riziko pro soukromí — vědět, které situace skutečně vyžadují odstranění metadat, pomáhá soustředit tento zvyk tam, kde na něm záleží nejvíc.</p>
+
+          <h4>Fotky pořízené doma nebo v práci</h4>
+          <p>Každá fotka pořízená uvnitř nebo bezprostředně kolem vašeho domova či pracoviště — včetně fotek do inzerátů, snímků „z home office“ nebo náhodných fotek z obýváku — nese metadata o poloze, která přímo ukazují na místo, kde pravidelně a předvídatelně trávíte čas. Je to trvale kategorie s nejvyššími sázkami, protože jde o místo, které je pro někoho nejcennější znát, a které většina lidí nenapadne chránit.</p>
+
+          <h4>Fotky s dětmi</h4>
+          <p>Fotky dětí — ve škole, na pravidelné aktivitě, v okolí bydliště — nesou další vrstvu rizika, pokud metadata o poloze přežijí, protože mohou prozradit, kde se dítě předvídatelně nachází v opakujících se časech. Mnoho rodičů už před zveřejněním pečlivě zvažuje, co je na fotce vidět; stejnou péči stojí za to věnovat tomu, co je v metadatech neviditelné.</p>
+
+          <h4>Cokoli, co jde cizímu člověku dřív, než vznikne důvěra</h4>
+          <p>Kupující na bazarech, online seznamování a další souvislosti, kde sdílíte fotky s někým, koho jste osobně neprověřili, jsou přesně situace, kdy nechcete prozradit víc informací, než jste zamýšleli. Fotka inzerátu nebo profilová fotka je nejjasnějším příkladem: příjemce s vámi zatím nemá žádný vztah a odstraněná metadata znamenají, že fotka prozradí jen to, co je na ní vidět, nic víc.</p>
+
+          <h4>Kdy na tom záleží méně</h4>
+          <p>Odstranění metadat je mnohem méně kritické u fotek sdílených soukromě s lidmi, které už znáte a kterým důvěřujete — poslání fotky přímo členovi rodiny nebo blízkému příteli soukromým kanálem nenese stejné riziko jako zveřejnění nebo poslání cizímu člověku. Neznamená to, že by ponechání metadat bylo z hlediska soukromí někdy přínosné, jen že praktická naléhavost roste s tím, jak veřejný nebo nedůvěryhodný příjemce je.</p>
+
+          <h4>Rozumné výchozí nastavení</h4>
+          <p>Vzhledem k tomu, jak je proces rychlý a bezeztrátový, má jen malou nevýhodu udělat z odstranění metadat výchozí zvyk u všeho, co opouští váš blízký, důvěryhodný okruh — nestojí vás to nic na kvalitě ani úsilí a znamená to, že nemusíte spoléhat na to, že si vzpomenete udělat to selektivně právě u fotky, na které nakonec záleží.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Časté chyby lidí v ochraně soukromí u fotek</h3>
+          <p>Většina problémů se soukromím u fotek pochází z hrstky zvyků, které se v danou chvíli zdají neškodné. Na co si dát pozor.</p>
+
+          <h4>Domněnka, že to platforma už řeší</h4>
+          <p>Je pravda, že mnoho velkých sociálních platforem odstraňuje metadata automaticky při nahrání, ale ne všechny, a přeposlané kopie, stažené soubory a sdílení tímto odstraněním spolehlivě neprojdou. Spoléhat na to, že „to platforma asi řeší“, je hazard; odstranění metadat sami před zveřejněním nejistotu úplně odstraní.</p>
+
+          <h4>Přemýšlení jen o tom, co je na fotce vidět</h4>
+          <p>Lidé často pečlivě kontrolují fotku kvůli viditelným detailům — žádné citlivé dokumenty v pozadí, žádné čitelné cedule s ulicemi — a zapomínají, že neviditelná metadata mohou prozradit úplně stejný druh informací (konkrétně polohu), i když obrázek sám vypadá dokonale bezpečně. Kontrola viditelného obsahu a odstranění metadat jsou dva samostatné, oba nutné kroky.</p>
+
+          <h4>Prodej věcí s nijak neupravenými fotkami inzerátu</h4>
+          <p>Inzeráty na bazarech jsou jedním z nejčastějších reálných zdrojů nechtěného vyzrazení polohy, protože prodejci fotí věci přesně tam, kde bydlí, a nahrávají fotky tak, jak jsou. Je to jeden z nejjasnějších a nejcennějších případů pro odstranění metadat před zveřejněním, protože riziko (vyzrazení domácí adresy cizím lidem) je konkrétní a náprava zabere vteřiny.</p>
+
+          <h4>Zapomenutí na staré, už zveřejněné fotky</h4>
+          <p>Odstranění metadat chrání jen fotky, které jste před sdílením upravili — zpětně neopraví fotky už někde zveřejněné s nedotčenými metadaty. Pokud se o dřívější příspěvky obáváte, náprava spočívá v návratu k těm konkrétním fotkám, jejich odstranění a nahrazení verzemi bez metadat, pokud to platforma dovoluje, místo předpokladu, že zvyk do budoucna pokryje vše, co už venku je.</p>
+
+          <h4>Brát to jako občasný úkol typu všechno, nebo nic</h4>
+          <p>Odstraňovat metadata jen u fotek, které „působí citlivě“, znamená pokaždé spoléhat na vlastní úsudek, což je přesně ten druh zvyku, který nakonec jednu fotku mine. Zařadit odstranění metadat do výchozí rutiny u všeho, co opouští důvěryhodný okruh, rozhodování úplně odstraní — uplatňuje se důsledně, ne výběrově.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-6"><h3>6. Cleanly pro SVG: odstranění metadat editoru, ne EXIF</h3>
+          <p>Vše výše se týká dat EXIF vložených do fotek — GPS, model fotoaparátu, časová razítka. Soubory SVG EXIF nemají vůbec, protože to nejsou fotky; jsou to XML text popisující tvary. Ale designérské nástroje do SVG vkládají vlastní druh skrytých metadat a Cleanly je při vložení souboru také rozpozná a odstraní.</p>
+
+          <h4>Co designérské nástroje do SVG vkládají</h4>
+          <p>Illustrator, Inkscape, Sketch i Figma zapisují do souboru víc než jen tvary, které jste nakreslili: vložený <code>&lt;metadata&gt;</code>/RDF blok (někdy včetně údajů o autorství a licenci pomocí značek Dublin Core), atributy specifické pro editor s vlastním jmenným prostorem (nejčastější jsou značky <code>sodipodi:</code> z Inkscape) a prosté komentáře XML zanechané procesem exportu. Nic z toho není vidět při vykreslení SVG, ale všechno putuje se souborem ke každému, komu ho pošlete.</p>
+
+          <h4>Proč to záleží při sdílení</h4>
+          <p>Platí stejná úvaha jako u značky GPS na fotce: metadata, která jste vědomě nepřidali, jsou stále metadata, která odcházejí se souborem. Ikona nebo logo exportované pro klienta, inzerát nebo veřejný repozitář může nést informace o verzi softwaru nebo uvedení autorství, které jste nikdy nechtěli zveřejnit. Jejich odstranění před sdílením je stejný zvyk „nestojí nic, předejde překvapení“ jako odstranění EXIF z fotky.</p>
+
+          <h4>Co vám Cleanly ukáže před odstraněním</h4>
+          <p>Stejně jako vypisuje značky GPS, fotoaparátu a data nalezené ve fotce, Cleanly prohledá vložený SVG a ukáže přesně, co našel — vložená metadata, autorská data editoru nebo komentáře — takže před odstraněním vidíte, co v souboru skutečně je, místo odstraňování poslepu.</p>
+
+          <h4>Bezeztrátově, ne ztrátově</h4>
+          <p>Na rozdíl od komprese fotek tu nejde o kompromis v kvalitě. Čištění odstraňuje jen balast, který prohlížeč stejně nikdy nevykresloval — tvary, barvy a struktura vytvořené vaším designérským nástrojem zůstávají zcela nedotčeny, takže vyčištěný soubor vypadá pixel po pixelu stejně a lze ho poté dál otevřít a upravovat ve vektorovém editoru.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -491,21 +615,21 @@
       <h3>Začínáme s</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/cs/convert/">Convert</a>
+          <a class="footer-dash-link" href="/cs/compress/">Compress</a>
+          <a class="footer-dash-link" href="/cs/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cs/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/cs/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/cs/congify/">Congify</a>
+          <a class="footer-dash-link" href="/cs/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/cs/codify/">Codify</a>
+          <a class="footer-dash-link" href="/cs/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/cs/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/cs/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -522,8 +646,8 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=57" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=167" defer></script>
 </body>
 </html>

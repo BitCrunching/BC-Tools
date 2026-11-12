@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/coudio/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/coudio/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/coudio/">
-<script src="/shared/i18n/cs.js?v=8"></script>
+<script src="/shared/i18n/cs.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Coudio – Zdarma převodník zvuku – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -938,7 +938,99 @@ html[data-theme="dark"] .cd-file-row-error{
       <li><a href="#gr-article-4">4. Kdy použít MP3 a kdy WAV: scénáře z praxe</a></li>
       <li><a href="#gr-article-5">5. Časté chyby při převodu zvuku (a jak se jim vyhnout)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="coudio"></div>
+    <div class="gr-inline" data-tool="coudio">
+<div class="gr-article" id="gr-article-1"><h3>1. Kompletní průvodce zvukovými formáty: MP3 vs WAV</h3>
+          <p>Zvukové formáty se dělí podél stejné čáry ztrátové vs bezeztrátové jako formáty obrázků a stejná základní otázka rozhoduje, který skutečně chcete: připravujete něco k poslechu a sdílení, nebo něco k uchování v nejlepší možné kvalitě pro další práci?</p>
+
+          <h4>MP3: ztrátový, univerzální formát</h4>
+          <p>MP3 používá ztrátovou kompresi a zahazuje zvukový detail, který lidský sluch hůř zaznamenává, aby soubor dramaticky zmenšil — často na desetinu velikosti nekomprimovaného originálu nebo méně, podle použitého datového toku. Podporuje ho v podstatě všechno: každý telefon, každé autorádio, každá hudební aplikace, každý web. Pro poslech, sdílení a každodenní použití je MP3 téměř vždy správnou výchozí volbou.</p>
+          <p>Kompromis je stejný jako u JPG: část detailu je po kompresi skutečně pryč a nevrátí se, když MP3 později převedete na něco jiného. Při běžném poslechu je to při rozumném datovém toku neslyšitelné; u kritického poslechu, masteringu nebo archivace to začíná záležet.</p>
+
+          <h4>WAV: bezeztrátový, nekomprimovaný formát</h4>
+          <p>WAV ukládá zvuk nekomprimovaně — každý vzorek zachován přesně, bez zahození dat. Proto je správnou volbou pro cokoli, co se bude dál upravovat, míchat nebo zpracovávat, protože artefakty ztrátové komprese se nenabalují jeden na druhý během několika kol úprav jako u opakovaně ukládaného MP3. Je to také standardní formát pro archivní mastery, protože je to nejblíž uchování původní nahrávky v neporušené podobě.</p>
+          <p>Cenou je velikost: soubory WAV jsou obvykle 5–10× větší než MP3 téhož zvuku při rozumném datovém toku, protože žádná komprese nic nepřispívá. Pár minut zvuku ve WAV může mít už desítky megabajtů, což záleží, když ho posíláte e-mailem nebo ukládáte ve velkém.</p>
+
+          <h4>OGG, AIFF and the rest</h4>
+          <p>Coudio also writes OGG (Opus), AIFF, AU, CAF and VOC. OGG (Opus) is lossy like MP3 but usually sounds as good or better at the same bitrate, which makes it a strong pick for websites and games; the catch is that not every player and device opens it. AIFF is lossless like WAV and is the default on macOS, Logic and GarageBand, so pick it when your Apple software asks for it. CAF is Apple's own container, AU comes from old Unix and Sun systems, and VOC from early Sound Blaster-era software. Choose those three only when a specific program or older system requires them.</p>
+
+          <h4>Rychlé pravidlo rozhodování</h4>
+          <p>Sharing, listening, uploading to most platforms → MP3. Smallest file for a website or game → OGG. Editing, mixing, or archiving a master copy you'll come back to → WAV (or AIFF on a Mac). Not sure, and it's a one-off → MP3 is the safer default; almost everything can play it.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Datový tok vysvětlen: výběr správného čísla pro MP3</h3>
+          <p>Datový tok je jediné nastavení MP3, na kterém skutečně záleží jak u velikosti souboru, tak u kvality, a vyplatí se pochopit, jak zvolit rozumné číslo pro to, co děláte, místo hádání.</p>
+
+          <h4>Co datový tok doopravdy řídí</h4>
+          <p>Datový tok je množství dat použitých ke kódování každé vteřiny zvuku, měřené v kilobitech za sekundu (kb/s). Vyšší datový tok zachová víc původního detailu a zní blíž nekomprimovanému zdroji; nižší komprimuje silněji, víc zahazuje, výměnou za menší soubor. Je to přímý, zhruba lineární vztah: zdvojnásobení datového toku zhruba zdvojnásobí velikost souboru při stejné délce zvuku.</p>
+
+          <h4>The three options in Coudio</h4>
+          <p>MP3 and OGG both offer 128, 192 and 320 kbps, and 320 is preselected. At 128 kbps a minute of audio takes about 1 MB, at 192 about 1.4 MB, and at 320 about 2.4 MB. For comparison, an uncompressed CD-quality WAV runs around 10 MB a minute.</p>
+
+          <h4>Přizpůsobení datového toku tomu, co kódujete</h4>
+          <p>Spoken word — podcasts, voice memos, audiobooks, narration — doesn't need a high bitrate; voice is far less complex than music, so 128 kbps sounds clear and keeps files small. Music, especially anything with a wide dynamic range or lots of instruments at once, benefits from 192 kbps or more before compression artifacts (a slight harshness or "underwater" quality on complex passages) become audible.</p>
+          <p>There's a genuine diminishing-returns point on the high end: past a certain bitrate, most listeners on typical headphones or speakers can no longer reliably tell the difference from the source, so cranking the number higher just inflates the file without a perceptible quality gain. If you're not sure, 192 kbps is the safe general-purpose choice for music, and 320 kbps is there for when you want the best an MP3 can offer and don't mind a file about 70% larger.</p>
+
+          <h4>Kdy datový tok nehraje roli</h4>
+          <p>Pokud převádíte na WAV místo MP3, datový tok je irelevantní — WAV je nekomprimovaný, takže není co nastavovat. Datový tok přichází do hry, až když záměrně měníte část kvality za menší soubor, což je celý smysl volby MP3 místo WAV.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Extrakce zvuku z videosouboru</h3>
+          <p>Coudio nepřevádí jen existující zvukové soubory — umí také vytáhnout zvukovou stopu z videa a dát vám jen zvuk, obraz úplně zahodí.</p>
+
+          <h4>Časté důvody, proč to lidé potřebují</h4>
+          <p>Proměnit nahrané video přednášky, schůzky nebo rozhovoru na zvukový soubor ve stylu podcastu, který je mnohem menší a lépe se poslouchá na cestách. Vytáhnout píseň nebo zvukový klip z videa, když je skutečně potřeba jen zvuk. Archivovat jen zvukovou část starých videozáznamů kvůli úspoře místa. Převést komentář z nahrávky obrazovky na samostatný zvukový soubor pro úpravy nebo přepis jinde.</p>
+
+          <h4>Jak to doopravdy funguje</h4>
+          <p>Drop an MP4, WEBM, MOV, or OGV file into Coudio the same way you'd drop an audio file — the tool detects it's a video and extracts the audio track automatically, discarding the picture. Pick the output format on the file's row the same way you would for a regular audio file, and for MP3 or OGG choose a bitrate. Your original video is never touched; only its audio track is read and converted.</p>
+
+          <h4>Co se stane, když video nemá zvukovou stopu</h4>
+          <p>Video bez jakéhokoli zvuku — ztlumená nahrávka obrazovky, záznam natočený bez zvuku — nemá pro Coudio co extrahovat, protože v souboru žádná zvuková stopa není. Nástroj to nemůže obejít; pokud původní nahrávka opravdu nemá zvuk, není z ní co vytáhnout.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Kdy použít MP3 a kdy WAV: scénáře z praxe</h3>
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situace</th><th>Nejlepší formát</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situace">Sdílení písně, nahrávky nebo hlasové poznámky</td><td data-label="Nejlepší formát">MP3</td></tr>
+              <tr><td data-label="Situace">Nahrávání na podcastovou platformu</td><td data-label="Nejlepší formát">MP3, 128 to 192 kbps</td></tr>
+              <tr><td data-label="Situace">Další úpravy nebo míchání zvuku</td><td data-label="Nejlepší formát">WAV</td></tr>
+              <tr><td data-label="Situace">Archivace master nahrávky</td><td data-label="Nejlepší formát">WAV</td></tr>
+              <tr><td data-label="Situace">Odeslání rychlé hlasové poznámky e-mailem</td><td data-label="Nejlepší formát">MP3, 128 kbps is fine for speech</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Podcasty, hlasové poznámky a mluvené slovo</h4>
+          <p>MP3 at 128 kbps is the standard here — file size matters more than it does for music, since episodes are often long, and speech tolerates compression exceptionally well. Move up to 192 kbps if the show has music in it.</p>
+
+          <h4>Hudba, kterou sdílíte nebo poslouchate</h4>
+          <p>MP3 at 192 to 320 kbps covers nearly every everyday case: sending a track to a friend, uploading to most platforms, keeping music on a phone where storage space adds up. Reach for WAV only if you specifically need the uncompressed original — for editing, sampling, or a truly critical-listening archive.</p>
+
+          <h4>Zvuk, který budete později upravovat nebo míchat</h4>
+          <p>WAV se vyhne nabalování další ztráty komprese na vše, co při úpravách děláte — míchání, stříhání, vrstvení, úprava hlasitosti — protože v souboru žádná ztrátová komprese není. Na MP3 převádějte až jako poslední krok exportu, po dokončení úprav, stejně jako platí pravidlo pro opakované ukládání JPG.</p>
+
+          <h4>Dlouhodobá archivace</h4>
+          <p>Pro cokoli, co chcete uchovat v nejlepší možné kvalitě na neurčito — původní nahrávku, master stopu, důležitý rozhovor — je WAV bezpečnější dlouhodobou volbou, protože nikdy neztratí žádný další detail, ať se zkopíruje nebo zazálohuje kolikrát chce.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Časté chyby při převodu zvuku (a jak se jim vyhnout)</h3>
+          <p>Většina stížností na kvalitu zvuku vychází z jednoho z hrstky předejitelných rozhodnutí.</p>
+
+          <h4>Opakovaný převod MP3 na MP3</h4>
+          <p>Stejně jako opakované ukládání JPG, i opětovné kódování už komprimovaného MP3 zpět do MP3 pokaždé ztratí trochu víc detailu — druhý průchod komprese má méně původních informací než první. Pokud je to možné, uchovávejte a upravujte z bezeztrátového zdroje (WAV) a do MP3 exportujte jen jednou, na konci.</p>
+
+          <h4>Použití datového toku, který neodpovídá obsahu</h4>
+          <p>128 kbps is perfectly fine for spoken word but can sound noticeably compressed on music with a full instrumental mix, while 320 kbps on a simple voice memo just wastes file size for no audible benefit. Match the bitrate to what's actually in the recording, not a single number used for everything.</p>
+
+          <h4>Nezkontrolování zvukové stopy před extrakcí</h4>
+          <p>Pokus vytáhnout zvuk z videa, které bylo nahráno ztlumené nebo ze kterého byl zvuk dříve odstraněn jiným krokem, skončí prázdným výsledkem — není co extrahovat. Vyplatí se rychlá kontrola (nebo krátký poslech původního videa), než usoudíte, že extrakce selhala na straně Coudia, a ne že zdroj prostě nemá zvuk.</p>
+
+          <h4>Ignorování velikosti souboru u dlouhých nahrávek</h4>
+          <p>Dlouhá nahrávka přednášky nebo schůzky exportovaná jako WAV nebo se zbytečně vysokým datovým tokem MP3 může nabobtnat na velikost, která se špatně posílá e-mailem nebo nahrává. Zejména u dlouhého mluveného obsahu udrží mírný datový tok MP3 soubor zvladatelný bez skutečné ztráty srozumitelnosti.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -960,21 +1052,21 @@ html[data-theme="dark"] .cd-file-row-error{
       <h3>Začínáme s</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/cs/convert/">Convert</a>
+          <a class="footer-dash-link" href="/cs/compress/">Compress</a>
+          <a class="footer-dash-link" href="/cs/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cs/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/cs/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/cs/congify/">Congify</a>
+          <a class="footer-dash-link" href="/cs/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/cs/codify/">Codify</a>
+          <a class="footer-dash-link" href="/cs/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/cs/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/cs/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -991,8 +1083,8 @@ html[data-theme="dark"] .cd-file-row-error{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/coudio/coudio-tool.js?v=61" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/coudio/coudio-tool.js?v=167" defer></script>
 </body>
 </html>

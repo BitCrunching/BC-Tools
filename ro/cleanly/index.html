@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cleanly/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cleanly/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cleanly/">
-<script src="/shared/i18n/ro.js?v=8"></script>
+<script src="/shared/i18n/ro.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Cleanly – Elimină gratuit metadatele fotografiilor – BC Tools">
@@ -74,7 +74,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:#7ED321; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -469,7 +469,131 @@
       <li><a href="#gr-article-5">5. Greșeli frecvente de confidențialitate pe care le fac oamenii cu fotografiile</a></li>
       <li><a href="#gr-article-6">6. Cleanly pentru SVG-uri: eliminarea metadatelor editorului, nu a EXIF</a></li>
     </ul>
-    <div class="gr-inline" data-tool="exif"></div>
+    <div class="gr-inline" data-tool="exif">
+<div class="gr-article" id="gr-article-1"><h3>1. Ce dezvăluie de fapt metadatele EXIF despre tine</h3>
+          <p>Fiecare fotografie făcută de telefon sau de cameră conține mult mai mult decât imaginea în sine. În fișier se află un bloc de metadate — date EXIF — care înregistrează discret o cantitate surprinzătoare de detalii despre când, unde și cum a fost făcută fotografia.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Tip de metadate</th><th>Ce dezvăluie</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tip de metadate">Locație GPS</td><td data-label="Ce dezvăluie">Locul exact în care a fost făcută fotografia, adesea la câțiva metri</td></tr>
+              <tr><td data-label="Tip de metadate">Marca și modelul dispozitivului</td><td data-label="Ce dezvăluie">Camera sau telefonul specific folosit</td></tr>
+              <tr><td data-label="Tip de metadate">Marcaj de timp</td><td data-label="Ce dezvăluie">Data și ora exactă, până la secundă</td></tr>
+              <tr><td data-label="Tip de metadate">Setările camerei</td><td data-label="Ce dezvăluie">Apertură, timp de expunere, ISO, distanță focală</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Locația: cea mai importantă</h4>
+          <p>Dacă serviciile de localizare au fost activate când a fost făcută fotografia, majoritatea telefoanelor încorporează coordonatele GPS exacte ale locului unde a fost făcută poza, adesea precise la câțiva metri. Oricine deschide fișierul original într-un vizualizator potrivit sau îl trece printr-un cititor de metadate poate marca acea locație pe o hartă — ceea ce înseamnă că o fotografie făcută acasă, la locul de muncă sau la școala unui copil poate dezvălui exact unde se află acel loc, fără ca tu să fi scris vreodată adresa undeva.</p>
+
+          <h4>Detalii despre dispozitiv</h4>
+          <p>EXIF include de obicei marca și modelul exact al camerei sau al telefonului care a făcut poza, uneori până la versiunea software-ului. Singur pare inofensiv, dar combinat cu alte metadate adaugă încă un detaliu de identificare unei fotografii și, în anumite contexte (anunțuri pe platforme de vânzare, conturi anonime), poate fi încă un fir care leagă o fotografie de dispozitivele cunoscute ale unei anumite persoane.</p>
+
+          <h4>Marcaje de timp</h4>
+          <p>Data și ora exactă la care a fost făcută fotografia sunt înregistrate până la secundă, ceea ce este mai precis decât își dau seama majoritatea oamenilor — o fotografie postată „ocazional” poate dezvălui exact când se afla cineva într-un anumit loc, ceea ce devine relevant pentru oricine se gândește că rutina sau locurile în care se află ar putea fi reconstituite dintr-un tipar de fotografii postate în timp.</p>
+
+          <h4>Setările camerei și, uneori, mai mult</h4>
+          <p>Detalii tehnice precum apertura, timpul de expunere și ISO sunt, de asemenea, stocate; ele contează pentru fotografii care își analizează propriile cadre, dar altfel nu sunt sensibile din punct de vedere al confidențialității. Unele dispozitive și aplicații de editare încorporează în plus o previzualizare miniatură, istoricul software/editărilor sau chiar un câmp pentru drepturi de autor sau numele autorului, în funcție de setări — câmpurile exacte prezente variază în funcție de dispozitiv și aplicație, dar datele de locație și de marcaj de timp sunt cele două cu cea mai mare greutate reală pentru confidențialitate.</p>
+
+          <h4>De ce contează chiar și pentru fotografiile „neimportante”</h4>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Cum elimini metadatele înainte de a vinde sau a posta fotografii</h3>
+          <p>Două dintre cele mai frecvente situații în care datele EXIF cauzează discret probleme reale sunt vânzarea de obiecte online și postarea publică de fotografii — ambele implică fotografii care ajung la străini, exact când metadatele ascunse contează cel mai mult.</p>
+
+          <h4>Vânzarea pe platforme de vânzare</h4>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
+
+          <h4>Postarea pe rețele sociale și forumuri</h4>
+          <p>Majoritatea platformelor sociale mari elimină automat metadatele la încărcare, ceea ce este o veste bună, dar nu o fac toate, iar copiile redirecționate sau descărcate ale fotografiei tale (capturi de ecran, salvări, redistribuiri) nu trec în mod sigur prin același proces de eliminare. Dacă o fotografie este vreodată descărcată de unde ai postat-o și repartajată în altă parte, orice metadate care au supraviețuit încărcării inițiale o însoțesc. Eliminarea metadatelor înainte de a posta este singura cale de a garanta că nu mai sunt prezente nicăieri în lanț.</p>
+
+          <h4>Un obicei simplu înainte de postare</h4>
+          <p>Înainte de a încărca fotografii oriunde vor fi vizibile pentru oameni pe care nu îi cunoști personal — un anunț pe o platformă de vânzare, o postare socială publică, un forum, un profil de dating — trece-le mai întâi prin Cleanly. Durează secunde, funcționează pe un întreg lot de fotografii deodată și produce copii identice vizual, fără datele ascunse. Dacă faci din asta un pas implicit, nu ceva de care îți amintești doar pentru fotografiile „sensibile”, nu vei fi niciodată prins nepregătit de o fotografie la care nu te-ai gândit de două ori.</p>
+
+          <h4>iPhone photos (HEIC)</h4>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
+
+          <h4>Ce nu schimbă eliminarea</h4>
+          <p>Merită să fie clar ce face și ce nu face Cleanly: elimină metadatele ascunse din fișier, dar nu poate elimina informațiile vizibile în imaginea însăși — un indicator de stradă în fundal, un număr de casă vizibil, o reflexie care îți arată locația. Eliminarea metadatelor se ocupă de stratul invizibil; tot ce este vizibil în fotografie este o altă chestiune pe care tot trebuie s-o verifici cu ochii tăi înainte de postare.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Cleanly pentru fotografi: confidențialitate fără pierderi de calitate</h3>
+          <p>Fotografii au o relație ușor diferită cu metadatele decât utilizatorii ocazionali de telefon — o parte din ele este cu adevărat utilă de păstrat pentru propriile evidențe, ceea ce face ca „elimină tot, mereu” să nu fie tocmai instinctul potrivit.</p>
+
+          <h4>De ce ar putea fotografii să vrea să păstreze local o parte din metadate</h4>
+          <p>Setările camerei — apertura, timpul de expunere, ISO, distanța focală — sunt valoroase când îți revezi mai târziu propriile fotografii: să înțelegi ce setări au produs o fotografie care ți-a plăcut te ajută s-o repeți. Pentru copiile tale de lucru, păstrate privat, nu există niciun motiv să elimini aceste informații, fiindcă sunt date de referință cu adevărat utile, care nu prezintă risc de confidențialitate atâta timp cât fișierele rămân la tine.</p>
+
+          <h4>De ce copiile livrate sau publicate sunt altă poveste</h4>
+          <p>În momentul în care o fotografie este livrată unui client, publicată pe un site de portofoliu sau postată public, socoteala se schimbă — datele de locație mai ales nu au ce căuta într-un fișier destinat clientului sau public, deoarece pot dezvălui locații de filmare care trebuiau să rămână private (casa unui client pentru o ședință de familie, un loc privat, adresa exactă a unui studio dacă nu trebuie să fie publică). Cleanly este făcut exact pentru acest pas: trece exporturile finale, orientate spre exterior, prin el înainte de livrare sau publicare, păstrând propriile fișiere de lucru cu metadatele complete pentru referința ta.</p>
+
+          <h4>What actually changes in the image</h4>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
+
+          <h4>Integrarea într-un flux de livrare</h4>
+          <p>Pentru fotografii care livrează galerii sau exportă loturi în mod regulat, cea mai simplă abordare este să tratezi eliminarea metadatelor ca ultim pas înainte de export, aplicat întregului lot deodată, nu fotografie cu fotografie. Astfel devine o parte de rutină a încheierii unei lucrări, ca o verificare finală de calitate, nu ceva de care trebuie să-ți amintești separat pentru fiecare client sau fiecare platformă pe care se partajează o galerie.</p>
+
+          <h4>Protejarea clienților la fel de mult ca pe tine</h4>
+          <p>Merită să-ți amintești că datele de locație și de dispozitiv puse în pericol în fotografiile unui client țin adesea de viața clientului, nu de a ta — o ședință foto de familie făcută la ei acasă, fotografii de logodnă ale unui cuplu într-un loc privat cu semnificație. Eliminarea metadatelor înainte de livrare protejează confidențialitatea clienților tăi la fel de mult ca reputația ta profesională de a le trata imaginile cu grijă.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Când contează cel mai mult eliminarea metadatelor</h3>
+          <p>Nu toate fotografiile au aceleași mize de confidențialitate — să știi în ce situații eliminarea metadatelor chiar contează te ajută să concentrezi obiceiul acolo unde contează cel mai mult.</p>
+
+          <h4>Fotografii făcute acasă sau la locul de muncă</h4>
+          <p>Orice fotografie făcută în casa ta sau chiar în apropierea ei, ori la locul de muncă — inclusiv fotografiile pentru anunțuri pe platforme de vânzare, pozele „de acasă” sau cele făcute la repezeală în sufragerie — poartă metadate de locație care indică direct un loc în care îți petreci timp în mod regulat și previzibil. Aceasta este constant categoria cu cele mai mari mize, pentru că este locația cea mai valoroasă de știut pentru altcineva și cea pe care majoritatea oamenilor nu se gândesc să o protejeze.</p>
+
+          <h4>Fotografii cu copii</h4>
+          <p>Fotografiile cu copii — la școală, la o activitate regulată, într-un cartier — poartă un strat suplimentar de risc dacă metadatele de locație supraviețuiesc, deoarece pot dezvălui unde se află previzibil un copil la anumite ore recurente. Mulți părinți se gândesc deja cu atenție la ce se vede într-o fotografie înainte de a posta; aceeași grijă merită extinsă și la ce nu se vede, adică la metadate.</p>
+
+          <h4>Orice merge către un străin înainte ca încrederea să fie stabilită</h4>
+          <p>Cumpărătorii de pe platformele de vânzare, potrivirile de pe aplicațiile de dating și alte contexte în care partajezi fotografii cu cineva pe care nu l-ai verificat personal sunt exact situațiile în care nu vrei să dai mai multe informații decât intenționai. O fotografie de anunț sau de profil este cel mai clar exemplu: destinatarul nu are încă nicio relație stabilită cu tine, iar metadatele eliminate înseamnă că fotografia dezvăluie doar ce se vede în ea, nimic mai mult.</p>
+
+          <h4>Când contează mai puțin</h4>
+          <p>Eliminarea metadatelor este mult mai puțin critică pentru fotografiile partajate privat cu oameni pe care îi cunoști și în care ai încredere — trimiterea unei fotografii direct unui membru al familiei sau unui prieten apropiat printr-un canal privat nu are același risc de expunere ca postarea publică sau trimiterea către un străin. Nu este vorba că metadatele ar fi vreodată benefice de lăsat din motive de confidențialitate, ci doar că urgența practică crește odată cu cât destinatarul este mai public sau mai puțin de încredere.</p>
+
+          <h4>O valoare implicită rezonabilă</h4>
+          <p>Având în vedere cât de rapid și fără pierderi este procesul, există puține dezavantaje în a face din eliminarea metadatelor un obicei implicit pentru tot ce iese din cercul tău apropiat, de încredere — nu te costă nimic în calitate sau efort și înseamnă că nu te bazezi niciodată pe faptul că îți amintești s-o faci selectiv tocmai pentru fotografia care se dovedește a conta.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Greșeli frecvente de confidențialitate pe care le fac oamenii cu fotografiile</h3>
+          <p>Majoritatea problemelor de confidențialitate a fotografiilor vin dintr-o mână de obiceiuri care par inofensive pe moment. Iată la ce să fii atent.</p>
+
+          <h4>Presupunând că platforma se ocupă deja de asta</h4>
+          <p>Este adevărat că multe platforme sociale mari elimină automat metadatele la încărcare, dar nu toate o fac, iar copiile redirecționate, descărcările și redistribuirile nu trec în mod sigur prin aceeași eliminare. A te baza pe „platforma probabil se ocupă” este un pariu; eliminarea metadatelor tu însuți înainte de postare înlătură complet incertitudinea.</p>
+
+          <h4>Gândirea doar la ce este vizibil în fotografie</h4>
+          <p>Oamenii verifică adesea cu grijă o fotografie pentru detalii vizibile — niciun document sensibil în fundal, nicio plăcuță de stradă lizibilă — uitând că metadatele invizibile pot scurge exact același tip de informații (în special locația) chiar dacă imaginea în sine arată perfect sigură. Verificarea conținutului vizibil și eliminarea metadatelor sunt doi pași separați, ambii necesari.</p>
+
+          <h4>Vânzarea de obiecte cu fotografii de anunț neatinse</h4>
+          <p>Anunțurile pe platformele de vânzare sunt una dintre cele mai frecvente surse reale de expunere accidentală a locației, deoarece vânzătorii fotografiază obiectele exact acolo unde locuiesc și încarcă fotografiile așa cum sunt. Este unul dintre cele mai clare cazuri, cu cea mai mare valoare, pentru eliminarea metadatelor înainte de postare, deoarece riscul (dezvăluirea adresei tale unor străini) este concret, iar remedierea durează secunde.</p>
+
+          <h4>Uitarea fotografiilor vechi, deja postate</h4>
+          <p>Eliminarea metadatelor protejează doar fotografiile pe care le cureți înainte de partajare — nu repară retroactiv fotografiile deja postate undeva cu metadatele intacte. Dacă te îngrijorează postările trecute, soluția este să te întorci la acele fotografii, să le elimini și să le înlocuiești cu versiuni curățate dacă platforma permite, nu să presupui că obiceiul de acum încolo acoperă tot ce există deja.</p>
+
+          <h4>Tratarea ca pe o sarcină ocazională, de tipul tot-sau-nimic</h4>
+          <p>A aștepta să elimini metadatele doar pentru fotografiile care „par sensibile” înseamnă să te bazezi pe propria judecată de fiecare dată, exact genul de obicei care până la urmă ratează una. Integrarea eliminării metadatelor în rutina ta implicită pentru tot ce iese din cercul de încredere elimină complet decizia — este aplicată consecvent, nu selectiv.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-6"><h3>6. Cleanly pentru SVG-uri: eliminarea metadatelor editorului, nu a EXIF</h3>
+          <p>Tot ce este mai sus privește datele EXIF încorporate în fotografii — GPS, modelul camerei, marcaje de timp. Fișierele SVG nu au deloc EXIF, pentru că nu sunt fotografii; sunt text XML care descrie forme. Dar instrumentele de design încorporează într-un SVG propriul lor fel de metadate ascunse, iar Cleanly le detectează și le elimină și pe acestea când pui un astfel de fișier.</p>
+
+          <h4>Ce încorporează instrumentele de design într-un SVG</h4>
+          <p>Illustrator, Inkscape, Sketch și Figma scriu toate în fișier mai mult decât formele pe care le-ai desenat: un element încorporat <code>&lt;metadata&gt;</code>/RDF (uneori cu informații despre autor și licență prin etichete Dublin Core), atribute proprii editorului, cu spațiu de nume (cele ale Inkscape <code>sodipodi:</code> etichetele sunt cele mai frecvente) și comentarii XML simple lăsate de procesul de export. Nimic din toate acestea nu este vizibil când SVG-ul se randează, dar totul este livrat odată cu fișierul oricui îl trimiți.</p>
+
+          <h4>De ce contează pentru partajare</h4>
+          <p>Același raționament care se aplică etichetei GPS a unei fotografii se aplică și aici: metadatele pe care nu le-ai adăugat în mod conștient sunt tot metadate care ies pe ușă împreună cu fișierul. O pictogramă sau o siglă exportată pentru un client, un anunț sau un depozit public poate purta informații despre versiunea software-ului sau atribuirea autorului pe care nu ai vrut niciodată să le publici. Eliminarea lor înainte de partajare este același obicei „nu costă nimic, previne o surpriză” ca eliminarea EXIF dintr-o fotografie.</p>
+
+          <h4>Ce îți arată Cleanly înainte de eliminare</h4>
+          <p>Așa cum listează etichetele GPS, ale camerei și de dată găsite într-o fotografie, Cleanly scanează un SVG adus și arată exact ce a găsit — metadate încorporate, date de autor ale editorului sau comentarii — ca să vezi ce este de fapt în fișier înainte de a-l elimina, nu să elimini pe nevăzute.</p>
+
+          <h4>Fără pierderi, nu cu pierderi</h4>
+          <p>Spre deosebire de compresia fotografiilor, aici nu este vorba de un compromis de calitate. Curățarea elimină doar resturile pe care browserul nu le-a randat niciodată — formele, culorile și structura create de instrumentul tău de design rămân complet neatinse, așa că fișierul curățat arată identic pixel cu pixel și poate fi deschis și editat în continuare într-un editor vectorial.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -491,21 +615,21 @@
       <h3>Primii pași cu</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ro/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ro/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ro/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ro/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ro/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ro/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ro/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ro/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ro/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ro/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ro/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -522,8 +646,8 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/cleanly/cleanly-tool.js?v=57" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=167" defer></script>
 </body>
 </html>

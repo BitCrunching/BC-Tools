@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/combine/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/combine/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/combine/">
-<script src="/shared/i18n/ja.js?v=8"></script>
+<script src="/shared/i18n/ja.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Combine – 画像やPDFを1つのPDFに結合 – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=324">
+<link rel="stylesheet" href="/shared/site.css?v=325">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#FF6961); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -672,7 +672,7 @@ html[data-theme="dark"] .combine-file-index{
     </button>
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="すべてのファイルを削除">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">クリック</span><span class="tool-drop-or-drop"> またはドロップ </span><span class="tool-drop-rest">PDFs or JPG images</span></div>
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">クリック</span><span class="tool-drop-or-drop"> またはドロップ </span><span class="tool-drop-rest">PDFまたはJPG画像</span></div>
     <input type="file" id="cbInput" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>前回の続きから再開</button>
 
@@ -681,37 +681,37 @@ html[data-theme="dark"] .combine-file-index{
 
       <div class="combine-options" id="cbOptions">
         <div class="combine-option">
-          <span class="bc-label">Image page size</span>
-          <button type="button" class="option-change-btn" id="cbSizeBtn" title="Image page size">
-            <span class="option-change-btn-label" id="cbSizeBtnLabel">Fit to A4</span>
+          <span class="bc-label">画像のページサイズ</span>
+          <button type="button" class="option-change-btn" id="cbSizeBtn" title="画像のページサイズ">
+            <span class="option-change-btn-label" id="cbSizeBtnLabel">A4に合わせる</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
-          <span class="bc-label">Page orientation</span>
-          <button type="button" class="option-change-btn" id="cbOrientBtn" title="Page orientation">
-            <span class="option-change-btn-label" id="cbOrientBtnLabel">Portrait</span>
+          <span class="bc-label">ページの向き</span>
+          <button type="button" class="option-change-btn" id="cbOrientBtn" title="ページの向き">
+            <span class="option-change-btn-label" id="cbOrientBtnLabel">縦</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
-          <span class="bc-label">Margin</span>
-          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
-            <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
+          <span class="bc-label">余白</span>
+          <button type="button" class="option-change-btn" id="cbMarginBtn" title="ページの余白">
+            <span class="option-change-btn-label" id="cbMarginBtnLabel">余白なし</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option">
-          <span class="bc-label">Image quality</span>
-          <button type="button" class="option-change-btn" id="cbQualityBtn" title="Image quality">
-            <span class="option-change-btn-label" id="cbQualityBtnLabel">Original</span>
+          <span class="bc-label">画像の品質</span>
+          <button type="button" class="option-change-btn" id="cbQualityBtn" title="画像の品質">
+            <span class="option-change-btn-label" id="cbQualityBtnLabel">元のまま</span>
             <span class="option-change-btn-icon" aria-hidden="true"></span>
           </button>
         </div>
         <div class="combine-option combine-option-name">
-          <span class="bc-label">Combined file name</span>
+          <span class="bc-label">結合後のファイル名</span>
           <div class="bc-name-field">
-            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Combined file name" spellcheck="false" autocomplete="off">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="結合後のファイル名" spellcheck="false" autocomplete="off">
             <span class="bc-name-ext">.pdf</span>
           </div>
         </div>
@@ -736,7 +736,109 @@ html[data-theme="dark"] .combine-file-index{
       <li><a href="#gr-article-4">4. 結合するときと、ファイルを分けておくとき</a></li>
       <li><a href="#gr-article-5">5. 結合でよくある間違い（と回避方法）</a></li>
     </ul>
-    <div class="gr-inline" data-tool="combine"></div>
+    <div class="gr-inline" data-tool="combine">
+<div class="gr-article" id="gr-article-1"><h3>1. PDFを毎回正しい順序で結合する方法</h3>
+          <p>Combineの仕事は一見とても簡単です。複数のファイルを取って1つのPDFに結合するだけですが、最もつまずきやすいのは結合そのものではなく、ページが意図した順序に収まるようにすることです。</p>
+
+          <h4>Combineがページ順を決める仕組み</h4>
+          <p>Combine merges your files in the exact order shown in its list, top to bottom. It doesn't try to guess a "correct" order from file names, dates, or content, because there's no universal rule for what you want. The list is also fully in your hands: drag any file up or down (by touch on a phone) and the merged PDF follows. PDFs are added as they are, and every JPG or PNG becomes one page.</p>
+
+          <h4>ファイル名が誤解を招くことがある理由</h4>
+          <p>A common assumption is that files will merge in alphabetical or numerical order automatically. If your file picker happens to list them that way and you select them all at once, the list often starts in that order, but that's a side effect of the picker, not a promise. Files added one at a time land in the order you added them, whatever their names say. Either way, the list is what counts, and you can fix it by dragging.</p>
+
+          <h4>結合前の確実な事前チェック</h4>
+          <p>Each file in the list shows a preview of its page, and the list is the real order the merge will use. If something's out of place, drag it to the right spot. This thirty-second check is far faster than downloading a merged PDF, discovering page 4 is actually supposed to be page 2, and starting over.</p>
+
+          <h4>ファイル名で順序を確実にする</h4>
+          <p>If you regularly merge multi-file sets — scanned pages, multi-part reports, sequential chapters — prefix the file names with numbers: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Adding them all at once will then usually give you the right order from the start, and any stragglers are a quick drag away.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 応募書類を結合する：カバーレター、履歴書、ポートフォリオ</h3>
+          <p>求人やインターンへの応募は、PDF結合ツールを使う最も一般的な理由の一つで、構成を正しく整えることが、応募の受け取られ方に実際に影響することがあります。</p>
+
+          <h4>雇用主が複数の添付ファイルより1つのPDFを好む理由</h4>
+          <p>採用担当者は何十、何百という応募を、たいていスマートフォンで、あるいは会議の合間にざっと確認します。応募書類が3〜4個の別々の添付ファイル（カバーレター、履歴書、ポートフォリオ、推薦状）で届くと、全体像をつかむために複数のファイルを開いて行き来する必要があり、一つが見落とされたり、別の場所に保存されたり、そもそも開かれなかったりしがちです。きちんと順序が整った1つのPDFなら、その手間が完全になくなります。1クリックですべてが、意図した読み順で開きます。</p>
+
+          <h4>ほとんどの応募書類でうまくいく順序</h4>
+          <p>妥当な初期の並び順は、最初にカバーレター（最も短く、文脈を示す）、次に履歴書（ほとんどの審査担当者が最も見たい中核）、最後にポートフォリオ、資格証明書、推薦状などの補足資料です。応募のどの職種かも分からないままポートフォリオから始めるのではなく、文脈、中身、裏付けの順で読みたいという、ほとんどの人の自然な読み方に沿っています。</p>
+
+          <h4>異なる形式で始まったファイルを結合する</h4>
+          <p>It's common for a cover letter to exist as a Word-exported PDF, a resume as a separate PDF, and portfolio samples as image files (photos of physical work, screenshots of digital projects, scanned certificates). Combine takes all of that in one go: drop the PDFs and the JPG or PNG images together, and each image becomes its own page. Only images in other formats, such as WEBP or HEIC, need a quick trip through Convert first.</p>
+
+          <h4>ファイルサイズを妥当に保つ</h4>
+          <p>Portfolio images, especially camera photos of physical work or high-resolution screenshots, can be unnecessarily large. Switch the image quality option to Smaller or Smallest and Combine shrinks the images inside the PDF, showing the new size of each file as you go. A large, slow-to-open attachment is a small but real point of friction for anyone reviewing it under time pressure.</p>
+
+          <h4>提出前の再確認</h4>
+          <p>結合したら、最終的なPDFを開いて、最初から最後まで一度スクロールしてください。順序違いのページ、誤って含まれた下書きバージョン、想定どおりに変換されなかったポートフォリオ画像など、実際に見るまで気づけない小さなミスが見つかります。雇用主がすでに開いてしまってから発見するのは、はるかに恥ずかしいものです。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. ページ順を崩さずにスキャン文書を結合する</h3>
+          <p>契約書、フォーム、身分証明書、複数ページの手紙といったスキャンされた書類には、スキャンが行われる方法ゆえの、独特な順序の問題があります。</p>
+
+          <h4>スキャンされたページが他のファイルより順序を崩しやすい理由</h4>
+          <p>Many scanners and scanning apps save each page as a separate file with a generic, auto-generated name (scan001.pdf, IMG_2024.jpg, and so on), sometimes numbered by the order pages were physically fed into the scanner and sometimes not. If you scanned a stack of pages out of physical order, or a multi-function printer numbered them unexpectedly, the file names won't reliably reflect the document's true reading order, so a list sorted by name can silently produce a document with pages out of sequence.</p>
+
+          <h4>最も安全な方法：ファイル名だけでなく、内容を確認する</h4>
+          <p>Before merging, glance at each page's preview in the list rather than trusting the file name alone. It only takes a few seconds to confirm page one is really the top of the document and page two follows it, and it's the most reliable way to avoid sending a scrambled document to a bank, government office, or landlord.</p>
+
+          <h4>混在するスキャン：一部のページは撮影、一部はスキャン</h4>
+          <p>It's common to have a proper scan for most pages and a phone photo for one or two (a page that didn't fit on the scanner bed, or was scanned later as an afterthought). Combine takes PDFs and JPG or PNG images side by side, so this isn't a problem technically. A photographed page often looks different in lighting and framing from a true scan, though, so if the document's appearance matters, re-scan the odd one out.
+
+          <h4>Sideways or upside-down pages</h4>
+          <p>Phone photos and scans often come in rotated. Use the rotate button on that file to turn the picture a quarter at a time; the page keeps its shape and the previews update straight away, so you can see the fix before you download.</p></p>
+
+          <h4>複数ページの契約書と署名ページ</h4>
+          <p>署名ページのある契約書やフォームでは、そのページが文書の他の部分に対して正確な位置に収まる必要があります。署名ページが間違った位置に結合されると、法的文書が無効または不完全に見えることがあるからです。上の結合前プレビューチェックが最も重要になるケースとして扱ってください。順序付きのプレビューリストを5秒見るだけで、署名し直して再送する羽目になる文書を避けられます。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 結合するときと、ファイルを分けておくとき</h3>
+          <p>すべてを1つのPDFにまとめるのが常に最善とは限りません。別々のファイルのほうが本当に受け取る人のためになることもあるので、今どちらの状況なのかを知る価値があります。</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>状況</th><th>結合するか、分けておくか</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">順番に読まれる複数ページの応募書類やレポート</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">プラットフォームが単一のPDFを明示的に求めている</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">受け取る人が各ファイルを個別に扱う必要がある</td><td data-label="結合するか、分けておくか">分けておく</td></tr>
+              <tr><td data-label="状況">無関係な参照ファイルの大量のバッチ</td><td data-label="結合するか、分けておくか">分けておく、またはZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h4>結合が明らかに正しい選択のとき</h4>
+          <p>特定の順序で読まれるべきもの（複数ページの応募書類、スキャンした契約書、導入のあとに裏付けデータが続く報告書）は、1つのファイルにすることで大きなメリットがあります。読み手が意図した順にすべてに触れることが保証され、ページを順不同に開いたり、何かを飛ばしたりすることがなくなります。フォームやプラットフォームが「単一のPDF」を明示的に求める場面も判断は簡単です。要求されたものを結合して提出するだけです。</p>
+
+          <h4>別々のファイルのほうが受け取る人のためになるとき</h4>
+          <p>受け取る側がドキュメントを個別に扱う必要がある場合（たとえば、請求書だけを経理に転送し、納品書は自分の記録用に残す場合）、1つのファイルにまとめると、必要な部分だけを取り出したり印刷し直したりする必要が生じ、作業が楽にならずむしろ難しくなります。同様に、別々の場所に保管する本当に無関係な複数の文書を送る場合は、まとめたPDFと格闘させるよりも、別々のファイルのほうが、それぞれを自分のやり方で扱えます。</p>
+
+          <h4>参考資料の大規模なコレクション</h4>
+          <p>順番に読むことを想定していない、緩やかに関連した画像や文書の大きなセット（たとえば参考写真の大量のバッチ）を送る場合、バラバラのファイルのZIPアーカイブのほうが、巨大な1つのPDFより実際に役立つことがあります。受け取る側は、1枚の写真を探すために巨大な文書をスクロールするのではなく、個々のアイテムを閲覧して開けるからです。</p>
+
+          <h4>手早く判断する方法</h4>
+          <p>ファイルが最初から最後まで通して読むべき一つのまとまり（結合する）なのか、たまたま一緒に送られる複数の独立したもの（分けておく、またはZIPにする）なのかを考えましょう。ほとんどの応募書類、契約書、複数ページのスキャン文書は明らかに前者に当たり、ほとんどの参考資料、まとめて納品する成果物、個別に扱える文書は後者に当たります。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 結合でよくある間違い（と回避方法）</h3>
+          <p>Combineはシンプルなツールですが、避けられるミスがいくつかあるだけで、使う人が感じる不満のほとんどを占めます。</p>
+
+          <h4>プレビューを確認せず、ファイル名で順序を信用する</h4>
+          <p>File names don't always reflect the order you want, especially for scans and downloads with auto-generated names. Look at the list before you download rather than assuming it came out right.</p>
+
+          <h4>「便宜上」無関係な文書を1つのファイルにまとめる</h4>
+          <p>Combining unrelated documents just to have fewer files often backfires: the recipient has to scroll through a large merged file to find the one section they need. Reserve combining for documents that belong together as one read.</p>
+
+          <h4>送信前に最終ファイルを確認しない</h4>
+          <p>Open the merged PDF and skim it once before it goes anywhere important. That catches an out-of-order page, a duplicated document, or a page that didn't render the way you expected.</p>
+
+          <h4>Leaving a page sideways</h4>
+          <p>A photo taken with the phone turned, or a page scanned the wrong way up, ends up sideways in the merged PDF and is a hassle to fix afterwards. Rotate it in the list before you download; the preview shows the result at once.</p>
+
+          <h4>必要以上に巨大な結合ファイルを送る</h4>
+          <p>Merging several already-large PDFs or high-resolution scans produces a combined file that inherits all of their weight. Before downloading, set the image quality to Smaller or Smallest and check the size shown on each file. A slow-to-open, oversized PDF is a common complaint from recipients on slower connections or older devices.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -758,21 +860,21 @@ html[data-theme="dark"] .combine-file-index{
       <h3>はじめに：</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -789,8 +891,8 @@ html[data-theme="dark"] .combine-file-index{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=166" defer></script>
-<script src="/shared/report.js?v=31" defer></script>
-<script src="/combine/combine-tool.js?v=73" defer></script>
+<script src="/shared/site.js?v=167" defer></script>
+<script src="/shared/report.js?v=167" defer></script>
+<script src="/combine/combine-tool.js?v=167" defer></script>
 </body>
 </html>
