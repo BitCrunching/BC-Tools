@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convert/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
-<script src="/shared/i18n/ja.js?v=8"></script>
+<script src="/shared/i18n/ja.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Convert – 無料の画像・PDF変換ツール – BC Tools">
@@ -77,7 +77,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -737,7 +737,117 @@
       <li><a href="#gr-article-4">4. 画像を変換するとき：実際のシナリオ</a></li>
       <li><a href="#gr-article-5">5. 変換でよくある間違い（と回避方法）</a></li>
     </ul>
-    <div class="gr-inline" data-tool="convert"></div>
+    <div class="gr-inline" data-tool="convert">
+<div class="gr-article" id="gr-article-1"><h3>1. 画像フォーマット完全ガイド：JPG・PNG・WEBP</h3>
+          <p>画像形式はそれぞれ異なる問題を解決するために設計されており、適切な形式を選ぶことは、画像を準備する際のほぼどんな決定よりも、ファイルサイズと品質に大きな影響を与えます。それぞれの内部で実際に何が起きているのか、そしてそれが本当に重要になるのはいつかを紹介します。</p>
+
+          <h4>JPG (JPEG)：写真向けの形式</h4>
+          <p>JPGは非可逆圧縮を使用しており、ファイルサイズを縮小するために、保存のたびに画像データの一部を捨てます。写真は、なだらかな色の変化、自然なノイズ、はっきりしたエッジがないという特徴を持つため、これが非常にうまく機能します。人間の目は、JPGが捨てる特定の情報に簡単には気づかないからです。だからこそ、JPGは写真向けの標準形式として、Web、カメラ、スマートフォンで使われ続けています。優れた圧縮、小さなファイル、普遍的なサポート。</p>
+          <p>JPGにできないことは透過です。形式にそもそもアルファチャンネルがないので、透明な背景が必要なら、JPGは選択肢から完全に外れます。また、再保存するたびに少しずつ劣化し（詳しくは下のミスに関する記事を参照）、文字やロゴのような鮮明なエッジを持つグラフィックでは苦手で、圧縮アーティファクトが硬い線の周りのぼやけとして目立ちます。</p>
+
+          <h4>PNG：可逆で透過に優しい形式</h4>
+          <p>PNGは可逆圧縮を使用しており、何度再保存しても品質の低下なく、すべてのピクセルが正確に保たれます。そのため、鮮明なエッジ、フラットな色、文字を含むもの（ロゴ、スクリーンショット、アイコン、図表）に適した選択です。また、部分的な透明（柔らかくぼかしたエッジ）を含む透過を完全にサポートします。JPGにはこれがまったくできません。</p>
+          <p>代償はサイズです。可逆圧縮は、JPGの非可逆アプローチほどファイルを小さくできません。特に、微妙な色の変化が多い写真ではそうです。PNGで保存した写真は、ほとんどの人が見分けられない品質の違いのために、同じ写真をJPGで保存したものの5〜10倍の大きさになることがあります。</p>
+
+          <h4>WEBP：現代のオールラウンダー</h4>
+          <p>WEBPはGoogleの新しい形式で、ほとんどの場合、本当に両方のいいとこ取りです。非可逆圧縮と可逆圧縮の両方をサポートし（必要に応じてJPGのようにも、PNGのようにも使えます）、透過をサポートし、同等の品質でJPGやPNGより小さなファイルを生成するのが一般的です。写真ではJPGより25〜35%小さくなることが多く、グラフィックではPNGよりはるかに小さくなります。</p>
+          <p>唯一の本当の制限は、古いソフトウェアとの互換性です。一部の古い画像エディタ、メールクライアント、古いデバイスは、WEBPをうまく扱えません。現代のWebサイトでは、これが実際に問題になることはもうまれですが、ソフトウェアを自分で管理できない相手にファイルを送る場合は、考慮する価値があります。</p>
+
+          <h4>HEIC：変換して離れたくなるiPhoneの形式</h4>
+          <p>HEIC（およびその近縁のHEIF）は、iOS 11以降のAppleの標準の写真形式で、同じ品質ならJPGより効率よく圧縮できるため、iPhoneが自動的に使用します。問題は互換性です。Apple以外のほとんどのソフトウェア、古い編集ツール、多くのWebサイトやアップロードフォームは、今でもHEICファイルを直接開けません。</p>
+          <p>ConvertはHEIC/HEIFを入力として受け付け、すべてブラウザ内でデコードします。iPhoneから出したばかりの写真をそのままドロップして、どこでも開けるJPG、PNG、WEBPを受け取れます。HEICの出力オプションはありません。変換する目的は、まさにその互換性のギャップをなくすことだからです。</p>
+
+          <h4>素早い判断ルール</h4>
+          <p>透過が不要な写真 → JPGまたはWEBP。透過や鮮明なエッジが必要なもの（ロゴ、スクリーンショット、グラフィック）→ PNGまたはWEBP。最新ブラウザ対応で最小のファイルが必要 → WEBP。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 写真をPDFにする方法（とその理由）</h3>
+          <p>画像を1つのPDFに変換することは、Convertができる最も便利なことの一つですが、すぐには気づかれません。「この12枚の写真を、12個の別々の添付ではなく1つのファイルで送るには？」への答えです。</p>
+
+          <h4>画像をZIPにまとめるのではなく、PDFにまとめる理由</h4>
+          <p>ZIPファイルでは、受け取る側がダウンロードして展開し、画像を一つずつ開く必要があります。ほとんどの人はその手間をかけたがりません。PDFならほぼすべての端末にあるブラウザや標準のPDFビューアで直接開け、ページはあなたが設定した順序のとおりに表示されます。応募書類（カバーレター、履歴書、ポートフォリオの順）や、順番を保つ必要があるスキャン書類で非常に重要です。</p>
+          <p>また、公式・準公式の提出の非常に多くの場面で期待される形式でもあります。求人応募、保険請求、税務書類、学校の課題、賃貸申込などでは、バラバラの画像が入ったフォルダのように誤って並べ替えられたり分割されたりすることがなく、あいまいさがないため、「単一のPDFで提出してください」と指定されることがよくあります。</p>
+
+          <h4>ステップごとに</h4>
+          <p>画像をConvertにドロップします。複数を一度に選択できます。「PDF」形式ボタンをクリックしてください。他の形式と異なり、これは各画像を別々に変換せず、すべてを1つのPDFにまとめて、それぞれの画像を1ページにします。「変換してダウンロード」をクリックすると、選択したすべての画像が、アップロードした順に1ページずつ入った単一のPDFファイルが得られます。</p>
+          <p>ここでは順序が重要なので、変換する前にファイルが選択された順序をもう一度確認してください。現在、Convertは選択またはドロップされた順にファイルを処理するため、順序が重要な場合（複数ページのスキャン文書など）は、表示させたい順に選択またはドロップしてください。</p>
+
+          <h4>PDF内の画像品質についての補足</h4>
+          <p>画像はそのまま埋め込まれるため、低解像度の画像はPDFの中でも低解像度のままです。PDFへの変換は、元になかったディテールを加えません。印刷ポートフォリオのようなものを準備する場合は、不必要に巨大なカメラ原本を放り込んで、開くのが遅くメール送信しにくい肥大化したPDFにするのではなく、事前に画像を圧縮または適切な解像度にリサイズする価値があります。</p>
+
+          <h4>これが適切なツールでないとき</h4>
+          <p>すでに持っているPDF（生の画像ではなく）を結合する場合は、代わりにCombineツールを使ってください。ConvertのPDF出力は、画像から新しいPDFを作るためのもので、既存のPDF文書を結合するためのものではありません。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. PDFから画像を取り出す：実践ガイド</h3>
+          <p>逆方向、つまり既存のPDFから画像を取り出すことは、別の、同じくらいよくある問題を解決します。PDFがあり、1ページだけ、またはすべてのページを、独立した画像ファイルとして必要としている場合です。</p>
+
+          <h4>これが必要になるよくある理由</h4>
+          <p>PDFプレゼンテーションから1枚のスライドを取り出して、メールやチャットメッセージに入れる。スキャンした文書のページを取り出して、画像エディタで個別に編集または注釈を付ける。PDFのレポートから図表を取り出して、別の場所で再利用する。古いスキャン文書の各ページを、より普遍的に閲覧できる個別の画像ファイルとしてアーカイブする。</p>
+
+          <h4>実際にはどう動作するのか</h4>
+          <p>画像ではなくPDFをConvertにドロップすると、ツールが自動的に検出し、形式オプションがJPG、PNG、WEBPのみに切り替わります。PDFを別のPDFやSVGに変換しても意味がないためです。ニーズに合う画像形式（小さいファイルならJPG、PDFのページに透過や鮮明な文字がある場合はPNG、両方のバランスが最良ならWEBP）を選んで変換してください。</p>
+          <p>PDFの各ページは、それぞれ独立した画像ファイルになります。10ページのPDFをJPGに変換すると、ページごとに自動で番号付けされた10個の個別のJPGファイルが得られます。5ページを超えて抽出する場合は、10回の個別ダウンロードを発生させる代わりに、1つのZIPダウンロードにまとめられます。</p>
+
+          <h4>解像度と画質に関する考慮事項</h4>
+          <p>PDFのページは、一般的な文書やプレゼンテーションで鮮明で読みやすい結果が得られるよう設計された固定スケールで画像にレンダリングされます。非常に詳細な図を抽出する場合や、印刷用に特に高い解像度が必要な場合は、印刷が重要な用途に使う前に出力品質を確認する価値があります。デジタル用途ならスクリーン解像度での抽出で通常は十分以上ですが、非常に細かい印刷作業には、高DPIの抽出のために特別に作られた別のツールが必要になることがあります。</p>
+
+          <h4>複数ページのPDFとファイル名</h4>
+          <p>抽出された各画像には自動的にページ番号のラベルが付くので、どの出力が元の文書のどのページに対応するかがひと目で分かります。長いPDFから、全体ではなく必要な数ページだけを取り出したいときに便利です。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 画像を変換するとき：実際のシナリオ</h3>
+          <p>形式間の技術的な違いを知っていることと、目の前の状況にどれが実際に当てはまるかを知っていることは別のことです。シナリオベースの考え方を紹介します。</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>状況</th><th>最適な形式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">プラットフォームが特定の形式を指定している</td><td data-label="最適な形式">プラットフォームの要件がどうあれ、まず確認する</td></tr>
+              <tr><td data-label="状況">自分のWebサイトを高速化する</td><td data-label="最適な形式">WEBP</td></tr>
+              <tr><td data-label="状況">透過背景が必要</td><td data-label="最適な形式">PNGまたはWEBP</td></tr>
+              <tr><td data-label="状況">印刷またはプロ向けの利用に備える</td><td data-label="最適な形式">PNG</td></tr>
+              <tr><td data-label="状況">長期のアーカイブ</td><td data-label="最適な形式">PNG（または可逆モードのWEBP）</td></tr>
+            </tbody>
+          </table>
+
+          <h4>特定の形式しか受け付けないプラットフォームにアップロードする</h4>
+          <p>これは、人々が変換ツールをそもそも必要とする最も一般的な理由です。Webサイト、アプリ、提出フォームが「JPGまたはPNGのみ」と指定しているのに、画像がWEBPやSVGである場合です。Convertならこれを数秒で解決できます。プラットフォームが要求する形式を選ぶだけです。推測を誤ると余計なやり取りが発生するので、必ず先にプラットフォームが明示している要件を確認してください。</p>
+
+          <h4>管理しているWebサイトを高速化する</h4>
+          <p>自分のWebサイトに画像をアップロードするなら、古いJPGやPNG画像をWEBPに変換することは、最も効果が高く、最も手間が少ない改善の一つです。ファイルが小さくなればページの読み込みが速くなり、ユーザー体験と検索順位の両方に影響します。小さなアイコンが1〜2個あるだけのページより、画像の多いページ（ギャラリー、商品一覧、写真の多いブログ）でより重要です。</p>
+
+          <h4>透過背景が必要な場合</h4>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
+
+          <h4>印刷またはプロ向けの利用に備える</h4>
+          <p>印刷所やプロのデザインワークフローには、特定の形式要件がある場合があります。ロゴやエッジの鮮明なグラフィックにPNGを求めるのは一般的で、JPGが文字や硬い線の周りに生み出しがちな柔らかい圧縮アーティファクトを避けられるからです。特定の印刷所が何を求めているか分からない場合、PNGは通常、単純な写真でないものに対する、安全で可逆な初期値です。</p>
+
+          <h4>アーカイブまたは長期保存</h4>
+          <p>何年も最高の画質で残したいものには、繰り返し圧縮されたJPGより、可逆形式（PNG）のほうが長期的には安全な選択です。JPGは再保存するたびに少しずつ画質が失われるためです。ストレージ容量が実際の制約になっている場合は、PNGより容量効率が良く、JPGの世代劣化も避けられるWEBPの可逆モードと比べて検討してください。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 変換でよくある間違い（と回避方法）</h3>
+          <p>変換に関する問題のほとんどは、繰り返される少数の間違いに由来します。注意すべき点を紹介します。</p>
+
+          <h4>JPGをJPGとして繰り返し再保存する</h4>
+          <p>JPGを開いて、少しでも編集し、保存し直すたびに、品質が少しずつ失われます。これは世代劣化と呼ばれ、積み重なります。画像を複数回編集する場合は、編集の途中は可逆形式（PNG）で作業し、最後の書き出しの段階で、1回だけJPGに変換してください。</p>
+
+          <h4>実際には透過が必要なのにJPGを使う</h4>
+          <p>これは変換ツールが受ける最も一般的なサポート質問です。「なぜロゴが透過背景ではなく白い枠で囲まれているのか？」答えはほぼ常に、ソースまたは出力形式がJPGだったからです。JPGは透過をまったく表現できず、設定やコツでは解決できません。形式自体にアルファチャンネルという概念がないからです。透過が必要なら、ソース画像と出力形式の両方がそれをサポートしている必要があります（PNGまたはWEBP）。</p>
+
+          <h4>横だけでなく、上方向に変換する</h4>
+          <p>小さな低解像度の画像を別の形式に変換しても、ディテールは増えず、実際の解像度も上がりません。400×300ピクセルのJPGをPNGに変換しても、400×300ピクセルの画像のままで、入れ物が違うだけです。より大きな画像が必要なら、最初からより高解像度の元データが必要です。形式変換だけでは、撮影されなかったディテールは作れません。</p>
+
+          <h4>大きな写真にデフォルトでPNGを選ぶ</h4>
+          <p>PNGの可逆圧縮はグラフィックには素晴らしいですが、写真には不向きです。ほとんどの人が気づかない品質の違いのために、必要以上にはるかに大きなファイルになります。休暇の写真のバッチを「念のため」変換するのであれば、JPGやWEBPのほうがずっと役に立ちます。PNGは、透過、文字、鮮明なグラフィックエッジを持つ画像専用にとっておきましょう。</p>
+
+          <h4>大切な場所に送る前に出力を確認しない</h4>
+          <p>顧客、雇用主、公式な提出先に送るものなら、送る前に変換したファイルを一度開く価値があります。複数ページのPDFのページ順の確認、透過が正しく反映されたかの確認、ファイルが予想外に巨大でないかの確認などです。数秒で済み、提出が差し戻されたり、恥ずかしい再送が必要になったりする、はるかに時間のかかる問題を避けられます。</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -759,21 +869,21 @@
       <h3>はじめに：</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -790,7 +900,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convert/convert-tool.js?v=50" defer></script>
 </body>

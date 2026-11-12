@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convert/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
-<script src="/shared/i18n/ko.js?v=8"></script>
+<script src="/shared/i18n/ko.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Convert – 무료 이미지 및 PDF 변환기 – BC Tools">
@@ -77,7 +77,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -737,7 +737,117 @@
       <li><a href="#gr-article-4">4. 이미지를 변환해야 할 때: 실제 시나리오</a></li>
       <li><a href="#gr-article-5">5. 변환에서 흔한 실수(와 피하는 방법)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="convert"></div>
+    <div class="gr-inline" data-tool="convert">
+<div class="gr-article" id="gr-article-1"><h3>1. 이미지 형식 완벽 가이드: JPG vs PNG vs WEBP</h3>
+          <p>모든 이미지 형식은 서로 다른 문제를 해결하기 위해 설계되었으며, 알맞은 형식을 고르는 것은 이미지를 준비할 때 내리는 거의 모든 결정보다 파일 크기와 품질에 더 큰 영향을 줍니다. 각 형식의 내부에서 실제로 어떤 일이 일어나는지, 그리고 언제 정말 중요한지 알아봅니다.</p>
+
+          <h4>JPG (JPEG): 사진용 형식</h4>
+          <p>JPG는 손실 압축을 사용하며, 이는 파일 크기를 줄이기 위해 저장할 때마다 일부 이미지 데이터를 버린다는 뜻입니다. 완만한 색 전환, 자연스러운 노이즈, 선명한 가장자리가 없는 사진에는 이것이 놀랄 만큼 잘 작동합니다. 사람의 눈은 JPG가 버리는 특정 정보를 쉽게 알아채지 못하기 때문입니다. 그래서 JPG는 웹, 카메라, 휴대폰에서 사진의 기본 형식으로 남아 있습니다. 뛰어난 압축, 작은 파일, 보편적인 지원.</p>
+          <p>JPG가 할 수 없는 것은 투명도입니다. 형식에 알파 채널이 전혀 없으므로 투명한 배경이 필요하다면 JPG는 완전히 제외됩니다. 또한 다시 저장할 때마다 조금씩 저하되고(아래 실수 관련 문서에서 자세히 다룹니다), 텍스트나 로고처럼 선명한 가장자리가 있는 그래픽에서 어려움을 겪으며, 이때 압축 아티팩트가 딱딱한 선 주변의 흐릿함으로 눈에 띕니다.</p>
+
+          <h4>PNG: 무손실이며 투명도에 친화적인 형식</h4>
+          <p>PNG는 무손실 압축을 사용하여, 몇 번을 다시 저장해도 품질 손실 없이 모든 픽셀이 정확히 보존됩니다. 따라서 선명한 가장자리, 단색, 텍스트가 있는 것, 즉 로고, 스크린샷, 아이콘, 다이어그램에 알맞은 선택입니다. 부분 투명도(부드럽고 흐릿한 가장자리)를 포함한 투명도도 완전히 지원하는데, JPG는 이것을 전혀 할 수 없습니다.</p>
+          <p>대가는 크기입니다. 무손실 압축은 특히 미묘한 색 변화가 많은 사진에서 JPG의 손실 방식만큼 파일을 줄일 수 없습니다. PNG로 저장한 사진은 대부분의 사람들이 알아볼 수 없는 품질 차이를 위해 같은 사진을 JPG로 저장한 것보다 5–10배 쉽게 커질 수 있습니다.</p>
+
+          <h4>WEBP: 현대적인 만능 형식</h4>
+          <p>WEBP는 Google의 비교적 새로운 형식이며, 대부분의 경우 정말 두 세계의 장점을 모두 가졌습니다. 손실 압축과 무손실 압축을 모두 지원하고(필요에 따라 JPG처럼도 PNG처럼도 동작할 수 있음), 투명도를 지원하며, 같은 품질에서 보통 JPG나 PNG보다 작은 파일을 만듭니다. 사진에서는 JPG보다 25–35% 작은 경우가 많고, 그래픽에서는 PNG보다 훨씬 작습니다.</p>
+          <p>유일한 실제 제한은 오래된 소프트웨어와의 호환성입니다. 일부 오래된 이미지 편집기, 일부 이메일 클라이언트, 일부 오래된 기기는 WEBP를 잘 처리하지 못합니다. 현대 웹사이트에서는 이것이 더 이상 실제로 문제가 되는 경우가 드물지만, 소프트웨어를 통제할 수 없는 사람에게 파일을 보낸다면 한 번 생각해 볼 만합니다.</p>
+
+          <h4>HEIC: 벗어나고 싶어질 iPhone 형식</h4>
+          <p>HEIC(및 그 가까운 친척인 HEIF)는 iOS 11부터 Apple의 기본 사진 형식입니다. 같은 품질에서 JPG보다 더 잘 압축되어 iPhone이 자동으로 사용합니다. 문제는 호환성입니다. Apple이 아닌 대부분의 소프트웨어, 오래된 편집 도구, 많은 웹사이트와 업로드 양식은 여전히 HEIC 파일을 바로 열 수 없습니다.</p>
+          <p>Convert는 HEIC/HEIF를 입력으로 받아 전부 브라우저 안에서 디코딩하므로, iPhone에서 막 꺼낸 사진을 그대로 놓고 어디서나 열리는 JPG, PNG, WEBP로 받을 수 있습니다. HEIC 출력 옵션은 없습니다. 변환의 목적이 바로 그 호환성 격차를 없애는 것이기 때문입니다.</p>
+
+          <h4>빠른 결정 규칙</h4>
+          <p>투명도가 필요 없는 사진 → JPG 또는 WEBP. 투명도나 선명한 가장자리가 필요한 것(로고, 스크린샷, 그래픽) → PNG 또는 WEBP. 최신 브라우저를 지원하는 가장 작은 파일이 필요 → WEBP.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 사진을 PDF로 바꾸는 방법(그리고 그래야 하는 이유)</h3>
+          <p>이미지를 하나의 PDF로 변환하는 것은 Convert가 할 수 있는 가장 유용한 일 중 하나이지만 사람들이 바로 발견하지 못합니다. “이 사진 12장을 12개의 첨부 파일이 아니라 파일 하나로 보내려면 어떻게 하나요”에 대한 답입니다.</p>
+
+          <h4>이미지를 그냥 ZIP으로 묶지 않고 PDF로 합치는 이유</h4>
+          <p>ZIP 파일은 받는 사람이 다운로드하고, 압축을 풀고, 이미지를 하나씩 열어야 합니다. 대부분의 사람들은 이런 추가 단계를 귀찮아합니다. PDF는 브라우저나 거의 모든 기기에 이미 있는 기본 PDF 뷰어에서 바로 열리고, 페이지는 설정한 순서 그대로 나타납니다. 지원서(자기소개서, 이력서, 포트폴리오 샘플 순)나 순서를 유지해야 하는 스캔 서류에서는 이것이 매우 중요합니다.</p>
+          <p>또한 수많은 공식 및 준공식 제출에서 기대되는 형식이기도 합니다. 입사 지원서, 보험 청구, 세금 서류, 학교 과제, 임대 신청서는 낱개 이미지 폴더처럼 실수로 순서가 바뀌거나 분리될 수 없고 모호함이 없다는 이유로 “단일 PDF로 제출해 주세요”라고 명시하는 경우가 많습니다.</p>
+
+          <h4>단계별로</h4>
+          <p>이미지를 Convert에 놓으세요. 여러 장을 한 번에 선택할 수 있습니다. “PDF” 형식 버튼을 클릭하세요. 다른 형식과 달리 이 형식은 각 이미지를 따로 변환하지 않고, 모든 이미지를 하나의 PDF로 합쳐 각 이미지가 한 페이지가 됩니다. “변환 후 다운로드”를 클릭하면 선택한 모든 이미지가 업로드한 순서대로 페이지당 하나씩 들어 있는 PDF 파일 하나를 받게 됩니다.</p>
+          <p>여기서는 순서가 중요하므로 변환하기 전에 파일이 선택된 순서를 다시 확인하세요. 현재 Convert는 파일을 선택하거나 놓은 순서를 따르므로, 순서가 중요하다면(여러 페이지 스캔 문서처럼) 나타나길 원하는 순서대로 선택하거나 놓으세요.</p>
+
+          <h4>PDF 안의 이미지 품질에 관한 참고</h4>
+          <p>이미지가 있는 그대로 내장되므로, 해상도가 낮은 이미지는 PDF 안에서도 여전히 해상도가 낮게 보입니다. PDF로 변환해도 없던 디테일이 더해지지 않습니다. 인쇄용 포트폴리오 같은 것을 준비한다면, 불필요하게 거대한 카메라 원본 파일을 그대로 쏟아 넣어 열기 느리고 이메일로 보내기 어색한 부풀려진 PDF를 만드는 대신, 미리 이미지를 압축하거나 적당한 해상도로 줄이는 것이 좋습니다.</p>
+
+          <h4>이것이 잘못된 도구일 때</h4>
+          <p>이미 가지고 있는 PDF(원본 이미지가 아니라)를 합친다면 대신 Combine 도구가 필요합니다. Convert의 PDF 출력은 이미지를 새 PDF로 바꾸기 위한 것이며, 기존 PDF 문서를 합치기 위한 것이 아닙니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. PDF에서 이미지 추출하기: 실전 가이드</h3>
+          <p>반대 방향, 즉 기존 PDF에서 이미지를 꺼내는 것은 다른, 똑같이 흔한 문제를 해결합니다. PDF가 있고 한 페이지 또는 모든 페이지가 독립적인 이미지 파일로 필요한 경우입니다.</p>
+
+          <h4>이것이 필요한 흔한 이유</h4>
+          <p>PDF 프레젠테이션에서 슬라이드 한 장을 꺼내 이메일이나 채팅 메시지에 넣기. 스캔한 문서의 페이지를 추출해 이미지 편집기에서 개별적으로 편집하거나 주석 달기. PDF 보고서에서 다이어그램이나 차트를 가져와 다른 곳에서 재사용하기. 오래된 스캔 문서의 각 페이지를 더 널리 볼 수 있는 별도의 이미지 파일로 보관하기.</p>
+
+          <h4>실제로 작동하는 방식</h4>
+          <p>이미지 대신 PDF를 Convert에 놓으면 도구가 이를 자동으로 감지하고, PDF를 다른 PDF나 SVG로 변환하는 것은 의미가 없으므로 형식 옵션이 JPG, PNG, WEBP만 표시되도록 바뀝니다. 필요에 맞는 이미지 형식(더 작은 파일에는 JPG, PDF 페이지에 투명도나 선명한 텍스트가 있으면 PNG, 둘의 균형이 가장 좋은 WEBP)을 고르고 변환하세요.</p>
+          <p>PDF의 각 페이지는 별도의 이미지 파일이 됩니다. 10페이지 PDF를 JPG로 변환하면 페이지별로 자동 번호가 매겨진 개별 JPG 파일 10개가 나옵니다. 5페이지를 넘게 추출하면 열 번의 개별 다운로드를 일으키는 대신 자동으로 하나의 ZIP 다운로드로 묶입니다.</p>
+
+          <h4>해상도와 품질 고려 사항</h4>
+          <p>PDF 페이지는 일반적인 문서와 프레젠테이션에서 선명하고 읽기 쉬운 결과를 내도록 설계된 고정 배율로 이미지로 렌더링됩니다. 매우 상세한 다이어그램을 추출하거나 인쇄를 위해 특히 높은 해상도가 필요하다면, 인쇄에 결정적인 용도로 의존하기 전에 출력 품질을 확인할 가치가 있습니다. 디지털 용도로는 화면 해상도 추출이 보통 충분하고도 남지만, 매우 정교한 인쇄 작업에는 고DPI 추출을 위해 특별히 만들어진 다른 도구가 필요할 수 있습니다.</p>
+
+          <h4>여러 페이지 PDF와 파일 이름</h4>
+          <p>추출된 각 이미지에는 자동으로 페이지 번호가 라벨로 붙어서, 어떤 출력이 원본 문서의 어느 페이지에 해당하는지 한눈에 알 수 있습니다. 긴 PDF에서 전체가 아니라 특정 몇 페이지만 필요할 때 유용합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 이미지를 변환해야 할 때: 실제 시나리오</h3>
+          <p>형식 간 기술적 차이를 아는 것과 눈앞의 상황에 실제로 어느 것이 적용되는지 아는 것은 별개입니다. 시나리오 기반으로 생각하는 방법을 소개합니다.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>상황</th><th>최적의 형식</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="상황">플랫폼이 특정 형식을 요구함</td><td data-label="최적의 형식">플랫폼이 무엇을 요구하든: 먼저 확인하세요</td></tr>
+              <tr><td data-label="상황">내 웹사이트 속도 높이기</td><td data-label="최적의 형식">WEBP</td></tr>
+              <tr><td data-label="상황">투명한 배경이 필요함</td><td data-label="최적의 형식">PNG 또는 WEBP</td></tr>
+              <tr><td data-label="상황">인쇄 또는 전문적인 용도 준비하기</td><td data-label="최적의 형식">PNG</td></tr>
+              <tr><td data-label="상황">장기 보관</td><td data-label="최적의 형식">PNG (또는 무손실 모드의 WEBP)</td></tr>
+            </tbody>
+          </table>
+
+          <h4>특정 형식만 받는 플랫폼에 업로드하기</h4>
+          <p>이것이 사람들이 변환기가 필요한 가장 흔한 이유입니다. 웹사이트, 앱, 제출 양식이 “JPG 또는 PNG만”이라고 지정하지만 이미지가 WEBP나 SVG인 경우입니다. Convert는 이를 몇 초 만에 해결합니다. 플랫폼이 요구하는 형식을 고르면 끝입니다. 잘못 짐작하면 왕복이 낭비되므로 항상 먼저 플랫폼이 명시한 요구 사항을 확인하세요.</p>
+
+          <h4>관리하는 웹사이트 속도 높이기</h4>
+          <p>자신의 웹사이트에 이미지를 업로드한다면, 오래된 JPG와 PNG 이미지를 WEBP로 변환하는 것은 할 수 있는 가장 가치가 높고 노력이 적게 드는 개선 중 하나입니다. 파일이 작아지면 페이지 로딩이 빨라지고, 이는 사용자 경험과 검색 엔진 순위 모두에 영향을 줍니다. 작은 아이콘이 한두 개뿐인 페이지보다 이미지가 많은 페이지(갤러리, 제품 목록, 사진이 많은 블로그)에서 더 중요합니다.</p>
+
+          <h4>투명한 배경이 필요할 때</h4>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
+
+          <h4>인쇄 또는 전문적인 용도 준비하기</h4>
+          <p>인쇄소와 전문 디자인 워크플로에는 때때로 특정 형식 요구 사항이 있습니다. 로고와 선명한 가장자리의 그래픽에는 PNG가 흔한 요구인데, JPG가 텍스트와 딱딱한 선 주변에 만들 수 있는 부드러운 압축 아티팩트를 피할 수 있기 때문입니다. 특정 인쇄소가 무엇을 원하는지 확실하지 않다면, PNG는 단순한 사진이 아닌 모든 것에 대해 보통 안전하고 무손실인 기본값입니다.</p>
+
+          <h4>보관 또는 장기 저장</h4>
+          <p>몇 년 동안 가능한 최고 화질로 보관하고 싶은 것이라면, JPG는 다시 저장할 때마다 조금씩 화질이 손실되므로 반복적으로 압축된 JPG보다 무손실 형식(PNG)이 장기적으로 더 안전한 선택입니다. 저장 공간이 실제 제약이라면 PNG보다 공간 효율이 좋으면서 JPG의 세대 손실도 피할 수 있는 WEBP의 무손실 모드와 비교해 보세요.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 변환에서 흔한 실수(와 피하는 방법)</h3>
+          <p>변환 문제의 대부분은 반복되는 몇 가지 실수에서 비롯됩니다. 주의할 점을 소개합니다.</p>
+
+          <h4>JPG를 JPG로 반복해서 다시 저장하기</h4>
+          <p>JPG를 열어 아주 조금이라도 편집하고 다시 저장할 때마다 품질이 조금씩 더 떨어집니다. 이를 세대 손실이라고 하며 누적됩니다. 이미지를 여러 번 편집할 거라면 편집하는 동안에는 무손실 형식(PNG)으로 작업하고, 마지막 내보내기 단계에서 한 번만 JPG로 변환하세요.</p>
+
+          <h4>실제로 투명도가 필요한데 JPG 사용하기</h4>
+          <p>이것은 변환기가 받는 가장 흔한 지원 질문입니다. “내 로고가 투명한 배경 대신 흰색 상자로 둘러싸인 이유가 뭐죠?” 답은 거의 항상 소스나 출력 형식이 JPG였기 때문입니다. JPG는 투명도를 전혀 표현할 수 없으며, 형식 자체에 알파 채널이라는 개념이 없으므로 어떤 설정이나 요령으로도 해결되지 않습니다. 투명도가 필요하다면 원본 이미지와 출력 형식 모두 이를 지원해야 합니다(PNG 또는 WEBP).</p>
+
+          <h4>옆으로만이 아니라 위로 변환하기</h4>
+          <p>작고 해상도가 낮은 이미지를 다른 형식으로 변환해도 디테일이 늘어나거나 실제 해상도가 높아지지 않습니다. 400×300 픽셀 JPG를 PNG로 변환해도 여전히 400×300 픽셀 이미지이며 그릇만 다를 뿐입니다. 더 큰 이미지가 필요하다면 처음부터 더 높은 해상도의 원본이 필요합니다. 형식 변환만으로는 촬영된 적 없는 디테일을 만들어 낼 수 없습니다.</p>
+
+          <h4>큰 사진에 기본값으로 PNG 선택하기</h4>
+          <p>PNG의 무손실 압축은 그래픽에는 환상적이지만 사진에는 맞지 않습니다. 대부분의 시청자가 인지하지 못할 품질 차이를 위해 필요 이상으로 훨씬 큰 파일이 만들어집니다. 휴가 사진 묶음을 “혹시 몰라서” 변환한다면 JPG나 WEBP가 훨씬 낫습니다. PNG는 투명도, 텍스트 또는 선명한 그래픽 가장자리가 있는 이미지에 특별히 아껴 두세요.</p>
+
+          <h4>중요한 곳에 보내기 전에 출력을 확인하지 않기</h4>
+          <p>고객, 고용주 또는 공식 제출용으로 가는 것이라면 보내기 전에 변환된 파일을 한 번 열어 볼 만합니다. 여러 페이지 PDF의 페이지 순서 확인, 투명도가 제대로 반영되었는지 확인, 파일이 예상 밖으로 거대하지 않은지 확인하는 것입니다. 몇 초면 되고, 제출이 반려되거나 난처한 재전송이 필요한 훨씬 시간이 많이 드는 문제를 막아 줍니다.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -759,21 +869,21 @@
       <h3>시작하기:</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -790,7 +900,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convert/convert-tool.js?v=50" defer></script>
 </body>

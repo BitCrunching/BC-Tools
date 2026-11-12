@@ -45,7 +45,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convido/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convido/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convido/">
-<script src="/shared/i18n/pl.js?v=8"></script>
+<script src="/shared/i18n/pl.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Convido – Darmowy konwerter wideo – BC Tools">
@@ -74,7 +74,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#B84CFF; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -649,7 +649,87 @@
       <li><a href="#gr-article-4">4. Co Convido potrafi, a czego nie potrafi odczytać</a></li>
       <li><a href="#gr-article-5">5. Konwersja w przeglądarce: czego się spodziewać</a></li>
     </ul>
-    <div class="gr-inline" data-tool="convido"></div>
+    <div class="gr-inline" data-tool="convido">
+<div class="gr-article" id="gr-article-1"><h3>1. Kontenery i kodeki: czym naprawdę jest format wideo</h3>
+          <p>Plik wideo to dwie nałożone na siebie rzeczy. Kodek to sposób kompresji obrazu i dźwięku (H.264, HEVC, VP9, AAC). Kontener to pudełko, które trzyma skompresowane wideo, dźwięk i informacje o czasie (MP4, MOV, MKV, WebM, AVI, FLV). Konwersja między kontenerami to często po prostu przeniesienie tej samej zawartości do innego pudełka.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Format</th><th>Najlepszy do</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Format">MP4</td><td data-label="Najlepszy do">Udostępnianie i wysyłanie — odtwarza się na prawie każdym telefonie, komputerze i w aplikacji</td></tr>
+              <tr><td data-label="Format">MOV</td><td data-label="Najlepszy do">Urządzenia Apple i edytory wideo, takie jak Final Cut, Premiere i DaVinci Resolve</td></tr>
+              <tr><td data-label="Format">WebM</td><td data-label="Najlepszy do">Strony internetowe — małe pliki, które odtwarzają się w każdej nowoczesnej przeglądarce</td></tr>
+              <tr><td data-label="Format">MKV</td><td data-label="Najlepszy do">Archiwizacja i odtwarzacze, takie jak VLC — mieści prawie wszystko</td></tr>
+              <tr><td data-label="Format">AVI</td><td data-label="Najlepszy do">Stare odtwarzacze i programy, które rozumieją tylko AVI</td></tr>
+              <tr><td data-label="Format">FLV</td><td data-label="Najlepszy do">Stare odtwarzacze z ery Flasha i przestarzałe konfiguracje streamingu</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Which codecs fit which container</h4>
+          <p>MP4, MOV, MKV, AVI and FLV take H.264 video with AAC audio, so a typical phone or camera clip fits all of them and is simply re-packed. WebM takes VP8, VP9 or AV1 video with Opus or Vorbis audio, so an H.264 clip going into WebM has to be re-encoded, and so does a WebM clip going into MP4 or MOV (more on that in the output format article).</p>
+
+          <h4>Dlaczego rozszerzenie może wprowadzać w błąd</h4>
+          <p>Zmiana nazwy pliku z .mov na .mp4 nie konwertuje go. Zawartość pozostaje dokładnie taka sama, a niektóre odtwarzacze odrzucają pliki, których nazwa i zawartość się nie zgadzają. Convido odczytuje to, co naprawdę jest w pliku, a nie tylko jego nazwę.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Przepakowanie czy ponowne kodowanie: szybko i bezstratnie albo wolniej</h3>
+          <p>Gdy wideo i dźwięk w Twoim pliku pasują już do nowego formatu, Convido po prostu przepakowuje je do nowego kontenera. Zajmuje to ułamek sekundy, nawet przy bardzo dużym pliku, i nic w obrazie ani dźwięku się nie zmienia. Dziesięciominutowe wideo o rozmiarze 143 MB można przepakować z MOV do MP4 w znacznie mniej niż sekundę.</p>
+
+          <h4>Kiedy Convido musi zakodować ponownie</h4>
+          <p>If the video or audio doesn't fit the new container — for example H.264 or HEVC video going into WebM, which only takes VP8, VP9 and AV1 — Convido re-encodes it. It also re-encodes WebM-style video and audio (VP9, AV1, Opus, Vorbis) going into MP4 or MOV, so the result plays on Apple devices. That takes longer, depends on your computer, and the picture is compressed a second time, so quality can change slightly.</p>
+
+          <h4>Mała litera „i” przy wideo</h4>
+          <p>Na podglądzie wideo pojawia się małe „i”, gdy zostanie ono zakodowane ponownie dla wybranego wyjścia. Wybierz format, który zostawi je bez zmian, np. MP4, MOV lub MKV dla większości filmów z aparatów i telefonów, a uwaga zniknie, wynik będzie natychmiastowy i bezstratny.</p>
+
+          <h4>Rozmiar pliku po ponownym kodowaniu</h4>
+          <p>Plik zakodowany ponownie może wyjść mniejszy lub większy niż oryginał. Wideo, które było już bardzo mocno skompresowane, może urosnąć, bo nowy koder nie wie, jak mocno ściśnięto oryginał. Jeśli wynik jest większy, niż chcesz, skonwertuj do formatu, który tylko przepakowuje, albo zmniejsz go potem w Comprio.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Wybór właściwego formatu wyjściowego</h3>
+          <p>W razie wątpliwości wybierz MP4. To najszerzej wspierany format wideo i działa na telefonach, komputerach, w przeglądarkach, komunikatorach i mediach społecznościowych.</p>
+
+          <h4>WebM i MP4 nie są wymienne</h4>
+          <p>Videos recorded as WebM usually hold VP9 or AV1 video with Opus audio. QuickTime, iPhones and many editors can't play those inside an MP4 or MOV file, so when you convert a WebM to MP4 or MOV, Convido re-encodes it to H.264 and AAC (the small "i" tells you), and the result plays everywhere. That takes longer than a re-pack and compresses the picture a second time. MKV keeps the original codecs and re-packs instantly, which suits VLC and other media players.</p>
+
+          <h4>AVI i FLV</h4>
+          <p>Convido zapisuje AVI i FLV z wideo H.264 i dźwiękiem AAC, które obsługują nowoczesne odtwarzacze. AVI nie ma znaczników czasu, więc wideo ze zmienną liczbą klatek na sekundę może w niektórych odtwarzaczach lekko się rozjeżdżać, a plik AVI nie może być większy niż 4 GB. Używaj ich tylko wtedy, gdy wymaga tego stary odtwarzacz lub program.</p>
+
+          <h4>WMV nie jest dostępny</h4>
+          <p>Przeglądarki nie potrafią kodować wideo WMV, więc Convido nie może tworzyć plików WMV. W systemie Windows MP4 obsługuje Windows Media Player i każda obecna aplikacja Windows.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Co Convido potrafi, a czego nie potrafi odczytać</h3>
+          <p>Convido odczytuje pliki MP4, M4V, MOV, 3GP, 3GPP, 3G2, MKV, WebM, TS, M2TS, MTS i GIF. Wybór oczekiwanego formatu wejściowego wypełnia się na podstawie pierwszego dodanego wideo, a każdy plik jest rozpoznawany osobno, więc możesz mieszać formaty w jednej partii.</p>
+
+          <h4>Formaty, których przeglądarki nie potrafią odczytać</h4>
+          <p>Plików AVI, FLV, WMV, ASF, MPG, MPEG, VOB, MOD, MXF, DV, DVR, RM, RMVB, SWF, CAVS i OGG/OGV nie da się otworzyć w przeglądarce, więc Convido je pomija i o tym informuje. Pomijane są też pliki RAW z aparatów i pliki tylko z dźwiękiem.</p>
+
+          <h4>Wideo w czytelnym kontenerze nadal może się nie udać</h4>
+          <p>Niektóre pliki używają kodeka, którego Twoja przeglądarka nie potrafi zdekodować — np. pewne stare formaty telefonów. Są pokazywane jako czerwona karta i wymienione w wierszu stanu, a reszta partii jest przetwarzana dalej. Stare pliki 3GP z dźwiękiem AMR mogą z tego samego powodu zostać skonwertowane bez dźwięku.</p>
+
+          <h4>Zamiana GIF-a na wideo</h4>
+          <p>GIF nie ma kodeka wideo, więc Convido dekoduje każdą klatkę i koduje ją jako zwykłe wideo z oryginalnym taktowaniem. Jako pliki wideo GIF-y są często maleńkie. Przezroczyste obszary stają się białe, bo wideo nie ma przezroczystości, a MP4, MOV, MKV, AVI i FLV wymagają parzystego rozmiaru, więc GIF o nieparzystym rozmiarze dostaje jednopikselową białą ramkę (WebM zachowuje dokładny rozmiar). Wejście GIF wymaga przeglądarki z wbudowanym dekoderem obrazów, jak Chrome i Edge.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Konwersja w przeglądarce: czego się spodziewać</h3>
+          <p>Convido działa w całości na Twoim urządzeniu. Nic nie jest wysyłane i nie bierze w tym udziału żaden serwer, więc Twoje wideo pozostaje prywatne, a strona nie narzuca limitu rozmiaru pliku.</p>
+
+          <h4>Pojedyncze pliki lub .zip</h4>
+          <p>Do 5 wideo pobiera się pojedynczo. Od 6 do 20 możesz wybrać między pojedynczymi plikami a jednym .zip, a powyżej 20 wynikiem jest zawsze jeden .zip, aby przeglądarka nie została zalana pobieraniami. Plik .zip jest budowany w pamięci, więc partia bardzo dużych wideo wymaga dużo wolnej pamięci.</p>
+
+          <h4>Pozostaw kartę otwartą</h4>
+          <p>Przeglądarki spowalniają lub wstrzymują karty w tle, więc zostaw kartę Convido widoczną, gdy pracuje. Ponowne naciśnięcie przycisku w trakcie pracy anuluje zadanie.</p>
+
+          <h4>Bardzo duże wideo i wideo o bardzo wysokiej rozdzielczości</h4>
+          <p>Przepakowanie jest ograniczone głównie wolną pamięcią, więc bardzo duże nagrania wymagają karty, w której nic innego nie działa. Ponowne kodowanie wideo 8K działa, ale trwa. H.264 nie potrafi zakodować obrazu mniejszego niż kilka pikseli ani o nieparzystej liczbie pikseli, więc wideo o nieparzystym rozmiarze konwertowane do MP4, MOV, MKV, AVI lub FLV może wymagać zamiast tego WebM.</p>
+
+          <h4>Uszkodzone pliki</h4>
+          <p>Gdy plik jest uszkodzony tylko w środku, przepakowanie kopiuje uszkodzenie. Wynik może mieć zakłócenia, mimo że Convido zgłasza zakończenie. Sprawdź ważną konwersję, zanim usuniesz oryginał.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -671,21 +751,21 @@
       <h3>Pierwsze kroki z</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pl/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pl/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pl/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pl/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pl/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pl/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pl/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pl/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pl/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pl/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pl/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -702,7 +782,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convido/convido-muxers.js?v=2" defer></script>
 <script src="/convido/convido-tool.js?v=16" defer></script>

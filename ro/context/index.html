@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/ro.js?v=8"></script>
+<script src="/shared/i18n/ro.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Adaugă gratuit text într-un PDF – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 
@@ -1975,7 +1975,110 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <li><a href="#gr-article-4">4. Lucrul cu PDF-uri cu mai multe pagini: consecvență și editare pagină cu pagină</a></li>
       <li><a href="#gr-article-5">5. Greșeli frecvente la adăugarea de text în PDF-uri (și cum să le eviți)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="context"></div>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. Cum funcționează de fapt adăugarea de text într-un PDF</h3>
+          <p>O pagină PDF nu este un document text în care poți da clic și scrie — este mai aproape de o foaie tipărită, o imagine fixă cu text și grafică așezate în poziții exacte. Înțelegerea acestei diferențe explică atât ce face Context, cât și de ce funcționează așa cum funcționează.</p>
+
+          <h4>Pagina este o imagine, nu un document</h4>
+          <p>Majoritatea PDF-urilor (tot ce nu este construit special ca formular completabil) nu au conceptul de „spațiu gol în care poți scrie”. Ceea ce vezi ca o linie, o casetă sau un câmp gol este de fapt doar cerneală plasată la coordonate fixe — nu există niciun câmp de text care să aștepte introducerea ta, cum există într-un document Word sau într-un formular web. Când Context îți permite să „adaugi text” într-un PDF, nu găsește un câmp ascuns pe care să-l completeze; plasează un strat nou, independent de text deasupra paginii existente, poziționat oriunde îl tragi.</p>
+
+          <h4>Suprapunere vs. editare</h4>
+          <p>Această abordare cu suprapunere este aceeași folosită de practic orice instrument de adnotare PDF, nu doar de acesta — editarea efectivă a textului original al unui PDF (schimbarea unei propoziții deja tipărite pe pagină) cere software specializat și adesea nici nu este posibilă dacă fișierul original nu a păstrat straturi de text editabile. Ceea ce face Context în schimb este mai simplu și mult mai util în general: adaugă o bucată de text nouă, separată, care stă vizual deasupra paginii, exact ce vrei pentru subtitrări, note, inițiale sau completarea unei linii goale dintr-un formular.</p>
+
+          <h4>Puncte, nu pixeli</h4>
+          <p>Paginile PDF măsoară poziția în puncte (1/72 dintr-un inch), nu în pixelii de pe ecran cu care tragi cu degetul sau cursorul. Context se ocupă de această conversie pentru tine — ceea ce vezi pe ecran, la orice nivel de mărire vizualizezi pagina, se potrivește mereu cu poziția fixă corectă din PDF-ul real, așa că o casetă de text pe care o plasezi sus pe o pagină rămâne sus pe pagină, indiferent pe ce dispozitiv sau la ce mărire o deschide altcineva mai târziu.</p>
+
+          <h4>Ce se întâmplă când descarci</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Alegerea dimensiunii și a poziției potrivite a fontului pentru diferite documente</h3>
+          <p>Dimensiunea și poziția potrivită a textului depind în întregime de felul de document pe care îl marchezi și de cine îl va citi mai departe. Iată cum să te gândești la asta pe scenarii.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Tip de document</th><th>Abordare recomandată</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tip de document">Completarea liniilor goale ale unui formular</td><td data-label="Abordare recomandată">Potrivește dimensiunea etichetei tipărite, plasează deasupra liniei</td></tr>
+              <tr><td data-label="Tip de document">Adăugarea unei note sau a unui comentariu</td><td data-label="Abordare recomandată">Folosește o culoare contrastantă, ține-o clar separată de textul original</td></tr>
+              <tr><td data-label="Tip de document">Semnare sau parafare</td><td data-label="Abordare recomandată">Puțin mai mare decât textul din jur, centrat pe linie</td></tr>
+              <tr><td data-label="Tip de document">Subtitrarea unui PDF plin de imagini</td><td data-label="Abordare recomandată">Dimensiune consecventă a fiecărei subtitrări pe fiecare pagină</td></tr>
+              <tr><td data-label="Tip de document">Documente formale sau juridice</td><td data-label="Abordare recomandată">Potrivește îndeaproape dimensiunea fontului documentului, folosește negru</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Potrivirea cu textul existent al documentului</h4>
+          <p>Cel mai mare lucru care face ca o linie adăugată să pară intenționată, nu lipită, este potrivirea dimensiunii ei cu ceea ce este deja tipărit în apropiere. Dacă etichetele formularului sunt tipărite la aproximativ 11–12 pt, adăugarea răspunsului tău la 24 pt face să pară că nu aparține, chiar dacă poziția este perfectă. Mărește mai întâi textul tipărit din jur, ia o idee aproximativă despre scara lui și alege o dimensiune apropiată — Context ține minte ultima dimensiune folosită, așa că odată ce ai potrivit-o o dată, fiecare casetă următoare pornește automat de la aceeași dimensiune.</p>
+
+          <h4>Rămânerea în limite — la propriu</h4>
+          <p>Rândurile și casetele goale din formulare sunt de obicei dimensionate pentru o anumită cantitate de text la o anumită mărime. Înainte să scrii un răspuns lung pe o linie scurtă, gândește-te dacă trebuie micșorat puțin ca să încapă, deoarece textul care depășește sfârșitul unei linii tipărite pare o greșeală pentru cine citește documentul final, chiar dacă tehnic nimic nu este stricat.</p>
+
+          <h4>Alegerea unei culori care se citește ca „adăugată”, nu „ascunsă”</h4>
+          <p>Textul negru este de obicei cea mai sigură alegere implicită, deoarece se potrivește cu modul în care sunt tipărite deja majoritatea formularelor și documentelor și nu atrage atenția ca un adaos. Textul colorat este cu adevărat util pentru note, corecturi sau orice vrei să iasă în evidență față de conținutul original — doar asigură-te că culoarea aleasă are contrast real cu pagina din spate; culorile deschise, precum galbenul, se pierd ușor pe o pagină albă.</p>
+
+          <h4>Lăsarea unei marje pentru neprevăzut</h4>
+          <p>Plasarea textului chiar la marginea paginii riscă să-l taie dacă documentul este tipărit ulterior pe o altă dimensiune de hârtie sau cu alte setări de margini decât te așteptai. Lăsarea unui mic spațiu între text și marginea paginii — și între text și orice conținut tipărit din apropiere — păstrează rezultatul curat, indiferent cum este tipărit sau vizualizat până la urmă.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Completarea formularelor și semnarea documentelor fără imprimantă</h3>
+          <p>A tipări, semna, scana și trimite înapoi prin e-mail este încă modul în care se rezolvă multe acte — și aproape întotdeauna este inutil. Iată cum o sari folosind doar un browser.</p>
+
+          <h4>Înlocuirea buclei tipărire-semnare-scanare</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>Semnături și inițiale tastate</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>Aliniarea răspunsurilor cu etichetele tipărite</h4>
+          <p>Majoritatea formularelor tipăresc o etichetă („Nume:”, „Data:”) urmată de o linie sau o casetă goală pentru răspuns. Trage caseta de text astfel încât să stea chiar deasupra liniei, nu peste ea — textul plasat direct pe o linie tipărită devine greu de citit când cele două se suprapun, în timp ce textul care plutește chiar deasupra rămâne clar lizibil și tot se citește ca „răspunsul la acea etichetă” pentru oricine se uită la pagina finală.</p>
+
+          <h4>Verificarea dublă înainte de trimitere</h4>
+          <p>După ce toate câmpurile sunt completate, merită să parcurgi fiecare pagină la dimensiunea reală (nu doar miniatura în care scriai) pentru a confirma că nimic nu se suprapune, nimic nu depășește marginea unei linii și fiecare câmp obligatoriu a fost într-adevăr completat — o casetă de text care arată bine cât o editezi activ poate ocazional să stea puțin diferit când vezi pagina finală în ansamblu.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Lucrul cu PDF-uri cu mai multe pagini: consecvență și editare pagină cu pagină</h3>
+          <p>Contractele, rapoartele și formularele cu mai multe pagini cer o abordare ușor diferită de o editare rapidă a unei singure pagini — mai ales pentru a păstra consecvența pe măsură ce parcurgi documentul.</p>
+
+          <h4>Navigarea între pagini fără a-ți pierde locul</h4>
+          <p>Navigarea între pagini din Context ține fiecare casetă de text legată de pagina anume pe care a fost plasată, așa că trecerea de la o pagină la alta pentru a completa secțiuni diferite ale unui document lung nu riscă să amestece nimic — o casetă adăugată pe pagina 3 rămâne pe pagina 3, indiferent câte alte pagini vizitezi înainte de descărcare.</p>
+
+          <h4>Păstrarea consecventă a dimensiunii și a culorii pe pagini</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>Planificarea unei treceri înainte de a începe să scrii</h4>
+          <p>Pentru documente mai lungi, merită o primă trecere rapidă prin toate paginile — doar privit, fără scris încă — ca să vezi întinderea completă a ceea ce trebuie completat înainte să te angajezi la o dimensiune și o poziție pe prima pagină. O dimensiune care pare potrivită pe o primă pagină aerisită poate ieși prea mare pentru o pagină mai deasă, mai departe, iar prinderea asta devreme te scutește să te întorci și să redimensionezi casete deja plasate.</p>
+
+          <h4>Revizuirea întregului document înainte de descărcare</h4>
+          <p>Deoarece fiecare pagină se redă și se editează independent, este ușor să te concentrezi strâns pe pagina la care lucrezi în acel moment și să pierzi din vedere documentul în ansamblu. Înainte de descărcare, răsfoiește-l de la început — este singura cale de a prinde o pagină sărită cu totul sau o casetă care arată diferit de celelalte fără să fi observat în timp ce lucrai.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Greșeli frecvente la adăugarea de text în PDF-uri (și cum să le eviți)</h3>
+          <p>Majoritatea problemelor unui PDF editat duc la un set restrâns de greșeli ușor de ratat. Iată la ce să fii atent.</p>
+
+          <h4>Text prea mic după micșorarea la loc</h4>
+          <p>Este ușor să scrii la o dimensiune care pare perfect lizibilă cât timp ești mărit și concentrat pe o singură casetă, doar ca să descoperi că este vizibil mică când pagina este văzută la dimensiunea ei normală, completă. Micșorează la loc (sau verifică PDF-ul final într-un vizualizator separat) înainte de descărcare, ca să confirmi că fiecare casetă este lizibilă la dimensiunea reală, nu doar la dimensiunea de editare.</p>
+
+          <h4>Plasarea textului peste conținutul existent, în loc de lângă el</h4>
+          <p>Dacă pui o casetă de text direct peste text tipărit sau peste o linie, ambele devin greu de citit când se suprapun — conținutul de dedesubt nu se mută din drum. Mută în schimb textul nou într-un spațiu cu adevărat gol din apropiere, în loc să-l așezi direct peste ceva ce este deja tipărit acolo.</p>
+
+          <h4>Editarea paginii greșite</h4>
+          <p>Într-un document mai lung este ușor să pierzi evidența paginii active, mai ales după mărire sau derulare, și să ajungi să adaugi text pe pagina greșită. Verifică indicatorul de pagină înainte de a adăuga o casetă în orice document cu mai mult de o pagină, în special imediat după ce ai navigat la o pagină nouă.</p>
+
+          <h4>Folosirea unei culori cu contrast slab</h4>
+          <p>Culorile deschise — mai ales galbenul pal — pot arăta bine la dimensiunea de editare pe un ecran luminos și apoi pot deveni greu de citit odată tipărite sau văzute pe alt afișaj. Rămâi la culori cu contrast puternic față de alb, precum negrul sau o culoare saturată, pentru tot ce trebuie citit, nu doar remarcat.</p>
+
+          <h4>Uitarea de a redenumi fișierul înainte de partajare</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -1998,21 +2101,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>Primii pași cu</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ro/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ro/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ro/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ro/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ro/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ro/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ro/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ro/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ro/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ro/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ro/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2029,7 +2132,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/context/context-tool.js?v=115" defer></script>
 </body>

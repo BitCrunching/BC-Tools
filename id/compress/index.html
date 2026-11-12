@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
-<script src="/shared/i18n/id.js?v=8"></script>
+<script src="/shared/i18n/id.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Compress – Kompresor Gambar Gratis – BC Tools">
@@ -75,7 +75,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -553,7 +553,112 @@
       <li><a href="#gr-article-4">4. Kapan Mengompres dan Kapan Membiarkan Gambar Apa Adanya</a></li>
       <li><a href="#gr-article-5">5. Kesalahan Kompresi yang Umum (dan Cara Menghindarinya)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="compress"></div>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Cara Kerja Kompresi Gambar yang Sebenarnya</h3>
+          <p>Kompresi tampak seperti satu penggeser atau satu klik, tetapi di baliknya ada dua pendekatan yang benar-benar berbeda yang melakukan pengecilan, dan memahami mana yang bekerja menjelaskan hampir setiap hasil dari alat seperti ini.</p>
+
+          <h4>Kompresi lossy: membuang apa yang tidak Anda sadari</h4>
+          <p>Kompresi lossy, jenis yang dipakai JPG dan WEBP, bekerja dengan mengidentifikasi informasi dalam gambar yang buruk ditangkap mata manusia lalu membuangnya. Gradasi warna halus disederhanakan, detail frekuensi tinggi yang halus dihaluskan, dan hasilnya adalah file yang bisa hanya sebagian kecil dari ukuran asli namun tetap tampak benar bagi pemirsa biasa. Masalahnya, pembuangan ini permanen — begitu detail itu hilang, membuka atau menyimpan ulang tidak akan mengembalikannya, dan mengompres ulang file lossy yang sudah terkompresi berulang kali menumpuk kehilangan setiap kalinya.</p>
+          <p>"Rasio kualitas" atau tingkat kompresi yang Anda pilih mengatur seberapa agresif hal ini terjadi. Pengaturan kualitas tinggi membuang sangat sedikit dan memperkecil file secara moderat; pengaturan kualitas rendah membuang jauh lebih banyak dan memperkecilnya secara drastis, dengan konsekuensi artefak yang terlihat — blok-blok di sekitar tepi, detail kabur, pita warna di langit dan gradasi.</p>
+
+          <h4>Kompresi lossless: mengemas ulang tanpa kehilangan apa pun</h4>
+          <p>Kompresi lossless, pendekatan PNG, bekerja sangat berbeda: ia menemukan cara yang lebih cerdas dan efisien untuk menyimpan data piksel yang persis sama, seperti file ZIP memperkecil dokumen teks tanpa mengubah satu karakter pun. Tidak ada yang dibuang, sehingga Anda dapat mengompres dan mendekompresi sebanyak yang Anda mau tanpa perubahan kualitas. Imbal baliknya, pengurangan ukurannya jauh lebih kecil, karena ada batas matematis keras seberapa banyak data dapat diperkecil tanpa membuang apa pun — terutama untuk gambar fotografis, yang penuh detail halus dan tak beraturan yang menolak pengemasan ulang lossless.</p>
+
+          <h4>Mengapa alat Compress kami mengonversi PNG ke JPG</h4>
+          <p>Inilah mengapa Compress otomatis mengonversi foto PNG ke JPG saat kompresi: foto PNG yang hanya melalui kompresi lossless nyaris tidak mengecil, tetapi foto yang sama yang diizinkan memakai kompresi lossy bisa mengecil drastis. Untuk fotografi sebenarnya, pertukaran ini hampir selalu sepadan — perbedaan kualitas tidak terlihat pada ukuran tampilan normal, dan perbedaan ukuran file sangat besar. Lain ceritanya untuk PNG yang bukan foto (tangkapan layar, logo, grafik dengan transparansi atau teks tajam), itulah sebabnya konversi ini disetel khusus untuk konten mirip foto dan tidak diterapkan membabi buta ke setiap PNG.</p>
+
+          <h4>Apa yang sebenarnya terjadi saat Anda menggeser penggeser kualitas</h4>
+          <p>Secara internal, pengaturan kualitas lebih rendah meningkatkan seberapa kasar informasi warna dan detail gambar dikelompokkan dan disederhanakan sebelum disimpan. Anggap seperti membulatkan angka: membulatkan "kualitas 95" nyaris tidak mengubah apa pun, sedangkan membulatkan "kualitas 40" mengubah jauh lebih banyak, tetapi juga memakai ruang yang jauh lebih sedikit. Tidak ada angka "benar" yang universal — pengaturan yang tepat bergantung sepenuhnya pada untuk apa gambar itu dipakai, dan itulah yang dibahas artikel berikutnya.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Memilih Tingkat Kompresi yang Tepat untuk Kebutuhan Anda</h3>
+          <p>Tidak ada satu pengaturan kompresi "terbaik" — tingkat yang tepat bergantung sepenuhnya pada ke mana gambar itu menuju dan apa yang harus dilaluinya. Berikut cara berpikir berdasarkan skenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Tujuan</th><th>Tingkat yang disarankan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tujuan">Media sosial / aplikasi pesan</td><td data-label="Tingkat yang disarankan">Sedang</td></tr>
+              <tr><td data-label="Tujuan">Situs web atau toko online Anda sendiri</td><td data-label="Tingkat yang disarankan">Sedang hingga Tinggi</td></tr>
+              <tr><td data-label="Tujuan">Cetak atau penyerahan profesional ke klien</td><td data-label="Tingkat yang disarankan">Rendah, atau lewati kompresi</td></tr>
+              <tr><td data-label="Tujuan">Pengarsipan jangka panjang</td><td data-label="Tingkat yang disarankan">Rendah</td></tr>
+              <tr><td data-label="Tujuan">Batas ukuran lampiran email</td><td data-label="Tingkat yang disarankan">Tinggi</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Media sosial dan aplikasi pesan</h4>
+          <p>Platform seperti Instagram, WhatsApp, dan sebagian besar umpan sosial sudah mengompres ulang setiap gambar yang Anda unggah, sering kali secara agresif, apa pun yang Anda kirim. Mengunggah file besar yang nyaris tidak dikompres di sini tidak ada gunanya — platform akan mengompresnya lagi di sisi mereka. Tingkat kompresi sedang hingga tinggi menjaga unggahan tetap cepat dan ukuran file asli wajar tanpa mengorbankan kualitas yang benar-benar terlihat setelah pemrosesan platform.</p>
+
+          <h4>Situs web dan toko online</h4>
+          <p>Untuk apa pun yang Anda host sendiri — situs portofolio, blog, halaman produk — ukuran file langsung memengaruhi seberapa cepat halaman dimuat, yang memengaruhi pengalaman pengunjung dan, untuk hal komersial, tingkat konversi serta peringkat pencarian. Di sini layak condong ke kompresi yang lebih agresif, karena tampilan web jarang membutuhkan detail setingkat cetak, dan halaman penuh gambar besar yang tidak dioptimalkan adalah salah satu penyebab paling umum situs terasa lambat.</p>
+
+          <h4>Pencetakan dan penggunaan profesional</h4>
+          <p>Ini satu-satunya tempat di mana Anda perlu berhati-hati. Cetak memperlihatkan detail dan artefak yang tidak terlihat di layar, karena dilihat pada resolusi efektif yang lebih tinggi dan sering ukuran fisik yang lebih besar. Untuk apa pun yang menuju percetakan, pengajuan galeri, atau penyerahan profesional ke klien, gunakan tingkat kompresi ringan atau lewati kompresi untuk salinan itu, dan simpan file master tanpa kompresi atau berkompresi ringan sebagai sumber acuan.</p>
+
+          <h4>Pengarsipan dan penyimpanan jangka panjang</h4>
+          <p>Jika tujuannya menyimpan foto selama bertahun-tahun — foto keluarga, arsip, apa pun yang mungkin ingin Anda lihat lagi dalam kualitas penuh — hindari kompresi lossy berat pada satu-satunya salinan Anda. Begitu detail dibuang, tidak bisa dipulihkan, meski kebutuhan di kemudian hari ternyata memerlukannya. Pendekatan yang masuk akal adalah menyimpan salinan arsip berkualitas lebih tinggi dan membuat versi terkompresi terpisah sesuai kebutuhan penggunaan tertentu.</p>
+
+          <h4>Lampiran email dan batas ukuran file</h4>
+          <p>Banyak penyedia email membatasi ukuran lampiran, umumnya sekitar 25MB total. Jika Anda mengirim beberapa foto, tingkat kompresi yang lebih kuat membuat Anda berada di bawah batas itu dengan andal. Ini salah satu dari sedikit kasus di mana batasan praktis (apakah muat di email) lebih penting daripada perbedaan visual antartingkat kompresi, jadi jangan takut mengompres lebih kuat daripada untuk keperluan lain.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Kompresi untuk Web: Cepat Tanpa Mengorbankan Kualitas</h3>
+          <p>Bobot gambar adalah salah satu penyebab terbesar dan paling mudah diperbaiki dari situs yang lambat, dan juga mudah keliru ke dua arah — terlalu sedikit kompresi membuat halaman merayap, terlalu banyak membuat foto tampak menurun. Berikut cara mendarat di titik tengah yang berguna.</p>
+
+          <h4>Mengapa ukuran gambar sangat penting bagi kecepatan</h4>
+          <p>Pada kebanyakan halaman yang padat konten, gambar menyumbang sebagian besar bobot halaman — jauh melebihi HTML, CSS, atau JavaScript digabungkan. Waktu muat halaman bagi pengunjung, dan penilaian mesin pencari atasnya, sangat dipengaruhi oleh seberapa berat gambar Anda, yang berarti mengompresnya dengan benar sering menjadi perubahan kinerja dengan dampak terbesar, mendahului sebagian besar optimasi tingkat kode.</p>
+
+          <h4>Menyesuaikan kompresi dengan cara gambar benar-benar ditampilkan</h4>
+          <p>Gambar yang ditampilkan selebar 400 piksel di halaman tidak perlu dikirim sebagai file asli kamera 4000 piksel yang dikompres ringan — ia membutuhkan detail jauh lebih sedikit agar tampak tajam pada ukuran tampilan sebenarnya. Sebelum mengkhawatirkan tingkat kompresi, pastikan dimensi gambar kurang lebih sesuai dengan ukuran tampilnya; mengompres gambar yang terlalu besar hanya mengobati gejala sambil membiarkan penyebab yang lebih besar (resolusi tidak perlu) tetap ada.</p>
+
+          <h4>Memilih format untuk web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>Titik hasil yang menurun</h4>
+          <p>Kompresi tidak berskala linear dengan kualitas visual yang hilang — porsi kompresi pertama dari aslinya yang tak terkompresi menghilangkan ukuran file dalam jumlah besar dengan hampir tanpa perubahan terlihat, sedangkan mendorong kompresi makin agresif menghilangkan ukuran yang makin sedikit untuk kerusakan yang makin terlihat. Dalam praktik, sebagian besar foto mencapai titik optimal jauh sebelum "kompresi maksimum", dan ada baiknya memeriksa gambar terkompresi pada ukuran tampil sebenarnya daripada mengira kompresi lebih banyak selalu lebih baik untuk kecepatan.</p>
+
+          <h4>Memproses gambar seluruh situs secara massal</h4>
+          <p>Jika Anda mengoptimalkan banyak gambar sekaligus — katalog produk, galeri, arsip gambar posting blog — terapkan tingkat kompresi yang konsisten untuk jenis konten serupa, bukan menilai satu per satu dengan mata. Ini menjaga kualitas visual konsisten di seluruh situs dan membuat pengulangan proses jauh lebih cepat jika Anda berubah pikiran soal pengaturan, karena Anda tidak memutuskan ulang kasus demi kasus.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Kapan Mengompres dan Kapan Membiarkan Gambar Apa Adanya</h3>
+          <p>Kompresi adalah alat yang sangat berguna, tetapi bukan otomatis langkah yang tepat untuk setiap gambar dalam setiap situasi — mengetahui kapan melewatinya sama pentingnya dengan mengetahui cara memakainya.</p>
+
+          <h4>Tanda gambar cocok untuk dikompres</h4>
+          <p>Foto asli kamera berukuran besar yang ditujukan untuk web, email, atau pesan hampir selalu diuntungkan — biasanya membawa resolusi dan bobot file jauh melebihi kebutuhan tujuan. File apa pun yang menabrak batas ukuran keras (batas lampiran email, pembatasan unggahan, plafon ukuran file formulir) juga kandidat jelas, karena kompresi sering kali cara tercepat untuk berada di bawah batas tanpa memangkas atau mengecilkan isi gambar.</p>
+
+          <h4>Tanda Anda sebaiknya membiarkan gambar (atau mengompres sangat ringan)</h4>
+          <p>Grafik dengan teks, garis tajam, atau warna datar — tangkapan layar, diagram, logo, dokumen pindaian — cenderung buruk dikompres dengan metode lossy, karena artefak kompresi muncul sebagai keburaman dan pinggiran warna tepat di tempat mata paling menyadarinya: di sekitar tepi dan teks. Ini biasanya lebih cocok dengan pendekatan lossless PNG, atau melewati kompresi daripada melawan artefak.</p>
+          <p>Apa pun yang sudah pernah dikompres jangan asal dikompres lagi "untuk jaga-jaga". Mengompres ulang JPG yang sudah terkompresi lossy tidak banyak memperkecilnya lagi dalam kebanyakan kasus, dan dapat menimbulkan putaran kedua kehilangan kualitas di atas yang pertama, menumpuk artefak alih-alih menghilangkannya.</p>
+
+          <h4>Kebiasaan menyimpan salinan master</h4>
+          <p>Aturan sederhana yang menghindari sebagian besar penyesalan: simpan satu salinan master berkualitas tinggi (atau tak terkompresi) dari apa pun yang mungkin dipakai ulang, dan buat versi terkompresi dari master itu sesuai kebutuhan tiap penggunaan, bukan menimpa satu-satunya salinan dengan yang terkompresi. Penyimpanan murah; menciptakan ulang asli yang hilang tidak mungkin setelah hilang.</p>
+
+          <h4>Menilai berdasarkan tujuan, bukan kebiasaan</h4>
+          <p>Pertanyaan yang tepat bukan "haruskah saya mengompres gambar ini" secara abstrak, melainkan "apa yang sebenarnya dibutuhkan tempat tujuan gambar ini." Foto untuk pesan teks nyaris tidak butuh detail aslinya; foto untuk spanduk cetak besar membutuhkan hampir semuanya. Biarkan tujuan menentukan standar, bukan menerapkan tingkat kompresi yang sama karena kebiasaan pada semua yang melewati alur kerja Anda.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Kesalahan Kompresi yang Umum (dan Cara Menghindarinya)</h3>
+          <p>Sebagian besar keluhan kompresi berasal dari sekumpulan kecil kesalahan yang berulang. Berikut yang perlu diwaspadai.</p>
+
+          <h4>Mengompres file yang sama berulang-ulang</h4>
+          <p>Setiap putaran kompresi lossy membuang sedikit lebih banyak detail, dan kehilangan itu menumpuk di tiap putaran tambahan — file yang dikompres, dibuka ulang, disunting, dan dikompres ulang beberapa kali akan tampak jauh lebih buruk daripada yang dikompres sekali dari asli yang bersih. Selalu kompres dari asli atau master tak terkompresi, bukan dari salinan yang sudah terkompresi.</p>
+
+          <h4>Menimpa satu-satunya salinan</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Mengompres grafik seperti foto</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Memilih tingkat kompresi tanpa memeriksa hasilnya</h4>
+          <p>Menggoda untuk memilih "kompresi maksimum" demi file sekecil mungkin lalu lanjut, tetapi pengaturan itu sering menimbulkan artefak yang jelas terlihat begitu Anda benar-benar melihat hasilnya pada ukuran asli. Pemeriksaan cepat atas hasil terkompresi — pada ukuran saat akan dilihat — hanya butuh beberapa detik dan mencegah pengiriman atau penerbitan sesuatu yang tampak jauh lebih buruk dari yang dimaksudkan.</p>
+
+          <h4>Mengabaikan kompresi milik tujuan itu sendiri</h4>
+          <p>Mengunggah file besar yang nyaris tidak dikompres ke platform yang akan mengompresnya juga (sebagian besar media sosial dan aplikasi pesan) membuang waktu unggah dan bandwidth tanpa manfaat visual, karena pemrosesan platform sendiri menentukan sebagian besar kualitas akhir terlepas dari yang Anda kirim. Sesuaikan upaya kompresi dengan apa yang benar-benar dipertahankan tujuan, bukan dengan anggapan bahwa "kualitas asli lebih banyak masuk berarti kualitas akhir lebih baik keluar."</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -575,21 +680,21 @@
       <h3>Memulai dengan</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/id/convert/">Convert</a>
+          <a class="footer-dash-link" href="/id/compress/">Compress</a>
+          <a class="footer-dash-link" href="/id/combine/">Combine</a>
+          <a class="footer-dash-link" href="/id/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/id/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/id/congify/">Congify</a>
+          <a class="footer-dash-link" href="/id/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/id/codify/">Codify</a>
+          <a class="footer-dash-link" href="/id/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/id/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/id/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -606,7 +711,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/compress/compress-tool.js?v=53" defer></script>
 </body>

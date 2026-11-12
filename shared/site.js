@@ -117,7 +117,6 @@ const SITE_PATH_MAP = {
   terms: "/terms/",
   privacy: "/privacy/",
   cookies: "/cookies/",
-  "golden-rules": "/golden-rules/",
   convert: "/convert/",
   compress: "/compress/",
   combine: "/combine/",
@@ -135,61 +134,12 @@ document.addEventListener("click", (e) => {
     location.href = target;
     return;
   }
-  const golden = e.target.closest(".go-to-golden-rules");
-  if (golden){
-    e.preventDefault();
-    /* Every one of these already carries data-tool (convert/compress/
-       combine/exif/context/gif/coudio/codify — the same values
-       golden-rules-tool.js's selectGoldenRulesTool() expects), but this
-       always ignored it and sent everyone to the page's default
-       ("convert") tab regardless of which tool's link was actually
-       clicked. Forward it as a query param so golden-rules/index.html
-       can open the right tab on load. */
-    const tool = golden.dataset.tool;
-    location.href = bcLangPath("/golden-rules/") + (tool ? `?tool=${encodeURIComponent(tool)}` : "");
-  }
 });
 
-/* ===== Golden Rules articles shown on a tool page ===== */
-let grInlinePromise = null;
-async function bcFillGoldenRules(box){
-  const res = await fetch(bcLangPath("/golden-rules/"));
-  if (!res.ok) throw new Error("golden rules");
-  const doc = new DOMParser().parseFromString(await res.text(), "text/html");
-  const src = doc.querySelector('.golden-rules-articles[data-tool="' + box.dataset.tool + '"]');
-  if (!src) throw new Error("golden rules tool");
-  src.querySelectorAll("details.golden-rules-article").forEach((d, i) => {
-    const art = document.createElement("div");
-    art.className = "gr-article";
-    art.id = "gr-article-" + (i + 1);
-    const h = document.createElement("h3");
-    h.textContent = d.querySelector("summary").textContent;
-    art.appendChild(h);
-    d.querySelectorAll(".golden-rules-body > *").forEach(el => {
-      let node = document.importNode(el, true);
-      if (node.tagName === "H3"){
-        const h4 = document.createElement("h4");
-        h4.innerHTML = node.innerHTML;
-        node = h4;
-      }
-      art.appendChild(node);
-    });
-    box.appendChild(art);
-  });
-}
-function bcLoadGoldenRules(){
-  const box = document.querySelector(".gr-inline[data-tool]");
-  if (!box) return null;
-  if (!grInlinePromise) grInlinePromise = bcFillGoldenRules(box).catch(() => null);
-  return grInlinePromise;
-}
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bcLoadGoldenRules);
-else bcLoadGoldenRules();
-document.addEventListener("click", async (e) => {
+document.addEventListener("click", (e) => {
   const link = e.target.closest(".gr-topics a");
   if (!link) return;
   e.preventDefault();
-  await bcLoadGoldenRules();
   const art = document.getElementById(link.getAttribute("href").slice(1));
   if (art) art.scrollIntoView({ behavior: "smooth", block: "start" });
 });

@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convert/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
-<script src="/shared/i18n/pl.js?v=8"></script>
+<script src="/shared/i18n/pl.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Convert – darmowy konwerter obrazów i PDF – BC Tools">
@@ -77,7 +77,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -737,7 +737,117 @@
       <li><a href="#gr-article-4">4. Kiedy konwertować obrazy: scenariusze z praktyki</a></li>
       <li><a href="#gr-article-5">5. Częste błędy przy konwersji (i jak ich unikać)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="convert"></div>
+    <div class="gr-inline" data-tool="convert">
+<div class="gr-article" id="gr-article-1"><h3>1. Kompletny przewodnik po formatach obrazów: JPG vs PNG vs WEBP</h3>
+          <p>Każdy format obrazu został zaprojektowany do rozwiązania innego problemu, a wybór właściwego wpływa na rozmiar i jakość pliku bardziej niż niemal jakakolwiek inna decyzja przy przygotowywaniu obrazów. Oto co naprawdę dzieje się „pod maską” w każdym z nich i kiedy ma to realne znaczenie.</p>
+
+          <h4>JPG (JPEG): format zdjęć</h4>
+          <p>JPG używa kompresji stratnej, co oznacza, że przy każdym zapisie odrzuca część danych obrazu, aby zmniejszyć rozmiar pliku. W przypadku fotografii — z płynnymi przejściami kolorów, naturalnym szumem i brakiem ostrych krawędzi — działa to wyjątkowo dobrze, ponieważ ludzkie oko nie zauważa łatwo informacji, które JPG odrzuca. Dlatego JPG pozostaje domyślnym formatem fotografii w sieci, aparatach i telefonach: doskonała kompresja, małe pliki, uniwersalna obsługa.</p>
+          <p>Czego JPG nie potrafi, to przezroczystość. Format w ogóle nie ma kanału alfa, więc jeśli potrzebujesz przezroczystego tła, JPG odpada. Pogarsza się też nieco przy każdym ponownym zapisie (więcej w artykule o błędach poniżej) i słabo radzi sobie z grafiką o ostrych krawędziach, jak tekst czy logo, gdzie artefakty kompresji są widoczne jako rozmycie wokół ostrych linii.</p>
+
+          <h4>PNG: format bezstratny z obsługą przezroczystości</h4>
+          <p>PNG używa kompresji bezstratnej — każdy piksel zostaje zachowany dokładnie, bez utraty jakości, bez względu na to, ile razy plik zapiszesz ponownie. To właściwy wybór dla wszystkiego z ostrymi krawędziami, płaskimi kolorami lub tekstem: logo, zrzutów ekranu, ikon, diagramów. W pełni obsługuje też przezroczystość, w tym częściową (miękkie, rozmyte krawędzie), czego JPG po prostu nie potrafi.</p>
+          <p>Ceną jest rozmiar. Kompresja bezstratna nie zmniejsza pliku nawet w przybliżeniu tak jak stratne podejście JPG, zwłaszcza w przypadku zdjęć z dużą ilością subtelnych odcieni. Zdjęcie zapisane jako PNG może być łatwo 5–10 razy większe niż to samo zdjęcie w JPG — za różnicę jakości, której większość osób nie zauważy.</p>
+
+          <h4>WEBP: nowoczesny uniwersał</h4>
+          <p>WEBP to nowszy format Google i w większości przypadków naprawdę łączy zalety obu światów: obsługuje kompresję stratną i bezstratną (może więc działać jak JPG lub jak PNG, zależnie od potrzeb), obsługuje przezroczystość i zwykle tworzy mniejsze pliki niż JPG czy PNG przy równoważnej jakości — często o 25–35% mniejsze niż JPG dla zdjęć i znacznie mniejsze niż PNG dla grafiki.</p>
+          <p>Jedynym realnym ograniczeniem jest zgodność ze starszym oprogramowaniem — niektóre starsze edytory obrazów, niektórzy klienci poczty i niektóre starsze urządzenia słabo radzą sobie z WEBP. Dla nowoczesnej strony to rzadko już praktyczny problem, ale jeśli wysyłasz plik komuś, czyjego oprogramowania nie kontrolujesz, warto to rozważyć.</p>
+
+          <h4>HEIC: format iPhone’a, który zechcesz przekonwertować</h4>
+          <p>HEIC (i jego bliski krewny HEIF) to domyślny format zdjęć Apple od iOS 11 — kompresuje lepiej niż JPG przy tej samej jakości, dlatego iPhone’y używają go automatycznie. Haczyk to zgodność: większość oprogramowania spoza Apple, starsze narzędzia do edycji oraz wiele stron i formularzy wysyłania wciąż nie potrafi bezpośrednio otworzyć pliku HEIC.</p>
+          <p>Convert przyjmuje HEIC/HEIF jako wejście i dekoduje go w całości w przeglądarce, więc możesz wrzucić zdjęcie prosto z iPhone’a i otrzymać JPG, PNG lub WEBP, który otworzy się wszędzie. Nie ma opcji wyjścia do HEIC, ponieważ cały sens konwersji polega na pozostawieniu tej luki w zgodności za sobą.</p>
+
+          <h4>Szybka zasada wyboru</h4>
+          <p>Zdjęcia bez potrzeby przezroczystości → JPG lub WEBP. Wszystko, co wymaga przezroczystości lub ostrych krawędzi (logo, zrzuty ekranu, grafika) → PNG lub WEBP. Potrzebujesz najmniejszego możliwego pliku ze wsparciem nowoczesnych przeglądarek → WEBP.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Jak zamienić zdjęcia w PDF (i po co to robić)</h3>
+          <p>Zamiana obrazów w jeden PDF to jedna z najprzydatniejszych rzeczy, które potrafi Convert, a których ludzie nie odkrywają od razu — to odpowiedź na pytanie „jak wysłać te 12 zdjęć jako jeden plik zamiast 12 osobnych załączników”.</p>
+
+          <h4>Dlaczego łączyć obrazy w PDF zamiast je po prostu spakować</h4>
+          <p>Plik ZIP wymaga od odbiorcy pobrania, rozpakowania i otwarcia każdego obrazu osobno — dodatkowych kroków, którymi większość osób się nie zajmie. PDF otwiera się bezpośrednio w przeglądarce lub wbudowanej przeglądarce PDF, którą ma niemal każde urządzenie, a strony pojawiają się w dokładnie ustawionej kolejności, co ma ogromne znaczenie np. przy podaniach o pracę (list motywacyjny, potem CV, potem próbki z portfolio) lub zeskanowanych dokumentach, które muszą zachować kolejność.</p>
+          <p>To także oczekiwany format w szerokiej gamie zgłoszeń oficjalnych i półoficjalnych: podania o pracę, zgłoszenia ubezpieczeniowe, dokumenty podatkowe, prace szkolne i wnioski o wynajem często wymagają „prosimy o przesłanie jako jeden PDF” właśnie dlatego, że jest to jednoznaczne i nie da się przypadkowo zmienić kolejności ani rozdzielić, jak w folderze luźnych obrazów.</p>
+
+          <h4>Krok po kroku</h4>
+          <p>Upuść obrazy w Convert — możesz wybrać kilka naraz. Kliknij przycisk formatu „PDF”; w przeciwieństwie do innych formatów ten nie konwertuje każdego obrazu osobno, lecz łączy wszystkie w jeden PDF, w którym każdy obraz staje się osobną stroną. Kliknij „Konwertuj i pobierz”, a otrzymasz jeden plik PDF zawierający wszystkie wybrane obrazy, po jednym na stronę, w kolejności, w jakiej je wczytałeś.</p>
+          <p>Kolejność ma tu znaczenie, więc przed konwersją sprawdź, w jakiej kolejności wybrano pliki — Convert obecnie zachowuje kolejność, w jakiej je wybrałeś lub upuściłeś, więc jeśli sekwencja jest ważna (np. wielostronicowy skan), wybieraj lub upuszczaj je w kolejności, w jakiej mają się pojawić.</p>
+
+          <h4>Uwaga o jakości obrazów w PDF</h4>
+          <p>Ponieważ obrazy są osadzane w niezmienionej postaci, obraz o niskiej rozdzielczości nadal będzie wyglądał na niskorozdzielczy w PDF — konwersja do PDF nie dodaje szczegółów, których nie było. Jeśli przygotowujesz np. drukowane portfolio, warto wcześniej skompresować lub zmniejszyć obrazy do rozsądnej rozdzielczości, zamiast wrzucać niepotrzebnie ogromne oryginały z aparatu, co da nadmuchany PDF, który wolno się otwiera i trudno go wysłać e-mailem.</p>
+
+          <h4>Kiedy to złe narzędzie</h4>
+          <p>Jeśli łączysz pliki PDF, które już masz (a nie surowe obrazy), potrzebujesz zamiast tego narzędzia Combine — wyjście PDF w Convert służy wyłącznie do zamiany obrazów w nowy PDF, a nie do scalania istniejących dokumentów PDF.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Wyodrębnianie obrazów z PDF: praktyczny przewodnik</h3>
+          <p>Odwrotny kierunek — wyciąganie obrazów z istniejącego PDF — rozwiązuje inny, równie częsty problem: masz PDF i potrzebujesz tylko jednej strony albo wszystkich stron jako samodzielnych plików obrazów.</p>
+
+          <h4>Częste powody, dla których ludzie tego potrzebują</h4>
+          <p>Wyciągnięcie jednego slajdu z prezentacji PDF, by wstawić go do e-maila lub wiadomości. Wyodrębnienie stron zeskanowanego dokumentu, by edytować lub opisywać je osobno w edytorze obrazów. Pobranie diagramu lub wykresu z raportu PDF do ponownego użycia gdzie indziej. Archiwizacja każdej strony starego skanu jako osobnego, bardziej uniwersalnie wyświetlanego pliku obrazu.</p>
+
+          <h4>Jak to naprawdę działa</h4>
+          <p>Upuść w Convert PDF zamiast obrazu, a narzędzie wykryje to automatycznie — opcje formatów zmienią się tak, by pokazywać tylko JPG, PNG i WEBP, ponieważ konwersja PDF na inny PDF lub SVG nie ma sensu. Wybierz format obrazu, który Ci odpowiada (JPG dla mniejszych plików, PNG jeśli strony PDF zawierają coś wymagającego przezroczystości lub ostrego tekstu, WEBP dla najlepszej równowagi obu), a następnie konwertuj.</p>
+          <p>Każda strona PDF staje się osobnym plikiem obrazu. 10-stronicowy PDF przekonwertowany na JPG da 10 pojedynczych plików JPG, automatycznie ponumerowanych według stron. Jeśli wyodrębniasz więcej niż 5 stron, zostaną automatycznie spakowane do jednego pobierania ZIP, zamiast uruchamiać dziesięć osobnych pobrań.</p>
+
+          <h4>Rozdzielczość i jakość</h4>
+          <p>Strony PDF są renderowane do obrazów w stałej skali, dobranej tak, by dawać ostre, czytelne wyniki dla typowych dokumentów i prezentacji. Jeśli wyodrębniasz bardzo szczegółowy diagram lub potrzebujesz szczególnie wysokiej rozdzielczości do druku, warto sprawdzić jakość wyniku, zanim zaufasz mu przy czymkolwiek krytycznym dla druku — wyodrębnianie w rozdzielczości ekranu zwykle w zupełności wystarcza do użytku cyfrowego, ale bardzo precyzyjny druk może wymagać innego narzędzia stworzonego do ekstrakcji w wysokim DPI.</p>
+
+          <h4>Wielostronicowe PDF-y i nazwy plików</h4>
+          <p>Każdy wyodrębniony obraz jest automatycznie oznaczany numerem strony, więc na pierwszy rzut oka widać, który wynik odpowiada której stronie oryginalnego dokumentu — przydatne, gdy pracujesz nad długim PDF-em i potrzebujesz tylko kilku konkretnych stron zamiast całości.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Kiedy konwertować obrazy: scenariusze z praktyki</h3>
+          <p>Znać techniczne różnice między formatami to jedno — wiedzieć, który faktycznie pasuje do sytuacji, w której jesteś, to drugie. Oto sposób myślenia oparty na scenariuszach.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Sytuacja</th><th>Najlepszy format</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Sytuacja">Platforma wymaga konkretnego formatu</td><td data-label="Najlepszy format">Cokolwiek wymaga platforma — sprawdź najpierw</td></tr>
+              <tr><td data-label="Sytuacja">Przyspieszenie własnej strony</td><td data-label="Najlepszy format">WEBP</td></tr>
+              <tr><td data-label="Sytuacja">Potrzebne przezroczyste tło</td><td data-label="Najlepszy format">PNG lub WEBP</td></tr>
+              <tr><td data-label="Sytuacja">Przygotowanie do druku lub użytku profesjonalnego</td><td data-label="Najlepszy format">PNG</td></tr>
+              <tr><td data-label="Sytuacja">Archiwizacja długoterminowa</td><td data-label="Najlepszy format">PNG (lub WEBP w trybie bezstratnym)</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Wysyłanie na platformę, która akceptuje tylko określone formaty</h4>
+          <p>To najczęstszy powód, dla którego ludzie w ogóle potrzebują konwertera: strona, aplikacja lub formularz wymaga „tylko JPG lub PNG”, a Twój obraz jest w WEBP lub SVG. Convert załatwia to w kilka sekund — wybierz format, którego wymaga platforma, i gotowe. Zawsze najpierw sprawdź podane wymagania platformy, bo błędne zgadywanie to zmarnowana runda.</p>
+
+          <h4>Przyspieszanie zarządzanej strony</h4>
+          <p>Jeśli wysyłasz obrazy na własną stronę, konwersja starych JPG i PNG do WEBP to jedna z najbardziej opłacalnych i najmniej pracochłonnych poprawek — mniejsze pliki oznaczają szybsze ładowanie stron, co wpływa zarówno na komfort użytkowników, jak i na pozycje w wyszukiwarkach. Bardziej liczy się to na stronach bogatych w obrazy (galerie, listy produktów, blogi z wieloma zdjęciami) niż na stronie z jedną czy dwiema małymi ikonami.</p>
+
+          <h4>Potrzeba przezroczystego tła</h4>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
+
+          <h4>Przygotowanie do druku lub użytku profesjonalnego</h4>
+          <p>Drukarnie i profesjonalne procesy projektowe czasem mają określone wymagania co do formatu — częsty jest PNG dla logo i grafiki z ostrymi krawędziami, ponieważ unika miękkich artefaktów kompresji, które JPG może wprowadzić wokół tekstu i ostrych linii. Jeśli nie wiesz, czego chce dana drukarnia, PNG jest zwykle bezpiecznym, bezstratnym wyborem dla wszystkiego, co nie jest zwykłą fotografią.</p>
+
+          <h4>Archiwizacja lub przechowywanie długoterminowe</h4>
+          <p>Dla wszystkiego, co chcesz zachować w najlepszej możliwej jakości przez lata, formaty bezstratne (PNG) są bezpieczniejszym wyborem długoterminowym niż wielokrotnie kompresowane JPG-i, ponieważ JPG traci odrobinę jakości przy każdym ponownym zapisie. Jeśli miejsce na dysku jest realnym ograniczeniem, rozważ tryb bezstratny WEBP, który jest oszczędniejszy niż PNG, a nadal unika generacyjnej utraty jakości JPG.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Częste błędy przy konwersji (i jak ich unikać)</h3>
+          <p>Większość problemów z konwersją wynika z garści powtarzalnych błędów. Na co zwracać uwagę.</p>
+
+          <h4>Wielokrotne ponowne zapisywanie JPG jako JPG</h4>
+          <p>Za każdym razem, gdy JPG jest otwierany, choćby minimalnie edytowany i zapisywany ponownie, traci trochę więcej jakości — nazywa się to stratą generacyjną i się kumuluje. Jeśli będziesz edytować obraz wiele razy, pracuj w formacie bezstratnym (PNG) przez cały proces edycji i konwertuj do JPG dopiero jako ostatni krok eksportu, raz, na końcu.</p>
+
+          <h4>Używanie JPG, gdy naprawdę potrzebujesz przezroczystości</h4>
+          <p>To najczęstsze pytanie, jakie dostają konwertery: „dlaczego moje logo ma wokół siebie biały kwadrat zamiast przezroczystego tła?” Odpowiedź prawie zawsze brzmi: format źródłowy lub wyjściowy to JPG, który w ogóle nie potrafi przedstawić przezroczystości — żadne ustawienie ani sztuczka tego nie naprawi, bo sam format nie zna pojęcia kanału alfa. Jeśli potrzebujesz przezroczystości, zarówno obraz źródłowy, jak i format wyjściowy muszą ją obsługiwać (PNG lub WEBP).</p>
+
+          <h4>Konwersja „w górę”, a nie tylko „w bok”</h4>
+          <p>Konwersja małego obrazu o niskiej rozdzielczości do innego formatu nie dodaje szczegółów ani nie zwiększa jego rzeczywistej rozdzielczości — JPG 400×300 pikseli przekonwertowany na PNG to nadal obraz 400×300 pikseli, tylko w innym pojemniku. Jeśli potrzebujesz większego obrazu, potrzebujesz oryginału w wyższej rozdzielczości; sama konwersja formatu nie stworzy szczegółów, które nigdy nie zostały zarejestrowane.</p>
+
+          <h4>Domyślny wybór PNG dla dużych fotografii</h4>
+          <p>Bezstratna kompresja PNG jest świetna dla grafiki, ale słabo pasuje do fotografii, gdzie tworzy pliki znacznie większe niż to potrzebne, za różnicę jakości, której większość widzów nie dostrzeże. Jeśli konwertujesz partię zdjęć z wakacji „na wszelki wypadek”, JPG lub WEBP posłużą dużo lepiej — PNG zachowaj specjalnie dla obrazów z przezroczystością, tekstem lub ostrymi krawędziami graficznymi.</p>
+
+          <h4>Brak sprawdzenia wyniku przed wysłaniem w ważne miejsce</h4>
+          <p>Przy wszystkim, co trafia do klienta, pracodawcy lub urzędowego zgłoszenia, warto raz otworzyć przekonwertowany plik przed wysłaniem — sprawdzić kolejność stron w wielostronicowym PDF, czy przezroczystość faktycznie przeszła poprawnie, albo czy plik nie jest nieoczekiwanie ogromny. To kilka sekund, które oszczędzają znacznie bardziej czasochłonnego problemu odrzuconego zgłoszenia lub żenującego ponownego wysyłania.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -759,21 +869,21 @@
       <h3>Pierwsze kroki z</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pl/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pl/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pl/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pl/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pl/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pl/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pl/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pl/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pl/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pl/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pl/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -790,7 +900,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convert/convert-tool.js?v=50" defer></script>
 </body>

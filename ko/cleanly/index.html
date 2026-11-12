@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cleanly/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cleanly/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cleanly/">
-<script src="/shared/i18n/ko.js?v=8"></script>
+<script src="/shared/i18n/ko.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Cleanly – 사진 메타데이터 무료 제거 – BC Tools">
@@ -74,7 +74,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#7ED321; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -469,7 +469,131 @@
       <li><a href="#gr-article-5">5. 사진에서 사람들이 흔히 저지르는 개인정보 실수</a></li>
       <li><a href="#gr-article-6">6. SVG를 위한 Cleanly: EXIF가 아닌 편집기 메타데이터 제거</a></li>
     </ul>
-    <div class="gr-inline" data-tool="exif"></div>
+    <div class="gr-inline" data-tool="exif">
+<div class="gr-article" id="gr-article-1"><h3>1. EXIF 메타데이터가 실제로 알려주는 당신의 정보</h3>
+          <p>휴대폰이나 카메라로 찍은 모든 사진에는 이미지 자체 이상의 것이 담겨 있습니다. 파일 안에는 메타데이터 블록, 즉 EXIF 데이터가 숨어 있으며 사진이 언제, 어디서, 어떻게 찍혔는지에 대한 놀라울 만큼 많은 세부 정보를 조용히 기록합니다.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>메타데이터 유형</th><th>드러내는 것</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="메타데이터 유형">GPS 위치</td><td data-label="드러내는 것">사진을 찍은 정확한 장소, 종종 몇 미터 이내</td></tr>
+              <tr><td data-label="메타데이터 유형">기기 제조사 및 모델</td><td data-label="드러내는 것">사용된 특정 카메라나 휴대폰</td></tr>
+              <tr><td data-label="메타데이터 유형">타임스탬프</td><td data-label="드러내는 것">정확한 날짜와 시간, 초 단위까지</td></tr>
+              <tr><td data-label="메타데이터 유형">카메라 설정</td><td data-label="드러내는 것">조리개, 셔터 속도, ISO, 초점 거리</td></tr>
+            </tbody>
+          </table>
+
+          <h4>위치: 가장 큰 문제</h4>
+          <p>사진을 찍을 때 위치 서비스가 켜져 있었다면 대부분의 휴대폰이 촬영 장소의 정확한 GPS 좌표를 내장하며, 종종 몇 미터 이내로 정확합니다. 올바른 뷰어에서 원본 파일을 열거나 메타데이터 리더에 통과시키는 누구든 그 위치를 지도에 표시할 수 있습니다. 즉, 집, 직장, 아이의 학교에서 찍은 사진은 주소를 어디에도 적은 적이 없어도 그 장소가 정확히 어디인지 드러낼 수 있습니다.</p>
+
+          <h4>기기 세부 정보</h4>
+          <p>EXIF에는 보통 사진을 찍은 카메라나 휴대폰의 정확한 제조사와 모델이 들어 있으며, 때로는 특정 소프트웨어 버전까지 기록됩니다. 그 자체로는 무해해 보이지만 다른 메타데이터와 결합하면 사진에 식별 가능한 세부 정보가 하나 더해지고, 마켓플레이스 목록이나 익명 계정 같은 상황에서는 사진을 특정인이 가진 알려진 기기와 연결짓는 또 하나의 실마리가 될 수 있습니다.</p>
+
+          <h4>타임스탬프</h4>
+          <p>사진을 찍은 정확한 날짜와 시간이 초 단위까지 기록되어 있으며, 이는 대부분의 사람들이 생각하는 것보다 더 정밀합니다. “가볍게” 올린 사진이 누군가가 특정 장소에 정확히 언제 있었는지 드러낼 수 있으며, 시간이 지나며 올린 사진 패턴에서 자신의 일상이나 행방이 조합될 수 있다는 점을 생각하는 사람에게 중요해집니다.</p>
+
+          <h4>카메라 설정과 때로는 그 이상</h4>
+          <p>조리개, 셔터 속도, ISO 같은 기술적인 세부 정보도 저장되며, 이는 자신의 촬영을 되돌아보는 사진작가에게는 중요하지만 그 자체로는 개인정보에 민감하지 않습니다. 일부 기기와 편집 앱은 설정에 따라 미리보기 썸네일, 소프트웨어/편집 이력, 심지어 저작권이나 작성자 이름 필드까지 추가로 내장합니다. 존재하는 필드는 기기와 앱에 따라 다르지만, 위치와 타임스탬프 데이터가 실질적인 개인정보 무게를 가장 많이 지닌 두 가지입니다.</p>
+
+          <h4>“중요하지 않은” 사진에도 이것이 중요한 이유</h4>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 사진을 팔거나 올리기 전에 메타데이터를 제거하는 방법</h3>
+          <p>EXIF 데이터가 조용히 실제 문제를 일으키는 가장 흔한 두 상황은 온라인에서 물건을 파는 것과 사진을 공개적으로 게시하는 것입니다. 둘 다 사진이 낯선 사람에게 가는 경우이며, 이때가 바로 숨겨진 메타데이터가 가장 중요한 때입니다.</p>
+
+          <h4>마켓플레이스에서 판매하기</h4>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
+
+          <h4>소셜 미디어와 포럼에 게시하기</h4>
+          <p>대부분의 주요 소셜 플랫폼은 업로드 시 메타데이터를 자동으로 제거하므로 좋은 소식이지만, 모든 플랫폼이 그런 것은 아니며 사진의 전달되거나 다운로드된 사본(스크린샷, 저장, 리포스트)이 같은 제거 과정을 안정적으로 거치지도 않습니다. 사진이 게시한 곳에서 다운로드되어 다른 곳에서 다시 공유된다면 원래 업로드에서 살아남은 메타데이터가 그대로 함께 이동합니다. 게시하기 전에 메타데이터를 제거하는 것이 체인의 어디에도 존재하지 않도록 보장하는 유일한 방법입니다.</p>
+
+          <h4>게시 전 간단한 습관</h4>
+          <p>개인적으로 알지 못하는 사람에게 보일 수 있는 곳(마켓플레이스 목록, 공개 소셜 게시물, 포럼, 데이팅 프로필)에 사진을 올리기 전에 먼저 Cleanly를 거치세요. 몇 초면 되고, 사진 묶음 전체에 한 번에 작동하며, 숨겨진 데이터가 없는 시각적으로 동일한 사본을 만들어 줍니다. “민감한” 사진에서만 떠올리는 것이 아니라 기본 단계로 삼으면, 별생각 없이 올린 사진 때문에 곤란해질 일이 없습니다.</p>
+
+          <h4>iPhone photos (HEIC)</h4>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
+
+          <h4>제거해도 바뀌지 않는 것</h4>
+          <p>Cleanly가 하는 일과 하지 않는 일을 분명히 해 두는 것이 좋습니다. 파일에서 숨겨진 메타데이터를 제거하지만, 이미지 자체에 보이는 정보(배경의 도로 표지판, 눈에 보이는 번지수, 위치를 보여 주는 반사)는 제거할 수 없습니다. 메타데이터 제거는 보이지 않는 층을 처리하며, 사진에 보이는 것은 게시 전에 직접 눈으로 확인해야 하는 별개의 고려 사항입니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. 사진작가를 위한 Cleanly: 화질 손실 없는 개인정보 보호</h3>
+          <p>사진작가는 평범한 휴대폰 사용자와 메타데이터와의 관계가 약간 다릅니다. 일부는 자신의 기록으로 보관하는 것이 정말 유용하므로 “항상 전부 제거”가 꼭 맞는 본능은 아닙니다.</p>
+
+          <h4>사진작가가 일부 메타데이터를 로컬에 남기고 싶어 할 수 있는 이유</h4>
+          <p>카메라 설정(조리개, 셔터 속도, ISO, 초점 거리)은 나중에 자신이 찍은 사진을 되돌아볼 때 유용합니다. 마음에 든 사진이 어떤 설정으로 나왔는지 알면 재현하는 데 도움이 됩니다. 비공개로 보관하는 자신의 작업용 사본이라면, 파일이 내 손에 있는 한 개인정보 위험 없이 정말 유용한 참고 데이터이므로 이 정보를 제거할 이유가 없습니다.</p>
+
+          <h4>납품되거나 게시된 사본이 다른 문제인 이유</h4>
+          <p>사진이 고객에게 납품되거나, 포트폴리오 사이트에 게시되거나, 공개적으로 게시되는 순간 계산이 바뀝니다. 특히 위치 데이터는 고객용이나 공개 파일에 있을 이유가 없습니다. 비공개로 남아야 했던 촬영 장소(가족 촬영을 한 고객의 집, 사적인 장소, 공개되지 않아야 하는 스튜디오의 정확한 주소)가 드러날 수 있기 때문입니다. Cleanly는 정확히 이 단계를 위한 것입니다. 납품이나 게시 전에 외부용 최종 내보내기를 여기에 통과시키고, 자신의 작업 파일은 참고용으로 전체 메타데이터를 그대로 유지하세요.</p>
+
+          <h4>What actually changes in the image</h4>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
+
+          <h4>납품 워크플로에 통합하기</h4>
+          <p>갤러리를 납품하거나 정기적으로 일괄 내보내는 사진작가에게 가장 간단한 접근법은 메타데이터 제거를 내보내기 직전의 마지막 단계로 삼아, 사진별로가 아니라 전체 묶음에 한 번에 적용하는 것입니다. 이렇게 하면 최종 품질 점검처럼 작업을 마무리하는 일상적인 과정이 되며, 고객이나 갤러리를 공유하는 플랫폼마다 따로 기억해야 하는 일이 아니게 됩니다.</p>
+
+          <h4>자신만큼 고객도 보호하기</h4>
+          <p>고객의 사진에서 위험에 처한 위치 및 기기 데이터는 대개 당신이 아니라 고객의 삶에 관한 것임을 기억할 만합니다. 고객의 집에서 촬영한 가족 초상 세션, 의미 있는 사적 장소에서의 약혼 사진 같은 것입니다. 납품 전에 메타데이터를 제거하는 것은 고객의 이미지를 조심스럽게 다룬다는 당신의 전문적 평판만큼이나 고객의 개인정보를 보호합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 메타데이터 제거가 가장 중요한 경우</h3>
+          <p>모든 사진이 같은 개인정보 위험을 안고 있는 것은 아닙니다. 어떤 상황이 정말 메타데이터 제거를 필요로 하는지 알면 그 습관을 가장 중요한 곳에 집중할 수 있습니다.</p>
+
+          <h4>집이나 직장에서 찍은 사진</h4>
+          <p>집이나 직장 안 또는 바로 주변에서 찍은 모든 사진(마켓플레이스 판매 사진, “재택근무” 사진, 거실에서 찍은 가벼운 사진 포함)에는 당신이 정기적으로 예측 가능하게 시간을 보내는 장소를 직접 가리키는 위치 메타데이터가 들어 있습니다. 다른 사람이 알면 가장 가치가 큰 위치이면서 대부분의 사람이 보호할 생각을 하지 않는 정보이기 때문에 항상 위험이 가장 큰 범주입니다.</p>
+
+          <h4>아이가 있는 사진</h4>
+          <p>아이들의 사진(학교, 정기 활동, 동네)은 위치 메타데이터가 남아 있으면 추가 위험이 있습니다. 아이가 반복되는 시간에 예측 가능하게 어디에 있는지를 드러낼 수 있기 때문입니다. 많은 부모가 이미 게시하기 전에 사진에 무엇이 보이는지 신중하게 생각합니다. 메타데이터에 보이지 않게 들어 있는 것에도 같은 주의를 기울일 가치가 있습니다.</p>
+
+          <h4>신뢰가 쌓이기 전에 낯선 사람에게 가는 모든 것</h4>
+          <p>마켓플레이스 구매자, 온라인 데이팅 상대, 개인적으로 검증하지 않은 사람과 사진을 공유하는 기타 상황은 의도한 것보다 더 많은 정보를 넘기고 싶지 않은 바로 그런 상황입니다. 판매 목록 사진이나 프로필 사진이 가장 분명한 예입니다. 받는 사람은 아직 당신과 아무 관계도 없으며, 메타데이터를 제거하면 사진은 그 안에 보이는 것만 드러내고 그 이상은 드러내지 않습니다.</p>
+
+          <h4>덜 중요할 때</h4>
+          <p>이미 알고 신뢰하는 사람들과 비공개로 공유하는 사진에는 메타데이터 제거가 훨씬 덜 중요합니다. 가족이나 가까운 친구에게 비공개 채널로 사진을 직접 보내는 것은 공개적으로 게시하거나 낯선 사람에게 보내는 것과 같은 노출 위험이 없습니다. 개인정보 보호 목적으로 메타데이터를 남겨 두는 것이 적극적으로 유익하다는 뜻은 아니며, 수신자가 얼마나 공개적이거나 신뢰할 수 없는지에 따라 실제 긴급성이 달라진다는 뜻일 뿐입니다.</p>
+
+          <h4>합리적인 기본값</h4>
+          <p>과정이 빠르고 손실이 없다는 점을 고려하면, 가까운 신뢰할 수 있는 범위를 벗어나는 모든 것에 메타데이터 제거를 기본 습관으로 삼는 데 단점이 거의 없습니다. 화질이나 노력이 전혀 들지 않으며, 결국 중요하게 되는 특정 사진에만 선택적으로 하는 것을 기억해야 하는 일도 없어집니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 사진에서 사람들이 흔히 저지르는 개인정보 실수</h3>
+          <p>사진 개인정보 문제의 대부분은 그 순간에는 해롭지 않게 느껴지는 몇 가지 습관에서 비롯됩니다. 주의할 점을 소개합니다.</p>
+
+          <h4>플랫폼이 이미 처리해 줄 것이라고 가정하기</h4>
+          <p>많은 주요 소셜 플랫폼이 업로드 시 메타데이터를 자동으로 제거하는 것은 사실이지만 모든 플랫폼이 그런 것은 아니며, 전달되거나 다운로드되거나 다시 공유된 사본이 같은 제거 과정을 안정적으로 거치는 것도 아닙니다. “플랫폼이 알아서 처리하겠지”에 의존하는 것은 도박입니다. 게시하기 전에 직접 메타데이터를 제거하면 불확실성이 완전히 사라집니다.</p>
+
+          <h4>사진에 보이는 것만 생각하기</h4>
+          <p>사람들은 사진의 눈에 보이는 세부 사항(배경에 민감한 문서가 없는지, 읽을 수 있는 도로 표지판이 없는지)을 신중하게 확인하면서도, 눈에 보이지 않는 메타데이터가 이미지 자체는 완벽하게 안전해 보여도 정확히 같은 종류의 정보(구체적으로 위치)를 유출할 수 있다는 점은 잊곤 합니다. 눈에 보이는 내용 확인과 메타데이터 제거는 서로 다른, 둘 다 필요한 단계입니다.</p>
+
+          <h4>손대지 않은 목록 사진으로 물건 판매하기</h4>
+          <p>마켓플레이스 목록은 위치가 우발적으로 노출되는 가장 흔한 현실 속 원인 중 하나입니다. 판매자들이 물건을 사는 곳 바로 그 자리에서 촬영하고 사진을 그대로 올리기 때문입니다. 위험(낯선 사람에게 집 주소를 알려 주는 것)이 구체적이고 해결에는 몇 초면 되므로, 게시 전에 메타데이터를 제거하는 가장 분명하고 가치 높은 경우 중 하나입니다.</p>
+
+          <h4>이미 올린 오래된 사진 잊어버리기</h4>
+          <p>메타데이터 제거는 공유하기 전에 제거한 사진만 보호합니다. 메타데이터가 그대로 남은 채 이미 어딘가에 게시된 사진을 소급해서 고쳐 주지는 않습니다. 과거 게시물이 걱정된다면, 해결책은 그 특정 사진으로 돌아가 플랫폼이 허용하는 경우 제거하고 정리된 버전으로 교체하는 것이지, 앞으로의 습관이 이미 퍼진 모든 것을 커버한다고 가정하는 것이 아닙니다.</p>
+
+          <h4>가끔 하는 전부 아니면 전무 작업으로 취급하기</h4>
+          <p>“민감하게 느껴지는” 사진에만 메타데이터 제거를 미루는 것은 매번 자신의 판단에 의존하는 것이며, 이는 결국 하나를 놓치게 되는 바로 그런 습관입니다. 신뢰할 수 있는 범위를 벗어나는 모든 것에 대해 메타데이터 제거를 기본 루틴에 넣으면 판단 자체가 사라지고 선택적이지 않고 일관되게 적용됩니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-6"><h3>6. SVG를 위한 Cleanly: EXIF가 아닌 편집기 메타데이터 제거</h3>
+          <p>위의 내용은 모두 사진에 내장된 EXIF 데이터(GPS, 카메라 모델, 타임스탬프)에 관한 것입니다. SVG 파일은 사진이 아니라 도형을 설명하는 XML 텍스트이므로 EXIF가 전혀 없습니다. 하지만 디자인 도구는 SVG에 자체적인 종류의 숨겨진 메타데이터를 넣고, Cleanly는 SVG를 놓았을 때 그것도 감지해 제거합니다.</p>
+
+          <h4>디자인 도구가 SVG에 내장하는 것</h4>
+          <p>Illustrator, Inkscape, Sketch, Figma는 모두 그린 도형보다 더 많은 것을 파일에 기록합니다. 내장된 <code>&lt;metadata&gt;</code>/RDF 블록(Dublin Core 태그를 통해 작성자와 라이선스 정보가 포함되기도 함), 편집기별 네임스페이스 속성(가장 흔한 것은 <code>sodipodi:</code> Inkscape의 태그입니다), 그리고 내보내기 과정에서 남은 일반 XML 주석이 들어 있습니다. SVG가 렌더링될 때는 아무것도 보이지 않지만, 보내는 누구에게든 파일과 함께 모두 전달됩니다.</p>
+
+          <h4>공유에 이것이 중요한 이유</h4>
+          <p>사진의 GPS 태그에 적용되는 같은 논리가 여기에도 적용됩니다. 의식적으로 추가하지 않은 메타데이터도 파일과 함께 문밖으로 나가는 메타데이터입니다. 고객, 마켓플레이스 목록, 공개 저장소용으로 내보낸 아이콘이나 로고에는 게시할 의도가 없었던 소프트웨어 버전 정보나 저작자 표시가 딸려 갈 수 있습니다. 공유하기 전에 그것을 제거하는 것은 사진에서 EXIF를 제거하는 것과 같은 “아무 비용이 들지 않고 놀랄 일을 막는” 습관입니다.</p>
+
+          <h4>정리하기 전에 Cleanly가 보여 주는 것</h4>
+          <p>사진에서 발견된 GPS, 카메라, 날짜 태그를 나열하는 것처럼, Cleanly는 놓은 SVG를 스캔해 발견한 것(내장 메타데이터, 편집기 작성 데이터, 주석)을 정확히 보여 줍니다. 제거하기 전에 파일에 실제로 무엇이 들어 있는지 볼 수 있으니, 보지도 않고 제거하는 일이 없습니다.</p>
+
+          <h4>손실이 아니라 무손실</h4>
+          <p>사진 압축과 달리 이것은 품질 교환이 아닙니다. 정리는 브라우저가 애초에 렌더링하지 않던 불필요한 것만 제거합니다. 디자인 도구가 만든 도형, 색, 구조는 전혀 건드리지 않고 남으므로, 정리된 파일은 픽셀 단위로 똑같이 보이고 이후에도 벡터 편집기에서 열고 편집할 수 있습니다.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -491,21 +615,21 @@
       <h3>시작하기:</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -522,7 +646,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/cleanly/cleanly-tool.js?v=56" defer></script>
 </body>

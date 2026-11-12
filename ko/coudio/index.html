@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/coudio/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/coudio/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/coudio/">
-<script src="/shared/i18n/ko.js?v=8"></script>
+<script src="/shared/i18n/ko.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Coudio – 무료 오디오 변환기 – BC Tools">
@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 #page-coudio::before{
   background:#18C98A;
@@ -938,7 +938,99 @@ html[data-theme="dark"] .cd-file-row-error{
       <li><a href="#gr-article-4">4. MP3와 WAV를 쓰는 때: 실제 시나리오</a></li>
       <li><a href="#gr-article-5">5. 오디오 변환에서 흔한 실수(와 피하는 방법)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="coudio"></div>
+    <div class="gr-inline" data-tool="coudio">
+<div class="gr-article" id="gr-article-1"><h3>1. 오디오 형식 완벽 가이드: MP3 vs WAV</h3>
+          <p>오디오 형식은 이미지 형식과 같은 손실/무손실의 경계를 따라 나뉘며, 실제로 어떤 것을 원하는지도 같은 근본적인 질문으로 정해집니다. 듣고 공유할 것을 준비하는 건가요, 아니면 이후 작업을 위해 가능한 한 최고 품질로 보관할 것을 준비하는 건가요?</p>
+
+          <h4>MP3: 손실 방식의 범용 형식</h4>
+          <p>MP3는 손실 압축을 사용하여 사람의 청각이 알아채기 어려운 오디오 디테일을 버려 파일을 크게 줄입니다. 사용한 비트레이트에 따라 비압축 원본의 10분의 1 또는 그 이하가 되는 경우도 많습니다. 거의 모든 것이 지원하며, 모든 휴대폰, 모든 카 스테레오, 모든 음악 앱, 모든 웹사이트에서 사용할 수 있습니다. 듣기, 공유, 일상적인 사용에는 MP3가 거의 항상 올바른 기본값입니다.</p>
+          <p>트레이드오프는 JPG와 같습니다. 압축 후 일부 디테일이 정말로 사라지고, 나중에 MP3를 다른 것으로 변환해도 돌아오지 않습니다. 가벼운 청취에서는 합리적인 비트레이트에서 들리지 않지만, 비판적 청취, 마스터링, 보관에서는 중요해지기 시작합니다.</p>
+
+          <h4>WAV: 무손실 비압축 형식</h4>
+          <p>WAV는 오디오를 비압축으로 저장하며, 모든 샘플이 정확히 보존되고 버려지는 데이터가 없습니다. 따라서 더 편집, 믹싱 또는 처리될 모든 것에 알맞은 선택입니다. 반복해서 다시 저장되는 MP3처럼 여러 번의 편집을 거치며 손실 압축 아티팩트가 서로 쌓이지 않기 때문입니다. 원본 녹음을 그대로 유지하는 것에 가장 가까운 형식이므로 보관용 마스터의 표준 형식이기도 합니다.</p>
+          <p>대가는 크기입니다. 압축이 아무 일도 하지 않으므로 WAV 파일은 보통 합리적인 비트레이트의 같은 오디오 MP3보다 5–10배 큽니다. 몇 분의 WAV 오디오가 이미 수십 메가바이트가 될 수 있으며, 이메일로 보내거나 많이 저장한다면 문제가 됩니다.</p>
+
+          <h4>OGG, AIFF and the rest</h4>
+          <p>Coudio also writes OGG (Opus), AIFF, AU, CAF and VOC. OGG (Opus) is lossy like MP3 but usually sounds as good or better at the same bitrate, which makes it a strong pick for websites and games; the catch is that not every player and device opens it. AIFF is lossless like WAV and is the default on macOS, Logic and GarageBand, so pick it when your Apple software asks for it. CAF is Apple's own container, AU comes from old Unix and Sun systems, and VOC from early Sound Blaster-era software. Choose those three only when a specific program or older system requires them.</p>
+
+          <h4>빠른 결정 규칙</h4>
+          <p>Sharing, listening, uploading to most platforms → MP3. Smallest file for a website or game → OGG. Editing, mixing, or archiving a master copy you'll come back to → WAV (or AIFF on a Mac). Not sure, and it's a one-off → MP3 is the safer default; almost everything can play it.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 비트레이트 설명: MP3에 맞는 숫자 고르기</h3>
+          <p>비트레이트는 파일 크기와 품질 모두에 실제로 중요한 유일한 MP3 설정이며, 하는 일에 맞는 합리적인 숫자를 고르는 법은 추측하는 것보다 이해해 두는 것이 가치 있습니다.</p>
+
+          <h4>비트레이트가 실제로 제어하는 것</h4>
+          <p>비트레이트는 오디오 1초를 인코딩하는 데 사용되는 데이터 양이며 초당 킬로비트(kbps)로 측정합니다. 비트레이트가 높을수록 원래 디테일이 더 많이 유지되어 비압축 원본에 가깝게 들리고, 낮으면 더 강하게 압축하여 더 많이 버리는 대신 파일이 작아집니다. 직접적이고 대체로 선형적인 맞교환이며, 비트레이트를 두 배로 하면 같은 길이의 오디오에서 파일 크기도 대략 두 배가 됩니다.</p>
+
+          <h4>The three options in Coudio</h4>
+          <p>MP3 and OGG both offer 128, 192 and 320 kbps, and 320 is preselected. At 128 kbps a minute of audio takes about 1 MB, at 192 about 1.4 MB, and at 320 about 2.4 MB. For comparison, an uncompressed CD-quality WAV runs around 10 MB a minute.</p>
+
+          <h4>실제로 인코딩하는 것에 비트레이트 맞추기</h4>
+          <p>Spoken word — podcasts, voice memos, audiobooks, narration — doesn't need a high bitrate; voice is far less complex than music, so 128 kbps sounds clear and keeps files small. Music, especially anything with a wide dynamic range or lots of instruments at once, benefits from 192 kbps or more before compression artifacts (a slight harshness or "underwater" quality on complex passages) become audible.</p>
+          <p>There's a genuine diminishing-returns point on the high end: past a certain bitrate, most listeners on typical headphones or speakers can no longer reliably tell the difference from the source, so cranking the number higher just inflates the file without a perceptible quality gain. If you're not sure, 192 kbps is the safe general-purpose choice for music, and 320 kbps is there for when you want the best an MP3 can offer and don't mind a file about 70% larger.</p>
+
+          <h4>비트레이트가 전혀 중요하지 않을 때</h4>
+          <p>MP3 대신 WAV로 변환한다면 비트레이트는 관련이 없습니다. WAV는 비압축이라 애초에 선택할 비트레이트 설정이 없습니다. 비트레이트는 더 작은 파일을 위해 의도적으로 품질을 조금 맞바꿀 때에만 관련이 있으며, 이것이 WAV 대신 MP3를 고르는 전체 전제입니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. 비디오 파일에서 오디오 추출하기</h3>
+          <p>Coudio는 기존 오디오 파일을 변환하는 데 그치지 않고, 비디오에서 오디오 트랙을 꺼내 영상은 버리고 소리만 줄 수도 있습니다.</p>
+
+          <h4>이것이 필요한 흔한 이유</h4>
+          <p>녹화된 강의, 회의, 인터뷰 비디오를 이동 중에 듣기 훨씬 작고 쉬운 팟캐스트 스타일의 오디오 파일로 바꾸기. 오디오만 실제로 필요할 때 비디오에서 노래나 사운드 클립 꺼내기. 저장 공간을 절약하기 위해 오래된 영상의 오디오 부분만 보관하기. 화면 녹화의 내레이션을 다른 곳에서 편집하거나 받아쓰기 위한 독립 오디오 파일로 변환하기.</p>
+
+          <h4>실제로 작동하는 방식</h4>
+          <p>Drop an MP4, WEBM, MOV, or OGV file into Coudio the same way you'd drop an audio file — the tool detects it's a video and extracts the audio track automatically, discarding the picture. Pick the output format on the file's row the same way you would for a regular audio file, and for MP3 or OGG choose a bitrate. Your original video is never touched; only its audio track is read and converted.</p>
+
+          <h4>비디오에 오디오 트랙이 없으면 어떻게 되나요</h4>
+          <p>소리가 전혀 없는 비디오(음소거된 화면 녹화, 오디오 없이 촬영한 영상)는 파일에 오디오 트랙 자체가 없기 때문에 Coudio가 추출할 것이 없습니다. 도구가 어떻게 해볼 수 있는 문제가 아니며, 원본 녹화에 정말로 소리가 없다면 뽑아낼 오디오가 없습니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. MP3와 WAV를 쓰는 때: 실제 시나리오</h3>
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>상황</th><th>최적의 형식</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="상황">노래, 녹음, 음성 메모 공유하기</td><td data-label="최적의 형식">MP3</td></tr>
+              <tr><td data-label="상황">팟캐스트 플랫폼에 업로드하기</td><td data-label="최적의 형식">MP3, 128 to 192 kbps</td></tr>
+              <tr><td data-label="상황">오디오를 추가로 편집하거나 믹싱하기</td><td data-label="최적의 형식">WAV</td></tr>
+              <tr><td data-label="상황">마스터 녹음 보관하기</td><td data-label="최적의 형식">WAV</td></tr>
+              <tr><td data-label="상황">간단한 음성 메모를 이메일로 보내기</td><td data-label="최적의 형식">MP3, 128 kbps is fine for speech</td></tr>
+            </tbody>
+          </table>
+
+          <h4>팟캐스트, 음성 메모, 말하는 콘텐츠</h4>
+          <p>MP3 at 128 kbps is the standard here — file size matters more than it does for music, since episodes are often long, and speech tolerates compression exceptionally well. Move up to 192 kbps if the show has music in it.</p>
+
+          <h4>공유하거나 듣는 음악</h4>
+          <p>MP3 at 192 to 320 kbps covers nearly every everyday case: sending a track to a friend, uploading to most platforms, keeping music on a phone where storage space adds up. Reach for WAV only if you specifically need the uncompressed original — for editing, sampling, or a truly critical-listening archive.</p>
+
+          <h4>나중에 편집하거나 믹싱할 오디오</h4>
+          <p>WAV는 믹싱, 자르기, 레이어링, 레벨 조정 등 어떤 편집을 하든 그 위에 추가적인 압축 손실이 쌓이는 것을 피합니다. 파일에 손실 압축이 애초에 없기 때문입니다. 편집이 끝난 최종 내보내기 단계에서만 MP3로 변환하세요. JPG를 반복해서 다시 저장하는 것에 적용되는 것과 같은 규칙입니다.</p>
+
+          <h4>장기 보관</h4>
+          <p>가능한 최고 화질로 무기한 보존하고 싶은 것(원본 녹음, 마스터 트랙, 중요한 인터뷰)에는 WAV가 장기적으로 더 안전한 선택입니다. 몇 번을 복사하거나 백업해도 디테일이 더 손실되지 않기 때문입니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 오디오 변환에서 흔한 실수(와 피하는 방법)</h3>
+          <p>오디오 품질에 관한 대부분의 불만은 피할 수 있는 소수의 선택으로 거슬러 올라갑니다.</p>
+
+          <h4>MP3를 MP3로 반복해서 변환하기</h4>
+          <p>JPG를 다시 저장하는 것처럼, 이미 압축된 MP3를 MP3로 다시 인코딩하면 매번 디테일이 조금씩 더 손실됩니다. 두 번째 압축은 첫 번째보다 작업할 원본 정보가 적기 때문입니다. 가능하면 무손실 소스(WAV)에서 보관하고 편집하며, 마지막에 한 번만 MP3로 내보내세요.</p>
+
+          <h4>콘텐츠에 맞지 않는 비트레이트 사용하기</h4>
+          <p>128 kbps is perfectly fine for spoken word but can sound noticeably compressed on music with a full instrumental mix, while 320 kbps on a simple voice memo just wastes file size for no audible benefit. Match the bitrate to what's actually in the recording, not a single number used for everything.</p>
+
+          <h4>추출하기 전에 오디오 트랙이 있는지 확인하지 않기</h4>
+          <p>음소거로 녹화되었거나 다른 단계에서 앞서 오디오가 제거된 비디오에서 오디오를 꺼내려 하면 아무것도 나오지 않습니다. 추출할 것이 없기 때문입니다. 추출이 Coudio 쪽에서 실패했다고 가정하기 전에, 원본에 소리가 단순히 없는 것은 아닌지 빠르게 확인해 보거나 원본 비디오를 잠깐 들어 볼 가치가 있습니다.</p>
+
+          <h4>긴 녹음의 파일 크기 무시하기</h4>
+          <p>긴 강의나 회의 녹음을 WAV로 내보내거나 불필요하게 높은 MP3 비트레이트로 내보내면 이메일로 보내거나 업로드하기 불편할 만큼 커질 수 있습니다. 특히 긴 음성 콘텐츠는 적당한 MP3 비트레이트로도 명료도 손실 없이 파일을 다루기 쉬운 크기로 유지할 수 있습니다.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -960,21 +1052,21 @@ html[data-theme="dark"] .cd-file-row-error{
       <h3>시작하기:</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -991,7 +1083,7 @@ html[data-theme="dark"] .cd-file-row-error{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/coudio/coudio-tool.js?v=60" defer></script>
 </body>

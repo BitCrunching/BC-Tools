@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cleanly/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cleanly/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cleanly/">
-<script src="/shared/i18n/pt.js?v=8"></script>
+<script src="/shared/i18n/pt.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Cleanly – Remova metadados de fotos de graça – BC Tools">
@@ -74,7 +74,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
 <script src="/vendor/exif.js"></script>
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#7ED321; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -469,7 +469,131 @@
       <li><a href="#gr-article-5">5. Erros comuns de privacidade com fotos</a></li>
       <li><a href="#gr-article-6">6. Cleanly para SVGs: removendo metadados de editor, não EXIF</a></li>
     </ul>
-    <div class="gr-inline" data-tool="exif"></div>
+    <div class="gr-inline" data-tool="exif">
+<div class="gr-article" id="gr-article-1"><h3>1. O que os metadados EXIF realmente revelam sobre você</h3>
+          <p>Toda foto que seu celular ou câmera tira carrega muito mais do que a imagem em si. Guardado dentro do arquivo há um bloco de metadados, os dados EXIF, que registra discretamente uma quantidade surpreendente de detalhes sobre quando, onde e como a foto foi tirada.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Tipo de metadado</th><th>O que revela</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tipo de metadado">Localização GPS</td><td data-label="O que revela">O lugar exato onde a foto foi tirada, muitas vezes com precisão de poucos metros</td></tr>
+              <tr><td data-label="Tipo de metadado">Marca e modelo do dispositivo</td><td data-label="O que revela">A câmera ou o celular específico usado</td></tr>
+              <tr><td data-label="Tipo de metadado">Carimbo de data e hora</td><td data-label="O que revela">A data e a hora exatas, até o segundo</td></tr>
+              <tr><td data-label="Tipo de metadado">Configurações da câmera</td><td data-label="O que revela">Abertura, velocidade do obturador, ISO, distância focal</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Localização: a principal</h4>
+          <p>Se os serviços de localização estavam ativados quando a foto foi tirada, a maioria dos celulares incorpora as coordenadas GPS exatas de onde a foto foi feita, muitas vezes precisas em poucos metros. Qualquer pessoa que abra o arquivo original no visualizador certo, ou o passe por um leitor de metadados, pode marcar essa localização em um mapa: uma foto tirada em casa, no trabalho ou na escola de uma criança pode revelar exatamente onde é esse lugar, sem você nunca ter escrito o endereço em lugar nenhum.</p>
+
+          <h4>Detalhes do dispositivo</h4>
+          <p>O EXIF normalmente inclui a marca e o modelo exatos da câmera ou do celular que tirou a foto, às vezes até a versão específica do software. Sozinho isso parece inofensivo, mas combinado com outros metadados acrescenta mais um detalhe identificador a uma foto e, em alguns contextos (anúncios em marketplaces, contas anônimas), pode ser mais um fio que liga uma foto aos dispositivos conhecidos de uma pessoa específica.</p>
+
+          <h4>Carimbos de data e hora</h4>
+          <p>A data e a hora exatas em que a foto foi tirada são registradas até o segundo, o que é mais preciso do que a maioria das pessoas imagina: uma foto postada «casualmente» pode revelar exatamente quando alguém estava em um determinado lugar, o que se torna relevante para quem pensa em ter sua rotina ou paradeiro reconstituídos a partir de um padrão de fotos postadas ao longo do tempo.</p>
+
+          <h4>Configurações da câmera e, às vezes, mais</h4>
+          <p>Detalhes técnicos como abertura, velocidade do obturador e ISO também são armazenados, o que importa para fotógrafos que revisam as próprias fotos, mas fora isso não são sensíveis em termos de privacidade por si só. Alguns dispositivos e aplicativos de edição ainda incorporam uma miniatura de prévia, histórico de software/edição ou até um campo de direitos autorais ou nome do autor, dependendo das configurações: os campos exatos presentes variam por dispositivo e aplicativo, mas os dados de localização e de data e hora são os dois que carregam mais peso real para a privacidade.</p>
+
+          <h4>Por que isso importa até para fotos «sem importância»</h4>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Como remover metadados antes de vender ou postar fotos</h3>
+          <p>Duas das situações mais comuns em que dados EXIF silenciosamente causam problemas reais são vender itens online e postar fotos publicamente: ambas envolvem fotos indo para estranhos, que é exatamente quando os metadados ocultos mais importam.</p>
+
+          <h4>Vender em marketplaces</h4>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
+
+          <h4>Postando em redes sociais e fóruns</h4>
+          <p>A maioria das grandes plataformas sociais remove metadados automaticamente no envio, o que é uma boa notícia, mas nem toda plataforma faz isso, e cópias encaminhadas ou baixadas da sua foto (capturas, salvamentos, repostagens) não passam de forma confiável pelo mesmo processo de remoção. Se uma foto for baixada de onde você a postou e recompartilhada em outro lugar, qualquer metadado que sobreviveu ao envio original viaja junto. Remover metadados antes de postar é a única forma de garantir que nunca estarão presentes em nenhum ponto da cadeia.</p>
+
+          <h4>Um hábito simples antes de postar</h4>
+          <p>Antes de enviar fotos para qualquer lugar onde serão visíveis para pessoas que você não conhece pessoalmente (um anúncio em marketplace, um post social público, um fórum, um perfil de namoro), passe-as primeiro pelo Cleanly. Leva segundos, funciona em um lote inteiro de fotos de uma vez e produz cópias visualmente idênticas sem os dados ocultos. Fazer disso uma etapa padrão, e não algo de que você só se lembra para fotos «sensíveis», significa nunca ser pego de surpresa por uma foto em que você não pensou duas vezes.</p>
+
+          <h4>iPhone photos (HEIC)</h4>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
+
+          <h4>O que a remoção não muda</h4>
+          <p>Vale ser claro sobre o que o Cleanly faz e não faz: ele remove metadados ocultos do arquivo, mas não consegue remover informações visíveis na própria imagem, como uma placa de rua ao fundo, um número de casa visível, um reflexo que mostra sua localização. A remoção de metadados cuida da camada invisível; qualquer coisa visível na própria foto é uma consideração separada que você ainda precisa conferir com seus próprios olhos antes de postar.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Cleanly para fotógrafos: privacidade sem perder qualidade</h3>
+          <p>Fotógrafos têm uma relação um pouco diferente com metadados do que usuários casuais de celular: parte deles é realmente útil manter para os próprios registros, o que faz de «remova tudo, sempre» um instinto não totalmente certo.</p>
+
+          <h4>Por que fotógrafos podem querer manter alguns metadados localmente</h4>
+          <p>As configurações da câmera (abertura, velocidade do obturador, ISO, distância focal) são valiosas quando você revisa suas próprias fotos depois: entender quais configurações produziram uma foto de que você gostou ajuda a repeti-la. Para suas cópias de trabalho, mantidas em particular, não há motivo para remover essas informações, pois são dados de referência realmente úteis e sem risco de privacidade enquanto os arquivos ficarem com você.</p>
+
+          <h4>Por que cópias entregues ou publicadas são outra história</h4>
+          <p>No momento em que uma foto é entregue a um cliente, publicada em um site de portfólio ou postada publicamente, a conta muda: dados de localização em particular não têm nada a fazer em um arquivo voltado ao cliente ou ao público, pois podem revelar locais de ensaio que deveriam permanecer privados (a casa de um cliente num ensaio de família, um local privado, o endereço exato de um estúdio se não for para ser público). O Cleanly foi feito exatamente para esta etapa: passe por ele as exportações finais voltadas ao exterior antes da entrega ou publicação, mantendo seus próprios arquivos de trabalho com metadados completos intactos para referência própria.</p>
+
+          <h4>What actually changes in the image</h4>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
+
+          <h4>Integrando a um fluxo de entrega</h4>
+          <p>Para fotógrafos que entregam galerias ou exportam lotes regularmente, a abordagem mais simples é tratar a remoção de metadados como a última etapa antes da exportação, aplicada ao lote inteiro de uma vez em vez de foto por foto. Assim ela vira uma parte rotineira de finalizar um trabalho, parecida com uma verificação final de qualidade, em vez de algo que precisa ser lembrado separadamente para cada cliente ou cada plataforma em que uma galeria é compartilhada.</p>
+
+          <h4>Protegendo os clientes tanto quanto a si mesmo</h4>
+          <p>Vale lembrar que os dados de localização e dispositivo em risco nas fotos de um cliente geralmente dizem respeito à vida do cliente, não à sua: uma sessão de retrato de família feita na casa deles, fotos de noivado em um local privado significativo. Remover metadados antes da entrega protege a privacidade dos seus clientes tanto quanto sua reputação profissional de tratar as imagens deles com cuidado.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Quando remover metadados importa mais</h3>
+          <p>Nem toda foto envolve os mesmos riscos de privacidade: saber quais situações realmente pedem a remoção de metadados ajuda a concentrar o hábito onde ele mais importa.</p>
+
+          <h4>Fotos tiradas em casa ou no local de trabalho</h4>
+          <p>Qualquer foto tirada dentro ou logo ao redor de casa ou do local de trabalho, incluindo fotos de anúncios em marketplaces, fotos de «home office» ou fotos casuais na sala de estar, carrega metadados de localização que apontam diretamente para um lugar onde você passa tempo regular e previsível. É consistentemente a categoria de maior risco, por ser a localização mais valiosa para alguém saber e a que a maioria das pessoas não pensa em proteger.</p>
+
+          <h4>Fotos envolvendo crianças</h4>
+          <p>Fotos de crianças (na escola, em uma atividade regular, num bairro) trazem uma camada extra de risco se os metadados de localização sobrevivem, pois podem revelar onde uma criança previsivelmente está em horários recorrentes. Muitos pais já pensam com cuidado sobre o que é visível em uma foto antes de postar: vale estender o mesmo cuidado ao que é invisível nos metadados.</p>
+
+          <h4>Qualquer coisa indo para um desconhecido antes de a confiança ser estabelecida</h4>
+          <p>Compradores em marketplaces, contatos de namoro online e outros contextos em que você compartilha fotos com alguém que não conhece pessoalmente são exatamente as situações em que você não quer entregar mais informação do que pretendia. Uma foto de anúncio ou de perfil é o exemplo mais claro: o destinatário ainda não tem relação nenhuma com você, e metadados removidos significam que a foto revela apenas o que é visível nela, nada mais.</p>
+
+          <h4>Quando importa menos</h4>
+          <p>Remover metadados é bem menos crítico para fotos compartilhadas em particular com pessoas que você já conhece e em quem confia: enviar uma foto diretamente a um familiar ou amigo próximo por um canal privado não traz o mesmo risco de exposição que postar publicamente ou enviar a um estranho. Não é que deixar metadados seja alguma vez ativamente benéfico para a privacidade, só que a urgência prática cresce conforme o destinatário é público ou não confiável.</p>
+
+          <h4>Um padrão razoável</h4>
+          <p>Dado o quão rápido e sem perdas é o processo, há pouca desvantagem em fazer da remoção de metadados um hábito padrão para qualquer coisa que saia do seu círculo imediato e de confiança: não custa nada em qualidade ou esforço, e significa que você nunca depende de lembrar de fazê-lo seletivamente para aquela foto específica que acaba importando.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Erros comuns de privacidade com fotos</h3>
+          <p>A maioria dos problemas de privacidade com fotos vem de um punhado de hábitos que parecem inofensivos no momento. Veja o que observar.</p>
+
+          <h4>Presumir que a plataforma já cuida disso</h4>
+          <p>É verdade que muitas grandes plataformas sociais removem metadados automaticamente no envio, mas nem todas fazem isso, e cópias encaminhadas, baixadas e recompartilhadas não passam de forma confiável por essa mesma remoção. Contar com «a plataforma provavelmente cuida disso» é uma aposta; remover os metadados você mesmo antes de postar elimina a incerteza por completo.</p>
+
+          <h4>Pensar só no que é visível na foto</h4>
+          <p>As pessoas costumam checar com cuidado uma foto em busca de detalhes visíveis (nenhum documento sensível ao fundo, nenhuma placa de rua legível) esquecendo que os metadados invisíveis podem vazar exatamente o mesmo tipo de informação (especificamente, localização) mesmo quando a imagem em si parece perfeitamente segura. Verificar o conteúdo visível e remover os metadados são dois passos separados, ambos necessários.</p>
+
+          <h4>Vender itens com fotos de anúncio intocadas</h4>
+          <p>Anúncios em marketplaces são uma das fontes reais mais comuns de exposição acidental de localização, já que vendedores fotografam os itens exatamente onde moram e enviam as fotos como estão. É um dos casos mais claros e de maior valor para remover metadados antes de postar, pois o risco (revelar o endereço de casa a estranhos) é concreto e a solução leva segundos.</p>
+
+          <h4>Esquecer fotos antigas já postadas</h4>
+          <p>Remover metadados só protege as fotos que você limpa antes de compartilhar: não corrige retroativamente fotos já postadas em algum lugar com os metadados intactos. Se você se preocupa com postagens antigas, a solução é voltar a essas fotos específicas, removê-las e substituí-las por versões limpas se a plataforma permitir, em vez de presumir que o hábito daqui para frente cobre tudo que já está por aí.</p>
+
+          <h4>Tratar como uma tarefa de tudo ou nada, ocasional</h4>
+          <p>Esperar para remover metadados só de fotos que «parecem sensíveis» significa depender do seu próprio julgamento toda vez, exatamente o tipo de hábito que acaba deixando passar uma. Incorporar a remoção de metadados à sua rotina padrão para qualquer coisa que saia de um círculo de confiança elimina o julgamento por completo: ela é aplicada de forma consistente em vez de seletiva.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-6"><h3>6. Cleanly para SVGs: removendo metadados de editor, não EXIF</h3>
+          <p>Tudo acima trata de dados EXIF incorporados em fotos: GPS, modelo da câmera, data e hora. Arquivos SVG não têm EXIF algum, pois não são fotos; são texto XML descrevendo formas. Mas ferramentas de design incorporam seu próprio tipo de metadado oculto em um SVG, e o Cleanly também detecta e remove isso quando você solta um.</p>
+
+          <h4>O que as ferramentas de design incorporam em um SVG</h4>
+          <p>Illustrator, Inkscape, Sketch e Figma escrevem todos mais no arquivo do que as formas que você desenhou: um bloco incorporado <code>&lt;metadata&gt;</code>/RDF (às vezes incluindo informações de autoria e licença via tags Dublin Core), atributos específicos do editor com namespace (as mais comuns são as tags <code>sodipodi:</code> do Inkscape) e comentários XML simples deixados pelo processo de exportação. Nada disso é visível quando o SVG é renderizado, mas tudo viaja com o arquivo para quem você o enviar.</p>
+
+          <h4>Por que isso importa para o compartilhamento</h4>
+          <p>O mesmo raciocínio que vale para a tag GPS de uma foto vale aqui: metadados que você não adicionou conscientemente continuam sendo metadados que saem pela porta com o arquivo. Um ícone ou logotipo exportado para um cliente, um anúncio em marketplace ou um repositório público pode carregar informações de versão de software ou atribuição de autoria que você nunca pretendeu publicar. Removê-los antes de compartilhar é o mesmo hábito de «não custa nada, evita uma surpresa» de remover EXIF de uma foto.</p>
+
+          <h4>O que o Cleanly mostra antes de remover</h4>
+          <p>Assim como lista as tags de GPS, câmera e data encontradas em uma foto, o Cleanly examina um SVG solto e mostra exatamente o que encontrou (metadados incorporados, dados de autoria do editor ou comentários) para você ver o que realmente há no arquivo antes de removê-lo, em vez de limpar às cegas.</p>
+
+          <h4>Sem perda, não com perda</h4>
+          <p>Ao contrário da compressão de fotos, isso não é uma troca de qualidade. A limpeza remove apenas o lixo que o navegador nunca renderizou: as formas, cores e estrutura que sua ferramenta de design criou ficam completamente intocadas, então o arquivo limpo parece idêntico pixel a pixel e ainda pode ser aberto e editado depois em um editor vetorial.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -491,21 +615,21 @@
       <h3>Primeiros passos com</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pt/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pt/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pt/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pt/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pt/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pt/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pt/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pt/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pt/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pt/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pt/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -522,7 +646,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/cleanly/cleanly-tool.js?v=56" defer></script>
 </body>

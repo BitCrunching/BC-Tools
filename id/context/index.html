@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/id.js?v=8"></script>
+<script src="/shared/i18n/id.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Tambahkan Teks ke PDF Gratis – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 
@@ -1975,7 +1975,110 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <li><a href="#gr-article-4">4. Bekerja dengan PDF Multi-Halaman: Konsistensi dan Penyuntingan Halaman demi Halaman</a></li>
       <li><a href="#gr-article-5">5. Kesalahan Umum Saat Menambahkan Teks ke PDF (dan Cara Menghindarinya)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="context"></div>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. Cara Kerja Penambahan Teks ke PDF yang Sebenarnya</h3>
+          <p>Halaman PDF bukan dokumen teks yang bisa langsung diklik dan diketik — lebih mirip lembar cetak, gambar tetap berisi teks dan grafik yang diletakkan pada posisi tepat. Memahami perbedaan itu menjelaskan apa yang dilakukan Context dan mengapa ia bekerja seperti ini.</p>
+
+          <h4>Halaman adalah gambar, bukan dokumen</h4>
+          <p>Sebagian besar PDF (apa pun yang tidak dibuat khusus sebagai formulir isian) tidak mengenal konsep "ruang kosong yang bisa diketik". Apa yang Anda lihat sebagai garis, kotak, atau kolom kosong sebenarnya hanya tinta pada koordinat tetap — tidak ada kolom teks di baliknya yang menunggu input Anda, seperti pada dokumen Word atau formulir web. Saat Context memungkinkan Anda "menambah teks" ke PDF, ia tidak menemukan kolom tersembunyi lalu mengisinya; ia menaruh lapisan teks baru yang independen di atas halaman yang ada, diposisikan di mana pun Anda menyeretnya.</p>
+
+          <h4>Menumpuk vs. menyunting</h4>
+          <p>Pendekatan penumpukan ini sama dengan yang dipakai pada dasarnya setiap alat anotasi PDF, bukan hanya yang ini — benar-benar menyunting teks asli PDF (mengubah kalimat yang sudah tercetak di halaman) memerlukan perangkat lunak khusus dan sering tidak mungkin sama sekali jika file asli tidak mempertahankan lapisan teks yang dapat disunting. Yang dilakukan Context lebih sederhana dan jauh lebih berguna luas: menambahkan potongan teks baru yang terpisah yang secara visual berada di atas halaman, persis yang Anda butuhkan untuk keterangan, catatan, paraf, atau mengisi garis kosong pada formulir.</p>
+
+          <h4>Poin, bukan piksel</h4>
+          <p>Halaman PDF mengukur posisi dalam poin (1/72 inci), bukan piksel layar yang Anda seret dengan jari atau kursor. Context menangani konversi itu untuk Anda — apa yang Anda lihat di layar, pada tingkat zoom apa pun, selalu terpetakan kembali ke posisi tetap yang benar di PDF sebenarnya, sehingga kotak teks yang Anda taruh di atas halaman tetap di atas halaman terlepas dari perangkat atau tingkat zoom yang dipakai orang lain saat membukanya nanti.</p>
+
+          <h4>Apa yang terjadi saat Anda mengunduh</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Memilih Ukuran Font dan Penempatan yang Tepat untuk Berbagai Dokumen</h3>
+          <p>Ukuran dan posisi teks yang tepat bergantung sepenuhnya pada jenis dokumen yang Anda tandai dan siapa yang akan membacanya selanjutnya. Berikut cara berpikir berdasarkan skenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Jenis dokumen</th><th>Pendekatan yang disarankan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Jenis dokumen">Mengisi garis kosong formulir</td><td data-label="Pendekatan yang disarankan">Sesuaikan dengan ukuran label tercetak, letakkan tepat di atas garis</td></tr>
+              <tr><td data-label="Jenis dokumen">Menambahkan catatan atau komentar</td><td data-label="Pendekatan yang disarankan">Gunakan warna kontras, pisahkan jelas dari teks asli</td></tr>
+              <tr><td data-label="Jenis dokumen">Menandatangani atau memaraf</td><td data-label="Pendekatan yang disarankan">Sedikit lebih besar dari teks sekitar, di tengah garis</td></tr>
+              <tr><td data-label="Jenis dokumen">Memberi keterangan pada PDF padat gambar</td><td data-label="Pendekatan yang disarankan">Ukuran konsisten pada setiap keterangan di setiap halaman</td></tr>
+              <tr><td data-label="Jenis dokumen">Dokumen formal atau hukum</td><td data-label="Pendekatan yang disarankan">Sesuaikan erat dengan ukuran font dokumen, gunakan hitam</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Menyesuaikan dengan teks yang ada di dokumen</h4>
+          <p>Hal terpenting yang membuat baris tambahan tampak disengaja dan bukan tempelan adalah menyesuaikan ukurannya dengan apa yang sudah tercetak di dekatnya. Jika label formulir dicetak sekitar 11–12pt, menambahkan jawaban Anda pada 24pt membuatnya tampak tidak cocok, walau posisinya sempurna. Perbesar dulu teks tercetak di sekitarnya, dapatkan gambaran kasar skalanya, dan pilih ukuran yang mendekati — Context mengingat ukuran terakhir yang Anda pakai, jadi begitu Anda menyesuaikannya sekali, setiap kotak berikutnya otomatis mulai dari ukuran yang sama.</p>
+
+          <h4>Tetap di dalam garis — secara harfiah</h4>
+          <p>Garis dan kotak kosong pada formulir biasanya berukuran untuk sejumlah teks tertentu pada ukuran tertentu. Sebelum mengetik jawaban panjang di garis pendek, pertimbangkan apakah perlu dikecilkan sedikit agar muat, karena teks yang melewati ujung garis tercetak tampak seperti kesalahan bagi siapa pun yang membaca dokumen jadi, meski secara teknis tidak ada yang rusak.</p>
+
+          <h4>Memilih warna yang terbaca "ditambahkan", bukan "tersembunyi"</h4>
+          <p>Teks hitam biasanya bawaan paling aman, karena sesuai dengan cara kebanyakan formulir dan dokumen dicetak dan tidak menarik perhatian sebagai tambahan. Teks berwarna sangat berguna untuk catatan, koreksi, atau apa pun yang sengaja ingin menonjol dari isi asli — pastikan saja warna yang Anda pilih punya kontras nyata terhadap halaman di belakangnya; warna terang seperti kuning mudah hilang pada halaman putih.</p>
+
+          <h4>Menyisakan margin untuk hal tak terduga</h4>
+          <p>Menaruh teks tepat di tepi halaman berisiko terpotong jika dokumen kemudian dicetak pada ukuran kertas atau pengaturan margin yang sedikit berbeda dari yang diharapkan. Menyisakan jarak kecil antara teks dan tepi halaman — serta antara teks dan konten tercetak di dekatnya — menjaga hasil tetap rapi terlepas dari bagaimana akhirnya dicetak atau dilihat.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Mengisi Formulir dan Menandatangani Dokumen Tanpa Printer</h3>
+          <p>Cetak, tanda tangani, pindai, dan kirim balik lewat email masih cara banyak urusan administrasi ditangani — dan hampir selalu tidak perlu. Berikut cara melewatinya hanya dengan browser.</p>
+
+          <h4>Menggantikan siklus cetak-tanda tangan-pindai</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>Tanda tangan dan paraf ketikan</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>Menyejajarkan jawaban dengan label tercetak</h4>
+          <p>Sebagian besar formulir mencetak label ("Nama:", "Tanggal:") diikuti garis atau kotak kosong untuk jawaban. Seret kotak teks Anda agar berada tepat di atas garis, bukan menimpanya — teks yang diletakkan langsung di garis tercetak sulit dibaca saat keduanya bertumpuk, sedangkan teks yang melayang tepat di atasnya tetap jelas terbaca dan tetap terbaca sebagai "jawaban untuk label itu" bagi siapa pun yang melihat halaman jadi.</p>
+
+          <h4>Memeriksa ulang sebelum mengirim</h4>
+          <p>Setelah semua kolom terisi, ada baiknya memeriksa tiap halaman pada ukuran sebenarnya (bukan hanya gambar mini tempat Anda mengetik) untuk memastikan tidak ada yang bertumpuk, tidak ada yang melewati tepi garis, dan setiap kolom wajib benar-benar terisi — kotak teks yang tampak baik saat Anda menyunting kadang tampak sedikit berbeda saat halaman jadi dilihat secara keseluruhan.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Bekerja dengan PDF Multi-Halaman: Konsistensi dan Penyuntingan Halaman demi Halaman</h3>
+          <p>Kontrak, laporan, dan formulir multi-halaman memerlukan pendekatan yang sedikit berbeda dari penyuntingan cepat satu halaman — terutama dalam menjaga konsistensi saat Anda menelusuri dokumen.</p>
+
+          <h4>Berpindah antarhalaman tanpa kehilangan posisi</h4>
+          <p>Navigasi halaman Context menjaga setiap kotak teks terikat pada halaman tempat ia diletakkan, sehingga berpindah antarhalaman untuk mengisi bagian berbeda dari dokumen panjang tidak berisiko mengacaukan apa pun — kotak yang ditambahkan di halaman 3 tetap di halaman 3 berapa pun halaman lain yang Anda kunjungi sebelum mengunduh.</p>
+
+          <h4>Menjaga ukuran dan warna tetap konsisten antarhalaman</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>Merencanakan satu putaran sebelum mulai mengetik</h4>
+          <p>Untuk dokumen yang lebih panjang, ada baiknya melakukan putaran cepat pertama melalui setiap halaman — hanya melihat, belum mengetik — untuk melihat cakupan penuh yang perlu diisi sebelum menentukan ukuran dan posisi di halaman pertama. Ukuran yang tampak tepat di halaman pertama yang longgar bisa terlalu besar untuk halaman yang lebih padat, dan menangkapnya lebih awal menghemat waktu kembali mengubah ukuran kotak yang sudah diletakkan.</p>
+
+          <h4>Meninjau seluruh dokumen sebelum mengunduh</h4>
+          <p>Karena setiap halaman dirender dan disunting secara independen, mudah terfokus pada halaman yang sedang dikerjakan dan kehilangan gambaran dokumen secara keseluruhan. Sebelum mengunduh, telusuri kembali dari awal — ini satu-satunya cara menangkap halaman yang terlewat sama sekali, atau kotak yang tampak berbeda dari yang lain tanpa Anda sadari saat mengerjakan file.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Kesalahan Umum Saat Menambahkan Teks ke PDF (dan Cara Menghindarinya)</h3>
+          <p>Sebagian besar masalah pada PDF yang disunting berasal dari sekumpulan kecil kesalahan yang mudah terlewat. Berikut yang perlu diwaspadai.</p>
+
+          <h4>Teks yang terlalu kecil setelah di-zoom keluar</h4>
+          <p>Mudah mengetik dengan ukuran yang tampak sangat terbaca saat Anda memperbesar dan fokus pada satu kotak, lalu mendapati ukurannya jelas kecil saat halaman dilihat pada ukuran normal penuh. Zoom keluar (atau periksa PDF jadi di penampil terpisah) sebelum mengunduh untuk memastikan setiap kotak benar-benar terbaca pada ukuran sebenarnya, bukan hanya pada ukuran penyuntingan.</p>
+
+          <h4>Menaruh teks di atas konten yang ada, bukan di sampingnya</h4>
+          <p>Menaruh kotak teks tepat di atas teks atau garis tercetak membuat keduanya sulit dibaca saat bertumpuk — konten di bawahnya tidak menyingkir. Geser teks baru ke ruang yang benar-benar kosong di dekatnya, bukan menumpuknya langsung di atas sesuatu yang sudah tercetak di sana.</p>
+
+          <h4>Menyunting halaman yang salah</h4>
+          <p>Pada dokumen yang lebih panjang mudah kehilangan jejak halaman mana yang sedang aktif, terutama setelah zoom atau menggulir, dan akhirnya menambahkan teks ke halaman yang sepenuhnya salah. Periksa penunjuk halaman sebelum menambahkan kotak pada dokumen lebih dari satu halaman, terutama tepat setelah berpindah ke halaman baru.</p>
+
+          <h4>Memakai warna dengan kontras buruk</h4>
+          <p>Warna terang — terutama kuning pucat — bisa tampak baik pada ukuran penyuntingan di layar terang lalu menjadi sangat sulit dibaca saat dicetak atau dilihat di layar lain. Tetaplah pada warna dengan kontras kuat terhadap putih, seperti hitam atau warna jenuh, untuk apa pun yang benar-benar perlu dibaca, bukan sekadar terlihat.</p>
+
+          <h4>Lupa mengganti nama file sebelum dibagikan</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -1998,21 +2101,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>Memulai dengan</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/id/convert/">Convert</a>
+          <a class="footer-dash-link" href="/id/compress/">Compress</a>
+          <a class="footer-dash-link" href="/id/combine/">Combine</a>
+          <a class="footer-dash-link" href="/id/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/id/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/id/congify/">Congify</a>
+          <a class="footer-dash-link" href="/id/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/id/codify/">Codify</a>
+          <a class="footer-dash-link" href="/id/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/id/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/id/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2029,7 +2132,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/context/context-tool.js?v=115" defer></script>
 </body>

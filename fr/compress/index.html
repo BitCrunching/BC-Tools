@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
-<script src="/shared/i18n/fr.js?v=8"></script>
+<script src="/shared/i18n/fr.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Compress – Compresseur d'images gratuit – BC Tools">
@@ -75,7 +75,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -553,7 +553,112 @@
       <li><a href="#gr-article-4">4. Quand compresser et quand laisser une image telle quelle</a></li>
       <li><a href="#gr-article-5">5. Erreurs courantes de compression (et comment les éviter)</a></li>
     </ul>
-    <div class="gr-inline" data-tool="compress"></div>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Comment fonctionne vraiment la compression d'image</h3>
+          <p>La compression ressemble à un simple curseur ou à un simple clic, mais en dessous, deux approches vraiment différentes font le travail de réduction, et comprendre laquelle est à l'œuvre explique presque tous les résultats que vous verrez avec un outil de ce genre.</p>
+
+          <h4>Compression avec perte : éliminer ce que vous ne remarquerez pas</h4>
+          <p>La compression avec perte, celle qu'utilisent le JPG et le WEBP, consiste à repérer dans une image les informations que l'œil humain perçoit mal et à les éliminer. Les dégradés de couleur subtils sont simplifiés, les détails fins à haute fréquence sont lissés, et le résultat est un fichier qui peut représenter une fraction de la taille d'origine tout en paraissant correct à un spectateur occasionnel. Le revers est que cette élimination est définitive : une fois ce détail perdu, aucune réouverture ni aucun réenregistrement ne le restitue, et recompresser un fichier déjà compressé avec perte cumule la perte à chaque fois.</p>
+          <p>Le « taux de qualité » ou niveau de compression que vous choisissez contrôle l'agressivité de ce processus. Un réglage de qualité élevé élimine très peu et réduit modestement le fichier ; un réglage de qualité bas élimine beaucoup plus et le réduit drastiquement, au prix d'artefacts visibles : effets de bloc autour des bords, détails brouillés, bandes de couleur dans les ciels et les dégradés.</p>
+
+          <h4>Compression sans perte : reconditionner sans rien perdre</h4>
+          <p>La compression sans perte, l'approche du PNG, fonctionne de façon totalement différente : elle trouve des moyens plus malins et plus efficaces de stocker exactement les mêmes données de pixels, comme un fichier ZIP réduit un document texte sans changer un seul caractère. Rien n'est éliminé, donc vous pouvez compresser et décompresser autant de fois que vous voulez sans aucun changement de qualité. Le revers est que la réduction de taille est bien plus faible, car il existe une limite mathématique stricte à la réduction de données sans en jeter aucune, surtout pour les images photographiques, pleines de détails fins et irréguliers qui résistent à un reconditionnement sans perte.</p>
+
+          <h4>Pourquoi notre outil Compress convertit le PNG en JPG</h4>
+          <p>C'est pourquoi Compress convertit automatiquement les photos PNG en JPG pendant la compression : une photographie PNG passée uniquement dans une compression sans perte ne rétrécit presque pas, alors que la même photo autorisée à utiliser la compression avec perte peut rétrécir considérablement. Pour une vraie photographie, ce compromis vaut presque toujours le coup : la différence de qualité est invisible aux tailles de visualisation normales, et la différence de taille est énorme. C'est une autre histoire pour les PNG qui ne sont pas des photographies (captures d'écran, logos, graphismes avec transparence ou texte net), et c'est pourquoi cette conversion est spécifiquement réglée pour le contenu de type photo plutôt qu'appliquée aveuglément à tous les PNG.</p>
+
+          <h4>Ce qui se passe vraiment quand vous déplacez le curseur de qualité</h4>
+          <p>En interne, un réglage de qualité plus bas augmente la grossièreté avec laquelle les informations de couleur et de détail de l'image sont regroupées et simplifiées avant stockage. Pensez-y comme à l'arrondi de nombres : arrondir « qualité 95 » ne change presque rien, alors qu'arrondir « qualité 40 » change beaucoup plus, mais prend aussi beaucoup moins de place à décrire. Il n'existe pas de « bon » chiffre universel : le bon réglage dépend entièrement de l'usage de l'image, ce que l'article suivant détaille.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Choisir le bon niveau de compression selon votre usage</h3>
+          <p>Il n'existe pas de « meilleur » réglage de compression unique : le bon niveau dépend entièrement de la destination de l'image et de ce qu'elle doit supporter. Voici comment y réfléchir par scénario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destination</th><th>Niveau recommandé</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destination">Réseaux sociaux / applis de messagerie</td><td data-label="Niveau recommandé">Moyen</td></tr>
+              <tr><td data-label="Destination">Votre propre site web ou boutique en ligne</td><td data-label="Niveau recommandé">Moyen à Élevé</td></tr>
+              <tr><td data-label="Destination">Impression ou livraison professionnelle à un client</td><td data-label="Niveau recommandé">Faible, ou sans compression</td></tr>
+              <tr><td data-label="Destination">Archivage à long terme</td><td data-label="Niveau recommandé">Faible</td></tr>
+              <tr><td data-label="Destination">Limites de taille des pièces jointes d'e-mail</td><td data-label="Niveau recommandé">Élevé</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Réseaux sociaux et messagerie</h4>
+          <p>Des plateformes comme Instagram, WhatsApp et la plupart des fils sociaux recompressent déjà chaque image que vous téléversez, souvent agressivement, quoi que vous leur envoyiez. Téléverser ici un fichier énorme et à peine compressé ne vous apporte rien : la plateforme va le recompresser de son côté de toute façon. Un niveau de compression modéré à élevé garde votre téléversement rapide et la taille de votre fichier d'origine raisonnable sans sacrifier de qualité que vous verriez réellement après le traitement propre à la plateforme.</p>
+
+          <h4>Sites web et boutiques en ligne</h4>
+          <p>Pour tout ce que vous hébergez vous-même (un site de portfolio, un blog, une page produit), la taille des fichiers affecte directement la vitesse de chargement de votre page, ce qui influence à la fois l'expérience des visiteurs et, pour tout ce qui est commercial, les taux de conversion et le référencement. Il vaut ici la peine de pencher pour une compression plus agressive, car la consultation sur le web exige rarement un niveau de détail d'impression, et une page remplie d'énormes images non optimisées est l'une des raisons les plus courantes de lenteur d'un site.</p>
+
+          <h4>Impression et usage professionnel</h4>
+          <p>C'est le seul endroit où il faut rester prudent. L'impression révèle des détails et des artefacts qu'un écran ne montre tout simplement pas, car elle est vue à une résolution effective plus élevée et souvent sur une taille physique plus grande. Pour tout ce qui va chez un imprimeur, dans une soumission de galerie ou en livraison professionnelle à un client, utilisez un niveau de compression léger ou n'en appliquez pas pour cette copie précise, et gardez un fichier maître non compressé ou légèrement compressé comme source de vérité.</p>
+
+          <h4>Archivage et stockage à long terme</h4>
+          <p>Si l'objectif est de conserver une photo pendant des années (photos de famille, archive, tout ce que vous pourriez vouloir revoir en pleine qualité plus tard), évitez une forte compression avec perte sur votre unique exemplaire. Une fois le détail éliminé, il est irrécupérable, même si un usage ultérieur l'exige. Une approche raisonnable consiste à garder une copie d'archive de meilleure qualité et à générer à la demande des versions compressées séparément pour ce dont un usage précis a vraiment besoin.</p>
+
+          <h4>Pièces jointes d'e-mail et limites de taille de fichier</h4>
+          <p>De nombreux fournisseurs d'e-mail plafonnent la taille des pièces jointes, souvent autour de 25 Mo au total. Si vous envoyez plusieurs photos, un niveau de compression plus fort vous fait passer sous ce plafond de façon fiable. C'est l'un des rares cas où la contrainte pratique (est-ce que ça tient dans l'e-mail) compte plus que la différence visuelle entre les niveaux de compression, donc n'hésitez pas à compresser plus fort que pour d'autres usages.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compression pour le web : de la vitesse sans sacrifier la qualité</h3>
+          <p>Le poids des images est l'un des plus gros facteurs, et des plus faciles à corriger, de lenteur d'un site web, et aussi l'un des plus faciles à mal régler dans un sens comme dans l'autre : trop peu de compression et les pages rament, trop et les photos paraissent nettement dégradées. Voici comment trouver le juste milieu.</p>
+
+          <h4>Pourquoi la taille des images compte autant pour la vitesse</h4>
+          <p>Sur la plupart des pages riches en contenu, les images représentent l'essentiel du poids total de la page, bien plus que le HTML, le CSS ou le JavaScript réunis. Le temps de chargement d'une page pour un visiteur, et l'évaluation qu'en font les moteurs de recherche, est affecté de façon disproportionnée par le poids de vos images, ce qui fait que les compresser correctement est souvent le changement de performance au plus fort effet de levier, devant la plupart des optimisations de code.</p>
+
+          <h4>Adapter la compression à la façon dont l'image sera réellement affichée</h4>
+          <p>Une image affichée à 400 pixels de large sur une page n'a pas besoin d'être livrée sous forme de fichier d'origine d'appareil photo de 4 000 pixels légèrement compressé : il lui faut bien moins de détails pour paraître nette à sa taille d'affichage réelle. Avant de vous soucier du niveau de compression, assurez-vous que les dimensions de l'image correspondent à peu près à la taille à laquelle elle apparaîtra ; compresser une image surdimensionnée revient à traiter le symptôme en laissant la cause principale (une résolution inutile).</p>
+
+          <h4>Choisir un format pour le web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>Le point de rendement décroissant</h4>
+          <p>La compression n'évolue pas linéairement avec la perte de qualité visuelle : le premier palier de compression d'un original non compressé retire énormément de taille pour presque aucun changement visible, tandis que pousser la compression de plus en plus loin retire progressivement moins de taille pour toujours plus de dégâts visibles. En pratique, la plupart des photos atteignent un point idéal bien avant la « compression maximale », et il vaut la peine de vérifier une image compressée à sa taille d'affichage réelle plutôt que de supposer que plus de compression est toujours meilleur pour la vitesse.</p>
+
+          <h4>Traiter par lots toutes les images d'un site</h4>
+          <p>Si vous optimisez beaucoup d'images à la fois (un catalogue produits, une galerie, les anciennes images d'articles d'un blog), appliquez un niveau de compression cohérent à des types de contenu similaires plutôt que d'évaluer chacune à l'œil. Cela maintient une qualité visuelle homogène sur votre site et rend bien plus rapide de refaire le processus si vous changez d'avis sur le réglage, puisque vous ne décidez pas à nouveau cas par cas.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Quand compresser et quand laisser une image telle quelle</h3>
+          <p>La compression est un outil vraiment utile, mais ce n'est pas automatiquement le bon choix pour chaque image dans chaque situation : savoir quand s'en passer est tout aussi important que savoir l'utiliser.</p>
+
+          <h4>Signes qu'une image est une bonne candidate à la compression</h4>
+          <p>Les grandes photos d'origine d'appareil destinées au web, à l'e-mail ou à la messagerie gagnent presque toujours à être compressées : elles portent généralement bien plus de résolution et de poids que la destination n'en a besoin. Tout fichier qui se heurte à une limite stricte (plafond de pièce jointe d'e-mail, restriction de téléversement, taille maximale d'un formulaire) est aussi un candidat évident, car la compression est souvent le moyen le plus rapide de passer sous la limite sans recadrer ni redimensionner le contenu de l'image.</p>
+
+          <h4>Signes qu'il faut laisser une image telle quelle (ou la compresser très légèrement)</h4>
+          <p>Les graphismes avec du texte, des lignes nettes ou des aplats de couleur (captures d'écran, schémas, logos, documents numérisés) se compressent généralement mal avec des méthodes avec perte, car les artefacts de compression apparaissent sous forme de flou et de franges colorées exactement là où l'œil remarque le plus : autour des bords et du texte. Ils sont généralement mieux servis par l'approche sans perte du PNG, ou en renonçant à la compression plutôt qu'en luttant contre les artefacts.</p>
+          <p>Tout ce qui a déjà été compressé une fois ne devrait pas l'être à nouveau « par précaution ». Recompresser un JPG déjà compressé avec perte ne le réduit pas de façon significative dans la plupart des cas, et peut introduire un second tour de perte de qualité par-dessus le premier, en empilant les artefacts au lieu de les supprimer.</p>
+
+          <h4>L'habitude de la copie maîtresse</h4>
+          <p>Une règle simple qui évite la plupart des regrets : gardez une copie maîtresse de haute qualité (ou non compressée) de tout ce que vous pourriez réutiliser, et générez des versions compressées à partir de cette copie selon chaque usage, au lieu d'écraser votre unique exemplaire par une version compressée. Le stockage est bon marché ; recréer un original perdu est impossible une fois qu'il a disparu.</p>
+
+          <h4>Juger selon la destination, pas selon l'habitude</h4>
+          <p>La bonne question n'est pas « dois-je compresser cette image » dans l'abstrait, mais « de quoi l'endroit où va cette image a-t-il réellement besoin ». Une photo destinée à un SMS n'a presque pas besoin de son détail d'origine ; une photo destinée à une grande bannière imprimée en a besoin de presque tout. Laissez la destination fixer le niveau, plutôt que d'appliquer par habitude le même niveau de compression à tout ce qui passe dans votre flux de travail.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Erreurs courantes de compression (et comment les éviter)</h3>
+          <p>La plupart des plaintes sur la compression remontent à un petit ensemble d'erreurs répétitives. Voici ce qu'il faut surveiller.</p>
+
+          <h4>Compresser le même fichier encore et encore</h4>
+          <p>Chaque passe de compression avec perte élimine un peu plus de détails, et cette perte s'accumule à chaque passe supplémentaire : un fichier compressé, rouvert, modifié et recompressé plusieurs fois paraîtra nettement moins bon qu'un fichier compressé une seule fois à partir d'un original propre. Compressez toujours à partir de l'original ou d'une copie maîtresse non compressée, jamais d'une copie déjà compressée.</p>
+
+          <h4>Écraser votre unique exemplaire</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Compresser des graphismes comme s'il s'agissait de photos</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Choisir un niveau de compression sans vérifier le résultat</h4>
+          <p>Il est tentant de choisir la « compression maximale » pour obtenir le fichier le plus petit possible et passer à autre chose, mais ce réglage introduit souvent des artefacts clairement visibles dès qu'on regarde la sortie à sa taille réelle. Une vérification rapide du résultat compressé, à la taille à laquelle il sera réellement vu, prend quelques secondes et évite d'envoyer ou de publier quelque chose de nettement moins bon que prévu.</p>
+
+          <h4>Ignorer la compression propre à la destination</h4>
+          <p>Téléverser un fichier énorme et à peine compressé sur une plateforme qui va de toute façon le compresser (la plupart des réseaux sociaux et applis de messagerie) fait perdre du temps de téléversement et de la bande passante sans bénéfice visuel, car le traitement propre à la plateforme détermine une grande part de la qualité finale quoi que vous ayez envoyé. Adaptez votre effort de compression à ce que la destination conservera réellement, pas à l'idée que « plus de qualité d'origine en entrée égale plus de qualité finale en sortie ».</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -575,21 +680,21 @@
       <h3>Premiers pas avec</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/fr/convert/">Convert</a>
+          <a class="footer-dash-link" href="/fr/compress/">Compress</a>
+          <a class="footer-dash-link" href="/fr/combine/">Combine</a>
+          <a class="footer-dash-link" href="/fr/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/fr/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/fr/congify/">Congify</a>
+          <a class="footer-dash-link" href="/fr/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/fr/codify/">Codify</a>
+          <a class="footer-dash-link" href="/fr/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/fr/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/fr/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -606,7 +711,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/compress/compress-tool.js?v=53" defer></script>
 </body>

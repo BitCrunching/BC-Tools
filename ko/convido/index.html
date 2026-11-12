@@ -45,7 +45,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convido/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convido/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convido/">
-<script src="/shared/i18n/ko.js?v=8"></script>
+<script src="/shared/i18n/ko.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Convido – 무료 동영상 변환기 – BC Tools">
@@ -74,7 +74,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:#B84CFF; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -649,7 +649,87 @@
       <li><a href="#gr-article-4">4. Convido가 읽을 수 있는 것과 없는 것</a></li>
       <li><a href="#gr-article-5">5. 브라우저에서 변환하기: 알아둘 점</a></li>
     </ul>
-    <div class="gr-inline" data-tool="convido"></div>
+    <div class="gr-inline" data-tool="convido">
+<div class="gr-article" id="gr-article-1"><h3>1. 컨테이너와 코덱: 동영상 형식의 실체</h3>
+          <p>동영상 파일은 두 가지가 겹쳐진 것입니다. 코덱은 영상과 소리를 압축하는 방식입니다(H.264, HEVC, VP9, AAC). 컨테이너는 압축된 영상, 음성, 타이밍 정보를 담는 상자입니다(MP4, MOV, MKV, WebM, AVI, FLV). 컨테이너 간 변환은 같은 내용물을 다른 상자로 옮기는 것일 때가 많습니다.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>형식</th><th>가장 적합한 용도</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="형식">MP4</td><td data-label="가장 적합한 용도">공유 및 업로드 — 거의 모든 휴대폰, 컴퓨터, 앱에서 재생됩니다</td></tr>
+              <tr><td data-label="형식">MOV</td><td data-label="가장 적합한 용도">Apple 기기와 Final Cut, Premiere, DaVinci Resolve 같은 동영상 편집기</td></tr>
+              <tr><td data-label="형식">WebM</td><td data-label="가장 적합한 용도">웹사이트 — 모든 최신 브라우저에서 재생되는 작은 파일</td></tr>
+              <tr><td data-label="형식">MKV</td><td data-label="가장 적합한 용도">보관용 및 VLC 같은 미디어 플레이어 — 거의 모든 것을 담을 수 있습니다</td></tr>
+              <tr><td data-label="형식">AVI</td><td data-label="가장 적합한 용도">AVI만 이해하는 오래된 플레이어와 소프트웨어</td></tr>
+              <tr><td data-label="형식">FLV</td><td data-label="가장 적합한 용도">플래시 시절의 오래된 플레이어와 레거시 스트리밍 환경</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Which codecs fit which container</h4>
+          <p>MP4, MOV, MKV, AVI and FLV take H.264 video with AAC audio, so a typical phone or camera clip fits all of them and is simply re-packed. WebM takes VP8, VP9 or AV1 video with Opus or Vorbis audio, so an H.264 clip going into WebM has to be re-encoded, and so does a WebM clip going into MP4 or MOV (more on that in the output format article).</p>
+
+          <h4>확장자가 오해를 부를 수 있는 이유</h4>
+          <p>파일 이름을 .mov에서 .mp4로 바꾼다고 변환되지는 않습니다. 내용은 그대로이고, 일부 플레이어는 이름과 내용이 맞지 않는 파일을 거부합니다. Convido는 이름이 아니라 파일 안에 실제로 무엇이 들어 있는지를 읽습니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 재포장 vs 재인코딩: 빠르고 무손실인 방식과 느린 방식</h3>
+          <p>파일 안의 영상과 음성이 이미 새 형식에 맞으면 Convido는 그것들을 새 컨테이너로 재포장만 합니다. 아주 큰 파일이어도 1초도 걸리지 않고, 화면이나 소리는 전혀 달라지지 않습니다. 143MB, 10분짜리 동영상도 MOV에서 MP4로 1초 안에 재포장할 수 있습니다.</p>
+
+          <h4>Convido가 재인코딩해야 할 때</h4>
+          <p>If the video or audio doesn't fit the new container — for example H.264 or HEVC video going into WebM, which only takes VP8, VP9 and AV1 — Convido re-encodes it. It also re-encodes WebM-style video and audio (VP9, AV1, Opus, Vorbis) going into MP4 or MOV, so the result plays on Apple devices. That takes longer, depends on your computer, and the picture is compressed a second time, so quality can change slightly.</p>
+
+          <h4>동영상의 작은 "i"</h4>
+          <p>선택한 출력 때문에 동영상이 재인코딩될 때 미리보기에 작은 "i"가 나타납니다. 대부분의 카메라·휴대폰 동영상은 MP4, MOV, MKV처럼 그대로 유지하는 형식을 고르면 안내가 사라지고 결과가 즉시 무손실로 만들어집니다.</p>
+
+          <h4>재인코딩 후 파일 크기</h4>
+          <p>재인코딩한 파일은 원본보다 작아지거나 커질 수 있습니다. 이미 아주 강하게 압축된 동영상은 새 인코더가 원본이 얼마나 압축됐는지 알지 못해 커질 수 있습니다. 결과가 원하는 것보다 크다면 재포장만 하는 형식으로 변환하거나, 이후에 Comprio로 줄이세요.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. 알맞은 출력 형식 고르기</h3>
+          <p>잘 모르겠다면 MP4를 고르세요. 가장 널리 지원되는 동영상 형식이며 휴대폰, 컴퓨터, 브라우저, 메시징 앱, 소셜 플랫폼에서 작동합니다.</p>
+
+          <h4>WebM과 MP4는 서로 바꿔 쓸 수 없습니다</h4>
+          <p>Videos recorded as WebM usually hold VP9 or AV1 video with Opus audio. QuickTime, iPhones and many editors can't play those inside an MP4 or MOV file, so when you convert a WebM to MP4 or MOV, Convido re-encodes it to H.264 and AAC (the small "i" tells you), and the result plays everywhere. That takes longer than a re-pack and compresses the picture a second time. MKV keeps the original codecs and re-packs instantly, which suits VLC and other media players.</p>
+
+          <h4>AVI와 FLV</h4>
+          <p>Convido는 AVI와 FLV를 H.264 영상과 AAC 음성으로 기록하며, 최신 플레이어에서 재생됩니다. AVI에는 타임스탬프가 없어서 프레임 레이트가 변하는 동영상은 일부 플레이어에서 약간 어긋날 수 있고, AVI 파일은 4GB를 넘을 수 없습니다. 오래된 플레이어나 프로그램이 요구할 때만 사용하세요.</p>
+
+          <h4>WMV는 사용할 수 없습니다</h4>
+          <p>브라우저는 WMV 동영상을 인코딩할 수 없으므로 Convido는 WMV 파일을 만들 수 없습니다. Windows에서는 MP4를 Windows Media Player와 모든 최신 Windows 앱이 지원합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Convido가 읽을 수 있는 것과 없는 것</h3>
+          <p>Convido는 MP4, M4V, MOV, 3GP, 3GPP, 3G2, MKV, WebM, TS, M2TS, MTS, GIF 파일을 읽습니다. 예상 입력 형식 선택은 처음 추가한 동영상에서 자동으로 채워지고, 각 파일은 개별적으로 인식되므로 한 번에 여러 형식을 섞어도 됩니다.</p>
+
+          <h4>브라우저가 읽을 수 없는 형식</h4>
+          <p>AVI, FLV, WMV, ASF, MPG, MPEG, VOB, MOD, MXF, DV, DVR, RM, RMVB, SWF, CAVS, OGG/OGV 파일은 브라우저에서 열 수 없으므로 Convido가 건너뛰고 알려 줍니다. 카메라 RAW 파일과 오디오 전용 파일도 건너뜁니다.</p>
+
+          <h4>읽을 수 있는 컨테이너 안의 동영상도 실패할 수 있습니다</h4>
+          <p>일부 파일은 브라우저가 디코딩할 수 없는 코덱을 사용합니다 — 예를 들어 오래된 일부 휴대폰 형식입니다. 이런 파일은 빨간 카드로 표시되고 상태 줄에 나열되며, 나머지 묶음은 계속 처리됩니다. AMR 음성이 있는 오래된 3GP 파일도 같은 이유로 소리 없이 변환될 수 있습니다.</p>
+
+          <h4>GIF를 동영상으로 만들기</h4>
+          <p>GIF에는 비디오 코덱이 없어서 Convido는 모든 프레임을 디코딩해 원래 타이밍 그대로 일반 동영상으로 인코딩합니다. 동영상 파일로 만들면 GIF는 아주 작아지는 경우가 많습니다. 동영상에는 투명도가 없어서 투명한 영역은 흰색이 되고, MP4, MOV, MKV, AVI, FLV는 짝수 크기가 필요하므로 홀수 크기의 GIF에는 1픽셀 흰색 테두리가 생깁니다(WebM은 정확한 크기를 유지합니다). GIF 입력에는 Chrome이나 Edge처럼 이미지 디코더가 내장된 브라우저가 필요합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 브라우저에서 변환하기: 알아둘 점</h3>
+          <p>Convido는 전적으로 사용자의 기기에서 작동합니다. 아무것도 업로드되지 않고 서버도 관여하지 않으므로 동영상은 비공개로 유지되며, 웹사이트가 부과하는 파일 크기 제한도 없습니다.</p>
+
+          <h4>개별 파일 또는 .zip</h4>
+          <p>최대 5개의 동영상은 하나씩 다운로드됩니다. 6~20개는 개별 파일과 하나의 .zip 중에서 고를 수 있고, 20개를 넘으면 브라우저가 다운로드로 넘치지 않도록 항상 하나의 .zip이 됩니다. .zip은 메모리에서 만들어지므로 아주 큰 동영상 묶음에는 충분한 여유 메모리가 필요합니다.</p>
+
+          <h4>탭을 열어 두세요</h4>
+          <p>브라우저는 백그라운드 탭을 느리게 하거나 일시 중지하므로, 작업하는 동안에는 Convido 탭을 보이는 상태로 두세요. 작업 중에 버튼을 다시 누르면 작업이 취소됩니다.</p>
+
+          <h4>매우 크거나 해상도가 매우 높은 동영상</h4>
+          <p>재포장은 주로 여유 메모리에 좌우되므로, 아주 큰 녹화본은 다른 작업이 없는 탭에서 처리해야 합니다. 8K 동영상 재인코딩도 가능하지만 시간이 걸립니다. H.264는 몇 픽셀보다 작거나 픽셀 수가 홀수인 화면은 인코딩할 수 없으므로, 홀수 크기의 동영상을 MP4, MOV, MKV, AVI, FLV로 변환할 때는 대신 WebM으로 보내야 할 수 있습니다.</p>
+
+          <h4>손상된 파일</h4>
+          <p>파일이 중간만 손상된 경우 재포장은 손상까지 그대로 복사합니다. Convido가 완료로 표시해도 결과에 문제가 나타날 수 있습니다. 중요한 변환은 원본을 삭제하기 전에 확인하세요.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -671,21 +751,21 @@
       <h3>시작하기:</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -702,7 +782,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convido/convido-muxers.js?v=2" defer></script>
 <script src="/convido/convido-tool.js?v=16" defer></script>

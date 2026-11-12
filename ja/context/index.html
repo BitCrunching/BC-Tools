@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/ja.js?v=8"></script>
+<script src="/shared/i18n/ja.js?v=9"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – PDFに無料でテキストを追加 – BC Tools">
@@ -76,7 +76,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=269">
+<link rel="stylesheet" href="/shared/site.css?v=270">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
 
@@ -1975,7 +1975,110 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <li><a href="#gr-article-4">4. 複数ページのPDFを扱う：一貫性とページごとの編集</a></li>
       <li><a href="#gr-article-5">5. PDFへのテキスト追加でよくある間違い（と回避方法）</a></li>
     </ul>
-    <div class="gr-inline" data-tool="context"></div>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. PDFへのテキスト追加は実際どう動くのか</h3>
+          <p>PDFのページは、クリックして入力できるテキスト文書ではありません。テキストやグラフィックが正確な位置に配置された、印刷された紙面のようなものです。この違いを理解すると、Contextが何をするのか、なぜそのように動作するのかが分かります。</p>
+
+          <h4>ページは文書ではなく、画像である</h4>
+          <p>ほとんどのPDF（入力可能なフォームとして特別に作られたもの以外）には、「入力できる空白スペース」という概念がありません。線、ボックス、空欄に見えるものは、実際には固定された座標に置かれたインクにすぎず、WordのドキュメントやWebフォームのように、入力を待っている下地のテキストフィールドは存在しません。ContextでPDFに「テキストを追加」するとき、隠れたフィールドを見つけて入力しているのではなく、ドラッグした場所に、既存のページの上に完全に新しい独立したテキストの層を置いています。</p>
+
+          <h4>重ねるのと編集するのは違う</h4>
+          <p>この重ね合わせ方式は、このツールだけでなく、事実上すべてのPDF注釈ツールが使っているものと同じです。PDFの元のテキストを実際に編集する（すでにページに印刷された文章を変更する）には専門のソフトウェアが必要で、元のファイルが編集可能なテキストレイヤーを保持していなければ、まったく不可能なことも多くあります。Contextが代わりに行うことは、より単純で、はるかに広く役立ちます。ページの上に視覚的に載る、新しい別のテキストを追加します。これは、キャプション、メモ、イニシャル、フォームの空白行への記入にまさに必要なことです。</p>
+
+          <h4>ピクセルではなくポイント</h4>
+          <p>PDFのページは、指やカーソルでドラッグする画面上のピクセルではなく、ポイント（1/72インチ）で位置を測ります。Contextがその変換を行ってくれるので、どのズームレベルでページを見ていても、画面に見えているものは常に実際のPDFの正しい固定位置に対応します。ページの上部に置いたテキストボックスは、後で他の人がどのデバイスやズームレベルで開いても、ページの上部に残ります。</p>
+
+          <h4>ダウンロードするとどうなりますか</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 文書ごとに合ったフォントサイズと配置の選び方</h3>
+          <p>適切なテキストサイズと位置は、あなたがどのような文書に書き込むのか、そして次に誰がそれを読むのかによって完全に決まります。シナリオ別の考え方を紹介します。</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>文書の種類</th><th>推奨される方法</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="文書の種類">フォームの空白の行を埋める</td><td data-label="推奨される方法">印刷されたラベルのサイズに合わせ、行のすぐ上に置く</td></tr>
+              <tr><td data-label="文書の種類">メモやコメントの追加</td><td data-label="推奨される方法">コントラストのある色を使い、元のテキストとははっきり分ける</td></tr>
+              <tr><td data-label="文書の種類">署名またはイニシャル</td><td data-label="推奨される方法">周囲のテキストよりわずかに大きく、行の中央に</td></tr>
+              <tr><td data-label="文書の種類">画像の多いPDFにキャプションを付ける</td><td data-label="推奨される方法">すべてのページのすべてのキャプションで一貫したサイズ</td></tr>
+              <tr><td data-label="文書の種類">正式文書や法的文書</td><td data-label="推奨される方法">文書自体のフォントサイズに近づけ、黒を使う</td></tr>
+            </tbody>
+          </table>
+
+          <h4>文書の既存テキストに合わせる</h4>
+          <p>追加した行を、貼り付けたものではなく意図的に見せる最大のポイントは、サイズを近くにすでに印刷されているものに合わせることです。フォームのラベルが約11〜12ptで印刷されているなら、位置が完璧でも、24ptで回答を加えると場違いに見えます。まず周囲の印刷された文字を拡大して、そのスケールをおおまかにつかみ、近いサイズを選んでください。Contextは最後に使ったサイズを覚えているので、一度合わせれば、その後のすべてのボックスが自動的に同じサイズから始まります。</p>
+
+          <h4>文字どおり、線の内側に収める</h4>
+          <p>フォームの空白の行やボックスは、通常、特定のサイズで特定の量のテキストが入るよう作られています。短い行に長い回答を入力する前に、収まるよう少し小さくする必要があるかを検討してください。印刷された行の端からはみ出したテキストは、技術的には何も壊れていなくても、完成した文書を次に読む人にはミスのように見えます。</p>
+
+          <h4>「隠れている」ではなく「追加された」と読める色を選ぶ</h4>
+          <p>黒いテキストは通常、最も安全な初期値です。ほとんどのフォームや文書がすでに印刷されている色と一致し、後から追加したものとして目立たないからです。色付きのテキストは、メモや訂正、元の内容から特に目立たせたいものにとても便利です。ただし、選んだ色が背後のページと十分なコントラストを持つようにしてください。黄色のような明るい色は、白いページでは簡単に見えなくなります。</p>
+
+          <h4>予期せぬことに備えて余白を残す</h4>
+          <p>ページのまさに端にテキストを置くと、後で文書が想定とわずかに異なる用紙サイズや余白設定で印刷された場合に、切り取られるおそれがあります。テキストとページの端、およびテキストと近くの印刷内容との間に小さな余裕を残しておくと、最終的にどのように印刷・表示されても、きれいな結果が保たれます。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. プリンターなしでフォームに記入して署名する</h3>
+          <p>印刷、署名、スキャンしてメールで返送という方法は、いまだに多くの書類手続きで使われていますが、ほぼ常に不要です。ブラウザだけでこれを省く方法を紹介します。</p>
+
+          <h4>印刷・署名・スキャンのループを置き換える</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>入力した署名とイニシャル</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>回答を印刷されたラベルに揃える</h4>
+          <p>ほとんどのフォームは、ラベル（「名前：」「日付：」など）の後に、回答用の空白の行やボックスを印刷しています。テキストボックスは行の上に重ねるのではなく、そのすぐ上に載るようにドラッグしてください。印刷された行の真上に置いたテキストは、重なったときに読みにくくなりますが、すぐ上に浮かんだテキストは、はっきり読めるまま、完成したページを見る人にとって「そのラベルへの回答」として読めます。</p>
+
+          <h4>送信前の再確認</h4>
+          <p>すべての項目を入力し終えたら、各ページを実際のサイズで（入力していたサムネイルだけでなく）見て回る価値があります。何も重なっていない、行の端からはみ出していない、必須項目がすべて実際に入力されているかを確認しましょう。編集中は問題なく見えるテキストボックスも、完成したページ全体で見ると、ときどき少し違う位置にあることがあります。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 複数ページのPDFを扱う：一貫性とページごとの編集</h3>
+          <p>複数ページの契約書、報告書、フォームは、1ページの簡単な編集とは少し違うアプローチが必要です。主に、文書を進める際に一貫性を保つことが焦点です。</p>
+
+          <h4>位置を見失わずにページ間を移動する</h4>
+          <p>Contextのページナビゲーションは、各テキストボックスを配置した特定のページに紐づけたままにします。長い文書の異なるセクションを入力するためにページを移動しても、何も混ざる心配はありません。3ページ目に追加したボックスは、ダウンロードするまでに他のページをいくつ訪れても3ページ目のままです。</p>
+
+          <h4>ページ間でサイズと色を一貫させる</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>入力を始める前に、一巡する計画を立てる</h4>
+          <p>長い文書では、1ページ目のサイズと位置を決める前に、各ページをざっと一巡して（見るだけで、まだ入力はしない）、何を記入する必要があるかの全体像を把握する価値があります。まばらな1ページ目では適切に見えるサイズも、先の密度の高いページには大きすぎることがあり、早く気づけば、すでに配置したボックスを戻って調整する手間を省けます。</p>
+
+          <h4>ダウンロードする前に文書全体を見直す</h4>
+          <p>各ページは独立して描画・編集されるため、今作業しているページに集中するあまり、文書全体を見失いがちです。ダウンロードする前に、最初からページをめくって確認しましょう。完全に飛ばしたページや、作業中に気づかないうちに他と違って見えるようになったボックスを見つける唯一の方法です。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. PDFへのテキスト追加でよくある間違い（と回避方法）</h3>
+          <p>編集したPDFのほとんどの問題は、見落としやすい少数の間違いに起因します。注意すべき点を紹介します。</p>
+
+          <h4>ズームアウトすると小さすぎるテキスト</h4>
+          <p>ズームして1つのボックスに集中している間は完璧に読めるように見えるサイズで入力しても、ページを通常のフルサイズで見たとき、明らかに小さいことに気づくことは簡単に起こります。ダウンロードする前に、ズームを戻して（または完成したPDFを別のビューアで確認して）、すべてのボックスが編集サイズではなく実際のサイズで読めることを確認してください。</p>
+
+          <h4>既存のコンテンツの横ではなく上にテキストを置く</h4>
+          <p>印刷された文字や線の真上にテキストボックスを置くと、重なったときに両方とも読みにくくなります。下の内容は避けてくれません。すでに印刷されているものの上に重ねるのではなく、近くの本当に空いているスペースに新しいテキストを寄せましょう。</p>
+
+          <h4>間違ったページを編集する</h4>
+          <p>長い文書では、特にズームやスクロールのあとに、現在どのページがアクティブか分からなくなり、まったく別のページにテキストを追加してしまいがちです。1ページを超える文書でボックスを追加する前、特に新しいページに移動した直後は、ページインジケーターを確認してください。</p>
+
+          <h4>コントラストの低い色を使う</h4>
+          <p>明るい色、特に淡い黄色は、明るい画面の編集サイズでは問題なく見えても、印刷したり別のディスプレイで見たりすると、本当に読みにくくなることがあります。単に目立たせるだけでなく、実際に読まれる必要があるものには、黒や彩度の高い色のような、白に対して強いコントラストのある色を使いましょう。</p>
+
+          <h4>共有する前にファイル名を変更し忘れる</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -1998,21 +2101,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>はじめに：</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2029,7 +2132,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=104" defer></script>
+<script src="/shared/site.js?v=105" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/context/context-tool.js?v=115" defer></script>
 </body>
