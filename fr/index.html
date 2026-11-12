@@ -952,6 +952,48 @@ main{
   margin-bottom:32px;
 }
 
+/* Decorative terminal frame that drifts over the hero title; overlay only, never layout */
+.hff-wrap{
+  position:relative;
+  display:inline-block;
+  margin-bottom:32px;
+}
+.hero.hero-intro .hff-wrap h1{
+  margin-bottom:0;
+}
+.hero-float-frame{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  animation:hff-drift 3.9s ease-in-out infinite;
+}
+@keyframes hff-drift{
+  0%, 100%{ transform:translateY(0) rotate(-1deg); }
+  50%{ transform:translateY(-12px) rotate(-1deg); }
+}
+.hff-box{
+  position:absolute;
+  inset:0;
+  border:1.5px solid #4ade80;
+  background:rgba(74,222,128,.06);
+}
+.hff-bang{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  color:#4ade80;
+  font-family:Arial, Helvetica, sans-serif;
+  font-size:70px;
+  letter-spacing:.02em;
+  opacity:.85;
+  white-space:nowrap;
+}
+.hff-bang-left{ right:100%; margin-right:14px; }
+.hff-bang-right{ left:100%; margin-left:14px; }
+@media (max-width:768px){
+  .hero-float-frame{ display:none; }
+}
+
 /* Desktop gets the full two-sentence intro; mobile gets a single
    condensed line instead — swapped via display, not translated
    separately per breakpoint, since it's the same content either way. */
@@ -2314,7 +2356,14 @@ footer a{
 <section class="page active" id="page-mainpage">
   <main>
     <div class="hero hero-intro">
-      <h1>Fixer un nouveau standard pour les créateurs !</h1>
+      <div class="hff-wrap">
+        <h1>Fixer un nouveau standard pour les créateurs !</h1>
+        <div class="hero-float-frame" aria-hidden="true">
+          <span class="hff-box"></span>
+          <span class="hff-bang hff-bang-left">&gt;!!!</span>
+          <span class="hff-bang hff-bang-right">!!!</span>
+        </div>
+      </div>
       <p class="hero-p1-desktop">Lancez-vous avec le Creative Hub... un endroit où la créativité voyage plus vite que la vitesse de la lumière.</p>
       <p class="hero-p1-desktop">Collection toujours plus riche d'outils dans le navigateur pour l'image, la vidéo, l'audio et le code.</p>
       <p class="hero-p1-mobile">Creative Hub : une collection toujours plus riche d'outils dans le navigateur pour l'image, la vidéo, l'audio et le code.</p>
