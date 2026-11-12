@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
-<script src="/shared/i18n/ja.js?v=10"></script>
+<script src="/shared/i18n/ja.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Compress – 無料の画像圧縮ツール – BC Tools">
@@ -75,7 +75,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -131,7 +131,6 @@
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
 .tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
-.cs-shape{ background:#68e1ff; }
 /* Flips light/dark same as every on-banner control — see "On-banner
    controls flip with theme" in shared/site.css's header comment.
    Explicit html[data-theme=...] guards on BOTH sides (not just a bare
@@ -517,9 +516,6 @@
   </div>
 
   <div class="content-section-format-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-2"></span>
-    </div>
     <h3>どのレベルを使えばよいか分かりませんか？</h3>
     <div class="format-pick-groups">
       <div class="format-pick-group">
@@ -547,13 +543,122 @@
   </div>
 
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>画像の圧縮は初めてですか？</h3>
     <p>圧縮は単一のスライダーのように見えますが、その裏には縮小を行う2つの本当に異なるアプローチがあり、どちらが働いているかを知れば、目にする結果のほとんどを説明できます。圧縮したときに実際に何が起きているのか、そして適切なレベルの選び方を紹介します。</p>
-    <p>もっと知りたいですか？全文を読む： <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress" href="/golden-rules/?tool=compress">クリック一つで。</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. 画像圧縮は実際どう動くのか</a></li>
+      <li><a href="#gr-article-2">2. 用途に合った圧縮レベルの選び方</a></li>
+      <li><a href="#gr-article-3">3. Web向け圧縮：画質を犠牲にせず速度を上げる</a></li>
+      <li><a href="#gr-article-4">4. 圧縮するときと、画像をそのままにするとき</a></li>
+      <li><a href="#gr-article-5">5. 圧縮でよくある間違い（と回避方法）</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. 画像圧縮は実際どう動くのか</h3>
+          <p>圧縮は単一のスライダーや1回のクリックのように見えますが、その裏には、縮小を行う2つの本当に異なるアプローチがあります。どちらが働いているかを理解すれば、このようなツールで目にする結果のほとんどを説明できます。</p>
+
+          <h4>非可逆圧縮：気づかない部分を捨てる</h4>
+          <p>JPGやWEBPが使う非可逆圧縮は、人間の目が苦手とする画像内の情報を見つけて捨てることで機能します。微妙な色のグラデーションは簡略化され、細かい高周波のディテールは滑らかにされ、その結果、気軽に見る人には正しく見えながら、元の何分の一かのファイルになります。問題は、この破棄が永久的であることです。そのディテールが失われると、再オープンも再保存も取り戻せず、すでに非可逆圧縮されたファイルを繰り返し圧縮すると、そのたびに損失が積み重なります。</p>
+          <p>選択する「品質比」または圧縮レベルが、これがどれだけ積極的に行われるかを決めます。高い品質設定ではほとんど捨てられず、ファイルは控えめに縮小されます。低い品質設定ではずっと多くが捨てられ、劇的に縮小されますが、エッジ周りのブロックノイズ、ぼやけたディテール、空やグラデーションの色の段差といった目に見えるアーティファクトを引き換えにします。</p>
+
+          <h4>可逆圧縮：何も失わずに詰め直す</h4>
+          <p>PNGが採用している可逆圧縮は、まったく異なる仕組みで動作します。ZIPファイルが中の文字を1文字も変えずにテキスト文書を縮小するのと同じように、まったく同じピクセルデータを、より賢く効率的に保存する方法を見つけます。何も捨てないため、画質をまったく変えずに、何度でも圧縮と展開ができます。トレードオフは、サイズ削減がずっと小さいことです。データを何も捨てずに縮小できる量には数学的な厳しい限界があり、特に、可逆的な再パッキングに抵抗する細かく不規則なディテールだらけの写真画像ではそうです。</p>
+
+          <h4>当社のCompressツールがPNGをJPGに変換する理由</h4>
+          <p>これが、Compressが圧縮時にPNG写真を自動的にJPGに変換する理由です。可逆圧縮だけを通したPNGの写真はほとんど縮小しませんが、同じ写真に非可逆圧縮を許せば劇的に縮小できます。実際の写真では、この取引はほぼ常に価値があります。画質の違いは通常の閲覧サイズでは見えず、ファイルサイズの違いは巨大です。写真ではないPNG（スクリーンショット、ロゴ、透過や鮮明な文字を持つグラフィック）では事情が異なり、だからこの変換はあらゆるPNGに無差別に適用されるのではなく、写真のような内容向けに特別に調整されています。</p>
+
+          <h4>品質スライダーを動かすと実際に何が起きるのか</h4>
+          <p>内部的には、品質設定を下げると、画像の色とディテールの情報が保存される前に、より粗くグループ化・簡略化されます。数字の丸めのようなものだと考えてください。「品質95」への丸めはほとんど何も変わりませんが、「品質40」への丸めははるかに多くを変え、同時に記述するスペースもはるかに少なくなります。普遍的な「正しい」数値はなく、適切な設定は画像の用途によって完全に変わります。それが次の記事の主題です。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 用途に合った圧縮レベルの選び方</h3>
+          <p>「最良の」圧縮設定は1つではありません。適切なレベルは、画像の行き先と、それが何に耐える必要があるかによって完全に決まります。シナリオ別の考え方を紹介します。</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>出力先</th><th>推奨レベル</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="出力先">SNS／メッセージアプリ</td><td data-label="推奨レベル">中</td></tr>
+              <tr><td data-label="出力先">自分のWebサイトまたはオンラインストア</td><td data-label="推奨レベル">中〜高</td></tr>
+              <tr><td data-label="出力先">印刷またはプロのクライアントへの納品</td><td data-label="推奨レベル">低、または圧縮しない</td></tr>
+              <tr><td data-label="出力先">長期アーカイブ</td><td data-label="推奨レベル">低</td></tr>
+              <tr><td data-label="出力先">メール添付のサイズ制限</td><td data-label="推奨レベル">高</td></tr>
+            </tbody>
+          </table>
+
+          <h4>SNSとメッセージ</h4>
+          <p>Instagram、WhatsApp、ほとんどのSNSフィードなどのプラットフォームは、送った内容に関係なく、アップロードされるすべての画像をすでに（多くは積極的に）再圧縮しています。ほとんど圧縮されていない巨大なファイルをここにアップロードしても得るものはなく、プラットフォームがどのみち向こう側で再び圧縮します。中〜高の圧縮レベルなら、プラットフォーム自身の処理後に実際に目に見える品質を犠牲にすることなく、アップロードを速く、元のファイルサイズを常識的な範囲に保てます。</p>
+
+          <h4>Webサイトとオンラインストア</h4>
+          <p>ポートフォリオサイト、ブログ、商品ページなど、自分でホスティングするものについては、ファイルサイズがページの読み込み速度に直結し、訪問者の体験に、そして商用なら成約率や検索順位にも影響します。ここでは、より強い圧縮に傾ける価値があります。Web表示で印刷レベルのディテールが必要になることはまれで、最適化されていない巨大な画像だらけのページは、サイトが重く感じられる最も一般的な理由の一つだからです。</p>
+
+          <h4>印刷とプロ向けの利用</h4>
+          <p>ここは保守的であるべき唯一の場所です。印刷は、画面が単純に表示しないディテールとアーティファクトを明らかにします。より高い実効解像度で、そしてしばしばより大きな物理サイズで見られるからです。印刷所、ギャラリーへの提出、プロのクライアントへの納品に行くものには、その特定のコピーについては軽い圧縮レベルを使うか圧縮を省き、非圧縮または軽く圧縮されたマスターファイルを信頼できる情報源として保持してください。</p>
+
+          <h4>アーカイブと長期保存</h4>
+          <p>目的が家族写真やアーカイブなど、後でフル画質で見返したいかもしれない写真を何年も保管することなら、唯一のコピーに強い非可逆圧縮をかけるのは避けてください。ディテールは一度捨てられると復元できず、後の用途で必要だと分かっても取り戻せません。妥当なアプローチは、高品質のアーカイブ用コピーを残し、特定の用途が実際に必要とするものに応じて、別々に圧縮したバージョンを都度作ることです。</p>
+
+          <h4>メール添付とファイルサイズの制限</h4>
+          <p>多くのメールプロバイダーは、添付ファイルのサイズを合計でおよそ25MBに制限しています。複数の写真を送る場合は、より強い圧縮レベルにすれば確実にその上限を下回れます。これは、実際的な制約（そもそもメールに収まるか）が、圧縮レベルの見た目の違いよりも重要になる数少ないケースの一つなので、他の用途より強く圧縮することを恐れないでください。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Web向け圧縮：画質を犠牲にせず速度を上げる</h3>
+          <p>画像の重さは、Webサイトが遅くなる最大かつ最も修正しやすい要因の一つであり、どちらの方向にも間違いやすいものの一つでもあります。圧縮が少なすぎるとページが這うように遅くなり、多すぎると写真が目に見えて劣化します。ちょうどよい中間に着地する方法を紹介します。</p>
+
+          <h4>画像サイズが速度にこれほど影響する理由</h4>
+          <p>コンテンツの多いほとんどのページでは、画像がページ全体の重さの大部分を占め、HTML、CSS、JavaScriptを合わせたものをはるかに上回ります。訪問者のページ読み込み時間と、検索エンジンによるその評価は、画像の重さに不均衡なほど影響を受けます。したがって、画像を適切に圧縮することは、ほとんどのコードレベルの最適化に先んじて、利用できる最もレバレッジの高いパフォーマンス改善であることが多いです。</p>
+
+          <h4>画像が実際に表示される方法に圧縮を合わせる</h4>
+          <p>ページ上で幅400ピクセルで表示される画像を、軽く圧縮した4000ピクセルのカメラ原本として配信する必要はありません。実際の表示サイズで鮮明に見せるのに、それほどの詳細は必要ないからです。圧縮レベルを気にする前に、画像の寸法が実際の表示サイズにおおむね合っているかを確認してください。大きすぎる画像を圧縮するのは、根本原因（不要な解像度）を残したまま症状を治療しているにすぎません。</p>
+
+          <h4>Web向けの形式を選ぶ</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>収穫逓減の点</h4>
+          <p>圧縮は、失われる見た目の品質に対して線形には変化しません。非圧縮の元データからの最初の圧縮は、見た目にほとんど変化がないまま非常に大きなファイルサイズを削減しますが、圧縮を強くしていくほど、削減できるサイズはだんだん小さくなり、目に見える劣化はだんだん大きくなります。実際には、ほとんどの写真は「最大圧縮」のずっと手前で最適点に達します。速度のために圧縮は多いほどよいと決めつけず、圧縮した画像を実際の表示サイズで確認する価値があります。</p>
+
+          <h4>サイト全体の画像を一括処理する</h4>
+          <p>商品カタログ、ギャラリー、ブログの過去記事の画像など、多数の画像を一度に最適化する場合は、1枚ずつ目分量で決めるのではなく、似たコンテンツの種類ごとに一貫した圧縮レベルを適用してください。サイト全体の見た目の品質が一定に保たれ、設定を後で変えたくなったときに、ケースごとに判断し直さなくてよいので、やり直しもずっと速くなります。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 圧縮するときと、画像をそのままにするとき</h3>
+          <p>圧縮は本当に便利なツールですが、あらゆる状況のあらゆる画像にとって自動的に正しい手段とは限りません。使わないべきときを知ることは、使い方を知ることと同じくらい重要です。</p>
+
+          <h4>画像が圧縮に向いているサイン</h4>
+          <p>Web、メール、メッセージ向けの大きなカメラ原本の写真は、ほぼ常に圧縮の恩恵を受けます。通常、配信先が必要とするより多くの解像度とファイル容量を持っているからです。厳しいサイズ制限（メール添付の上限、アップロード制限、フォームのファイルサイズ上限）に当たるファイルも当然の候補です。画像のコンテンツをクロップや縮小することなく制限内に収める最も手早い方法が、圧縮であることが多いからです。</p>
+
+          <h4>画像をそのままにしておく（または非常に軽く圧縮する）べきサイン</h4>
+          <p>文字、鮮明な線、フラットな色を含むグラフィック（スクリーンショット、図表、ロゴ、スキャン文書）は、非可逆圧縮では劣化しやすい傾向があります。圧縮アーティファクトが、目が最も気づきやすい場所、つまりエッジや文字の周りに、ぼやけや色のにじみとして現れるからです。こうしたものは通常、PNGの可逆アプローチを使うか、アーティファクトと戦うよりも圧縮を見送るほうが適しています。</p>
+          <p>一度圧縮したものを、念のためと気軽にもう一度圧縮すべきではありません。すでに非可逆圧縮されたJPGを再圧縮しても、ほとんどの場合、意味のあるほど小さくならず、最初の劣化の上にさらに劣化が重なって、アーティファクトが取り除かれるのではなく積み重なります。</p>
+
+          <h4>マスターコピーの習慣</h4>
+          <p>ほとんどの後悔を避けられる簡単なルールがあります。再利用する可能性があるものは、高品質（または非圧縮）のマスターコピーを1つ残し、用途ごとにそのマスターから圧縮版を作ることです。唯一のコピーを圧縮版で上書きしてはいけません。ストレージは安価ですが、失われた元データは二度と作り直せません。</p>
+
+          <h4>習慣ではなく、行き先で判断する</h4>
+          <p>正しい問いは、抽象的な「この画像を圧縮すべきか」ではなく、「この画像の行き先は実際に何を必要としているのか」です。テキストメッセージ向けの写真は、元のディテールのほとんどを必要としませんが、大きな印刷バナー向けの写真は、ほぼすべてを必要とします。ワークフローを通過するすべてのものに、習慣で同じ圧縮レベルを適用するのではなく、行き先に基準を決めさせましょう。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 圧縮でよくある間違い（と回避方法）</h3>
+          <p>圧縮に関する不満のほとんどは、繰り返される少数の間違いに起因します。注意すべき点を紹介します。</p>
+
+          <h4>同じファイルを何度も圧縮する</h4>
+          <p>非可逆圧縮は、通過するたびにディテールをさらに少しずつ捨て、その損失は圧縮のたびに積み重なります。圧縮、再オープン、編集、再圧縮を何度も繰り返したファイルは、きれいな元データから1回だけ圧縮したものより明らかに見劣りします。圧縮は常に元データまたは非圧縮のマスターから行い、すでに圧縮されたコピーからは行わないでください。</p>
+
+          <h4>唯一のコピーを上書きする</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>グラフィックを写真のように圧縮する</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>結果を確認せずに圧縮レベルを選ぶ</h4>
+          <p>最小のファイルを得て終わりにするために「最大圧縮」を選びたくなりますが、その設定では、実際のサイズで出力を見ると明らかに目立つアーティファクトが出ることがよくあります。圧縮した結果を、実際に見られるサイズで素早く確認するのは数秒で済み、意図よりも明らかに見劣りするものを送ったり公開したりするのを防げます。</p>
+
+          <h4>配信先自身の圧縮を無視する</h4>
+          <p>どのみち圧縮するプラットフォーム（ほとんどのSNSやメッセージアプリ）に、ほとんど圧縮されていない巨大なファイルをアップロードすることは、視覚的なメリットなしにアップロード時間と帯域を無駄にします。プラットフォーム自身の処理が、送った内容にかかわらず最終的な品質の大部分を決めるからです。圧縮の労力は、「入力の元の品質が高いほど出力の最終品質も高くなる」という思い込みではなく、配信先が実際に保持するものに合わせてください。</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -575,21 +680,21 @@
       <h3>はじめに：</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -606,7 +711,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/compress/compress-tool.js?v=53" defer></script>
 </body>

@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
-<script src="/shared/i18n/ro.js?v=10"></script>
+<script src="/shared/i18n/ro.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Compress – Compresor gratuit de imagini – BC Tools">
@@ -75,7 +75,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -131,7 +131,6 @@
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
 .tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
-.cs-shape{ background:#68e1ff; }
 /* Flips light/dark same as every on-banner control — see "On-banner
    controls flip with theme" in shared/site.css's header comment.
    Explicit html[data-theme=...] guards on BOTH sides (not just a bare
@@ -517,9 +516,6 @@
   </div>
 
   <div class="content-section-format-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-2"></span>
-    </div>
     <h3>Nu ești sigur ce nivel să folosești?</h3>
     <div class="format-pick-groups">
       <div class="format-pick-group">
@@ -547,13 +543,122 @@
   </div>
 
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>Ești nou în comprimarea imaginilor?</h3>
     <p>Compresia pare un singur glisor, dar dedesubt două abordări cu adevărat diferite fac micșorarea, iar știind care dintre ele lucrează explici aproape orice rezultat vei vedea. Iată ce se întâmplă de fapt când comprimi și cum alegi nivelul potrivit.</p>
-    <p>Vrei să afli mai multe? Citește tot — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress" href="/golden-rules/?tool=compress">la un singur clic distanță.</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Cum funcționează de fapt compresia imaginilor</a></li>
+      <li><a href="#gr-article-2">2. Alegerea nivelului potrivit de compresie pentru cazul tău</a></li>
+      <li><a href="#gr-article-3">3. Compresia pentru web: viteză fără a sacrifica calitatea</a></li>
+      <li><a href="#gr-article-4">4. Când să comprimi și când să lași o imagine în pace</a></li>
+      <li><a href="#gr-article-5">5. Greșeli frecvente la compresie (și cum să le eviți)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Cum funcționează de fapt compresia imaginilor</h3>
+          <p>Compresia pare un singur glisor sau un singur clic, dar dedesubt două abordări cu adevărat diferite fac micșorarea, iar înțelegerea celei care lucrează explică aproape orice rezultat vei vedea de la un instrument ca acesta.</p>
+
+          <h4>Compresie cu pierderi: aruncarea a ceea ce nu vei observa</h4>
+          <p>Compresia cu pierderi, cea folosită de JPG și WEBP, funcționează identificând informațiile dintr-o imagine pe care ochiul uman le percepe slab și eliminându-le. Gradientele subtile de culoare sunt simplificate, detaliile fine de înaltă frecvență sunt netezite, iar rezultatul este un fișier care poate fi o fracțiune din originalul ca dimensiune, arătând totuși corect pentru un privitor ocazional. Problema este că această eliminare este permanentă — odată ce detaliul a dispărut, nicio redeschidere sau resalvare nu îl readuce, iar comprimarea repetată a unui fișier deja comprimat cu pierderi agravează pierderea de fiecare dată.</p>
+          <p>„Raportul de calitate” sau nivelul de compresie pe care îl alegi controlează cât de agresiv se întâmplă asta. O setare de calitate ridicată aruncă foarte puțin și micșorează fișierul modest; o setare de calitate scăzută aruncă mult mai mult și îl micșorează dramatic, cu prețul unor artefacte vizibile — blocuri în jurul marginilor, detalii șterse, benzi de culoare pe cer și în gradiente.</p>
+
+          <h4>Compresie fără pierderi: reîmpachetare fără a pierde nimic</h4>
+          <p>Compresia fără pierderi, abordarea PNG, funcționează complet diferit: găsește modalități mai inteligente și mai eficiente de a stoca exact aceleași date de pixeli, la fel cum un fișier ZIP micșorează un document text fără a schimba un singur caracter din el. Nimic nu este aruncat, așa că poți comprima și decomprima de câte ori vrei, fără nicio schimbare de calitate. Compromisul este că reducerea de dimensiune este mult mai mică, deoarece există o limită matematică fermă a cât poți micșora datele fără a arunca nimic din ele — mai ales pentru imaginile fotografice, pline de tipul de detaliu fin și neregulat care se împotrivește reîmpachetării fără pierderi.</p>
+
+          <h4>De ce instrumentul nostru Compress convertește PNG în JPG</h4>
+          <p>Iată de ce Compress convertește automat fotografiile PNG în JPG în timpul compresiei: o fotografie PNG trecută doar prin compresie fără pierderi abia se micșorează, dar aceeași fotografie lăsată să folosească compresie cu pierderi se poate micșora dramatic. Pentru o fotografie propriu-zisă, acest schimb merită aproape întotdeauna — diferența de calitate este invizibilă la dimensiunile normale de vizualizare, iar diferența de dimensiune este enormă. Este o altă poveste pentru PNG-urile care nu sunt fotografii (capturi de ecran, sigle, grafice cu transparență sau text ascuțit), motiv pentru care această conversie este reglată special pentru conținut de tip fotografie, nu aplicată orbește fiecărui PNG.</p>
+
+          <h4>Ce se întâmplă de fapt când muți glisorul de calitate</h4>
+          <p>Intern, o setare de calitate mai joasă mărește cât de grosier sunt grupate și simplificate informațiile de culoare și detaliu ale imaginii înainte de stocare. Gândește-te ca la rotunjirea numerelor: rotunjirea „calității 95” abia schimbă ceva, în timp ce rotunjirea „calității 40” schimbă mult mai mult, dar ocupă și mult mai puțin spațiu pentru a fi descrisă. Nu există un număr universal „corect” — setarea potrivită depinde în întregime de pentru ce va fi folosită imaginea, exact subiectul următorului articol.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Alegerea nivelului potrivit de compresie pentru cazul tău</h3>
+          <p>Nu există o singură setare de compresie „cea mai bună” — nivelul potrivit depinde în întregime de unde ajunge imaginea și de ce trebuie să reziste. Iată cum să te gândești la asta pe scenarii.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destinație</th><th>Nivel recomandat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destinație">Rețele sociale / aplicații de mesagerie</td><td data-label="Nivel recomandat">Mediu</td></tr>
+              <tr><td data-label="Destinație">Propriul tău site web sau magazin online</td><td data-label="Nivel recomandat">Mediu spre ridicat</td></tr>
+              <tr><td data-label="Destinație">Tipar sau livrare profesională către client</td><td data-label="Nivel recomandat">Scăzut sau fără compresie</td></tr>
+              <tr><td data-label="Destinație">Arhivare pe termen lung</td><td data-label="Nivel recomandat">Scăzut</td></tr>
+              <tr><td data-label="Destinație">Limite de dimensiune pentru atașamentele de e-mail</td><td data-label="Nivel recomandat">Ridicat</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Rețele sociale și mesagerie</h4>
+          <p>Platforme precum Instagram, WhatsApp și majoritatea fluxurilor sociale recomprimă deja fiecare imagine pe care o încarci, adesea agresiv, indiferent ce le trimiți. Încărcarea unui fișier uriaș, abia comprimat, nu îți aduce nimic — platforma îl va comprima oricum din nou la ea. Un nivel de compresie moderat-spre-ridicat îți păstrează încărcarea rapidă și dimensiunea fișierului original rezonabilă, fără a renunța la nicio calitate pe care ai vedea-o oricum după procesarea proprie a platformei.</p>
+
+          <h4>Site-uri web și magazine online</h4>
+          <p>Pentru tot ce găzduiești tu însuți — un site de portofoliu, un blog, o pagină de produs — dimensiunea fișierelor afectează direct cât de repede se încarcă pagina, ceea ce influențează atât experiența vizitatorilor, cât și, pentru orice este comercial, ratele de conversie și poziția în căutări. Aici merită să te înclini spre o compresie mai agresivă, deoarece vizualizarea pe web rareori are nevoie de detalii la nivel de tipar, iar o pagină plină de imagini uriașe, neoptimizate, este unul dintre cele mai frecvente motive pentru care site-urile par lente.</p>
+
+          <h4>Tipar și utilizare profesională</h4>
+          <p>Acesta este singurul loc în care vrei să fii conservator. Tiparul dezvăluie detalii și artefacte pe care un ecran pur și simplu nu le arată, deoarece este privit la o rezoluție efectivă mai mare și adesea la o dimensiune fizică mai mare. Pentru orice merge la o tipografie, la o galerie sau la o livrare profesională către client, folosește un nivel ușor de compresie sau sari peste compresie pentru acea copie anume și păstrează un fișier master necomprimat sau ușor comprimat ca sursă de adevăr.</p>
+
+          <h4>Arhivare și stocare pe termen lung</h4>
+          <p>Dacă scopul este să păstrezi o fotografie ani de zile — fotografii de familie, o arhivă, orice ai vrea să revezi mai târziu la calitate completă — evită compresia puternică cu pierderi pe singura ta copie. Odată ce detaliile sunt aruncate, nu mai pot fi recuperate, chiar dacă o utilizare ulterioară se dovedește a avea nevoie de ele. O abordare rezonabilă este să păstrezi o copie de arhivă de calitate mai înaltă și să generezi separat versiuni comprimate, la cerere, pentru ce are nevoie de fapt o anumită utilizare.</p>
+
+          <h4>Atașamente de e-mail și limite de dimensiune a fișierelor</h4>
+          <p>Mulți furnizori de e-mail limitează dimensiunea atașamentelor, de obicei în jur de 25 MB în total. Dacă trimiți mai multe fotografii, un nivel mai puternic de compresie te aduce sub acest plafon în mod sigur. Acesta este unul dintre puținele cazuri în care constrângerea practică (încape sau nu în e-mail) contează mai mult decât diferența vizuală dintre nivelurile de compresie, așa că nu te teme să comprimi mai tare decât ai face pentru alte utilizări.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compresia pentru web: viteză fără a sacrifica calitatea</h3>
+          <p>Greutatea imaginilor este unul dintre cei mai mari factori, și cei mai ușor de remediat, ai unui site lent, și este totodată unul dintre cele mai ușor de greșit în ambele direcții — prea puțină compresie și paginile se târăsc, prea multă și fotografiile arată vizibil degradate. Iată cum nimerești mijlocul util.</p>
+
+          <h4>De ce contează atât de mult dimensiunea imaginii pentru viteză</h4>
+          <p>Pe majoritatea paginilor cu mult conținut, imaginile reprezintă marea majoritate a greutății totale a paginii — mult mai mult decât HTML, CSS sau JavaScript la un loc. Timpul de încărcare a paginii pentru un vizitator, precum și evaluarea acestuia de către motoarele de căutare, sunt influențate disproporționat de cât de grele sunt imaginile tale, ceea ce înseamnă că o comprimare corectă este adesea cea mai eficientă schimbare de performanță disponibilă, înaintea majorității optimizărilor de cod.</p>
+
+          <h4>Potrivirea compresiei cu modul în care va fi afișată de fapt imaginea</h4>
+          <p>O imagine afișată pe o pagină la 400 de pixeli lățime nu trebuie livrată ca un fișier original de cameră de 4000 de pixeli, comprimat ușor — are nevoie de mult mai puține detalii ca să arate clară la dimensiunea reală de afișare. Înainte să te gândești deloc la nivelul de compresie, asigură-te că dimensiunile imaginii se potrivesc aproximativ cu cât de mare va apărea; comprimarea unei imagini supradimensionate înseamnă să tratezi simptomul și să lași cauza mai mare (rezoluția inutilă) la locul ei.</p>
+
+          <h4>Alegerea unui format pentru web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>Punctul randamentelor descrescătoare</h4>
+          <p>Compresia nu scade liniar odată cu calitatea vizuală pierdută — prima bucată de compresie dintr-un original necomprimat elimină o cantitate enormă de dimensiune a fișierului aproape fără schimbări vizibile, în timp ce împingerea compresiei tot mai adânc în teritoriul agresiv elimină progresiv tot mai puțină dimensiune pentru tot mai multe stricăciuni vizibile. În practică, majoritatea fotografiilor ating un punct optim cu mult înainte de „compresia maximă”, și merită să verifici o imagine comprimată la dimensiunea ei reală de afișare, în loc să presupui că mai multă compresie înseamnă mereu mai multă viteză.</p>
+
+          <h4>Procesarea în lot a imaginilor unui întreg site</h4>
+          <p>Dacă optimizezi multe imagini deodată — un catalog de produse, o galerie, arhiva de imagini a unui blog — aplică un nivel de compresie consecvent pentru tipuri de conținut similare, în loc să le evaluezi din ochi pe fiecare în parte. Asta păstrează calitatea vizuală consecventă pe tot site-ul și face mult mai rapid să refaci procesul mai târziu dacă te răzgândești asupra setării, deoarece nu mai decizi de la caz la caz.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Când să comprimi și când să lași o imagine în pace</h3>
+          <p>Compresia este un instrument cu adevărat util, dar nu este automat mișcarea potrivită pentru fiecare imagine în fiecare situație — să știi când s-o sari este la fel de important ca să știi cum s-o folosești.</p>
+
+          <h4>Semne că o imagine este un bun candidat pentru compresie</h4>
+          <p>Fotografiile mari, originale de cameră, destinate web-ului, e-mailului sau mesageriei aproape întotdeauna au de câștigat — de obicei conțin mult mai multă rezoluție și greutate decât are nevoie destinația. Orice fișier care atinge o limită strictă de dimensiune (o limită de atașament de e-mail, o restricție de încărcare, un plafon de dimensiune al unui formular) este și el un candidat evident, deoarece compresia este adesea cea mai rapidă cale de a coborî sub limită fără a decupa sau a redimensiona conținut din imagine.</p>
+
+          <h4>Semne că ar trebui să lași o imagine în pace (sau s-o comprimi foarte ușor)</h4>
+          <p>Graficele cu text, linii ascuțite sau culori plate — capturi de ecran, diagrame, sigle, documente scanate — tind să se comprime prost cu metodele cu pierderi, deoarece artefactele de compresie apar ca neclaritate și franjuri de culoare exact acolo unde ochiul observă cel mai mult: în jurul marginilor și al textului. Acestea sunt de obicei mai bine servite de abordarea fără pierderi a PNG sau de renunțarea la compresie, în loc să te lupți cu artefactele.</p>
+          <p>Ceea ce a fost deja comprimat o dată nu ar trebui comprimat din nou „pentru siguranță”. Recomprimarea unui JPG deja comprimat cu pierderi nu îl micșorează semnificativ în majoritatea cazurilor și poate introduce o a doua rundă de pierdere de calitate peste prima, adunând artefacte în loc să le elimine.</p>
+
+          <h4>Obiceiul copiei master</h4>
+          <p>O regulă simplă care evită cele mai multe regrete: păstrează o copie master de înaltă calitate (sau necomprimată) a oricărui lucru pe care l-ai putea reutiliza și generează versiuni comprimate din acel master, după cum e nevoie pentru fiecare utilizare, în loc să-ți suprascrii singura copie cu una comprimată. Spațiul de stocare e ieftin; recrearea unui original pierdut nu mai e posibilă odată ce a dispărut.</p>
+
+          <h4>Judecând după destinație, nu după obicei</h4>
+          <p>Întrebarea potrivită nu este „ar trebui să comprim această imagine” în abstract, ci „de ce are nevoie de fapt locul unde ajunge această imagine”. O fotografie destinată unui mesaj text are nevoie de aproape niciunul din detaliile ei originale; una destinată unui banner tipărit mare are nevoie de aproape toate. Lasă destinația să stabilească ștacheta, în loc să aplici același nivel de compresie din obișnuință la tot ce trece prin fluxul tău de lucru.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Greșeli frecvente la compresie (și cum să le eviți)</h3>
+          <p>Majoritatea plângerilor despre compresie duc la un set restrâns de greșeli repetabile. Iată la ce să fii atent.</p>
+
+          <h4>Comprimarea aceluiași fișier iar și iar</h4>
+          <p>Fiecare trecere de compresie cu pierderi aruncă puțin mai multe detalii, iar pierderea se adună cu fiecare trecere în plus — un fișier comprimat, redeschis, editat și recomprimat de mai multe ori va arăta vizibil mai rău decât unul comprimat o singură dată dintr-un original curat. Comprimă întotdeauna din original sau dintr-un master necomprimat, nu dintr-o copie deja comprimată.</p>
+
+          <h4>Suprascrierea singurei tale copii</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Comprimarea graficelor ca și cum ar fi fotografii</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Alegerea unui nivel de compresie fără a verifica rezultatul</h4>
+          <p>Este tentant să alegi „compresia maximă” pentru cel mai mic fișier posibil și să mergi mai departe, dar acea setare introduce adesea artefacte evident vizibile odată ce te uiți de fapt la rezultat la dimensiunea reală. O verificare rapidă a rezultatului comprimat — la dimensiunea la care va fi de fapt văzut — durează secunde și previne trimiterea sau publicarea a ceva care arată vizibil mai rău decât intenționai.</p>
+
+          <h4>Ignorarea compresiei proprii a destinației</h4>
+          <p>Încărcarea unui fișier uriaș, abia comprimat, pe o platformă care îl va comprima oricum (majoritatea rețelelor sociale și aplicațiilor de mesagerie) irosește timp de încărcare și lățime de bandă fără niciun beneficiu vizual, deoarece procesarea proprie a platformei determină o mare parte din calitatea finală, indiferent ce ai trimis. Potrivește efortul de compresie cu ceea ce va păstra de fapt destinația, nu cu presupunerea că „mai multă calitate originală la intrare înseamnă mai multă calitate finală la ieșire”.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -575,21 +680,21 @@
       <h3>Primii pași cu</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/ro/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ro/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ro/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ro/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ro/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/ro/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ro/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ro/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ro/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ro/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/ro/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -606,7 +711,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/compress/compress-tool.js?v=53" defer></script>
 </body>

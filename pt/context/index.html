@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/context/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/context/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/context/">
-<script src="/shared/i18n/pt.js?v=10"></script>
+<script src="/shared/i18n/pt.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Context – Adicione texto a um PDF de graça – BC Tools">
@@ -76,10 +76,9 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:var(--context-yellow); }
-.cs-shape{ background:#ffde89; }
 
 /* Every other tool's banner floor is 1100×322.5px (border-box: 250.5px
    of content height + the shared 72px vertical padding) — this was
@@ -2232,14 +2231,120 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 
 <div class="content-section-convert" data-tool="context">
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-2"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>Novo em adicionar texto a PDFs?</h3>
     <p>Adicionar texto a um PDF parece que deveria funcionar como em qualquer editor de texto, mas uma página de PDF não tem um «espaço em branco para digitar» embutido como um documento do Word: ela se parece mais com uma folha impressa. Veja o que realmente acontece quando você solta uma caixa de texto na página e como fazê-la parecer intencional, e não colada.</p>
-    <p>Quer saber mais? Leia na íntegra: <a class="golden-rules-link-inline go-to-golden-rules" data-tool="context" href="/golden-rules/?tool=context">a apenas um clique de distância.</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Como adicionar texto a um PDF realmente funciona</a></li>
+      <li><a href="#gr-article-2">2. Escolhendo o tamanho e a posição certos da fonte para diferentes documentos</a></li>
+      <li><a href="#gr-article-3">3. Preenchendo formulários e assinando documentos sem impressora</a></li>
+      <li><a href="#gr-article-4">4. Trabalhando com PDFs de várias páginas: consistência e edição página por página</a></li>
+      <li><a href="#gr-article-5">5. Erros comuns ao adicionar texto a PDFs (e como evitá-los)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="context">
+<div class="gr-article" id="gr-article-1"><h3>1. Como adicionar texto a um PDF realmente funciona</h3>
+          <p>Uma página de PDF não é um documento de texto em que você simplesmente clica e digita: ela se parece mais com uma folha impressa, uma imagem fixa de texto e gráficos dispostos em posições exatas. Entender essa distinção explica tanto o que o Context faz quanto por que ele funciona do jeito que funciona.</p>
+
+          <h4>A página é uma imagem, não um documento</h4>
+          <p>A maioria dos PDFs (qualquer coisa que não seja especificamente construída como formulário preenchível) não tem o conceito de «espaço vazio em que você pode digitar». O que você vê como uma linha, uma caixa ou um campo em branco é na verdade apenas tinta posicionada em coordenadas fixas: não há nenhum campo de texto subjacente esperando sua entrada, como em um documento do Word ou formulário web. Quando o Context permite «adicionar texto» a um PDF, ele não encontra um campo oculto para preencher; ele posiciona uma camada de texto nova e independente sobre a página existente, no lugar para onde você arrasta.</p>
+
+          <h4>Sobrepor vs. editar</h4>
+          <p>Essa abordagem de sobreposição é a mesma usada por essencialmente toda ferramenta de anotação de PDF, não só esta: editar de fato o texto original de um PDF (mudar uma frase já impressa na página) exige software especializado e muitas vezes nem é possível se o arquivo original não preservou camadas de texto editáveis. O que o Context faz em vez disso é mais simples e muito mais amplamente útil: adiciona um trecho de texto novo e separado que fica visualmente sobre a página, exatamente o que você quer para legendas, notas, iniciais ou para preencher uma linha em branco de um formulário.</p>
+
+          <h4>Pontos, não pixels</h4>
+          <p>As páginas de PDF medem a posição em pontos (1/72 de polegada), não nos pixels da tela com que você arrasta o dedo ou o cursor. O Context cuida dessa conversão para você: o que você vê na tela, em qualquer nível de zoom, sempre corresponde à posição fixa correta no PDF real, então uma caixa de texto que você coloca no topo de uma página permanece no topo da página, independentemente do dispositivo ou do zoom com que outra pessoa a abra depois.</p>
+
+          <h4>O que acontece quando você baixa</h4>
+          <p>When you hit Download, every text box, date, shape and signature you've placed gets permanently drawn onto the PDF's pages — colors, bold/italic/underline styling, exact position and size all included — producing a single, ordinary PDF file. There's no special "Context format" and nothing separate to keep track of: the file that comes out opens and prints identically to any other PDF, in any PDF reader, on any device.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Escolhendo o tamanho e a posição certos da fonte para diferentes documentos</h3>
+          <p>O tamanho e a posição certos do texto dependem inteiramente do tipo de documento que você está marcando e de quem vai ler em seguida. Veja como pensar nisso por cenário.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Tipo de documento</th><th>Abordagem recomendada</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Tipo de documento">Preenchendo as linhas em branco de um formulário</td><td data-label="Abordagem recomendada">Combine o tamanho do rótulo impresso, fique logo acima da linha</td></tr>
+              <tr><td data-label="Tipo de documento">Adicionando uma nota ou comentário</td><td data-label="Abordagem recomendada">Use uma cor contrastante, mantenha-a claramente separada do texto original</td></tr>
+              <tr><td data-label="Tipo de documento">Assinar ou rubricar</td><td data-label="Abordagem recomendada">Um pouco maior que o texto ao redor, centralizado na linha</td></tr>
+              <tr><td data-label="Tipo de documento">Legendando um PDF cheio de imagens</td><td data-label="Abordagem recomendada">Tamanho consistente em todas as legendas de todas as páginas</td></tr>
+              <tr><td data-label="Tipo de documento">Documentos formais ou legais</td><td data-label="Abordagem recomendada">Combine de perto o tamanho da fonte do próprio documento, use preto</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Combinando com o texto existente do documento</h4>
+          <p>A coisa mais importante que faz uma linha adicionada parecer intencional e não colada é igualar o tamanho dela ao que já está impresso por perto. Se os rótulos do formulário estão impressos em cerca de 11–12 pt, adicionar sua resposta em 24 pt a faz parecer deslocada, mesmo que a posição esteja perfeita. Aproxime primeiro o texto impresso ao redor, tenha uma noção da escala dele e escolha um tamanho próximo: o Context lembra do último tamanho que você usou, então, depois de acertá-lo uma vez, toda caixa seguinte começa automaticamente do mesmo tamanho.</p>
+
+          <h4>Ficar dentro das linhas, literalmente</h4>
+          <p>Linhas e caixas em branco em formulários geralmente são dimensionadas para uma quantidade específica de texto em um tamanho específico. Antes de digitar uma resposta longa numa linha curta, considere se ela precisa encolher um pouco para caber, pois um texto que transborda além do fim de uma linha impressa parece um erro para quem lê o documento final, mesmo que nada esteja tecnicamente quebrado.</p>
+
+          <h4>Escolher uma cor que pareça «adicionada», não «oculta»</h4>
+          <p>O texto preto costuma ser o padrão mais seguro, pois combina com o modo como a maioria dos formulários e documentos já é impressa e não chama atenção como um acréscimo. O texto colorido é realmente útil para notas, correções ou qualquer coisa que você queira destacar do conteúdo original: apenas certifique-se de que a cor escolhida tenha contraste real com a página atrás; cores claras como amarelo se perdem facilmente numa página branca.</p>
+
+          <h4>Deixar margem para o inesperado</h4>
+          <p>Colocar o texto bem na borda da página corre o risco de cortá-lo se o documento for impresso depois em um papel de tamanho ou margem ligeiramente diferente do esperado. Deixar um pequeno espaço entre o texto e a borda da página, e entre o texto e qualquer conteúdo impresso próximo, mantém o resultado limpo, não importa como seja impresso ou visto no fim.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Preenchendo formulários e assinando documentos sem impressora</h3>
+          <p>Imprimir, assinar, digitalizar e devolver por e-mail ainda é como muita papelada é resolvida, e quase sempre é desnecessário. Veja como pular isso usando apenas um navegador.</p>
+
+          <h4>Substituindo o ciclo de imprimir, assinar e digitalizar</h4>
+          <p>If a form only needs a name, a date, a few short answers, and a mark where a signature goes, there's rarely a real reason to involve a printer or scanner at all. Open the PDF directly in Context, place a text box on each blank line, type your answer, and download — the entire round trip that used to require paper now takes place entirely on screen, and the result is a cleaner, more legible PDF than a scanned paper copy usually is anyway. For a checkbox or multiple-choice option, drop a checkmark, crossmark or circle shape instead of trying to type a checkmark character that may not even be in the font.
+
+          <h4>Dates in one click</h4>
+          <p>Add date places today's date as an ordinary text box, in the last format you used. Double-click the date to flip between day-first and month-first, and edit it like any other text if the form needs a different day.</p></p>
+
+          <h4>Assinaturas e rubricas digitadas</h4>
+          <p>The Signature button lets you add your own handwriting: upload a photo of your signature, take one with the camera, or draw it. Crop it, brush away leftovers, fade out faint marks, pick an ink color, then place and resize it like any other item. It's common practice for a large share of everyday paperwork — internal company forms, informal agreements, acknowledgment forms. It's worth being clear-eyed about one thing though: a signature image is not the same as a legally recognized electronic signature under laws like eIDAS or the U.S. ESIGN Act, which generally require specific consent and verification steps that an image placed on a page doesn't provide. For contracts, legal filings, or anything where signature validity actually matters, use a dedicated e-signature service instead — Context is the right tool for informal paperwork, not a replacement for one.</p>
+
+          <h4>Alinhando as respostas com os rótulos impressos</h4>
+          <p>A maioria dos formulários imprime um rótulo («Nome:», «Data:») seguido de uma linha ou caixa em branco para a resposta. Arraste sua caixa de texto para que fique logo acima da linha, em vez de sobre ela: texto colocado diretamente sobre uma linha impressa fica difícil de ler quando os dois se sobrepõem, enquanto o texto flutuando logo acima continua claramente legível e ainda se lê como «a resposta àquele rótulo» para quem olha a página final.</p>
+
+          <h4>Conferindo de novo antes de enviar</h4>
+          <p>Depois de preencher todos os campos, vale percorrer cada página no tamanho real (não só na miniatura em que você digitava) para confirmar que nada se sobrepõe, nada passa da borda de uma linha e todo campo obrigatório foi realmente preenchido: uma caixa de texto que parece boa enquanto você a edita pode às vezes ficar ligeiramente diferente quando você vê a página pronta como um todo.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Trabalhando com PDFs de várias páginas: consistência e edição página por página</h3>
+          <p>Contratos, relatórios e formulários de várias páginas pedem uma abordagem um pouco diferente de uma edição rápida de uma página, principalmente para manter a consistência ao percorrer o documento.</p>
+
+          <h4>Navegando entre páginas sem perder o lugar</h4>
+          <p>A navegação por páginas do Context mantém cada caixa de texto presa à página específica em que foi colocada, então alternar entre páginas para preencher seções diferentes de um documento longo não corre o risco de misturar nada: uma caixa adicionada na página 3 permanece na página 3, não importa quantas outras páginas você visite antes de baixar.</p>
+
+          <h4>Manter tamanho e cor consistentes entre as páginas</h4>
+          <p>For anything with a repeated structure across pages — the same kind of label appearing on every page of a multi-page form, for instance — deliberately reusing the same font size and color each time keeps the finished document looking like one coherent pass rather than several inconsistent edits stitched together. Since the last size and color you used carry forward automatically to the next text box you add, staying consistent across a long document usually just means not changing them unless you actually mean to. For a label that repeats on every page, copy the box with Ctrl/Cmd+C and paste it with Ctrl/Cmd+V on the next page; the paste lands on the page you're viewing, and Ctrl/Cmd+Z undoes it if it lands wrong.</p>
+
+          <h4>Planejando uma passada antes de começar a digitar</h4>
+          <p>Para documentos mais longos, vale fazer uma rápida primeira passada por todas as páginas (só olhando, ainda sem digitar) para ver todo o escopo do que precisa ser preenchido antes de se comprometer com um tamanho e posição na página um. Um tamanho que parece certo numa primeira página esparsa pode ficar grande demais para uma página mais densa adiante, e perceber isso cedo evita ter de voltar e redimensionar caixas que você já colocou.</p>
+
+          <h4>Revisando o documento inteiro antes de baixar</h4>
+          <p>Como cada página é renderizada e editada de forma independente, é fácil focar na página em que você está trabalhando e perder de vista o documento como um todo. Antes de baixar, volte página por página desde o início: é a única forma de pegar uma página que foi pulada por completo, ou uma caixa que acabou ficando diferente das outras sem você notar enquanto trabalhava no arquivo.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Erros comuns ao adicionar texto a PDFs (e como evitá-los)</h3>
+          <p>A maioria dos problemas com um PDF editado remonta a um pequeno conjunto de erros fáceis de passar despercebidos. Veja o que observar.</p>
+
+          <h4>Texto pequeno demais ao reduzir o zoom</h4>
+          <p>É fácil digitar em um tamanho que parece perfeitamente legível enquanto você está com zoom e focado em uma única caixa, só para descobrir que fica visivelmente pequeno quando a página é vista no tamanho normal e inteiro. Reduza o zoom (ou confira o PDF final em um visualizador separado) antes de baixar para confirmar que cada caixa está legível no tamanho real, não só no tamanho de edição.</p>
+
+          <h4>Colocar texto sobre o conteúdo existente em vez de ao lado</h4>
+          <p>Soltar uma caixa de texto diretamente sobre texto impresso ou uma linha deixa ambos difíceis de ler quando se sobrepõem: o conteúdo por baixo não sai do caminho. Empurre o novo texto para um espaço realmente vazio por perto em vez de empilhá-lo sobre algo que já está impresso ali.</p>
+
+          <h4>Editar a página errada</h4>
+          <p>Em um documento mais longo é fácil perder de vista qual página está ativa, especialmente depois de dar zoom ou rolar, e acabar adicionando texto à página errada. Confira o indicador de página antes de adicionar uma caixa em qualquer documento com mais de uma página, particularmente logo depois de navegar para uma nova página.</p>
+
+          <h4>Usar uma cor com contraste ruim</h4>
+          <p>Cores claras, em especial amarelo-claro, podem parecer boas no tamanho de edição numa tela brilhante e depois ficar realmente difíceis de ler quando impressas ou vistas em outra tela. Prefira cores com forte contraste contra o branco, como preto ou uma cor saturada, para tudo que realmente precisa ser lido e não apenas notado.</p>
+
+          <h4>Esquecer de renomear o arquivo antes de compartilhar</h4>
+          <p>Downloading straight from a generic uploaded filename can leave you (or whoever you send it to) with a file simply called "document" or similar, indistinguishable from a dozen other files with the same default name. Press R (Rename file) to give it a clear, specific name before downloading — what it is, and often the date — which saves real confusion later, especially once several versions of the same form start accumulating in a downloads folder.</p>
+
+          <h4>Sending a PDF that's too big to email</h4>
+          <p>If the PDF is over 10 MB, Context shows a Compress file button under the editor. It shrinks the images inside just enough to make the file easy to email or upload, and it only touches JPEG images, so a file that's big for other reasons may not shrink much. Check the result at real size before sending.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -2262,21 +2367,21 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
       <h3>Primeiros passos com</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/pt/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pt/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pt/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pt/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pt/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/pt/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pt/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pt/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pt/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pt/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/pt/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -2293,7 +2398,7 @@ html[data-theme="light"] .context-signature-color-swatch--orig{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/context/context-tool.js?v=155" defer></script>
 </body>

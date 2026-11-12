@@ -44,7 +44,7 @@
 <link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
 <link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
 <link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
-<script src="/shared/i18n/nl.js?v=10"></script>
+<script src="/shared/i18n/nl.js?v=11"></script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Compress – Gratis afbeeldingscompressor – BC Tools">
@@ -75,7 +75,7 @@
 
 <script src="/vendor/jszip.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:#3FBFE8; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -131,7 +131,6 @@
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
 .tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
-.cs-shape{ background:#68e1ff; }
 /* Flips light/dark same as every on-banner control — see "On-banner
    controls flip with theme" in shared/site.css's header comment.
    Explicit html[data-theme=...] guards on BOTH sides (not just a bare
@@ -517,9 +516,6 @@
   </div>
 
   <div class="content-section-format-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-2"></span>
-    </div>
     <h3>Weet je niet welk niveau je moet gebruiken?</h3>
     <div class="format-pick-groups">
       <div class="format-pick-group">
@@ -547,13 +543,122 @@
   </div>
 
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>Nieuw met afbeeldingen comprimeren?</h3>
     <p>Compressie lijkt één schuifregelaar, maar eronder doen twee echt verschillende methoden het verkleinen, en weten welke aan het werk is verklaart bijna elk resultaat dat je ziet. Dit gebeurt er echt als je comprimeert, en zo kies je het juiste niveau.</p>
-    <p>Wil je meer weten? Lees het volledig: <a class="golden-rules-link-inline go-to-golden-rules" data-tool="compress" href="/golden-rules/?tool=compress">slechts één klik verwijderd.</a></p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Hoe beeldcompressie echt werkt</a></li>
+      <li><a href="#gr-article-2">2. Het juiste compressieniveau kiezen voor jouw toepassing</a></li>
+      <li><a href="#gr-article-3">3. Compressie voor het web: snelheid zonder kwaliteitsverlies</a></li>
+      <li><a href="#gr-article-4">4. Wanneer je moet comprimeren en wanneer je een afbeelding met rust laat</a></li>
+      <li><a href="#gr-article-5">5. Veelgemaakte fouten bij compressie (en hoe je ze vermijdt)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Hoe beeldcompressie echt werkt</h3>
+          <p>Compressie lijkt één schuifregelaar of één klik, maar eronder doen twee echt verschillende methoden het verkleinen, en begrijpen welke aan het werk is verklaart bijna elk resultaat dat je van zo'n tool ziet.</p>
+
+          <h4>Compressie met verlies: weggooien wat je niet opmerkt</h4>
+          <p>Compressie met verlies, de soort die JPG en WEBP gebruiken, werkt door informatie in een afbeelding te identificeren die het menselijk oog slecht waarneemt en die weg te gooien. Subtiele kleurovergangen worden vereenvoudigd, fijn hoogfrequent detail wordt gladgestreken, en het resultaat is een bestand dat een fractie van de oorspronkelijke grootte kan zijn en er voor een toevallige kijker toch correct uitziet. De keerzijde is dat dit weggooien permanent is: eenmaal weg komt dat detail niet meer terug, hoe vaak je ook heropent of opnieuw opslaat, en een al gecomprimeerd bestand met verlies herhaaldelijk comprimeren stapelt het verlies elke keer op.</p>
+          <p>De “kwaliteitsverhouding” of het compressieniveau dat je kiest bepaalt hoe agressief dit gebeurt. Een hoge kwaliteitsinstelling gooit heel weinig weg en verkleint het bestand bescheiden; een lage kwaliteitsinstelling gooit veel meer weg en verkleint het drastisch, ten koste van zichtbare artefacten: blokkerigheid rond randen, uitgesmeerd detail, kleurbanding in luchten en verlopen.</p>
+
+          <h4>Verliesvrije compressie: herverpakken zonder iets te verliezen</h4>
+          <p>Verliesvrije compressie, de aanpak van PNG, werkt totaal anders: het vindt slimmere, efficiëntere manieren om exact dezelfde pixelgegevens op te slaan, zoals een ZIP-bestand een tekstdocument verkleint zonder één teken erin te veranderen. Er wordt niets weggegooid, dus je kunt zo vaak comprimeren en decomprimeren als je wilt zonder kwaliteitsverandering. De keerzijde is dat de verkleining veel kleiner is, omdat er een harde wiskundige grens is aan hoeveel je gegevens kunt verkleinen zonder iets weg te gooien, vooral bij fotografische afbeeldingen, die vol zitten met het soort fijn, onregelmatig detail dat zich verzet tegen verliesvrij herverpakken.</p>
+
+          <h4>Waarom onze tool Compress PNG naar JPG converteert</h4>
+          <p>Daarom zet Compress PNG-foto's tijdens het comprimeren automatisch om naar JPG: een PNG-foto die alleen verliesvrij wordt gecomprimeerd, krimpt nauwelijks, maar dezelfde foto met compressie met verlies kan drastisch krimpen. Voor een echte foto is deze afweging bijna altijd de moeite waard: het kwaliteitsverschil is onzichtbaar op normale kijkgroottes en het verschil in bestandsgrootte is enorm. Bij PNG's die geen foto zijn (screenshots, logo's, afbeeldingen met transparantie of scherpe tekst) is het een ander verhaal, en daarom is deze conversie specifiek afgestemd op fotoachtige inhoud en niet blind op elke PNG toegepast.</p>
+
+          <h4>Wat er echt gebeurt als je de kwaliteitsschuif verplaatst</h4>
+          <p>Intern vergroot een lagere kwaliteitsinstelling hoe grof de kleur- en detailinformatie van de afbeelding wordt gegroepeerd en vereenvoudigd voordat hij wordt opgeslagen. Zie het als afronden van getallen: “kwaliteit 95” afronden verandert nauwelijks iets, terwijl “kwaliteit 40” afronden veel meer verandert, maar ook veel minder ruimte kost om te beschrijven. Er is geen universeel “juist” getal: de juiste instelling hangt volledig af van waarvoor de afbeelding wordt gebruikt, en daar gaat het volgende artikel op in.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Het juiste compressieniveau kiezen voor jouw toepassing</h3>
+          <p>Er is geen enkele “beste” compressie-instelling: het juiste niveau hangt volledig af van waar de afbeelding naartoe gaat en wat hij moet doorstaan. Zo denk je erover per scenario.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Bestemming</th><th>Aanbevolen niveau</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Bestemming">Sociale media / berichtenapps</td><td data-label="Aanbevolen niveau">Gemiddeld</td></tr>
+              <tr><td data-label="Bestemming">Je eigen website of webwinkel</td><td data-label="Aanbevolen niveau">Gemiddeld tot hoog</td></tr>
+              <tr><td data-label="Bestemming">Druk of professionele oplevering aan klanten</td><td data-label="Aanbevolen niveau">Laag, of sla compressie over</td></tr>
+              <tr><td data-label="Bestemming">Langetermijnarchivering</td><td data-label="Aanbevolen niveau">Laag</td></tr>
+              <tr><td data-label="Bestemming">Limieten voor de grootte van e-mailbijlagen</td><td data-label="Aanbevolen niveau">Hoog</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Sociale media en berichten</h4>
+          <p>Platforms zoals Instagram, WhatsApp en de meeste socialemediafeeds comprimeren elke afbeelding die je uploadt al opnieuw, vaak agressief, ongeacht wat je ze stuurt. Een enorm, nauwelijks gecomprimeerd bestand uploaden levert hier niets op: het platform comprimeert het aan zijn kant toch opnieuw. Een matig tot hoog compressieniveau houdt je upload snel en de grootte van je originele bestand redelijk, zonder kwaliteit op te geven die je na de eigen verwerking van het platform echt zou zien.</p>
+
+          <h4>Websites en webwinkels</h4>
+          <p>Voor alles wat je zelf host, zoals een portfoliosite, een blog of een productpagina, bepaalt de bestandsgrootte direct hoe snel je pagina laadt, wat zowel de ervaring van bezoekers beïnvloedt als, voor commerciële sites, de conversie en de positie in zoekmachines. Hier loont het om naar agressievere compressie te neigen, omdat bekijken op het web zelden detail op drukniveau nodig heeft, en een pagina vol enorme niet-geoptimaliseerde afbeeldingen een van de meest voorkomende redenen is waarom sites traag aanvoelen.</p>
+
+          <h4>Drukwerk en professioneel gebruik</h4>
+          <p>Dit is de enige plek waar je behoudend wilt zijn. Druk toont detail en artefacten die een scherm simpelweg niet laat zien, omdat het op hogere effectieve resolutie en vaak op groter fysiek formaat wordt bekeken. Gebruik voor alles wat naar een drukkerij, een galerie-inzending of professionele oplevering aan een klant gaat een licht compressieniveau of sla compressie over voor die specifieke kopie, en bewaar een ongecomprimeerd of licht gecomprimeerd masterbestand als je bron van waarheid.</p>
+
+          <h4>Archivering en langetermijnopslag</h4>
+          <p>Als het doel is een foto jarenlang te bewaren, zoals familiefoto's, een archief of alles wat je later op volledige kwaliteit wilt terugzien, vermijd dan zware compressie met verlies op je enige exemplaar. Eenmaal weggegooid detail komt niet meer terug, ook niet als een latere toepassing het nodig blijkt te hebben. Een redelijke aanpak is een archiefkopie van hogere kwaliteit bewaren en op aanvraag apart gecomprimeerde versies maken voor wat een specifieke toepassing echt nodig heeft.</p>
+
+          <h4>E-mailbijlagen en bestandsgroottelimieten</h4>
+          <p>Veel e-mailproviders beperken de grootte van bijlagen, meestal tot ongeveer 25 MB in totaal. Als je meerdere foto's verstuurt, komt een sterker compressieniveau betrouwbaar onder die grens. Dit is een van de weinige gevallen waarin de praktische beperking (past het überhaupt in de e-mail) zwaarder weegt dan het visuele verschil tussen compressieniveaus, dus wees niet bang om harder te comprimeren dan je voor ander gebruik zou doen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compressie voor het web: snelheid zonder kwaliteitsverlies</h3>
+          <p>Het gewicht van afbeeldingen is een van de grootste en best oplosbare oorzaken van een trage website, en ook een van de makkelijkste om in beide richtingen verkeerd te doen: te weinig compressie en pagina's kruipen, te veel en foto's zien er merkbaar slechter uit. Zo kom je in het nuttige midden uit.</p>
+
+          <h4>Waarom afbeeldingsgrootte zo veel uitmaakt voor snelheid</h4>
+          <p>Op de meeste inhoudrijke pagina's vormen afbeeldingen veruit het grootste deel van het totale paginagewicht, veel meer dan de HTML, CSS of JavaScript samen. De laadtijd van een pagina voor een bezoeker, en de beoordeling ervan door zoekmachines, wordt onevenredig beïnvloed door hoe zwaar je afbeeldingen zijn, wat betekent dat ze goed comprimeren vaak de enige prestatieverbetering met de grootste hefboom is, vóór de meeste optimalisaties op codeniveau.</p>
+
+          <h4>Compressie afstemmen op hoe de afbeelding echt wordt weergegeven</h4>
+          <p>Een afbeelding die op een pagina 400 pixels breed wordt getoond, hoeft niet als een camera-origineel van 4000 pixels met lichte compressie te worden geleverd; er is veel minder detail nodig om er op de werkelijke weergavegrootte scherp uit te zien. Voordat je je druk maakt over het compressieniveau, moet je ervoor zorgen dat de afmetingen van de afbeelding ongeveer overeenkomen met hoe groot hij echt verschijnt. Een te grote afbeelding comprimeren is symptoombestrijding terwijl de grotere oorzaak (onnodige resolutie) blijft bestaan.</p>
+
+          <h4>Een formaat kiezen voor het web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>Het punt van afnemende meeropbrengst</h4>
+          <p>Compressie schaalt niet lineair met het verlies aan zichtbare kwaliteit: het eerste stuk compressie van een ongecomprimeerd origineel haalt enorm veel bestandsgrootte weg zonder zichtbare verandering, terwijl steeds agressievere compressie steeds minder grootte weghaalt voor steeds meer zichtbare schade. In de praktijk bereiken de meeste foto's een optimum ruim voor “maximale compressie”, en het loont om een gecomprimeerde afbeelding op de werkelijke weergavegrootte te controleren in plaats van aan te nemen dat meer compressie altijd beter is voor de snelheid.</p>
+
+          <h4>Alle afbeeldingen van een hele site in bulk verwerken</h4>
+          <p>Als je veel afbeeldingen tegelijk optimaliseert, zoals een productcatalogus, een galerij of de oude afbeeldingen van een blog, pas dan een consistent compressieniveau toe op vergelijkbare inhoudstypen in plaats van elke afbeelding op het oog te beoordelen. Dat houdt de visuele kwaliteit over je site consistent en maakt het veel sneller om het proces later opnieuw te doen als je je bedenkt over de instelling, omdat je niet geval voor geval opnieuw beslist.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Wanneer je moet comprimeren en wanneer je een afbeelding met rust laat</h3>
+          <p>Compressie is een echt nuttig hulpmiddel, maar niet automatisch de juiste zet voor elke afbeelding in elke situatie. Weten wanneer je het moet overslaan is net zo belangrijk als weten hoe je het gebruikt.</p>
+
+          <h4>Tekenen dat een afbeelding een goede kandidaat is voor compressie</h4>
+          <p>Grote camera-originelen die voor het web, e-mail of berichten bedoeld zijn, hebben er bijna altijd baat bij: ze hebben doorgaans veel meer resolutie en bestandsgewicht dan de bestemming nodig heeft. Elk bestand dat tegen een harde groottelimiet aanloopt (een limiet voor e-mailbijlagen, een uploadbeperking, een maximale bestandsgrootte van een formulier) is ook een duidelijke kandidaat, omdat compressie vaak de snelste manier is om onder de limiet te komen zonder inhoud uit de afbeelding bij te snijden of te verkleinen.</p>
+
+          <h4>Tekenen dat je een afbeelding met rust moet laten (of heel licht moet comprimeren)</h4>
+          <p>Afbeeldingen met tekst, scherpe lijnen of effen kleuren, zoals screenshots, diagrammen, logo's en gescande documenten, comprimeren doorgaans slecht met methoden met verlies, omdat de compressieartefacten zich als wazigheid en kleurranden tonen precies waar het oog het meest oplet: rond randen en tekst. Die zijn meestal beter af met de verliesvrije aanpak van PNG, of door compressie over te slaan in plaats van tegen de artefacten te vechten.</p>
+          <p>Alles wat al eens is gecomprimeerd, moet je niet zomaar “voor de zekerheid” nog eens comprimeren. Een JPG die al met verlies is gecomprimeerd opnieuw comprimeren maakt hem in de meeste gevallen niet merkbaar kleiner en kan een tweede ronde kwaliteitsverlies bovenop de eerste veroorzaken, waardoor artefacten zich opstapelen in plaats van verdwijnen.</p>
+
+          <h4>De mastercopy-gewoonte</h4>
+          <p>Een eenvoudige regel die de meeste spijt voorkomt: bewaar één kopie van hoge kwaliteit (of ongecomprimeerd) van alles wat je later misschien opnieuw gebruikt, en maak gecomprimeerde versies van die master voor elk specifiek gebruik, in plaats van je enige exemplaar te overschrijven met een gecomprimeerd exemplaar. Opslag is goedkoop; een verloren origineel opnieuw maken kan niet meer als het weg is.</p>
+
+          <h4>Beoordelen op de bestemming, niet op gewoonte</h4>
+          <p>De juiste vraag is niet in het algemeen “moet ik deze afbeelding comprimeren”, maar “wat heeft de plek waar deze afbeelding naartoe gaat echt nodig”. Een foto voor een sms heeft bijna niets van het oorspronkelijke detail nodig; een foto voor een grote gedrukte banner heeft bijna alles nodig. Laat de bestemming de lat leggen, in plaats van uit gewoonte hetzelfde compressieniveau toe te passen op alles wat door je workflow gaat.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Veelgemaakte fouten bij compressie (en hoe je ze vermijdt)</h3>
+          <p>De meeste klachten over compressie zijn terug te voeren op een kleine set herhaalbare fouten. Hier let je op.</p>
+
+          <h4>Hetzelfde bestand steeds opnieuw comprimeren</h4>
+          <p>Elke compressieronde met verlies gooit nog wat meer detail weg, en dat verlies stapelt zich op met elke extra ronde: een bestand dat meerdere keren is gecomprimeerd, heropend, bewerkt en opnieuw gecomprimeerd, ziet er merkbaar slechter uit dan een bestand dat één keer vanaf een schoon origineel is gecomprimeerd. Comprimeer altijd vanaf het origineel of een ongecomprimeerde master, niet vanaf een eerder gecomprimeerde kopie.</p>
+
+          <h4>Je enige exemplaar overschrijven</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Afbeeldingen met scherpe randen comprimeren alsof het foto's zijn</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Een compressieniveau kiezen zonder het resultaat te controleren</h4>
+          <p>Het is verleidelijk om “maximale compressie” te kiezen voor het kleinst mogelijke bestand en door te gaan, maar die instelling geeft vaak artefacten die duidelijk zichtbaar zijn zodra je de uitvoer op werkelijke grootte bekijkt. Een snelle controle van het gecomprimeerde resultaat, op de grootte waarop het echt wordt bekeken, kost seconden en voorkomt dat je iets verstuurt of publiceert dat merkbaar slechter oogt dan bedoeld.</p>
+
+          <h4>De eigen compressie van de bestemming negeren</h4>
+          <p>Een nauwelijks gecomprimeerd, enorm bestand uploaden naar een platform dat het toch gaat comprimeren (de meeste sociale media en berichtenapps) verspilt uploadtijd en bandbreedte zonder visueel voordeel, omdat de eigen verwerking van het platform een groot deel van de uiteindelijke kwaliteit bepaalt, ongeacht wat je stuurde. Stem je compressie-inspanning af op wat de bestemming echt behoudt, niet op de aanname dat “meer originele kwaliteit erin gelijk is aan meer uiteindelijke kwaliteit eruit”.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -575,21 +680,21 @@
       <h3>Aan de slag met</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/nl/convert/">Convert</a>
+          <a class="footer-dash-link" href="/nl/compress/">Compress</a>
+          <a class="footer-dash-link" href="/nl/combine/">Combine</a>
+          <a class="footer-dash-link" href="/nl/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/nl/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/nl/congify/">Congify</a>
+          <a class="footer-dash-link" href="/nl/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/nl/codify/">Codify</a>
+          <a class="footer-dash-link" href="/nl/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/nl/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/nl/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -606,7 +711,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/compress/compress-tool.js?v=53" defer></script>
 </body>

@@ -73,7 +73,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=261">
+<link rel="stylesheet" href="/shared/site.css?v=271">
 <style>
 .tool-app::before{ background:#B84CFF; }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -129,7 +129,6 @@
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
 .tool-app.wobble .tool-logo .icon-convido{ animation:icon-wobble .5s ease; }
-.cs-shape{ background:#d670ff; }
 /* Flips light/dark same as every on-banner control — see "On-banner
    controls flip with theme" in shared/site.css's header comment.
    Explicit html[data-theme=...] guards on BOTH sides (not just a bare
@@ -605,9 +604,6 @@
   </div>
 
   <div class="content-section-format-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-2"></span>
-    </div>
     <h3>Not sure which format to use?</h3>
     <div class="format-pick-groups">
       <div class="format-pick-group">
@@ -642,13 +638,76 @@
   </div>
 
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>New to converting videos?</h3>
-    <p>MOV, MP4, WebM and MKV are containers — the box a video and its audio are packed into — not the compression itself. When the video inside already fits the new box, Convido simply re-packs it: nearly instant, and no quality is lost. When it doesn't (for example H.264 video going into WebM), Convido re-encodes it, which takes longer and is the only case where quality can change slightly.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="convido" href="/golden-rules/?tool=convido">just one click away.</a></p>
+    <p>Did you know a ten-minute video can change format in under a second? When nothing needs re-compressing, Convido just moves it into a new box. No experience needed: these short guides explain how video formats work, in plain words.</p>
+    <p class="gr-topics-lead">Jump to what you need:</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. Containers and Codecs: What a Video Format Really Is</span><span class="gr-toc-note">What a video format really is: containers and codecs.</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. Re-pack or Re-encode: Fast and Lossless vs Slower</span><span class="gr-toc-note">Fast and lossless, or slower: how Convido decides.</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. Choosing the Right Output Format</span><span class="gr-toc-note">Which output format to choose.</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. What Convido Can and Can't Read</span><span class="gr-toc-note">Which files Convido can and cannot read.</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. Converting in Your Browser: What to Expect</span><span class="gr-toc-note">What to expect when your browser does the work.</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="convido">
+<div class="gr-article" id="gr-article-1"><h3>1. Containers and Codecs: What a Video Format Really Is</h3>
+          <p>A video file has two layers. The codec is how the picture and sound are compressed (H.264, HEVC, VP9, AAC). The container is the box that holds them (MP4, MOV, MKV, WebM, AVI, FLV).</p>
+          <table class="info-table-convido">
+            <thead>
+              <tr><th>Format</th><th>Best for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Format">MP4</td><td data-label="Best for">Sharing and uploading. Plays on almost every phone, computer and app.</td></tr>
+              <tr><td data-label="Format">MOV</td><td data-label="Best for">Apple devices and editors like Final Cut, Premiere and DaVinci Resolve.</td></tr>
+              <tr><td data-label="Format">WebM</td><td data-label="Best for">Websites. Small files that play in every modern browser.</td></tr>
+              <tr><td data-label="Format">MKV</td><td data-label="Best for">Archiving and players like VLC. Holds almost anything.</td></tr>
+              <tr><td data-label="Format">AVI</td><td data-label="Best for">Old players and software that only know AVI.</td></tr>
+              <tr><td data-label="Format">FLV</td><td data-label="Best for">Old Flash-era players and legacy streaming.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Which codec fits where.</strong> MP4, MOV, MKV, AVI and FLV take H.264 video with AAC audio, so a typical phone clip is simply re-packed. WebM takes VP8, VP9 or AV1 with Opus or Vorbis, so H.264 going into WebM must be re-encoded, and so must WebM going into MP4 or MOV.</p>
+          <p><strong>Extensions can mislead.</strong> Renaming .mov to .mp4 converts nothing. Convido reads what is inside the file, not its name.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Re-pack or Re-encode: Fast and Lossless vs Slower</h3>
+          <p>When the video and audio already fit the new format, Convido just re-packs them. Nothing about the picture or sound changes.</p>
+          <table class="info-table-convido">
+            <thead>
+              <tr><th>Case</th><th>What Convido does</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Case">The contents already fit, like a phone MOV to MP4</td><td data-label="What Convido does">Re-packs</td><td data-label="Result">Instant and lossless</td></tr>
+              <tr><td data-label="Case">H.264 or HEVC going into WebM</td><td data-label="What Convido does">Re-encodes</td><td data-label="Result">Slower. The picture is compressed again.</td></tr>
+              <tr><td data-label="Case">WebM-style video and audio going into MP4 or MOV</td><td data-label="What Convido does">Re-encodes to H.264 and AAC</td><td data-label="Result">Slower, but it plays on Apple devices</td></tr>
+            </tbody>
+          </table>
+          <p><strong>How fast is fast?</strong> A 143 MB, ten-minute video can be re-packed from MOV to MP4 in well under a second.</p>
+          <p><strong>The little "i".</strong> It appears when a video will be re-encoded. Pick a format that keeps it as it is, like MP4, MOV or MKV for most camera and phone videos, and the note disappears.</p>
+          <p><strong>File size.</strong> A re-encoded file can come out smaller or larger. A tightly compressed video can grow. If it is too big, choose a format that re-packs, or shrink it afterwards with Comprio.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Choosing the Right Output Format</h3>
+          <p>When in doubt, choose MP4. It works on phones, computers, browsers, messaging apps and social platforms.</p>
+          <p><strong>WebM and MP4 are not interchangeable.</strong> WebM videos usually hold VP9 or AV1 with Opus audio. QuickTime, iPhones and many editors cannot play those inside MP4 or MOV. So Convido re-encodes to H.264 and AAC, and the result plays everywhere. MKV keeps the original codecs and re-packs instantly, which suits VLC.</p>
+          <p><strong>AVI and FLV.</strong> Convido writes both with H.264 and AAC. AVI has no timestamps, so a changing frame rate can drift in some players, and an AVI file cannot be larger than 4 GB. Use them only when an old player asks.</p>
+          <p><strong>No WMV.</strong> Browsers cannot encode WMV. For Windows, MP4 works in Windows Media Player and every current Windows app.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. What Convido Can and Can't Read</h3>
+          <p>Convido reads MP4, M4V, MOV, 3GP, 3GPP, 3G2, MKV, WebM, TS, M2TS, MTS and GIF. The Expected Input picker fills from the first video you add, and every file is recognized on its own, so you can mix formats.</p>
+          <p><strong>Browsers cannot open these.</strong> AVI, FLV, WMV, ASF, MPG, MPEG, VOB, MOD, MXF, DV, DVR, RM, RMVB, SWF, CAVS and OGG/OGV. Convido skips them and says so. Camera RAW and audio-only files are skipped too.</p>
+          <p><strong>Readable box, unreadable codec.</strong> Some files use a codec your browser cannot decode, such as certain old phone formats. They show a red card and the rest of the batch carries on. Old 3GP files with AMR audio may convert without sound.</p>
+          <p><strong>GIF to video.</strong> Convido decodes every frame and encodes a normal video with the original timing. Transparent areas become white. MP4, MOV, MKV, AVI and FLV need an even size, so an odd-sized GIF gains a one-pixel white edge. WebM keeps the exact size. GIF input needs a browser with a built-in image decoder, like Chrome or Edge.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Converting in Your Browser: What to Expect</h3>
+          <p>Convido works on your own device. Nothing is uploaded, so your videos stay private, and a website sets no size limit.</p>
+          <p><strong>Single files or a .zip.</strong> Up to 5 videos download one by one. From 6 to 20 you choose. Above 20 it is always one .zip. A .zip is built in memory, so very large videos need plenty of free memory.</p>
+          <p><strong>Keep the tab open.</strong> Browsers slow or pause background tabs. Leave it visible. Pressing the button again cancels.</p>
+          <p><strong>Very large or high-resolution videos.</strong> Re-packing is limited by free memory, so use a tab with nothing else running. Re-encoding 8K works but takes a while. An odd-sized video going to MP4, MOV, MKV, AVI or FLV may need WebM instead.</p>
+          <p><strong>Damaged files.</strong> If a file is damaged in the middle, re-packing copies the damage across. Check an important conversion before you delete the original.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -670,21 +729,21 @@
       <h3>Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/convert/">Convert</a>
+          <a class="footer-dash-link" href="/compress/">Compress</a>
+          <a class="footer-dash-link" href="/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="colorfy">Colorfy</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="comprio">Comprio</button>
+          <a class="footer-dash-link" href="/congify/">Congify</a>
+          <a class="footer-dash-link" href="/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/codify/">Codify</a>
+          <a class="footer-dash-link" href="/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/comprio/">Comprio</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convido">Convido</button>
+          <a class="footer-dash-link" href="/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -701,7 +760,7 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=100" defer></script>
+<script src="/shared/site.js?v=106" defer></script>
 <script src="/shared/report.js?v=30" defer></script>
 <script src="/convido/convido-muxers.js?v=2" defer></script>
 <script src="/convido/convido-tool.js?v=16" defer></script>

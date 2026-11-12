@@ -117,7 +117,6 @@ const SITE_PATH_MAP = {
   terms: "/terms/",
   privacy: "/privacy/",
   cookies: "/cookies/",
-  "golden-rules": "/golden-rules/",
   convert: "/convert/",
   compress: "/compress/",
   combine: "/combine/",
@@ -135,19 +134,14 @@ document.addEventListener("click", (e) => {
     location.href = target;
     return;
   }
-  const golden = e.target.closest(".go-to-golden-rules");
-  if (golden){
-    e.preventDefault();
-    /* Every one of these already carries data-tool (convert/compress/
-       combine/exif/context/gif/coudio/codify — the same values
-       golden-rules-tool.js's selectGoldenRulesTool() expects), but this
-       always ignored it and sent everyone to the page's default
-       ("convert") tab regardless of which tool's link was actually
-       clicked. Forward it as a query param so golden-rules/index.html
-       can open the right tab on load. */
-    const tool = golden.dataset.tool;
-    location.href = bcLangPath("/golden-rules/") + (tool ? `?tool=${encodeURIComponent(tool)}` : "");
-  }
+});
+
+document.addEventListener("click", (e) => {
+  const link = e.target.closest(".gr-topics a");
+  if (!link) return;
+  e.preventDefault();
+  const art = document.getElementById(link.getAttribute("href").slice(1));
+  if (art) art.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 /* ===== GA4 click tracking ===== */
