@@ -30,6 +30,20 @@
 <title>Congify – Free Video to GIF Converter – BC Tools</title>
 <meta name="description" content="Convert a video clip into a GIF for free, right in your browser. Trim the range, pick fps and size — no uploads, nothing leaves your device.">
 <link rel="canonical" href="https://bitcrunching.com/congify/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/congify/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/congify/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/congify/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/congify/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/congify/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/congify/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/congify/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/congify/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/congify/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/congify/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/congify/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/congify/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/congify/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/congify/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Congify – Free Video to GIF Converter – BC Tools">
@@ -58,7 +72,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=232">
+<link rel="stylesheet" href="/shared/site.css?v=272">
 <style>
 #page-gif::before{
   background:#22D3D0;
@@ -403,6 +417,28 @@
   font:inherit;
   cursor:text;
 }
+.gif-done-filename[hidden]{ display:none; }
+@media (max-width:768px){
+  .gif-done-filename .gif-scrubber-filename-tag-text::before{ content:"GIF:"; }
+}
+.gif-results-header-btns .gif-done-filename{
+  margin-top:0;
+  min-width:0;
+}
+.gif-results-header-btns .gif-scrubber-filename{
+  max-width:150px;
+}
+.gif-done-filename{
+  margin-top:14px;
+  justify-content:flex-start;
+}
+.gif-done-filename .gif-scrubber-filename-group{
+  flex-wrap:nowrap;
+}
+.gif-scrubber-filename-ext{
+  flex-shrink:0;
+  opacity:.7;
+}
 .gif-scrubber-filename:hover{
   border-bottom-color:var(--border-strong);
 }
@@ -480,7 +516,8 @@
   margin-top:20px;
 }
 .gif-results-header span{
-  font-size:13px;
+  font-family:var(--bc-mono);
+  font-size:12px;
   font-weight:700;
   color:var(--text);
 }
@@ -525,6 +562,8 @@
   font-weight:700;
   white-space:nowrap;
 }
+#gifSizeStatus{ margin-top:0; min-height:0; }
+#gifSizeStatus:empty{ display:none; }
 #gifResults[hidden]{
   display:none;
 }
@@ -1307,8 +1346,7 @@
                 <div class="nav-share-wrap">    
       <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
         <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 3L9.5 14.5"></path>
-          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
         </svg>
       </button>
       <div class="nav-share-menu" id="navShareMenu">
@@ -1378,9 +1416,9 @@
           </svg>
         </button>
         <button type="button" class="gif-remove-btn bc-remove-btn bc-canvas-remove-btn" id="gifRemoveBtn" aria-label="Remove video">×</button>
-        <div class="gif-preview-frame" id="gifPreviewFrame">
+        <div class="gif-preview-frame bc-hover-reveal-host" id="gifPreviewFrame">
           <canvas id="gifPreviewCanvas"></canvas>
-          <button type="button" class="gif-crop-corner-btn" id="gifCropBtn" title="Aspect ratio">
+          <button type="button" class="gif-crop-corner-btn bc-hover-reveal" id="gifCropBtn" title="Aspect ratio">
             <span class="gif-crop-free-icon" id="gifCropFreeIcon" aria-hidden="true">
               <span class="gif-crop-free-corner gif-crop-free-corner-tl"></span>
               <span class="gif-crop-free-corner gif-crop-free-corner-tr"></span>
@@ -1389,8 +1427,8 @@
               <span class="gif-crop-free-icon-number" id="gifCropFreeIconNumber">0</span>
             </span>
           </button>
-          <button type="button" class="gif-preview-play-btn" id="gifPreviewPlayBtn" aria-label="Play preview" title="Play/pauze (space)">▶</button>
-          <div class="gif-resize-handle bc-resize-handle" id="gifResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></div>
+          <button type="button" class="gif-preview-play-btn bc-hover-reveal" id="gifPreviewPlayBtn" aria-label="Play preview" title="Play/pauze (space)">▶</button>
+          <div class="gif-resize-handle bc-resize-handle bc-hover-reveal" id="gifResizeHandle" role="slider" aria-label="Preview size" tabindex="0"></div>
         </div>
       </div>
 
@@ -1433,9 +1471,14 @@
             </button>
             <div class="bc-dropdown-menu" id="gifCaptionFontMenu" role="listbox" hidden>
               <button type="button" class="bc-dropdown-option" data-font="Arial, sans-serif" data-label="Arial" style="font-family:Arial, sans-serif;" role="option" aria-selected="false">Arial</button>
-              <button type="button" class="bc-dropdown-option" data-font="Impact, sans-serif" data-label="Impact" style="font-family:Impact, sans-serif;" role="option" aria-selected="false">Impact</button>
               <button type="button" class="bc-dropdown-option" data-font="'Times New Roman', serif" data-label="Times" style="font-family:'Times New Roman', serif;" role="option" aria-selected="false">Times</button>
-              <button type="button" class="bc-dropdown-option" data-font="'Comic Sans MS', cursive" data-label="Comic Sans" style="font-family:'Comic Sans MS', cursive;" role="option" aria-selected="false">Comic Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="'Courier New', monospace" data-label="Courier" style="font-family:'Courier New', monospace;" role="option" aria-selected="false">Courier</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Roboto', sans-serif" data-label="Roboto" style="font-family:'BC Roboto', sans-serif;" role="option" aria-selected="false">Roboto</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Open Sans', sans-serif" data-label="Open Sans" style="font-family:'BC Open Sans', sans-serif;" role="option" aria-selected="false">Open Sans</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Comic Neue', cursive" data-label="Comic Neue" style="font-family:'BC Comic Neue', cursive;" role="option" aria-selected="false">Comic Neue</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Anton', Impact, sans-serif" data-label="Anton" style="font-family:'BC Anton', Impact, sans-serif;" role="option" aria-selected="false">Anton</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Caveat', cursive" data-label="Caveat" style="font-family:'BC Caveat', cursive;" role="option" aria-selected="false">Caveat</button>
+              <button type="button" class="bc-dropdown-option" data-font="'BC Playfair Display', serif" data-label="Playfair" style="font-family:'BC Playfair Display', serif;" role="option" aria-selected="false">Playfair</button>
             </div>
           </div>
         </div>
@@ -1549,14 +1592,21 @@
       </div>
     </div>
 
+    <div class="tool-results" id="gifResults"></div>
     <div class="gif-results-header" id="gifResultsHeader" hidden>
-      <span><span class="nav-terminal-prompt">&gt;</span> Result</span>
+      <span><span class="nav-terminal-prompt">&gt;</span> <span id="gifResultsLabel">Result</span></span>
       <div class="gif-results-header-btns">
         <button type="button" class="gif-results-toggle gif-results-download" id="gifResultsDownloadBtn" aria-label="Download result" title="Download result">Download</button>
         <button type="button" class="gif-results-toggle" id="gifResultsToggle" aria-label="Minimize result" title="Minimize result" aria-expanded="true">&#8722;</button>
       </div>
     </div>
-    <div class="tool-results" id="gifResults"></div>
+    <div class="gif-scrubber-label gif-done-filename" id="gifResultNameRow" hidden>
+      <span class="gif-scrubber-filename-group">
+        <span class="gif-scrubber-filename-tag"><span class="nav-terminal-prompt">&gt;</span> <span class="gif-scrubber-filename-tag-text">GIF name:</span></span>
+        <input type="text" class="gif-scrubber-filename" id="gifDoneFileName" aria-label="Output file name" spellcheck="false">
+        <span class="gif-scrubber-filename-ext">.gif</span>
+      </span>
+    </div>
     <div class="gif-done-actions" id="gifDoneActions" hidden>
       <button type="button" class="tool-primary-btn tool-continue-btn" id="gifDoneContinueBtn">Continue working</button>
       <button type="button" class="tool-primary-btn" id="gifDownloadBtn" title="Download (D)">Download</button>
@@ -1570,18 +1620,108 @@
          happens once a video's already active, so moving it out here
          doesn't change anything about how those already look. -->
     <div class="tool-status" id="gifStatus"></div>
+    <div class="tool-status" id="gifSizeStatus"></div>
   </div>
 </div>
 
 <div class="content-section-convert" data-tool="gif">
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>New to making GIFs?</h3>
-    <p>A GIF isn't compressed video — it's a sequence of individual frames capped at 256 colors each, with no audio track at all, which is exactly why frame rate, trim length, and crop hit its file size so differently than they would for a video. Here's what's actually happening under the hood, and how to pick settings that hold up.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="gif" href="/golden-rules/?tool=gif">just one click away.</a></p>
+    <p>Did you know a GIF can be several times bigger than the same clip as a video? A few small settings decide it. No experience needed: these short guides explain them in plain words.</p>
+    <p class="gr-topics-lead">Jump to what you need:</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. The Complete Guide to GIFs: Frame Rate, Size, and Why They're Still Everywhere</span><span class="gr-toc-note">What a GIF really is, and how frame rate and crop change it.</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. Trimming: Picking the Right Clip Length</span><span class="gr-toc-note">How to trim, loop and speed up a clip.</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. Adding Captions That Actually Work</span><span class="gr-toc-note">Make captions easy to read over moving footage.</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. When to Use a GIF vs an MP4 vs a Static Image</span><span class="gr-toc-note">When a GIF beats a video, and when it does not.</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. Common GIF Mistakes (and How to Avoid Them)</span><span class="gr-toc-note">Four easy mistakes, and how to avoid them.</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="gif">
+<div class="gr-article" id="gr-article-1"><h3>1. The Complete Guide to GIFs: Frame Rate, Size, and Why They're Still Everywhere</h3>
+          <p>A GIF is a silent loop of still pictures. That is why it plays by itself almost everywhere.</p>
+          <p><strong>What a GIF is.</strong> A series of images, each with at most 256 colors, played in a loop. There is no sound, ever. A sunset with soft gradients can show banding.</p>
+          <p><strong>Frame rate.</strong> Congify offers 5, 10, 15 and 20 frames per second. Each frame is one more image in the file.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="Bar chart: number of frames in a 3-second clip at 5, 10, 15 and 20 frames per second.">
+              <div class="gr-bar-row"><span class="gr-bar-label">5 fps</span><span class="gr-bar-track"><span class="gr-bar" style="--v:25%"></span></span><span class="gr-bar-value">15</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">10 fps</span><span class="gr-bar-track"><span class="gr-bar" style="--v:50%"></span></span><span class="gr-bar-value">30</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">15 fps</span><span class="gr-bar-track"><span class="gr-bar" style="--v:75%"></span></span><span class="gr-bar-value">45</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">20 fps</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">60</span></div>
+            </div>
+            <figcaption>Frames in a 3-second clip, calculated as frames per second times 3. File size grows with the number of frames.</figcaption>
+          </figure>
+          <table class="info-table-gif">
+            <thead>
+              <tr><th>Frames per second</th><th>Use it for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Frames per second">5</td><td data-label="Use it for">Long or mostly still clips, like a text slide or a slow pan</td></tr>
+              <tr><td data-label="Frames per second">10</td><td data-label="Use it for">Most clips. A good default.</td></tr>
+              <tr><td data-label="Frames per second">15 to 20</td><td data-label="Use it for">Fast motion, like gameplay or quick gestures</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Crop.</strong> Full keeps the original shape. Square crops to a centered square, which most feeds show cleanly. Portrait suits stories. Whatever is cropped away is gone for good, so check the preview.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Trimming: Picking the Right Clip Length</h3>
+          <p>Trim tight. How much footage you use changes the file more than any setting.</p>
+          <p><strong>Shorter is better.</strong> A GIF loops, so a good one earns a second look. A 6-second trim is roughly twice the size of a 3-second trim at the same settings.</p>
+          <p><strong>Use the handles.</strong> Drag the two handles on the filmstrip to set the start and end. The preview updates live. Scrub slowly near both ends to cut dead air.</p>
+          <table class="info-table-gif">
+            <thead>
+              <tr><th>Direction</th><th>What it does</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Direction">Normal</td><td data-label="What it does">Plays once through, then jumps back to the start. It can look abrupt.</td></tr>
+              <tr><td data-label="Direction">Reverse</td><td data-label="What it does">Plays backward, mostly as an effect.</td></tr>
+              <tr><td data-label="Direction">Boomerang</td><td data-label="What it does">Plays forward, then backward, so there is no jump at the loop point.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Speed is not frame rate.</strong> Speed sets how fast the GIF plays, such as 0.5x for slow motion or 2x and 4x for faster. Frame rate sets how many frames exist. A slow GIF at a low frame rate looks choppy, so pair slow with a higher rate.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Adding Captions That Actually Work</h3>
+          <p>GIFs have no sound, so captions carry the message. Moving footage makes them harder to read.</p>
+          <table class="info-table-gif">
+            <thead>
+              <tr><th>Font</th><th>Best for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Font">Impact</td><td data-label="Best for">Memes. Clear at small sizes over busy backgrounds.</td></tr>
+              <tr><td data-label="Font">Arial</td><td data-label="Best for">A neutral, informational look.</td></tr>
+              <tr><td data-label="Font">Times, Comic Sans</td><td data-label="Best for">When the tone calls for it. Weaker over moving footage.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Use a stroke.</strong> An outline in a contrasting color keeps text readable as the footage behind it changes. Turn it on for any real motion.</p>
+          <p><strong>Pick strong contrast.</strong> White or yellow text with a black stroke works almost everywhere. Check the darkest and lightest moments of your clip.</p>
+          <p><strong>Place it anywhere.</strong> Drag a caption to move it and drag its corner to resize it. You can add several, but one well-placed line is often enough.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. When to Use a GIF vs an MP4 vs a Static Image</h3>
+          <p>A video clip does not always need to become a GIF.</p>
+          <table class="info-table-gif">
+            <thead>
+              <tr><th>Situation</th><th>Best choice</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situation">Chat apps and messaging</td><td data-label="Best choice">GIF</td><td data-label="Why">It plays on its own, with no tap.</td></tr>
+              <tr><td data-label="Situation">A longer clip with important audio</td><td data-label="Best choice">MP4</td><td data-label="Why">A GIF cannot carry sound.</td></tr>
+              <tr><td data-label="Situation">One moment, no motion needed</td><td data-label="Best choice">A still image</td><td data-label="Why">It is smaller and simpler.</td></tr>
+              <tr><td data-label="Situation">A tutorial or documentation step</td><td data-label="Best choice">GIF for short actions, video for long ones</td><td data-label="Why">A short loop repeats without a play button.</td></tr>
+              <tr><td data-label="Situation">A social feed post</td><td data-label="Best choice">Either</td><td data-label="Why">Check what the platform plays on its own.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Email and slides.</strong> Support for animated GIFs is uneven. Some apps show only the first frame. Test in the real place first.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Common GIF Mistakes (and How to Avoid Them)</h3>
+          <p><strong>Always using the highest frame rate.</strong> The smoothness gain over 10 is small for most clips, but the file gets much bigger.</p>
+          <p><strong>Trimming too loosely.</strong> Extra seconds of lead-in make the file bigger and the point weaker. Trim tighter than feels comfortable.</p>
+          <p><strong>Captions with no stroke.</strong> They can vanish once the background changes. Keep the stroke on.</p>
+          <p><strong>Ignoring size on mobile.</strong> The whole GIF has to arrive before it plays. If it is big, trim it shorter and lower the frame rate first.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -1603,16 +1743,21 @@
       <h3>Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/convert/">Convert</a>
+          <a class="footer-dash-link" href="/compress/">Compress</a>
+          <a class="footer-dash-link" href="/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <a class="footer-dash-link" href="/congify/">Congify</a>
+          <a class="footer-dash-link" href="/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/codify/">Codify</a>
+          <a class="footer-dash-link" href="/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -1629,8 +1774,8 @@
 </footer>
 </div>
 
-<script src="/shared/site.js?v=96" defer></script>
-<script src="/shared/report.js?v=22" defer></script>
-<script src="/congify/congify-tool.js?v=132" defer></script>
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/congify/congify-tool.js?v=146" defer></script>
 </body>
 </html>

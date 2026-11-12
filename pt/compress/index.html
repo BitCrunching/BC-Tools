@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compress – Compressor de imagens gratuito – BC Tools</title>
+<meta name="description" content="Comprima imagens para um arquivo menor de graça, direto no navegador. Escolha seu nível de qualidade: sem envios, nada sai do seu dispositivo.">
+<link rel="canonical" href="https://bitcrunching.com/pt/compress/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/compress/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/compress/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/compress/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/compress/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/compress/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/compress/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/compress/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/compress/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/compress/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/compress/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/compress/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
+<script src="/shared/i18n/pt.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Compress – Compressor de imagens gratuito – BC Tools">
+<meta property="og:description" content="Comprima imagens para um arquivo menor de graça, direto no navegador. Escolha seu nível de qualidade: sem envios, nada sai do seu dispositivo.">
+<meta property="og:url" content="https://bitcrunching.com/pt/compress/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Compress – Compressor de imagens gratuito – BC Tools">
+<meta name="twitter:description" content="Comprima imagens para um arquivo menor de graça, direto no navegador. Escolha seu nível de qualidade: sem envios, nada sai do seu dispositivo.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:#3FBFE8; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cpAfterDrop is revealed, so it never fights the level
+   buttons/Compress button once there's real content to interact with.
+   Same "jump" plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+.tool-app:has(#cpAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cpAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cpAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cpResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cpAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Convert gets for the same reason; found via a
+   1100×322.5px banner-size audit (every other tool renders exactly
+   that pre-load, Convert/Compress were 354.5 — 32px of dead space). */
+.tool-app:has(#cpAfterDrop[hidden]) #cpResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Compress's own
+   brand-tinted border on top, the one genuinely tool-specific piece.
+   Same color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cp-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#30c4ff;
+  color:#30c4ff;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIA";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shared/site.css's #page-compress .tool-controls{grid-template-columns:1fr;}
+   only fires inside the homepage SPA (id="page-compress" wrapper) — this
+   standalone page has no such ancestor, so .tool-controls was silently
+   falling back to the shared 2-column default (1fr 1.2fr) and squeezing
+   #cpControls' one child (the Compress button) into the first, narrower
+   column instead of stretching full width. Same local override Convert's
+   own index.html already carries for its own single-button #cvControls. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cp-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+
+/* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
+   .tool-format-select native dropdown (Convert's pattern, for a picker
+   with several options) — Compress never grew that select fallback, so
+   the three level buttons just vanished on mobile with nothing standing
+   in for them. Fixed by swapping them ≤768px for the site's existing
+   .option-change-btn (Congify's fps/crop/order pickers) instead of
+   stacking all 3 full-width — a plain Low/Medium/High pick reads better
+   as "tap to advance" on a phone than three repeated buttons. Desktop
+   never sees #cpLevelOptionChangeBtn at all (hidden by default below);
+   mobile hides the real three-button row instead and shows it. */
+.cp-level-option-change-btn{
+  display:none;
+}
+@media (max-width:768px){
+  .compress-level-buttons{
+    display:none;
+  }
+  .cp-level-option-change-btn{
+    display:flex;
+  }
+}
+
+#cpDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cpDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cpDrop.active{
+  border-color:#30c4ff;
+  background:rgba(48,196,255,.1);
+}
+.tool-app.active{
+  background:rgba(48,196,255,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cpAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. */
+.cp-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cpAfterDrop:not([hidden])) .cp-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cp-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cp-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cp-back-btn{ display:none; }
+  .tool-app:has(#cpAfterDrop:not([hidden])) .cp-back-btn{ display:flex; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Usamos cookies. Escolha abaixo quais categorias permitir. Veja nossa <a data-goto="cookies">Política de Cookies</a> para mais detalhes.</p>
+  <p class="cookie-banner-text-mobile">Escolha quais categorias permitir</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Alternar conteúdo das configurações de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIES_FERRAMENTAS_DEV:</span>
+    </span>
+    <span>Escolha quais categorias permitir</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mais sobre cookies necessários">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necessários (sempre ativos)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Esses mantêm o essencial funcionando: lembrar sua escolha de cookies, seu idioma e seu tema claro/escuro. Não podem ser desativados e, como tudo o mais neste site, nunca saem do seu dispositivo.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mais sobre cookies de análise">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Análise - Para privacidade total, mantenha desativado.</span><span class="cookie-label-docked">Análise (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Isso nos permite melhorar a experiência do usuário recebendo dados valiosos via (Google Analytics) sobre como os usuários navegam pelo nosso site. Se você deseja permanecer totalmente anônimo, recomendamos desativar esta opção.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mais sobre cookies de publicidade">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicidade (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Usado pelo Google AdSense para exibir anúncios. Atualmente desativado em todo o site enquanto aguardamos a aprovação do AdSense, então este botão ainda não tem efeito.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Aceitar tudo</button>
+    <button type="button" id="cookieBannerSave">Confirmar escolhas</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logotipo do BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Alternar entre modo claro e escuro" title="Alternar entre modo claro e escuro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Compartilhar" title="Compartilhar">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiar link</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mais opções de compartilhamento"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Clique para redefinir o guia da ferramenta" title="Clique para redefinir o guia da ferramenta">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Voltar ao Creative Hub" title="Voltar ao Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cpHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cpHelpClose" aria-label="Fechar e não mostrar novamente"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cpHelpToggle" aria-label="Minimizar" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cpHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpBack">&lt; VOLTAR</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cpHelpCloseMobile">FECHAR</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpNext">PRÓXIMO &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cpHelpBody">
+    <div class="engine-status-row">&gt; <span id="cpHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-compress" role="img" aria-label="Ícone do Compress"></span>
+        Compress
+      </div>
+      <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cp-back-btn bc-canvas-back-btn" id="cpBackBtn" data-goto="mainpage" aria-label="Voltar ao Creative Hub" title="Voltar ao Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="Remover todos os arquivos">×</button>
+
+    <div class="tool-drop" id="cpDrop"><span class="tool-drop-click-word">Clique</span><span class="tool-drop-or-drop"> ou solte </span><span class="tool-drop-rest">imagens</span></div>
+    <input type="file" id="cpInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/svg+xml,image/tiff,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>Continue de onde parou</button>
+
+    <div class="tool-after-drop" id="cpAfterDrop" hidden>
+      <div class="tool-controls" id="cpToolControls">
+        <div class="compress-level-buttons" id="cpLevelButtons">
+          <button type="button" class="tool-format-btn" data-quality="0.9" data-label="Baixo" data-level-key="low">
+            <span>Baixo</span><span class="level-sub">Melhor qualidade</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.6" data-label="Médio" data-level-key="medium">
+            <span>Médio</span><span class="level-sub">Equilibrado</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.4" data-label="Alto" data-level-key="high">
+            <span>Alto</span><span class="level-sub">Menor qualidade</span>
+          </button>
+        </div>
+        <button type="button" class="option-change-btn option-change-btn-lg cp-level-option-change-btn" id="cpLevelOptionChangeBtn" title="Nível de compressão">
+          <span class="option-change-btn-label" id="cpLevelOptionChangeBtnLabel">Baixo</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="selected-compression" id="cpSelectedCompression"></div>
+    </div>
+
+    <div class="tool-results" id="cpResults">
+      <button type="button" class="bc-add-tile" id="cpAddTile" aria-label="Adicionar imagens" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cpControls" hidden>
+      <div class="bc-segmented-toggle cp-download-mode-toggle" id="cpDownloadModeToggle" hidden>
+        <button type="button" id="cpDownloadModeSingleBtn" aria-pressed="false">Arquivos individuais</button>
+        <button type="button" id="cpDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cpCompressBtn" disabled title="Comprimir e baixar (D)" data-ga-event="tool_primary_action" data-ga-tool="compress">Comprimir e baixar</button>
+    </div>
+
+    <div class="tool-status" id="cpStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="compress">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>Não sabe qual nível usar?</h3>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Baixo</p>
+        <ul class="format-pick-sublist">
+          <li>Melhor qualidade possível, mudança quase invisível.</li>
+          <li>Impressão, arquivamento, trabalho profissional.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Médio</p>
+        <ul class="format-pick-sublist">
+          <li>Tamanho e qualidade equilibrados.</li>
+          <li>Web, e-mail, compartilhamento do dia a dia.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> Alto</p>
+        <ul class="format-pick-sublist">
+          <li>Menor tamanho de arquivo, perda mais visível.</li>
+          <li>Prévias, compartilhamento rápido, rascunhos.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>Novo em comprimir imagens?</h3>
+    <p>A compressão parece um único controle deslizante, mas há duas abordagens realmente diferentes fazendo a redução por baixo, e saber qual está em ação explica quase todo resultado que você verá. Veja o que realmente acontece quando você comprime e como escolher o nível certo.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Como a compressão de imagens realmente funciona</a></li>
+      <li><a href="#gr-article-2">2. Escolhendo o nível de compressão certo para o seu caso</a></li>
+      <li><a href="#gr-article-3">3. Compressão para a web: velocidade sem sacrificar a qualidade</a></li>
+      <li><a href="#gr-article-4">4. Quando comprimir e quando deixar uma imagem em paz</a></li>
+      <li><a href="#gr-article-5">5. Erros comuns de compressão (e como evitá-los)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Como a compressão de imagens realmente funciona</h3>
+          <p>A compressão parece um único controle deslizante ou um único clique, mas por baixo há duas abordagens realmente diferentes fazendo a redução, e entender qual está em ação explica quase todo resultado que você verá em uma ferramenta como esta.</p>
+
+          <h4>Compressão com perda: descartando o que você não vai notar</h4>
+          <p>A compressão com perda, do tipo que JPG e WEBP usam, funciona identificando informações em uma imagem que o olho humano percebe mal e descartando-as. Gradientes sutis de cor são simplificados, detalhes finos de alta frequência são suavizados, e o resultado é um arquivo que pode ter uma fração do tamanho original e ainda parecer correto para um observador casual. A contrapartida é que esse descarte é permanente: uma vez que esse detalhe se foi, nenhuma reabertura ou novo salvamento o traz de volta, e comprimir repetidamente um arquivo já comprimido com perda acumula a perda a cada vez.</p>
+          <p>A «razão de qualidade» ou nível de compressão que você escolhe controla o quão agressivamente isso acontece. Uma configuração de qualidade alta descarta muito pouco e reduz o arquivo modestamente; uma configuração de qualidade baixa descarta muito mais e o reduz drasticamente, ao custo de artefatos visíveis: blocos em torno de bordas, detalhes borrados, faixas de cor em céus e gradientes.</p>
+
+          <h4>Compressão sem perda: reempacotar sem perder nada</h4>
+          <p>A compressão sem perda, a abordagem do PNG, funciona de forma completamente diferente: encontra maneiras mais inteligentes e eficientes de armazenar exatamente os mesmos dados de pixel, do mesmo jeito que um arquivo ZIP encolhe um documento de texto sem mudar um único caractere dentro dele. Nada é descartado, então você pode comprimir e descomprimir quantas vezes quiser sem nenhuma mudança de qualidade. A contrapartida é que a redução de tamanho é muito menor, porque há um limite matemático rígido para o quanto você pode encolher dados sem descartar nada deles, especialmente em imagens fotográficas, cheias do tipo de detalhe fino e irregular que resiste ao reempacotamento sem perda.</p>
+
+          <h4>Por que nossa ferramenta Compress converte PNG em JPG</h4>
+          <p>É por isso que o Compress converte automaticamente fotos PNG em JPG durante a compressão: uma fotografia PNG submetida apenas à compressão sem perda quase não encolhe, mas a mesma foto com permissão para usar compressão com perda pode encolher drasticamente. Para uma fotografia de verdade, essa troca quase sempre vale a pena: a diferença de qualidade é invisível em tamanhos normais de visualização, e a diferença de tamanho de arquivo é enorme. É diferente para PNGs que não são fotografias (capturas de tela, logotipos, gráficos com transparência ou texto nítido), e é por isso que essa conversão é ajustada especificamente para conteúdo parecido com foto em vez de aplicada às cegas a todo PNG.</p>
+
+          <h4>O que realmente acontece quando você move o controle de qualidade</h4>
+          <p>Internamente, uma configuração de qualidade mais baixa aumenta o quão grosseiramente a informação de cor e detalhe da imagem é agrupada e simplificada antes de ser armazenada. Pense como arredondar números: arredondar «qualidade 95» quase não muda nada, enquanto arredondar «qualidade 40» muda muito mais, mas também ocupa bem menos espaço para ser descrito. Não existe um número «correto» universal: a configuração certa depende inteiramente do uso da imagem, que é exatamente o assunto do próximo artigo.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Escolhendo o nível de compressão certo para o seu caso</h3>
+          <p>Não existe uma única configuração de compressão «melhor»: o nível certo depende inteiramente de para onde a imagem vai e do que ela precisa suportar. Veja como pensar nisso por cenário.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destino</th><th>Nível recomendado</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destino">Redes sociais / aplicativos de mensagens</td><td data-label="Nível recomendado">Médio</td></tr>
+              <tr><td data-label="Destino">Seu próprio site ou loja online</td><td data-label="Nível recomendado">Médio a Alto</td></tr>
+              <tr><td data-label="Destino">Impressão ou entrega profissional ao cliente</td><td data-label="Nível recomendado">Baixo, ou pule a compressão</td></tr>
+              <tr><td data-label="Destino">Arquivamento de longo prazo</td><td data-label="Nível recomendado">Baixo</td></tr>
+              <tr><td data-label="Destino">Limites de tamanho de anexos de e-mail</td><td data-label="Nível recomendado">Alto</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Redes sociais e mensagens</h4>
+          <p>Plataformas como Instagram, WhatsApp e a maioria dos feeds sociais já recomprimem toda imagem que você envia, muitas vezes de forma agressiva, independentemente do que você mandar. Enviar um arquivo enorme e quase sem compressão aqui não ganha nada: a plataforma vai comprimi-lo de novo do lado dela de qualquer jeito. Um nível de compressão de moderado a alto mantém o envio rápido e o tamanho do arquivo original razoável sem abrir mão de qualidade que você veria de fato depois do processamento da própria plataforma.</p>
+
+          <h4>Sites e lojas online</h4>
+          <p>Para qualquer coisa que você hospede por conta própria (um site de portfólio, um blog, uma página de produto), o tamanho do arquivo afeta diretamente a rapidez de carregamento da página, o que afeta tanto a experiência do visitante quanto, para algo comercial, as taxas de conversão e o ranking em buscas. Aqui vale pender para uma compressão mais agressiva, já que a visualização na web raramente precisa de detalhe de nível de impressão, e uma página cheia de imagens enormes e não otimizadas é um dos motivos mais comuns de sites parecerem lentos.</p>
+
+          <h4>Impressão e uso profissional</h4>
+          <p>Este é o único lugar em que você quer ser conservador. A impressão revela detalhes e artefatos que uma tela simplesmente não mostra, já que é vista em resolução efetiva maior e muitas vezes em tamanho físico maior. Para qualquer coisa que vá para uma gráfica, uma submissão a galeria ou entrega profissional a cliente, use um nível leve de compressão ou pule a compressão para aquela cópia específica, e mantenha um arquivo mestre sem compressão ou levemente comprimido como sua fonte da verdade.</p>
+
+          <h4>Arquivamento e armazenamento de longo prazo</h4>
+          <p>Se o objetivo é guardar uma foto por anos (fotos de família, um arquivo, qualquer coisa que você possa querer rever em qualidade total mais tarde), evite compressão pesada com perda na sua única cópia. Uma vez descartado, o detalhe não pode ser recuperado, mesmo que um uso posterior acabe precisando dele. Uma abordagem razoável é manter uma cópia de arquivo de qualidade maior e gerar versões comprimidas separadamente, sob demanda, para o que cada uso específico realmente precisa.</p>
+
+          <h4>Anexos de e-mail e limites de tamanho de arquivo</h4>
+          <p>Muitos provedores de e-mail limitam o tamanho dos anexos, geralmente em torno de 25 MB no total. Se você está enviando várias fotos, um nível de compressão mais forte as deixa abaixo desse teto de forma confiável. É um dos poucos casos em que a restrição prática (cabe no e-mail ou não) importa mais do que a diferença visual entre os níveis de compressão, então não tenha medo de comprimir mais do que faria para outros usos.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compressão para a web: velocidade sem sacrificar a qualidade</h3>
+          <p>O peso das imagens é um dos maiores e mais corrigíveis fatores de lentidão de um site, e também um dos mais fáceis de errar em qualquer direção: pouca compressão e as páginas se arrastam, muita e as fotos ficam visivelmente degradadas. Veja como chegar ao meio-termo útil.</p>
+
+          <h4>Por que o tamanho da imagem importa tanto para a velocidade</h4>
+          <p>Na maioria das páginas com muito conteúdo, as imagens compõem a grande maioria do peso total da página, muito mais do que o HTML, CSS ou JavaScript juntos. O tempo de carregamento da página para um visitante, e a avaliação dos mecanismos de busca sobre ele, é afetado desproporcionalmente pelo peso das suas imagens, o que significa que comprimi-las corretamente é muitas vezes a mudança de desempenho de maior alavancagem disponível, à frente da maioria das otimizações no nível do código.</p>
+
+          <h4>Ajustando a compressão a como a imagem será realmente exibida</h4>
+          <p>Uma imagem exibida com 400 pixels de largura em uma página não precisa ser entregue como um arquivo original de câmera de 4000 pixels levemente comprimido: ela precisa de muito menos detalhe que isso para parecer nítida no tamanho real de exibição. Antes de se preocupar com o nível de compressão, certifique-se de que as dimensões da imagem correspondam mais ou menos ao tamanho em que ela realmente aparecerá; comprimir uma imagem superdimensionada é tratar o sintoma deixando a causa maior (resolução desnecessária).</p>
+
+          <h4>Escolhendo um formato para a web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>O ponto de retornos decrescentes</h4>
+          <p>A compressão não escala linearmente com a qualidade visual perdida: o primeiro trecho de compressão a partir de um original sem compressão remove uma enorme quantidade de tamanho de arquivo com quase nenhuma mudança visível, enquanto empurrar a compressão cada vez mais para o território agressivo remove progressivamente menos tamanho com progressivamente mais dano visível. Na prática, a maioria das fotos atinge um ponto ideal bem antes da «compressão máxima», e vale conferir uma imagem comprimida no tamanho real de exibição em vez de presumir que mais compressão é sempre melhor para a velocidade.</p>
+
+          <h4>Processando em lote as imagens de um site inteiro</h4>
+          <p>Se você está otimizando muitas imagens de uma vez (um catálogo de produtos, uma galeria, o acervo antigo de imagens de posts de um blog), aplique um nível de compressão consistente a tipos de conteúdo semelhantes em vez de avaliar cada uma no olho. Isso mantém a qualidade visual consistente no site e torna muito mais rápido refazer o processo depois se você mudar de ideia sobre a configuração, já que não está decidindo caso a caso de novo.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Quando comprimir e quando deixar uma imagem em paz</h3>
+          <p>A compressão é uma ferramenta realmente útil, mas não é automaticamente a jogada certa para toda imagem em toda situação: saber quando pulá-la é tão importante quanto saber usá-la.</p>
+
+          <h4>Sinais de que uma imagem é boa candidata à compressão</h4>
+          <p>Fotos originais grandes de câmera destinadas à web, e-mail ou mensagens quase sempre se beneficiam: elas normalmente trazem muito mais resolução e peso de arquivo do que o destino precisa. Qualquer arquivo que esbarre em um limite rígido (um teto de anexo de e-mail, uma restrição de envio, o limite de tamanho de um formulário) também é um candidato óbvio, já que a compressão costuma ser a forma mais rápida de ficar abaixo do limite sem recortar nem redimensionar conteúdo da imagem.</p>
+
+          <h4>Sinais de que você deve deixar uma imagem em paz (ou comprimir muito levemente)</h4>
+          <p>Gráficos com texto, linhas nítidas ou cores chapadas (capturas de tela, diagramas, logotipos, documentos digitalizados) tendem a comprimir mal com métodos com perda, pois os artefatos de compressão aparecem como desfoque e franjas de cor exatamente onde o olho mais nota: em torno de bordas e texto. Esses geralmente são mais bem atendidos pela abordagem sem perda do PNG, ou pulando a compressão em vez de lutar contra os artefatos.</p>
+          <p>Qualquer coisa que já tenha sido comprimida uma vez não deve ser recomprimida casualmente «por garantia». Recomprimir um JPG que já foi comprimido com perda não o encolhe de modo significativo na maioria dos casos, e pode introduzir uma segunda rodada de perda de qualidade sobre a primeira, empilhando artefatos em vez de removê-los.</p>
+
+          <h4>O hábito da cópia mestre</h4>
+          <p>Uma regra simples que evita a maioria dos arrependimentos: mantenha uma cópia mestre de alta qualidade (ou sem compressão) de tudo que possa reutilizar e gere versões comprimidas a partir dessa mestre para cada uso específico, em vez de sobrescrever a única cópia com uma comprimida. Armazenamento é barato; recriar um original perdido não é possível depois que ele se vai.</p>
+
+          <h4>Julgar pelo destino, não por hábito</h4>
+          <p>A pergunta certa não é «devo comprimir esta imagem» em abstrato, mas «do que o lugar para onde esta imagem vai realmente precisa». Uma foto destinada a uma mensagem de texto precisa de quase nada do detalhe original; uma foto destinada a um grande banner impresso precisa de quase tudo. Deixe o destino definir o padrão, em vez de aplicar por hábito o mesmo nível de compressão a tudo que passa pelo seu fluxo de trabalho.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Erros comuns de compressão (e como evitá-los)</h3>
+          <p>A maioria das reclamações sobre compressão remonta a um pequeno conjunto de erros repetíveis. Veja o que observar.</p>
+
+          <h4>Comprimir o mesmo arquivo repetidamente</h4>
+          <p>Cada passada de compressão com perda descarta um pouco mais de detalhe, e essa perda se acumula a cada passada adicional: um arquivo que foi comprimido, reaberto, editado e recomprimido várias vezes ficará visivelmente pior do que um comprimido uma vez a partir de um original limpo. Sempre comprima a partir do original ou de uma mestre sem compressão, não de uma cópia já comprimida.</p>
+
+          <h4>Sobrescrever sua única cópia</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Comprimir gráficos como se fossem fotos</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Escolher um nível de compressão sem conferir o resultado</h4>
+          <p>É tentador escolher a «compressão máxima» para ter o menor arquivo possível e seguir em frente, mas essa configuração muitas vezes introduz artefatos obviamente visíveis quando você olha a saída no tamanho real. Uma verificação rápida do resultado comprimido, no tamanho em que será realmente visto, leva segundos e evita enviar ou publicar algo que parece visivelmente pior do que o pretendido.</p>
+
+          <h4>Ignorar a compressão própria do destino</h4>
+          <p>Enviar um arquivo enorme e quase sem compressão para uma plataforma que vai comprimi-lo de qualquer jeito (a maioria das redes sociais e aplicativos de mensagens) desperdiça tempo de envio e banda sem nenhum benefício visual, pois o próprio processamento da plataforma determina boa parte da qualidade final, não importa o que você enviou. Ajuste seu esforço de compressão ao que o destino realmente preservará, não à suposição de que «mais qualidade original na entrada significa mais qualidade final na saída».</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Empresa</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Sobre nós"><span class="footer-link-fun">Nosso universo</span><span class="footer-link-plain">Sobre nós</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Já respondido</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Termos de Uso"><span class="footer-link-fun">Manual galáctico</span><span class="footer-link-plain">Termos de Uso</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Política de Privacidade"><span class="footer-link-fun">Protocolo alienígena de privacidade</span><span class="footer-link-plain">Política de Privacidade</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Política de Cookies"><span class="footer-link-fun">Registro de cookies</span><span class="footer-link-plain">Política de Cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primeiros passos com</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/pt/convert/">Convert</a>
+          <a class="footer-dash-link" href="/pt/compress/">Compress</a>
+          <a class="footer-dash-link" href="/pt/combine/">Combine</a>
+          <a class="footer-dash-link" href="/pt/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/pt/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/pt/congify/">Congify</a>
+          <a class="footer-dash-link" href="/pt/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/pt/codify/">Codify</a>
+          <a class="footer-dash-link" href="/pt/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/pt/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/pt/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Entre em contato</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Entre no nosso Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/compress/compress-tool.js?v=53" defer></script>
+</body>
+</html>

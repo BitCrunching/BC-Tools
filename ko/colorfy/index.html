@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colorfy – 어떤 이미지에서든 색상 선택 – BC Tools</title>
+<meta name="description" content="이미지 속 모든 픽셀의 정확한 색상을 브라우저에서 무료로 찾아보세요. 이미지를 놓고 피커를 드래그하면 HEX와 RGB 코드를 바로 얻을 수 있습니다.">
+<link rel="canonical" href="https://bitcrunching.com/ko/colorfy/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/colorfy/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/colorfy/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/colorfy/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/colorfy/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/colorfy/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/colorfy/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/colorfy/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/colorfy/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/colorfy/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/colorfy/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/colorfy/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/colorfy/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/colorfy/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/colorfy/">
+<script src="/shared/i18n/ko.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Colorfy – 어떤 이미지에서든 색상 선택 – BC Tools">
+<meta property="og:description" content="이미지 속 모든 픽셀의 정확한 색상을 브라우저에서 무료로 찾아보세요. 이미지를 놓고 피커를 드래그하면 HEX와 RGB 코드를 바로 얻을 수 있습니다.">
+<meta property="og:url" content="https://bitcrunching.com/ko/colorfy/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Colorfy – 어떤 이미지에서든 색상 선택 – BC Tools">
+<meta name="twitter:description" content="이미지 속 모든 픽셀의 정확한 색상을 브라우저에서 무료로 찾아보세요. 이미지를 놓고 피커를 드래그하면 HEX와 RGB 코드를 바로 얻을 수 있습니다.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+
+.help-banner[hidden]{ display:none; }
+
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+
+.tool-after-drop[hidden]{ display:none; }
+
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"가이드";
+    font-size:15px;
+  }
+}
+
+#page-colorfy::before{
+  background:#FF8A4C;
+}
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cyAfterDrop is revealed, so it never fights the picker
+   itself once there's real content to interact with. Same "jump" plays
+   while a file is being dragged over the banner (.active class,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
+   confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
+.tool-app:has(#cyAfterDrop[hidden]):hover,
+.tool-app:has(#cyAfterDrop[hidden]).active{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+
+.tool-app:has(#cyAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+.tool-app.wobble .tool-logo .icon-colorfy{ animation:icon-wobble .5s ease; }
+
+/* Same as Convert's #cvDrop / Coudio's #cdDrop — before an image is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it. Scoped to :not(.tool-drop-revealed) so it doesn't
+   cancel the shared .tool-drop-addpill's own dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#cyDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+
+#cyDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+
+#cyDrop.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cyDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cyDrop.tool-drop-revealed.active{
+  border-color:#FF8A4C;
+  background:rgba(255,140,66,.1);
+}
+
+.tool-app.active{
+  background:rgba(255,140,66,.08);
+}
+
+/* No separate dark workspace panel — the uploaded image is the
+   workspace, so .colorfy-frame (holding the canvas, pickers, and the
+   resize/remove/add controls) sits directly in the banner instead of
+   inside an extra padded wrapper. Every picker ring is still clamped
+   to this frame's own bounds in JS, so dragging one never lands
+   somewhere that isn't actually part of the image. */
+.colorfy-frame{
+  position:relative;
+  width:650px;
+  max-width:100%;
+  margin:16px auto 0;
+  border-radius:12px;
+  background:repeating-conic-gradient(#3a4258 0% 25%, #2b3247 0% 50%) 0 0 / 20px 20px;
+  border:1px solid var(--border-strong);
+  line-height:0;
+}
+
+/* Rounds the canvas's own corners to match the frame instead of
+   relying on overflow:hidden on the frame — overflow:hidden would
+   also clip the resize handle and picker ring, both of which are
+   meant to hang slightly outside the frame's edge. */
+.colorfy-frame canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:12px;
+  cursor:crosshair;
+}
+
+/* Same "×" remove button as Congify's .gif-remove-btn — clears the
+   loaded image and brings back the drop zone, rather than requiring a
+   second file pick to replace what's loaded. */
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in .colorfy-frame), shown via the same :has() toggle
+   those two use instead of relying on a hidden ancestor. */
+.colorfy-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+
+.tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-remove-btn{ display:flex; }
+
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .colorfy-remove-btn/.bc-remove-btn above. Sits just to the
+   left of Remove, same corner, shown together with it. */
+.colorfy-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+
+@media (max-width:768px){
+  .colorfy-back-btn{ display:none; }
+  .tool-app:has(#cyAfterDrop:not([hidden])) .colorfy-back-btn{ display:flex; }
+}
+
+/* "+" adds another picker ring (up to 4 total) — sits in its own row
+   just below the preview rather than floating over the image corner,
+   so it reads as a control for the picker(s), not part of the image
+   itself. Disabled (not hidden) once 4 pickers are already placed, so
+   it's clear why it stopped working rather than the control just
+   vanishing. */
+.colorfy-add-row{
+  display:flex;
+  justify-content:center;
+  margin-top:12px;
+}
+
+/* Collapses the row's own margin along with the button once all 4
+   pickers are placed, instead of leaving an empty gap behind. */
+.colorfy-add-row:has(#cyAddBtn[hidden]){
+  display:none;
+}
+
+.colorfy-add-btn{
+  width:28px;
+  height:28px;
+  padding:0;
+  border-radius:50%;
+  font-weight:900;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.colorfy-add-btn:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+/* Same filled-circle-with-white-border look as Congify/Codify's drag
+   handles, just with a see-through center (not a solid fill) so the
+   ring itself doesn't obscure the exact pixel it's marking. */
+.colorfy-picker{
+  position:absolute;
+  width:26px;
+  height:26px;
+  margin:-13px 0 0 -13px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-sizing:border-box;
+  cursor:grab;
+  touch-action:none;
+  z-index:4;
+}
+
+.colorfy-picker::before{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,.5);
+}
+
+.colorfy-picker:active{
+  cursor:grabbing;
+}
+
+/* Numbers each ring so it's obvious which result row below belongs to
+   which picker once there's more than one on the image. */
+.colorfy-picker-num{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+  text-shadow:0 0 3px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.9);
+  pointer-events:none;
+}
+
+/* Drag-to-resize handle on the preview's corner — circle geometry is
+   the shared .bc-resize-handle (shared/site.css). Lets the preview
+   grow up to 800px for a closer look at fine detail. Purely a
+   display-size change: the canvas keeps sampling at the image's real
+   resolution regardless of how large or small it's rendered. */
+.colorfy-resize-handle{
+  right:-10px;
+  bottom:-10px;
+  cursor:nwse-resize;
+}
+
+/* content is needed here even though the actual icon (background) now
+   comes from the shared .bc-resize-handle::before rule — a ::before
+   with no content declared of its own doesn't generate at all, shared
+   rule or not. Only width/height stay local, since this one's icon is
+   deliberately smaller than Congify's/Codify's 18px default. */
+.colorfy-resize-handle::before{
+  content:"";
+  width:13px;
+  height:13px;
+}
+
+/* The format dropdown applies to every picker's code at once (one
+   consistent notation across the whole list, not a per-row choice),
+   so it sits on its own above the list rather than repeated per row. */
+.colorfy-format-row{
+  display:flex;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.colorfy-picker-list{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+}
+
+.colorfy-picker-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.colorfy-swatch{
+  position:relative;
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  flex-shrink:0;
+}
+
+/* Mirrors .colorfy-picker-num's ring on the image (same numbering, same
+   look) so it's obvious at a glance which row below belongs to which
+   marker on the preview. */
+.colorfy-swatch-num{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#1d2436;
+  border:2px solid #fff;
+  box-sizing:border-box;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:10px;
+  font-weight:700;
+  color:#fff;
+}
+
+/* Flips light/dark same as every other on-banner control — see
+   "On-banner controls flip with theme" in shared/site.css's header
+   comment. */
+.colorfy-code-btn{
+  height:36px;
+  min-width:170px;
+  padding:0 16px;
+  border-radius:10px;
+  font-family:"SF Mono", Consolas, Menlo, monospace;
+  font-size:14px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+}
+
+/* No .copied color change on this button — removed on request (the
+   green border/text accent read as unwanted). The shared .bc-terminal-
+   chip confirmation above the saved-colors panel is the only "copied"
+   feedback now. */
+/* Only shown on pickers beyond the first — there's always at least
+   one active picker, so it can't be removed down to zero. */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only size stays here (28x28 already matches its
+   own default, kept explicit for clarity). */
+.colorfy-picker-remove-btn{
+  width:28px;
+  height:28px;
+  flex-shrink:0;
+  font-size:16px;
+}
+
+/* Saves this one row's color into the palette below — unlike the
+   picker rows themselves, a saved color survives loading a new image
+   or reloading the page (localStorage), since it's an explicit "keep
+   this one" action rather than part of the current session. */
+.colorfy-save-btn{
+  height:36px;
+  padding:0 14px;
+  flex-shrink:0;
+  border-radius:10px;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.colorfy-save-btn:disabled{
+  opacity:.5;
+  cursor:default;
+}
+
+/* ===== Saved palette — sits outside .tool-after-drop (a sibling, not
+   a child) so it stays visible even after removing the current image
+   or before one's ever been loaded, since saved colors are meant to
+   outlive any one file. Hidden only when genuinely empty. */
+.colorfy-palette[hidden]{ display:none; }
+
+.colorfy-palette{
+  margin-top:24px;
+}
+
+/* Row-gap widened to 34px (column-gap stays 10px) — the remove btn now
+   floats above each chip (see .colorfy-palette-remove-btn) instead of
+   overlapping its corner, so a wrapped row needs real clearance from
+   the row above it or the buttons would sit on top of those chips.
+   The extra top margin gives the first row clearance from the panel's
+   own top edge.
+   Left-aligned (not centered) on purpose — removing a chip from a
+   centered row re-centers everything else too, so a chip a visitor was
+   about to click next silently moves out from under their cursor.
+   Left-anchored, every chip after the removed one just slides back by
+   one slot in reading order, so removing several in a row (click,
+   click, click on the same spot) behaves the way visitors expect. */
+.colorfy-palette-list{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  gap:34px 10px;
+  margin-top:44px;
+}
+
+.colorfy-palette-chip{
+  position:relative;
+  width:40px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+/* A "strip" rather than the old square chip — taller so a saved color
+   reads more like a real paint sample than a tiny dot, still narrow
+   enough that a full row of 4 pickers' worth of saves stays compact. */
+.colorfy-palette-swatch{
+  width:100%;
+  height:80px;
+  flex-shrink:0;
+  padding:0;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.4);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+.colorfy-palette-swatch:hover{
+  transform:scale(1.05);
+}
+
+/* The optional short name/tag a visitor can give a saved color
+   (double-click to rename, max 25 chars) — kept in the swatch's own
+   title tooltip only, not shown as a visible label under the chip
+   (requested directly). This input is the only visible UI for it,
+   appearing in place for the moment of renaming. */
+.colorfy-palette-name-input{
+  width:100%;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  text-align:center;
+  color:var(--text);
+  background:rgba(255,255,255,.35);
+  border:1px solid rgba(0,0,0,.4);
+  border-radius:4px;
+  padding:2px 4px;
+}
+
+html[data-theme="dark"] .colorfy-palette-name-input{
+  background:rgba(0,0,0,.25);
+  border-color:rgba(0,0,0,.4);
+}
+
+/* No .copied outline on a saved swatch — removed on request (the green
+   accent read as unwanted). */
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css,
+   the "beta remove btn" — translucent white/black flip, not
+   .bc-remove-btn's bold red) — only size/position stay here. */
+.colorfy-palette-remove-btn{
+  position:absolute;
+  top:-32px;
+  left:50%;
+  right:auto;
+  transform:translateX(-50%);
+  width:25px;
+  height:25px;
+  font-size:15px;
+}
+
+/* Format picker — lets the code button below show HEX, RGB, HSB, or
+   HSL instead of always showing one fixed format. Uses the shared
+   .bc-dropdown component (shared/site.css). .colorfy-format-row
+   centers it with no other width constraint, so it needs an explicit
+   width here rather than relying on the shared trigger's width:100%
+   against an otherwise auto-sized flex item (that circular case is
+   the same trap documented in CLAUDE.md's resizable-frame notes —
+   always give it a real anchor). */
+.colorfy-format-row .bc-dropdown{
+  width:140px;
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="클릭하여 도구 가이드 초기화" title="클릭하여 도구 가이드 초기화">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cyHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cyHelpClose" aria-label="닫고 다시 표시하지 않기"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cyHelpToggle" aria-label="최소화" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cyHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cyHelpBack">&lt; 뒤로</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cyHelpCloseMobile">닫기</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cyHelpNext">다음 &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cyHelpBody">
+    <div class="engine-status-row">&gt; <span id="cyHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-colorfy">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-colorfy" role="img" aria-label="Colorfy 아이콘"></span>
+        Colorfy
+      </div>
+      <span class="privacy-check-badge" id="cyPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="colorfy-back-btn bc-canvas-back-btn" id="cyBackBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="colorfy-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cyRemoveBtn" aria-label="이미지 삭제">×</button>
+
+    <div class="tool-drop tool-drop-addpill" id="cyDrop"><span class="tool-drop-click-word">클릭</span><span class="tool-drop-or-drop"> 또는 놓기 </span><span class="tool-drop-rest">이미지</span></div>
+    <input type="file" id="cyInput" accept="image/*,.heic,.heif" hidden>
+
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cyContinueBtn" hidden>중단한 곳에서 이어서 하기</button>
+
+    <div class="tool-after-drop" id="cyAfterDrop" hidden>
+      <div class="colorfy-frame bc-hover-reveal-host" id="cyFrame">
+        <canvas id="cyCanvas"></canvas>
+        <span class="colorfy-resize-handle bc-resize-handle bc-hover-reveal" id="cyResizeHandle" role="slider" aria-label="미리보기 크기" tabindex="0"></span>
+      </div>
+
+      <div class="colorfy-format-row">
+        <div class="bc-dropdown" id="cyFormatDropdown">
+          <button type="button" class="bc-dropdown-trigger" id="cyFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="bc-dropdown-trigger-label" id="cyFormatTriggerLabel">HEX</span>
+            <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="bc-dropdown-menu" id="cyFormatMenu" role="listbox" hidden>
+            <button type="button" class="bc-dropdown-option active" data-format="hex" data-label="HEX" role="option" aria-selected="true">HEX</button>
+            <button type="button" class="bc-dropdown-option" data-format="rgb" data-label="RGB" role="option" aria-selected="false">RGB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsb" data-label="HSB" role="option" aria-selected="false">HSB</button>
+            <button type="button" class="bc-dropdown-option" data-format="hsl" data-label="HSL" role="option" aria-selected="false">HSL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="colorfy-picker-list" id="cyPickerList"></div>
+
+      <div class="colorfy-add-row">
+        <button type="button" class="colorfy-add-btn" id="cyAddBtn" aria-label="피커 추가">+</button>
+      </div>
+    </div>
+
+    <div class="tool-status" id="cyStatus"></div>
+
+    <div class="colorfy-palette" id="cyPalette" hidden>
+      <div class="colorfy-palette-list" id="cyPaletteList"></div>
+      <div class="tool-status" id="cyPaletteStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="colorfy">
+  <div class="content-section-article-wrap">
+    <h3>이미지에서 색상을 고르는 게 처음이신가요?</h3>
+    <p>이미지를 놓으면 Colorfy가 이미 서로 다른 두 곳을 샘플링하는 피커 두 개로 시작합니다 — 어느 링이든 이미지 위 원하는 곳으로 드래그하거나(또는 그냥 한 곳을 클릭해) 다른 곳을 샘플링하면 아래 코드가 실시간으로 바뀝니다. +를 누르면 피커를 최대 4개까지 한꺼번에 추가할 수 있고, 각각 아래에 자기 행이 생깁니다. 드롭다운에서 HEX, RGB, HSB, HSL을 전환하고, 코드를 클릭하면 바로 클립보드에 복사됩니다.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. HEX, RGB, HSB, HSL: 각 색상 코드의 실제 의미</a></li>
+      <li><a href="#gr-article-2">2. 스크린샷, 사진, 디자인 레퍼런스에서 색 가져오기</a></li>
+      <li><a href="#gr-article-3">3. 작업하면서 재사용할 팔레트 만들기</a></li>
+      <li><a href="#gr-article-4">4. 여러 색 추출기로 색을 나란히 비교하기</a></li>
+      <li><a href="#gr-article-5">5. 색 고르기에서 흔한 실수(와 피하는 방법)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="colorfy">
+<div class="gr-article" id="gr-article-1"><h3>1. HEX, RGB, HSB, HSL: 각 색상 코드의 실제 의미</h3>
+          <p>화면의 모든 색은 같은 빨강/초록/파랑 빛의 값으로 귀결됩니다. HEX, RGB, HSB, HSL은 같은 색을 적는 네 가지 서로 다른 방법일 뿐이며, 각각 다른 종류의 작업에 알맞습니다.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>형식</th><th>가장 적합한 용도</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="형식">HEX (<code>#FF8A4C</code>)</td><td data-label="가장 적합한 용도">CSS, 디자인 도구, 간결한 단일 코드가 필요한 모든 곳</td></tr>
+              <tr><td data-label="형식">RGB (<code>rgb(255, 138, 76)</code>)</td><td data-label="가장 적합한 용도">별도의 숫자로 색을 만드는 코드, 또는 채널에 대한 블렌딩/연산</td></tr>
+              <tr><td data-label="형식">HSB (<code>hsb(20°, 70%, 100%)</code>)</td><td data-label="가장 적합한 용도">같은 색조를 유지하면서 색의 밝기나 채도 조정하기</td></tr>
+              <tr><td data-label="형식">HSL (<code>hsl(20°, 100%, 65%)</code>)</td><td data-label="가장 적합한 용도">호버/활성 상태를 위해 색을 예측 가능하게 밝게 또는 어둡게 하기</td></tr>
+            </tbody>
+          </table>
+
+          <h4>HEX: 간결하고 어디서나 지원되는 기본값</h4>
+          <p>HEX 코드는 빨강, 초록, 파랑을 여섯 자리 문자열 하나에 담은 것으로, 거의 모든 디자인 도구, CSS 스타일시트, 이미지 편집기가 기본으로 기대하는 형식입니다. 간결하고 붙여넣기 쉽지만, 그 안의 숫자(16진수 쌍)는 일반 10진수처럼 한눈에 읽기는 어렵습니다.</p>
+
+          <h4>RGB: 같은 값을 풀어 쓴 것</h4>
+          <p>RGB는 HEX가 인코딩하는 같은 세 채널을 묶인 16진수 쌍 대신 0–255의 세 일반 숫자로 풀어 쓴 것입니다. 한 채널을 손으로 조정하거나 별도의 빨강/초록/파랑 입력으로 색을 만드는 코드를 작성할 때 생각하기 더 쉽습니다.</p>
+
+          <h4>HSB와 HSL: 색이 실제로 어떻게 느껴지는지를 바탕으로 설계됨</h4>
+          <p>둘 다 색을 색조(색 자체, 색상환의 위치)와 얼마나 선명한지 또는 밝은지를 나타내는 두 가지 다른 차원으로 나눕니다. HSB는 채도와 명도를, HSL은 채도와 밝기를 사용합니다. “같은 색인데 더 어둡게”나 “같은 색인데 더 칙칙하게”를 원할 때는 둘 다 훨씬 생각하기 쉽습니다. 색조는 그대로 두고 다른 숫자만 조정하면 되며, 세 개의 RGB 채널을 일일이 다시 계산할 필요가 없습니다.</p>
+
+          <h4>Colorfy에서 형식 선택하기</h4>
+          <p>Colorfy의 형식 드롭다운은 모든 추출기와 저장된 색의 표시에 한 번에 적용됩니다. 붙여넣을 곳에 맞는 것(CSS는 HEX, 색조를 손으로 미세 조정할 때는 HSB/HSL)으로 바꾸세요. 복사한 코드를 나중에 직접 변환할 필요가 없습니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 스크린샷, 사진, 디자인 레퍼런스에서 색 가져오기</h3>
+          <p>브랜드의 정확한 파란색, 무드보드 사진의 색조, 경쟁사 사이트의 색처럼 색을 눈대중으로 맞추려는 시도는 기억에 의존하거나 HEX 코드를 짐작으로 입력해서는 정확히 맞는 경우가 드뭅니다. 실제 픽셀을 샘플링하는 것이 정확한 값을 얻는 유일한 방법입니다.</p>
+
+          <h4>“거의 맞다”가 종종 충분하지 않은 이유</h4>
+          <p>나란히 놓으면 거의 똑같아 보이는 두 색도 실제 코드를 비교하면 측정 가능한 차이가 있을 수 있습니다. RGB 채널 하나만 약간 다른 색조는 따로 볼 때는 눈에 보이지 않는 경우가 많지만 진짜 기준 바로 옆에 놓는 순간 분명해집니다. 샘플링은 추측을 완전히 없앱니다. 추출기는 근사치가 아니라 파일에 있는 것을 정확히 읽어 냅니다.</p>
+
+          <h4>스크린샷에서 작업하기</h4>
+          <p>웹페이지, 앱, 다른 사람의 디자인 스크린샷도 다른 이미지와 똑같이 처리됩니다. 놓고, 맞추려는 정확한 픽셀로 추출기를 드래그해서 코드를 복사하세요. 원본 소스 파일이 없는 레퍼런스에서 브랜드 색이나 UI 색을 뽑아내는 가장 확실한 방법입니다.</p>
+
+          <h4>압축 및 조명 아티팩트에 주의하세요</h4>
+          <p>강하게 압축된 JPEG나 색조가 있는/따뜻한 조명에서 찍은 사진은 색의 실제 픽셀 값이 의도한 “참된” 색에서 벗어날 수 있습니다. 노란 실내 조명 아래에서 찍은 로고의 실제 HEX 코드는 로고 자체보다 약간 더 따뜻하게 측정됩니다. 정확도가 중요할 때(공식 브랜드 색을 맞출 때 등)는 가능하다면 사진보다 깨끗한 스크린샷이나 압축되지 않은 원본에서 색을 추출하는 것이 좋습니다.</p>
+
+          <h4>일관성을 확인하기 위해 여러 지점 샘플링하기</h4>
+          <p>사진 한 장도 “균일해” 보이는 영역 안에 한눈에 보이는 것보다 색 변화가 더 많은 경우가 흔합니다. JPEG 압축, 미세한 그라데이션, 조명이 픽셀 간에 작은 차이를 만듭니다. 하나의 샘플만 믿는 대신 같은 영역의 서로 다른 지점에 추출기를 두세 개 쓰면 실제 색 변화인지 단순한 노이즈인지 더 잘 알 수 있습니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. 작업하면서 재사용할 팔레트 만들기</h3>
+          <p>Colorfy의 저장된 색 팔레트는 이미지에서 둘 이상의 색을 뽑아 나중에 모두 다시 찾아야 할 때를 위해 존재합니다. 파일을 다시 열어 각 색을 처음부터 다시 고를 필요가 없습니다.</p>
+
+          <h4>작업하면서 저장하기</h4>
+          <p>추출한 색 옆의 “저장”을 클릭하면 브라우저에 유지되는 팔레트에 추가됩니다. 이미지와는 별개로 저장되므로 다음에 Colorfy를 열 때 다른 이미지를 불러왔거나 이미지를 불러오지 않았더라도 그대로 남아 있습니다. 한 번에 최대 20가지 색을 보관할 수 있어, 먼저 코드를 다른 곳에 복사하지 않고도 여러 참고 이미지에서 모은 전체 팔레트를 만들 수 있습니다.</p>
+
+          <h4>저장된 색에 이름 붙이기</h4>
+          <p>저장된 색을 더블클릭하면 짧은 이름(최대 25자)을 붙일 수 있습니다. 팔레트에 항목이 몇 개를 넘으면 “세 번째 주황색”으로는 구분하기 어려워지므로 유용합니다. 이름은 마우스를 올렸을 때 툴팁으로 표시되어 색 견본 자체는 깔끔하게 유지하면서도 필요할 때 이름으로 쉽게 식별할 수 있습니다.</p>
+
+          <h4>팔레트 비우기</h4>
+          <p>저장된 색을 하나씩 제거하는 것은 이 사이트의 모든 파일 목록이 쓰는 것과 같은 “×” 버튼으로 이루어집니다. 그 버튼을 클릭하면서 Shift를 누르고 있으면 클릭한 색을 포함해 저장된 모든 색이 한 번에 지워집니다. 끝난 프로젝트의 팔레트가 더 이상 필요하지 않고 각 항목을 개별적으로 제거하는 것보다 다음 팔레트를 빈 상태로 시작하고 싶을 때 더 빠른 방법입니다.</p>
+
+          <h4>팔레트를 열어 둘 가치가 있을 때</h4>
+          <p>저장한 팔레트는 한 번만 색을 찾는 경우보다 여러 세션에 걸쳐 일관된 브랜드 색이나 UI 색 세트를 만들어 가는 진행 중인 프로젝트에 가장 유용합니다. 한 번 찾는 경우에는 코드를 바로 복사하고 넘어가는 것이 저장하는 것보다 간단합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 여러 색 추출기로 색을 나란히 비교하기</h3>
+          <p>색 하나를 가져오는 데는 추출기 하나로 충분하지만, 같은 이미지에서 두 개 이상의 색을 비교하는 일(대비 확인, 그라데이션 양 끝 맞추기, 한 사진에 흩어진 팔레트 샘플링)은 여러 추출기를 동시에 활성화하면 훨씬 쉽습니다.</p>
+
+          <h4>두 번째(또는 세 번째, 네 번째) 추출기 추가하기</h4>
+          <p>같은 이미지에서 최대 4개의 추출기를 동시에 활성화할 수 있으며, 각각 번호가 매겨져 아래의 결과 행을 이미지의 링과 쉽게 짝지을 수 있습니다. 추출기 목록 아래의 “+” 버튼으로 추가하거나, Shift를 누른 채 이미지의 아무 곳이나 클릭해 그 지점에 번호가 매겨진 새 추출기를 바로 놓을 수 있습니다. 대략 어디서 샘플링하고 싶은지 이미 알고 있다면 더 빠른 방법입니다.</p>
+
+          <h4>결과를 함께 읽기</h4>
+          <p>활성화된 각 추출기에는 자체 코드와 저장 버튼이 있는 전용 행이 있으며 모두 동시에 보입니다. 이미지에서 같은 색으로 보이는 두 영역이 실제로 같은 코드인지 확인하거나, 하나씩 샘플링하고 저장하고 다시 샘플링하는 대신 한 이미지에서 한 번에 작은 여러 색 팔레트를 만드는 데 유용합니다.</p>
+
+          <h4>더 추가하지 않고 위치 바꾸기</h4>
+          <p>일반 클릭(Shift 없이)은 새 추출기를 추가하는 대신 가장 최근에 활성화된 추출기를 옮깁니다. 추출기를 삭제하고 다시 추가하지 않고도 샘플 지점을 미세 조정할 때 유용합니다. 추출기를 직접 드래그하거나 포커스를 준 뒤 방향키를 사용해도 같은 방식으로 픽셀 단위의 정밀 조정이 가능합니다.</p>
+
+          <h4>추출기 하나가 여전히 올바른 선택일 때</h4>
+          <p>색 하나를 빠르게 가져오는 데는 추출기를 더 추가하는 것이 불필요한 부담입니다. 추출기는 한 세션에서 같은 이미지의 색을 둘 이상 비교, 대조 또는 수집해야 할 때 가치가 있습니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 색 고르기에서 흔한 실수(와 피하는 방법)</h3>
+          <p>부정확한 색 선택의 대부분은 몇 가지 피할 수 있는 습관으로 거슬러 올라가며, 대부분은 도구 자체의 문제가 아니라 추출기가 정확히 어디에 놓이는가에 관한 것입니다.</p>
+
+          <h4>가장자리 바로 위에서 샘플링하기</h4>
+          <p>두 색의 경계에 있는 픽셀은 어느 쪽의 깨끗한 샘플이 아니라 안티앨리어싱으로 섞인 중간 색인 경우가 많습니다. 축소된 상태에서 도형의 윤곽 근처를 클릭할 때 특히 쉽게 일어납니다. 확대(미리보기를 크게)하고 가장자리에서 충분히 떨어진, 원하는 영역의 균일한 안쪽을 겨냥하세요.</p>
+
+          <h4>강하게 압축된 이미지 믿기</h4>
+          <p>JPEG 압축은 특히 사진의 복잡하거나 디테일이 많은 영역에서 개별 픽셀 값을 원래 색에서 약간 벗어나게 할 수 있습니다. “단색”으로 보이는 영역에도 원래 장면에는 없던 픽셀 간의 작은 노이즈가 있을 수 있습니다. 정확도가 중요할 때는 가능하다면 압축된 JPEG보다 PNG나 다른 무손실 소스를 선호하세요.</p>
+
+          <h4>자신의 화면만 고려하지 않기</h4>
+          <p>Colorfy가 읽어 오는 코드는 이미지 파일에 저장된 정확한 값이지만, 그 색이 실제로 어떻게 보이는지는 그것을 표시하는 화면에 달려 있고 디스플레이마다 보정 상태가 다릅니다. 샘플링한 색이 물리적 참고물(인쇄물, 실물 제품)과 정확히 일치해야 한다면, 샘플링한 코드를 정확한 출발점으로 취급하고 모니터에서 보이는 모습만이 아니라 물리적 참고물 자체와 비교해 최종 결과를 확인할 것을 예상하세요.</p>
+
+          <h4>저장된 색이 이미지를 넘어 유지된다는 사실 잊기</h4>
+          <p>저장된 팔레트는 불러온 어떤 이미지에도 묶여 있지 않으므로, 가끔 비우지 않으면 관련 없는 여러 프로젝트의 색이 같은 팔레트에 섞이기 쉽습니다. 관련 없는 새 프로젝트를 시작할 때는 저장된 색의 삭제 버튼을 Shift+클릭해서 팔레트 전체를 한 번에 지우세요. 오래된 색과 새 색이 함께 쌓이게 두지 마세요.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="소개"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="이용 약관"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="개인정보 처리방침"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="쿠키 정책"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/colorfy/colorfy-tool.js?v=41" defer></script>
+</body>
+</html>

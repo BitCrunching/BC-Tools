@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cleanly – Fotometadata gratis verwijderen – BC Tools</title>
+<meta name="description" content="Verwijder EXIF-metadata (locatie, camera-informatie, tijdstempels) gratis uit je foto's, rechtstreeks in je browser, voordat je ze ergens deelt.">
+<link rel="canonical" href="https://bitcrunching.com/nl/cleanly/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/cleanly/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/cleanly/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/cleanly/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/cleanly/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/cleanly/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/cleanly/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/cleanly/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/cleanly/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/cleanly/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/cleanly/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/cleanly/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cleanly/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cleanly/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cleanly/">
+<script src="/shared/i18n/nl.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Cleanly – Fotometadata gratis verwijderen – BC Tools">
+<meta property="og:description" content="Verwijder EXIF-metadata (locatie, camera-informatie, tijdstempels) gratis uit je foto's, rechtstreeks in je browser, voordat je ze ergens deelt.">
+<meta property="og:url" content="https://bitcrunching.com/nl/cleanly/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cleanly – Fotometadata gratis verwijderen – BC Tools">
+<meta name="twitter:description" content="Verwijder EXIF-metadata (locatie, camera-informatie, tijdstempels) gratis uit je foto's, rechtstreeks in je browser, voordat je ze ergens deelt.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/exif.js"></script>
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:#7ED321; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #exAfterDrop is revealed, so it never fights the file list/
+   Strip button once there's real content to interact with. Same "jump"
+   plays while a file is being dragged over the banner (.active class,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — not to be
+   confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
+.tool-app:has(#exAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#exAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#exAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-cleanly{ animation:icon-wobble .5s ease; }
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row from shared/site.css — same "classified terminal"
+   look as Convert/Compress/Combine's help banners. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GIDS";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Compress's .cp-remove-btn.
+   Unlike Convert/Compress (where the drop zone is hidden once a file
+   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
+   small negative offset reaches the card corner), Cleanly keeps its
+   drop zone visible in the revealed state — so #exAfterDrop starts far
+   down the card. The button is anchored to .tool-app itself instead and
+   shown only while files are loaded, via the same :has(#exAfterDrop…)
+   toggle the hover rules above already use. */
+.ex-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#exAfterDrop:not([hidden])) .ex-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .ex-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. Both display rules
+   guarded to the same mobile breakpoint as .bc-canvas-back-btn's own
+   display:flex — see Combine's identical comment for why the :has()
+   rule specifically needs that guard. */
+.ex-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .ex-back-btn{ display:none; }
+  .tool-app:has(#exAfterDrop:not([hidden])) .ex-back-btn{ display:flex; }
+}
+
+/* Before a file is loaded the whole banner is the drop target, so the
+   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
+   doesn't cancel the shared .tool-drop-addpill's dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#exDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#exDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#exDrop.active{
+  border-color:#4ade80;
+  background:rgba(74,222,128,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #exDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#exDrop.tool-drop-revealed.active{
+  border-color:#4ade80;
+  background:rgba(74,222,128,.1);
+}
+.tool-app.active{
+  background:rgba(74,222,128,.08);
+}
+/* Per-row Clean/Download button(s) — same compact-CTA exception
+   Coudio's own .cd-row-convert-btn documents in CLAUDE.md: N independent
+   per-file actions, not one global CTA, so .tool-primary-btn's 74px
+   height doesn't fit. Only height/padding/font-size are overridden —
+   color/border/flip recipe stay .tool-primary-btn's own. Shared by all
+   four buttons renderList() can put in a row's .exif-file-actions
+   (Clean first / Clean and download / Clean anyways / Download) so they
+   line up at the same size regardless of which one(s) are showing. */
+.ex-row-strip-btn,
+.ex-row-clean-download-btn,
+.ex-row-clean-anyways-btn,
+.ex-row-download-btn{
+  flex-shrink:0;
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.ex-row-strip-btn:disabled,
+.ex-row-clean-download-btn:disabled,
+.ex-row-clean-anyways-btn:disabled{
+  opacity:.5;
+  cursor:default;
+}
+/* Mobile drops the per-row buttons entirely (two/three of them plus
+   remove-× never fit next to a filename/tags column at phone widths, in
+   any labeling) and falls back to one global "Download" button below the
+   list instead — same shape as main's old single #exStripBtn, just
+   renamed/rewired for today's clean-then-download model. Clicking it
+   cleans (if needed) and downloads every loaded file in sequence — see
+   mobileDownloadAll() in cleanly-tool.js. */
+.ex-mobile-download-btn{
+  display:none;
+  width:100%;
+  margin-top:16px;
+}
+@media (max-width:768px){
+  .exif-file-actions{ display:none; }
+  .ex-mobile-download-btn{ display:block; }
+}
+
+/* Local width/margin for the shared .bc-segmented-toggle (shared/site.css,
+   CLAUDE.md) — same split every adopter of that class uses, it only owns
+   segment chrome. Rendered twice per HEIC row (cleanly-tool.js) — once
+   next to "Clean first" in .exif-file-actions (desktop), once in the info
+   column above where the desktop copy used to sit (mobile) — only one is
+   ever visible at a time. The desktop copy disappears on its own below
+   768px since its parent .exif-file-actions is hidden outright there; the
+   mobile copy needs its own explicit hide above that width since it isn't
+   inside anything already hidden. */
+.ex-heic-format-toggle{
+  width:140px;
+  flex-shrink:0;
+}
+.ex-heic-format-toggle-mobile{
+  margin-top:8px;
+}
+@media (min-width:769px){
+  .ex-heic-format-toggle-mobile{ display:none; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">We gebruiken cookies. Kies hieronder welke categorieën je toestaat. Zie onze <a data-goto="cookies">Cookiebeleid</a> voor details.</p>
+  <p class="cookie-banner-text-mobile">Kies welke categorieën je toestaat</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Inhoud van cookie-instellingen in-/uitschakelen" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Kies welke categorieën je toestaat</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Meer over noodzakelijke cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Noodzakelijk (altijd aan)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Hiermee blijven de essentiële dingen werken: je cookiekeuze, je taal en je licht/donker-thema onthouden. Ze kunnen niet worden uitgeschakeld en verlaten, zoals al het andere op deze site, nooit je apparaat.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Meer over analytische cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse - Houd dit uitgeschakeld voor volledige privacy.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Hiermee kunnen we de gebruikerservaring verbeteren door via (Google Analytics) waardevolle gegevens te ontvangen over hoe gebruikers door onze website navigeren. Wil je volledig anoniem blijven, dan raden we aan deze optie uit te schakelen.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Meer over advertentiecookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Advertenties (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Gebruikt door Google AdSense om advertenties te tonen. Momenteel site-breed uitgeschakeld in afwachting van goedkeuring door AdSense, dus deze schakelaar heeft nog geen effect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alles accepteren</button>
+    <button type="button" id="cookieBannerSave">Keuzes bevestigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools-logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Licht en donker thema wisselen" title="Licht en donker thema wisselen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Delen" title="Delen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopiëren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Meer deelopties"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Klik om de gids van de tool te resetten" title="Klik om de gids van de tool te resetten">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Terug naar de Creative Hub" title="Terug naar de Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="exHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="exHelpClose" aria-label="Sluiten en niet meer tonen"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="exHelpToggle" aria-label="Minimaliseren" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="exHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="exHelpBack">&lt; TERUG</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="exHelpCloseMobile">SLUITEN</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="exHelpNext">VOLGENDE &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="exHelpBody">
+    <div class="engine-status-row">&gt; <span id="exHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-cleanly" role="img" aria-label="Cleanly-pictogram"></span>
+        Cleanly
+      </div>
+      <span class="privacy-check-badge" id="exPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="ex-back-btn bc-canvas-back-btn" id="exBackBtn" data-goto="mainpage" aria-label="Terug naar de Creative Hub" title="Terug naar de Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="ex-remove-btn bc-remove-btn bc-canvas-remove-btn" id="exRemoveBtn" aria-label="Alle bestanden verwijderen" title="Afgesloten project">×</button>
+
+    <div class="tool-drop tool-drop-addpill" id="exDrop"><span class="tool-drop-click-word">Klik</span><span class="tool-drop-or-drop"> of sleep </span><span class="tool-drop-rest">JPEG-, PNG-, HEIC- of SVG-afbeeldingen</span></div>
+    <input type="file" id="exInput" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif,.svg,image/svg+xml" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="exContinueBtn" hidden>Verder gaan waar je was gebleven</button>
+
+    <div class="tool-after-drop" id="exAfterDrop" hidden>
+      <div class="exif-file-list" id="exFileList"></div>
+      <button type="button" class="tool-primary-btn ex-mobile-download-btn" id="exMobileDownloadBtn" disabled title="Elk geladen bestand opschonen en downloaden" data-ga-event="tool_primary_action" data-ga-tool="cleanly" data-ga-action="mobile_download_all">Opschonen &amp; downloaden</button>
+    </div>
+
+    <div class="tool-status" id="exStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="exif">
+  <div class="content-section-article-wrap">
+    <h3>Nieuw met afbeeldingen opschonen?</h3>
+    <p>Elke foto die je telefoon of camera maakt, bevat veel meer dan alleen het beeld: erin zit een blok metadata dat stilletjes verrassend veel details vastlegt over wanneer, waar en hoe de foto is gemaakt. Dit onthult die metadata echt en waarom het verwijderen ervan ertoe doet.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Wat EXIF-metadata echt over jou verraden</a></li>
+      <li><a href="#gr-article-2">2. Metadata verwijderen voordat je foto's verkoopt of plaatst</a></li>
+      <li><a href="#gr-article-3">3. Cleanly voor fotografen: privacy zonder kwaliteitsverlies</a></li>
+      <li><a href="#gr-article-4">4. Wanneer het verwijderen van metadata het belangrijkst is</a></li>
+      <li><a href="#gr-article-5">5. Veelgemaakte privacyfouten met foto's</a></li>
+      <li><a href="#gr-article-6">6. Cleanly voor SVG's: editormetadata verwijderen, geen EXIF</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="exif">
+<div class="gr-article" id="gr-article-1"><h3>1. Wat EXIF-metadata echt over jou verraden</h3>
+          <p>Elke foto die je telefoon of camera maakt, bevat veel meer dan alleen het beeld. In het bestand zit een blok metadata, EXIF-gegevens, dat stilletjes verrassend veel details vastlegt over wanneer, waar en hoe de foto is gemaakt.</p>
+
+          <table class="info-table-exif">
+            <thead>
+              <tr><th>Type metadata</th><th>Wat het onthult</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Type metadata">GPS-locatie</td><td data-label="Wat het onthult">De exacte plek waar de foto is genomen, vaak tot op enkele meters</td></tr>
+              <tr><td data-label="Type metadata">Merk en model van het apparaat</td><td data-label="Wat het onthult">De specifieke camera of telefoon die is gebruikt</td></tr>
+              <tr><td data-label="Type metadata">Tijdstempel</td><td data-label="Wat het onthult">De exacte datum en tijd, tot op de seconde</td></tr>
+              <tr><td data-label="Type metadata">Camera-instellingen</td><td data-label="Wat het onthult">Diafragma, sluitertijd, ISO, brandpuntsafstand</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Locatie: de grootste</h4>
+          <p>Als locatievoorzieningen waren ingeschakeld toen de foto werd gemaakt, leggen de meeste telefoons de exacte gps-coördinaten vast van waar de opname is gemaakt, vaak nauwkeurig tot op enkele meters. Iedereen die het originele bestand in de juiste viewer opent of door een metadatalezer haalt, kan die locatie op een kaart uitzetten. Een foto gemaakt thuis, op een werkplek of op de school van een kind kan dus precies onthullen waar die plek is, zonder dat je ooit het adres ergens opschrijft.</p>
+
+          <h4>Apparaatgegevens</h4>
+          <p>EXIF bevat doorgaans het exacte merk en model van de camera of telefoon waarmee de foto is gemaakt, soms zelfs tot de specifieke softwareversie. Op zichzelf lijkt dat onschuldig, maar in combinatie met andere metadata is het een extra identificerend detail van een foto, en in sommige contexten (marktplaatsadvertenties, anonieme accounts) kan het nog een draad zijn die een foto terugleidt naar de bekende apparaten van een specifiek persoon.</p>
+
+          <h4>Tijdstempels</h4>
+          <p>De exacte datum en tijd waarop de foto is gemaakt, wordt tot op de seconde vastgelegd, nauwkeuriger dan de meeste mensen beseffen. Een “terloops” geplaatste foto kan precies onthullen wanneer iemand op een bepaalde plek was, wat relevant wordt voor wie zijn routine of verblijfplaats uit een patroon van in de tijd geplaatste foto's zou kunnen laten reconstrueren.</p>
+
+          <h4>Camera-instellingen en soms meer</h4>
+          <p>Technische details zoals diafragma, sluitertijd en ISO worden ook opgeslagen. Die zijn belangrijk voor fotografen die hun eigen opnamen bekijken, maar op zichzelf niet privacygevoelig. Sommige apparaten en bewerkings-apps bedden afhankelijk van de instellingen ook een voorbeeldminiatuur, software-/bewerkingsgeschiedenis of zelfs een veld voor copyright of auteursnaam in. De exacte velden verschillen per apparaat en app, maar locatie- en tijdstempelgegevens wegen het zwaarst voor de privacy.</p>
+
+          <h4>Waarom dit zelfs bij “onbelangrijke” foto's telt</h4>
+          <p>Most individual photos feel low-stakes on their own, but metadata compounds: a stranger with access to several of your photos' location data can map out a pattern of places you frequent — home, workplace, gym, a child's school — that no single photo would reveal by itself. This is exactly the gap Cleanly exists to close: stripping this metadata before a photo leaves your device removes that entire layer of hidden information, while the visible image looks exactly the same.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Metadata verwijderen voordat je foto's verkoopt of plaatst</h3>
+          <p>Twee van de meest voorkomende situaties waarin EXIF-gegevens stilletjes echte problemen veroorzaken, zijn items online verkopen en foto's openbaar plaatsen. In beide gevallen gaan foto's naar vreemden, precies wanneer verborgen metadata het meest uitmaakt.</p>
+
+          <h4>Verkopen op marktplaatsen</h4>
+          <p>Photos of items for sale — furniture, electronics, a car, a home for rent — are almost always taken at the seller's home or workplace. Left untouched, these photos can hand a buyer your exact address before you've ever met them or agreed to anything, simply by opening the image's metadata. This is a real, documented way people have had their home location exposed to strangers who had no prior legitimate reason to know it. Running listing photos through Cleanly before uploading removes this risk entirely, with no visible difference to the buyer.</p>
+
+          <h4>Plaatsen op sociale media en forums</h4>
+          <p>De meeste grote socialemediaplatforms verwijderen metadata bij het uploaden automatisch, wat goed nieuws is, maar niet elk platform doet dat, en doorgestuurde of gedownloade kopieën van je foto (screenshots, opgeslagen versies, reposts) gaan niet betrouwbaar door hetzelfde verwijderproces. Als een foto ooit wordt gedownload van waar je hem plaatste en elders opnieuw wordt gedeeld, reist elke metadata die de oorspronkelijke upload heeft overleefd mee. Metadata verwijderen voordat je plaatst is de enige manier om te garanderen dat die nergens in de keten aanwezig is.</p>
+
+          <h4>Een simpele gewoonte voor het plaatsen</h4>
+          <p>Voordat je foto's uploadt naar een plek waar mensen ze kunnen zien die je niet persoonlijk kent, zoals een marktplaatsadvertentie, een openbaar socialmediabericht, een forum of een datingprofiel, haal je ze eerst door Cleanly. Het kost seconden, werkt op een hele reeks foto's tegelijk en levert visueel identieke kopieën zonder de verborgen gegevens. Maak hier een standaardstap van, en niet iets wat je alleen bij “gevoelige” foto's onthoudt, dan word je nooit verrast door een foto waar je niet bij stilstond.</p>
+
+          <h4>iPhone photos (HEIC)</h4>
+          <p>Cleanly can't read what's inside a HEIC file, so it always flags HEIC photos as possibly carrying metadata. When you clean one, it's converted to PNG or JPG (you choose on the file's row) and saved without any of the hidden data.</p>
+
+          <h4>Wat het verwijderen niet verandert</h4>
+          <p>Het is goed om duidelijk te zijn over wat Cleanly wel en niet doet: het verwijdert verborgen metadata uit het bestand, maar kan geen informatie verwijderen die in de afbeelding zelf zichtbaar is, zoals een straatnaambord op de achtergrond, een zichtbaar huisnummer of een weerspiegeling die je locatie verraadt. Het verwijderen van metadata regelt de onzichtbare laag; alles wat in de foto zelf zichtbaar is, is een aparte afweging die je voor het plaatsen nog met je eigen ogen moet controleren.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Cleanly voor fotografen: privacy zonder kwaliteitsverlies</h3>
+          <p>Fotografen hebben een iets andere relatie met metadata dan gewone telefoongebruikers: een deel ervan is echt nuttig om voor eigen administratie te bewaren, waardoor “alles altijd verwijderen” niet helemaal het juiste instinct is.</p>
+
+          <h4>Waarom fotografen sommige metadata lokaal willen bewaren</h4>
+          <p>Camera-instellingen (diafragma, sluitertijd, ISO, brandpuntsafstand) zijn waardevol als je je eigen opnamen later bekijkt: begrijpen met welke instellingen een foto is gemaakt die je mooi vond, helpt je die te herhalen. Voor je eigen werkkopieën, privé bewaard, is er geen reden om deze informatie te verwijderen, omdat het echt nuttige naslaggegevens zijn zonder privacyrisico zolang de bestanden bij jou blijven.</p>
+
+          <h4>Waarom opgeleverde of gepubliceerde kopieën een ander verhaal zijn</h4>
+          <p>Zodra een foto aan een klant wordt geleverd, op een portfoliosite wordt gepubliceerd of openbaar wordt geplaatst, verandert de afweging: locatiegegevens horen vooral niet in een bestand voor klanten of het publiek, omdat ze opnamelocaties kunnen onthullen die privé moesten blijven (het huis van een klant bij een gezinsshoot, een privélocatie, het exacte adres van een studio als dat niet openbaar hoort te zijn). Cleanly is precies voor deze stap bedoeld: haal definitieve, naar buiten gerichte exports erdoor vóór oplevering of publicatie, en houd je eigen werkbestanden met volledige metadata intact voor eigen naslag.</p>
+
+          <h4>What actually changes in the image</h4>
+          <p>Metadata is a separate block of information stored alongside the pixels, so removing it doesn't touch resolution or sharpness. To leave that block behind, Cleanly redraws the image and saves a fresh copy. For PNG that's lossless. For JPEG and WEBP it's a re-save at 95% quality, which looks identical at any normal viewing size but isn't byte-for-byte the original, so clean a JPEG once from your master rather than running the same file through repeatedly. The embedded color profile isn't carried over either, so the copy uses standard sRGB colors. Keep your originals as the master for anything where exact color matters.</p>
+
+          <h4>Het in een leveringsworkflow inbouwen</h4>
+          <p>Voor fotografen die regelmatig galerijen opleveren of batches exporteren, is de eenvoudigste aanpak om het verwijderen van metadata als laatste stap vóór het exporteren te behandelen, toegepast op de hele batch tegelijk in plaats van foto voor foto. Zo wordt het een vast onderdeel van het afronden van een opdracht, vergelijkbaar met een laatste kwaliteitscontrole, in plaats van iets wat je voor elke klant of elk platform waar een galerij wordt gedeeld apart moet onthouden.</p>
+
+          <h4>Klanten beschermen en jezelf</h4>
+          <p>Bedenk dat de locatie- en apparaatgegevens die gevaar lopen in de foto's van een klant vaak over het leven van de klant gaan, niet over het jouwe: een gezinsportretsessie bij hen thuis, verlovingsfoto's van een stel op een betekenisvolle privélocatie. Metadata verwijderen vóór oplevering beschermt de privacy van je klanten net zo goed als je eigen professionele reputatie voor zorgvuldig omgaan met hun afbeeldingen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Wanneer het verwijderen van metadata het belangrijkst is</h3>
+          <p>Niet elke foto heeft dezelfde privacy-inzet. Weten welke situaties echt om het verwijderen van metadata vragen, helpt je de gewoonte te richten waar het er het meest toe doet.</p>
+
+          <h4>Foto's gemaakt thuis of op een werkplek</h4>
+          <p>Elke foto die binnen of vlak rond je huis of werkplek is genomen, inclusief foto's voor advertenties op marktplaatsen, “thuiswerk”-foto's of snelle plaatjes in je woonkamer, bevat locatiemetadata die rechtstreeks verwijst naar een plek waar je regelmatig en voorspelbaar bent. Dit is steevast de categorie met de hoogste inzet, omdat het de locatie is die voor anderen het waardevolst is om te kennen en die de meeste mensen niet bedenken te beschermen.</p>
+
+          <h4>Foto's met kinderen</h4>
+          <p>Foto's van kinderen, op school, bij een vaste activiteit, in een buurt, brengen een extra risicolaag met zich mee als locatiemetadata blijft bestaan, omdat die kan onthullen waar een kind op vaste tijden voorspelbaar is. Veel ouders denken al zorgvuldig na over wat zichtbaar is in een foto voordat ze plaatsen; dezelfde zorg is het waard voor wat onzichtbaar is in de metadata.</p>
+
+          <h4>Alles wat naar een vreemde gaat voordat er vertrouwen is</h4>
+          <p>Kopers op marktplaatsen, dates uit datingapps en andere contexten waarin je foto's deelt met iemand die je niet persoonlijk hebt gescreend, zijn precies de situaties waarin je niet meer informatie wilt weggeven dan bedoeld. Een advertentiefoto of profielfoto is het duidelijkste voorbeeld: de ontvanger heeft nog geen band met je, en verwijderde metadata betekent dat de foto alleen onthult wat erin zichtbaar is, niets meer.</p>
+
+          <h4>Wanneer het minder uitmaakt</h4>
+          <p>Het verwijderen van metadata is veel minder kritiek voor foto's die je privé deelt met mensen die je al kent en vertrouwt: een foto rechtstreeks naar een familielid of goede vriend sturen via een privékanaal brengt niet hetzelfde blootstellingsrisico met zich mee als openbaar plaatsen of naar een vreemde sturen. Het is niet zo dat metadata ooit actief nuttig is om te laten staan voor de privacy, alleen dat de praktische urgentie meegroeit met hoe openbaar of onvertrouwd de ontvanger is.</p>
+
+          <h4>Een redelijke standaard</h4>
+          <p>Gezien hoe snel en verliesvrij het proces is, is er weinig nadeel aan om het verwijderen van metadata een vaste gewoonte te maken voor alles wat je directe, vertrouwde kring verlaat: het kost je niets aan kwaliteit of moeite, en je hoeft er niet op te vertrouwen dat je het selectief doet voor precies die ene foto die er later toe blijkt te doen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Veelgemaakte privacyfouten met foto's</h3>
+          <p>De meeste problemen met privacy van foto's komen door een handvol gewoonten die op het moment zelf onschuldig voelen. Hier let je op.</p>
+
+          <h4>Aannemen dat het platform het al afhandelt</h4>
+          <p>Het klopt dat veel grote socialemediaplatforms metadata bij het uploaden automatisch verwijderen, maar niet alle platforms doen dat, en doorgestuurde kopieën, downloads en reshares gaan niet betrouwbaar opnieuw door diezelfde verwijdering. Erop vertrouwen dat “het platform het wel afhandelt” is een gok; zelf metadata verwijderen voordat je plaatst, haalt de onzekerheid volledig weg.</p>
+
+          <h4>Alleen nadenken over wat in de foto zichtbaar is</h4>
+          <p>Mensen controleren een foto vaak zorgvuldig op zichtbare details, geen gevoelige documenten op de achtergrond, geen leesbare straatnaamborden, terwijl ze vergeten dat de onzichtbare metadata precies dezelfde soort informatie (met name locatie) kan lekken, ook als de afbeelding zelf volkomen veilig lijkt. De zichtbare inhoud controleren en de metadata verwijderen zijn twee aparte, beide noodzakelijke stappen.</p>
+
+          <h4>Spullen verkopen met onaangeraakte advertentiefoto's</h4>
+          <p>Advertenties op marktplaatsen zijn een van de meest voorkomende praktijkbronnen van onbedoeld vrijgegeven locatie, omdat verkopers items fotograferen waar ze wonen en de foto's ongewijzigd uploaden. Dit is een van de duidelijkste en waardevolste gevallen om metadata vóór het plaatsen te verwijderen, omdat het risico (je thuisadres aan vreemden onthullen) concreet is en de oplossing seconden kost.</p>
+
+          <h4>Oude, al geplaatste foto's vergeten</h4>
+          <p>Het verwijderen van metadata beschermt alleen foto's die je vóór het delen opschoont. Het herstelt niet met terugwerkende kracht foto's die al ergens met metadata zijn geplaatst. Als je je zorgen maakt over eerdere berichten, is de oplossing teruggaan naar die specifieke foto's en ze verwijderen en vervangen door opgeschoonde versies als het platform dat toestaat, in plaats van aan te nemen dat de gewoonte voortaan alles dekt wat er al is.</p>
+
+          <h4>Het behandelen als een alles-of-niets-klus die af en toe voorkomt</h4>
+          <p>Wachten met het verwijderen van metadata tot een foto “gevoelig voelt” betekent elke keer op je eigen inschatting vertrouwen, precies het soort gewoonte die er uiteindelijk een mist. Het verwijderen van metadata in je standaardroutine opnemen voor alles wat een vertrouwde kring verlaat, haalt de inschatting volledig weg: het wordt consequent toegepast in plaats van selectief.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-6"><h3>6. Cleanly voor SVG's: editormetadata verwijderen, geen EXIF</h3>
+          <p>Alles hierboven gaat over EXIF-gegevens die in foto's zijn ingebed: gps, cameramodel, tijdstempels. SVG-bestanden hebben helemaal geen EXIF, want het zijn geen foto's maar XML-tekst die vormen beschrijft. Maar ontwerptools bouwen hun eigen soort verborgen metadata in een SVG in, en Cleanly detecteert en verwijdert die ook als je er een neerzet.</p>
+
+          <h4>Wat ontwerptools in een SVG inbedden</h4>
+          <p>Illustrator, Inkscape, Sketch en Figma schrijven allemaal meer in het bestand dan de vormen die je hebt getekend: een ingebed <code>&lt;metadata&gt;</code>/RDF-blok (soms met informatie over auteurschap en licentie via Dublin Core-tags), editorspecifieke attributen met naamruimte (het vaakst de tags <code>sodipodi:</code> van Inkscape) en gewone XML-opmerkingen die het exportproces achterlaat. Niets daarvan is zichtbaar wanneer de SVG wordt weergegeven, maar het reist allemaal mee met het bestand naar iedereen aan wie je het stuurt.</p>
+
+          <h4>Waarom dit telt voor delen</h4>
+          <p>Dezelfde redenering als bij de gps-tag van een foto geldt hier: metadata die je niet bewust hebt toegevoegd, is nog steeds metadata die met het bestand de deur uitgaat. Een pictogram of logo dat is geëxporteerd voor een klant, een marktplaatsadvertentie of een openbare repo kan softwareversie-informatie of auteursvermelding bevatten die je nooit wilde publiceren. Het vóór het delen verwijderen is dezelfde gewoonte als bij EXIF in een foto: het kost niets en voorkomt een verrassing.</p>
+
+          <h4>Wat Cleanly je toont voordat het iets verwijdert</h4>
+          <p>Net zoals het de gps-, camera- en datumtags in een foto weergeeft, scant Cleanly een neergezette SVG en toont precies wat het heeft gevonden: ingebedde metadata, auteursgegevens van de editor of opmerkingen, zodat je kunt zien wat er echt in het bestand zit voordat je het verwijdert, in plaats van blind te verwijderen.</p>
+
+          <h4>Verliesvrij, niet met verlies</h4>
+          <p>Anders dan bij fotocompressie is dit geen kwaliteitsafweging. De opschoning verwijdert alleen rommel die de browser nooit heeft weergegeven. De vormen, kleuren en structuur die je ontwerptool heeft gemaakt, blijven volledig onaangeroerd, dus het opgeschoonde bestand ziet er pixel voor pixel identiek uit en kan daarna nog steeds in een vectoreditor worden geopend en bewerkt.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000018" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Bedrijf</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Over ons"><span class="footer-link-fun">Ons universum</span><span class="footer-link-plain">Over ons</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Al beantwoord</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Gebruiksvoorwaarden"><span class="footer-link-fun">Galactisch handboek</span><span class="footer-link-plain">Gebruiksvoorwaarden</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Privacybeleid"><span class="footer-link-fun">Buitenaards privacyprotocol</span><span class="footer-link-plain">Privacybeleid</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookiebeleid"><span class="footer-link-fun">Cookieregister</span><span class="footer-link-plain">Cookiebeleid</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Aan de slag met</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/nl/convert/">Convert</a>
+          <a class="footer-dash-link" href="/nl/compress/">Compress</a>
+          <a class="footer-dash-link" href="/nl/combine/">Combine</a>
+          <a class="footer-dash-link" href="/nl/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/nl/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/nl/congify/">Congify</a>
+          <a class="footer-dash-link" href="/nl/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/nl/codify/">Codify</a>
+          <a class="footer-dash-link" href="/nl/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/nl/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/nl/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Neem contact met ons op</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Word lid van onze Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/cleanly/cleanly-tool.js?v=56" defer></script>
+</body>
+</html>

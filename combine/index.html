@@ -30,6 +30,20 @@
 <title>Combine – Merge Images or PDFs into One PDF – BC Tools</title>
 <meta name="description" content="Combine multiple images or PDF files into a single PDF for free, right in your browser. Drag to reorder pages — no uploads required.">
 <link rel="canonical" href="https://bitcrunching.com/combine/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/combine/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/combine/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/combine/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/combine/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/combine/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/combine/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/combine/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/combine/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/combine/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/combine/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/combine/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/combine/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/combine/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/combine/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BC Tools">
 <meta property="og:title" content="Combine – Merge Images or PDFs into One PDF – BC Tools">
@@ -61,7 +75,7 @@
 <script src="/vendor/pdf-lib.min.js"></script>
 <script src="/vendor/pdf.min.js"></script>
 
-<link rel="stylesheet" href="/shared/site.css?v=232">
+<link rel="stylesheet" href="/shared/site.css?v=272">
 <style>
 .tool-app::before{ background:linear-gradient(155deg,#FF6961); }
 .tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
@@ -108,7 +122,6 @@
   75%{ transform:rotate(-4deg) scale(1.05); }
 }
 .tool-app.wobble .tool-logo .icon-combine{ animation:icon-wobble .5s ease; }
-.cs-shape{ background:#FF6961; }
 
 /* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
    .engine-status-row/.engine-status-value from shared/site.css — the
@@ -291,12 +304,35 @@
   color:var(--text);
   opacity:.6;
   user-select:none;
+  touch-action:none;
+}
+@media (hover:none), (max-width:768px){
+  .combine-drag-handle{ padding:12px 6px; margin:-12px -6px; }
+}
+.combine-file-item.touch-dragging{
+  position:relative;
+  z-index:5;
+  transition:none;
 }
 
-.combine-file-thumb{
+.combine-file-thumb-wrap{
+  position:relative;
   flex-shrink:0;
   width:76px;
   height:96px;
+}
+.combine-file-thumb-wrap .combine-thumb-resize{
+  right:-8px;
+  bottom:-8px;
+  width:24px;
+  height:24px;
+  padding:0;
+  cursor:nwse-resize;
+}
+
+.combine-file-thumb{
+  width:100%;
+  height:100%;
   border-radius:8px;
   overflow:hidden;
   background:rgba(255,255,255,.08);
@@ -310,6 +346,27 @@
   height:100%;
   object-fit:cover;
   display:block;
+}
+
+.combine-thumb-page{
+  position:relative;
+  flex-shrink:0;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.25);
+  box-sizing:content-box;
+}
+.combine-file-thumb:has(.combine-thumb-page){
+  border-radius:0;
+  overflow:visible;
+  background:none;
+}
+.combine-file-thumb .combine-thumb-page img{
+  position:absolute;
+  max-width:none;
+  object-fit:fill;
+  border-radius:0;
+  margin:0;
+  transition:none;
 }
 
 .combine-file-thumb-fallback{
@@ -338,6 +395,7 @@ html[data-theme="dark"] .combine-file-index{
   background:rgba(255,255,255,.14);
 }
 
+.combine-file-meta{ display:contents; }
 .combine-file-name{
   flex:1;
   min-width:0;
@@ -362,6 +420,110 @@ html[data-theme="dark"] .combine-file-index{
    on the markup (class="combine-file-remove bc-file-remove-btn").
    Kept as a class only as an addressing hook for its own JS
    listener. */
+
+.combine-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px 20px;
+  margin-top:24px;
+}
+.combine-option{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.combine-option .bc-dropdown,
+.combine-option .option-change-btn{ min-width:170px; }
+.combine-option-name{ flex:1 1 220px; }
+.combine-file-rotate{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.combine-file-rotate svg{ width:16px; height:16px; }
+.combine-file-thumb img,
+.combine-file-thumb-fallback{ transition:transform .2s ease; }
+.combine-file-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+.cb-phone-dd{ display:none; }
+.cb-name-title{ display:none; }
+.cb-orient-rect{
+  display:block;
+  box-sizing:border-box;
+  width:14px;
+  height:22px;
+  margin:0 auto;
+  border:2.2px solid currentColor;
+  border-radius:3px;
+  transition:transform .3s cubic-bezier(.22,1,.36,1);
+}
+.cb-orient-rect[data-orient="landscape"]{ transform:rotate(90deg); }
+@media (max-width:768px){
+  .tool-wrap{ padding-left:10px; padding-right:10px; }
+  .tool-app{ max-width:max(97vw, 315px); padding-left:10px; padding-right:10px; }
+  .combine-file-item{ gap:8px; padding:12px 10px; }
+  .combine-file-meta{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-width:0;
+    gap:2px;
+  }
+  .combine-file-name{ flex:0 0 auto; }
+  .combine-option > .bc-label{ display:none; }
+  .combine-option .option-change-btn{ display:none; }
+  .combine-options{ flex-direction:column; align-items:center; gap:10px; }
+  .combine-option{ flex:0 0 auto; }
+  .combine-option .cb-phone-dd{ display:block; width:200px; min-width:0; }
+  .combine-option .cb-dd-trigger{ height:34px; font-size:15px; }
+  .cb-dd-value{ display:inline-flex; align-items:center; justify-content:center; }
+  .cb-dd-value .cb-orient-name{ display:none; }
+  .cb-phone-dd .bc-dropdown-option{ white-space:nowrap; }
+  .cb-phone-dd .bc-dropdown-option .cb-orient-rect{ margin:0 10px 0 0; flex-shrink:0; }
+  /* Congify's file name line (13px/700 bold, ">" prompt): "> Output name: combined.pdf" */
+  .combine-option .bc-name-field,
+  .combine-option .bc-name-field:hover,
+  .combine-option .bc-name-field:focus-within{
+    width:auto;
+    max-width:none;
+    min-width:0;
+    height:auto;
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--text);
+    justify-content:center;
+    gap:6px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+  }
+  .cb-name-title{ display:inline; order:-1; flex-shrink:0; }
+  .combine-option .bc-name-field input{
+    field-sizing:content;
+    flex:0 1 auto;
+    max-width:185px;
+    min-width:20px;
+    height:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    border-bottom:1px solid transparent;
+    font:inherit;
+  }
+  .combine-option .bc-name-field input:hover{ border-bottom-color:var(--border-strong); }
+  .combine-option .bc-name-field input:focus{ border-bottom-color:var(--text); }
+  .combine-option .bc-name-ext{ font:inherit; flex-shrink:0; margin-left:-6px; opacity:.7; }
+  .combine-file-actions{ flex-direction:column; gap:8px; }
+  .combine-file-thumb-wrap .combine-thumb-resize{ display:none; }
+}
 
 .combine-primary-btn{
   margin-top:24px;
@@ -448,8 +610,7 @@ html[data-theme="dark"] .combine-file-index{
                 <div class="nav-share-wrap">    
       <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Share" title="Share">
         <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 3L9.5 14.5"></path>
-          <path d="M21 3L14.5 21L9.5 14.5L3 11.5L21 3Z"></path>
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
         </svg>
       </button>
       <div class="nav-share-menu" id="navShareMenu">
@@ -510,12 +671,50 @@ html[data-theme="dark"] .combine-file-index{
     </button>
     <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="Remove all files">×</button>
 
-    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDF files</span></div>
-    <input type="file" id="cbInput" accept="application/pdf,.pdf" multiple hidden>
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">Click</span><span class="tool-drop-or-drop"> or drop </span><span class="tool-drop-rest">PDFs or JPG images</span></div>
+    <input type="file" id="cbInput" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple hidden>
     <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>Continue where you left off</button>
 
     <div class="tool-after-drop" id="cbAfterDrop" hidden>
       <div class="combine-file-list" id="cbFileList"></div>
+
+      <div class="combine-options" id="cbOptions">
+        <div class="combine-option">
+          <span class="bc-label">Image page size</span>
+          <button type="button" class="option-change-btn" id="cbSizeBtn" title="Image page size">
+            <span class="option-change-btn-label" id="cbSizeBtnLabel">Fit to A4</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Page orientation</span>
+          <button type="button" class="option-change-btn" id="cbOrientBtn" title="Page orientation">
+            <span class="option-change-btn-label" id="cbOrientBtnLabel">Portrait</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Margin</span>
+          <button type="button" class="option-change-btn" id="cbMarginBtn" title="Page margin">
+            <span class="option-change-btn-label" id="cbMarginBtnLabel">No margin</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">Image quality</span>
+          <button type="button" class="option-change-btn" id="cbQualityBtn" title="Image quality">
+            <span class="option-change-btn-label" id="cbQualityBtnLabel">Original</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option combine-option-name">
+          <span class="bc-label">Combined file name</span>
+          <div class="bc-name-field">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="Combined file name" spellcheck="false" autocomplete="off">
+            <span class="bc-name-ext">.pdf</span>
+          </div>
+        </div>
+      </div>
 
       <button class="tool-primary-btn combine-primary-btn" id="cbCombineBtn" disabled title="Combine and download PDF (D)" data-ga-event="tool_primary_action" data-ga-tool="combine">Combine and download PDF</button>
     </div>
@@ -526,14 +725,84 @@ html[data-theme="dark"] .combine-file-index{
 
 <div class="content-section-convert" data-tool="combine">
   <div class="content-section-article-wrap">
-    <div class="content-section-bg" aria-hidden="true">
-      <span class="cs-shape cs-shape-1"></span>
-      <span class="cs-shape cs-shape-2"></span>
-      <span class="cs-shape cs-shape-3"></span>
-    </div>
     <h3>New to combining images?</h3>
-    <p>Combine's job looks deceptively simple — merge several files into one PDF — but the detail that trips people up most isn't the merging itself, it's making sure the pages land in the order you actually intended. Here's how page order really works, and how to get it right every time.</p>
-    <p>Do you want to know more? Read in full — <a class="golden-rules-link-inline go-to-golden-rules" data-tool="combine" href="/golden-rules/?tool=combine">just one click away.</a></p>
+    <p>Ever merged files and found page 4 where page 2 should be? It is easy to avoid once you know one trick. No experience needed: these short guides walk you through it, step by step.</p>
+    <p class="gr-topics-lead">Jump to what you need:</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. How to Combine PDFs in the Right Order Every Time</span><span class="gr-toc-note">How Combine picks the order, and how to fix it.</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. Combine for Job Applications: Cover Letter, Resume, Portfolio</span><span class="gr-toc-note">The best order for a cover letter, resume and portfolio.</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. Merging Scanned Documents Without Losing Page Order</span><span class="gr-toc-note">How to keep scanned pages in the right order.</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. When to Combine vs When to Keep Files Separate</span><span class="gr-toc-note">When one PDF helps, and when separate files are better.</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. Common Combining Mistakes (and How to Avoid Them)</span><span class="gr-toc-note">Five easy mistakes, and how to avoid them.</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="combine">
+<div class="gr-article" id="gr-article-1"><h3>1. How to Combine PDFs in the Right Order Every Time</h3>
+          <p>Combine merges your files in the order of its list, top to bottom. It never guesses from file names, dates or content.</p>
+          <p><strong>Drag to reorder.</strong> Drag any file up or down (by touch on a phone) and the merged PDF follows. PDFs go in as they are, and every JPG or PNG becomes one page.</p>
+          <p><strong>Check the previews.</strong> Each file shows a preview of its page. Look at the list before you download. It takes thirty seconds and saves a redo.</p>
+          <p>File names can fool you. A file picker may sort names the way a computer does, not the way a person does.</p>
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Names</th><th>Sorted by name</th><th>Right order?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Names">page1, page2, page10</td><td data-label="Sorted by name">page1, page10, page2</td><td data-label="Right order?">No</td></tr>
+              <tr><td data-label="Names">01-cover, 02-resume, 10-notes</td><td data-label="Sorted by name">01-cover, 02-resume, 10-notes</td><td data-label="Right order?">Yes</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Tip.</strong> Start file names with 01, 02, 03. Adding them all at once then usually gives the right order. Files added one at a time land in the order you added them.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Combine for Job Applications: Cover Letter, Resume, Portfolio</h3>
+          <p>One PDF is easier to review than four attachments. One click opens everything in the order you meant.</p>
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Order</th><th>What goes in</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Order">1</td><td data-label="What goes in">Cover letter</td><td data-label="Why">It is short and sets the scene.</td></tr>
+              <tr><td data-label="Order">2</td><td data-label="What goes in">Resume</td><td data-label="Why">It is what most reviewers want most.</td></tr>
+              <tr><td data-label="Order">3</td><td data-label="What goes in">Portfolio, certificates, references</td><td data-label="Why">Supporting proof comes last.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Mixed formats are fine.</strong> Drop PDFs and JPG or PNG images together. Each image becomes a page. WEBP or HEIC images need a quick trip through Convert first.</p>
+          <p><strong>Keep it light.</strong> Set the image quality to Smaller or Smallest. Combine shows the new size of each file.</p>
+          <p><strong>Check before sending.</strong> Open the merged PDF and scroll through it once, start to finish.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Merging Scanned Documents Without Losing Page Order</h3>
+          <p>Scans often have names like scan001.pdf that do not match the page order.</p>
+          <p><strong>Check the page, not the name.</strong> Look at each preview before you merge. It is the surest way to avoid sending a scrambled document to a bank or an office.</p>
+          <p><strong>Mixed scans and photos work.</strong> PDFs and JPG or PNG images go in together. A phone photo can look different from a real scan, so re-scan the odd one out if looks matter.</p>
+          <p><strong>Sideways pages.</strong> Use the rotate button on that file. It turns a quarter at a time and the preview updates at once.</p>
+          <p><strong>Signature pages.</strong> A signature page in the wrong place can make a contract look incomplete. Check it first.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. When to Combine vs When to Keep Files Separate</h3>
+          <p>Combine files that belong together. Keep the rest apart.</p>
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>Situation</th><th>What to do</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situation">A multi-page application or report read in order</td><td data-label="What to do">Combine</td><td data-label="Why">The reader sees everything in your order.</td></tr>
+              <tr><td data-label="Situation">A platform asks for a single PDF</td><td data-label="What to do">Combine</td><td data-label="Why">Send exactly what it asks for.</td></tr>
+              <tr><td data-label="Situation">The recipient needs to act on each file alone</td><td data-label="What to do">Keep separate</td><td data-label="Why">One merged file makes it harder to pull out a piece.</td></tr>
+              <tr><td data-label="Situation">A big batch of unrelated reference files</td><td data-label="What to do">Keep separate, or ZIP</td><td data-label="Why">The reader can open just the one they need.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Quick test.</strong> Is it one thing to read from start to finish? Combine it. Is it several things that just travel together? Keep them apart.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Common Combining Mistakes (and How to Avoid Them)</h3>
+          <p><strong>Trusting file names for the order.</strong> Names do not always match the order you want. Look at the list before you download.</p>
+          <p><strong>Mixing unrelated documents.</strong> One big file makes the reader scroll to find their part. Combine only what belongs together.</p>
+          <p><strong>Not checking the final file.</strong> Skim the merged PDF once. It catches an out-of-order page or a duplicate.</p>
+          <p><strong>Leaving a page sideways.</strong> Rotate it in the list. The preview shows the result at once.</p>
+          <p><strong>Sending a huge file.</strong> Merged files inherit the weight of every page. Set the image quality to Smaller or Smallest and check the size on each file.</p>
+        
+</div>
+</div>
   </div>
 
   <div class="ad-slot">
@@ -555,16 +824,21 @@ html[data-theme="dark"] .combine-file-index{
       <h3>Getting started with</h3>
       <div class="footer-getting-started-columns">
         <div class="footer-dashboard-col footer-getting-started">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="convert">Convert</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="compress">Compress</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="combine">Combine</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="exif">Cleanly</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="context">Context</button>
+          <a class="footer-dash-link" href="/convert/">Convert</a>
+          <a class="footer-dash-link" href="/compress/">Compress</a>
+          <a class="footer-dash-link" href="/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/context/">Context</a>
         </div>
         <div class="footer-dashboard-col footer-getting-started-more">
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="gif">Congify</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="coudio">Coudio</button>
-          <button type="button" class="footer-dash-link go-to-golden-rules" data-tool="codify">Codify</button>
+          <a class="footer-dash-link" href="/congify/">Congify</a>
+          <a class="footer-dash-link" href="/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/codify/">Codify</a>
+          <a class="footer-dash-link" href="/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/convido/">Convido</a>
         </div>
       </div>
     </div>
@@ -581,8 +855,8 @@ html[data-theme="dark"] .combine-file-index{
 </footer>
 </div>
 
-<script src="/shared/site.js?v=96" defer></script>
-<script src="/shared/report.js?v=22" defer></script>
-<script src="/combine/combine-tool.js?v=23" defer></script>
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/combine/combine-tool.js?v=69" defer></script>
 </body>
 </html>

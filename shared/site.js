@@ -87,14 +87,26 @@ window.addEventListener("pagehide", () => {
   try { sessionStorage.setItem(bcScrollKey, String(window.scrollY)); } catch(e){ /* unavailable */ }
 });
 
-/* ===== Message text helper =====
-   bcT(message, {n}) returns the message with {name} placeholders filled
-   in. User-facing strings go through it so they can be translated later
-   (see the dev-translations branch). */
+/* ===== Translations (see tools/build_translations.py) =====
+   Translated pages (/cs/...) load shared/i18n/<lang>.js first, which sets
+   window.BC_LANG, window.BC_LANG_PAGES (paths that have a translated copy)
+   and window.BC_I18N (English sentence -> translation). bcT() looks a
+   sentence up there and returns it unchanged when there's no entry (or on
+   an English page), so wrapping a string in bcT() is always safe.
+   Strings with values use {name} placeholders: bcT(message, {n}).
+   A translation may leave a placeholder out (handy to dodge plural forms). */
 function bcT(s, vars){
-  let out = s;
+  const dict = window.BC_I18N;
+  let out = (dict && dict[s]) || s;
   if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
   return out;
+}
+/* Prefixes a site path with the current language folder when that page
+   has a translated copy (e.g. "/convert/" -> "/cs/convert/"). */
+function bcLangPath(path){
+  const lang = window.BC_LANG;
+  if (lang && Array.isArray(window.BC_LANG_PAGES) && window.BC_LANG_PAGES.includes(path)) return "/" + lang + path;
+  return path;
 }
 
 /* ===== data-goto -> real navigation (no SPA gotoPage() here) ===== */
@@ -105,7 +117,6 @@ const SITE_PATH_MAP = {
   terms: "/terms/",
   privacy: "/privacy/",
   cookies: "/cookies/",
-  "golden-rules": "/golden-rules/",
   convert: "/convert/",
   compress: "/compress/",
   combine: "/combine/",
@@ -119,23 +130,18 @@ document.addEventListener("click", (e) => {
   if (gotoEl){
     e.preventDefault();
     if (typeof gtag === "function") gtag("event", "nav_click", { destination: gotoEl.dataset.goto });
-    const target = SITE_PATH_MAP[gotoEl.dataset.goto] || "/";
+    const target = bcLangPath(SITE_PATH_MAP[gotoEl.dataset.goto] || "/");
     location.href = target;
     return;
   }
-  const golden = e.target.closest(".go-to-golden-rules");
-  if (golden){
-    e.preventDefault();
-    /* Every one of these already carries data-tool (convert/compress/
-       combine/exif/context/gif/coudio/codify — the same values
-       golden-rules-tool.js's selectGoldenRulesTool() expects), but this
-       always ignored it and sent everyone to the page's default
-       ("convert") tab regardless of which tool's link was actually
-       clicked. Forward it as a query param so golden-rules/index.html
-       can open the right tab on load. */
-    const tool = golden.dataset.tool;
-    location.href = "/golden-rules/" + (tool ? `?tool=${encodeURIComponent(tool)}` : "");
-  }
+});
+
+document.addEventListener("click", (e) => {
+  const link = e.target.closest(".gr-topics a");
+  if (!link) return;
+  e.preventDefault();
+  const art = document.getElementById(link.getAttribute("href").slice(1));
+  if (art) art.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 /* ===== GA4 click tracking ===== */
@@ -855,9 +861,10 @@ function showNavTerminal(text){
         const toggle = document.getElementById("navShareMoreToggle");
         if (list){ list.hidden = true; toggle.setAttribute("aria-expanded", "false"); }
       };
+      document.addEventListener("bc-report-hover", closeShare);
       shareWrap.addEventListener("mouseenter", () => {
         clearTimeout(closeTimer);
-        if (window.innerWidth > 768) shareMenu.classList.add("open");
+        if (window.innerWidth > 768){ shareMenu.classList.add("open"); document.dispatchEvent(new Event("bc-nav-hover")); }
       });
       shareWrap.addEventListener("mouseleave", () => {
         clearTimeout(closeTimer);
@@ -1148,6 +1155,45 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 function bcFormatFileSize(bytes){
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/* ===== Editable output file name (per file row) =====
+   Coudio's pattern, shared: the row shows an input holding the output's
+   base name (no extension — that comes from the output format); the tool
+   keeps the value per file and builds the download name from it. */
+function bcCreateRowNameInput(initial, onChange){
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "bc-row-name";
+  input.value = initial;
+  input.spellcheck = false;
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", bcT("Output file name"));
+  input.title = bcT("Output file name");
+  input.addEventListener("input", () => onChange(input.value));
+  ["click", "pointerdown", "dragstart"].forEach(type => input.addEventListener(type, e => e.stopPropagation()));
+  input.draggable = false;
+  return input;
+}
+function bcSafeBaseName(value, fallback){
+  const cleaned = (value || "").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "").trim();
+  return cleaned || fallback;
+}
+/* Names collide once files can be renamed (two files both called "scan");
+   a ZIP would silently keep only the last, so suffix " (2)", " (3)"... */
+function bcUniqueName(name, used){
+  if (!used.has(name)){
+    used.add(name);
+    return name;
+  }
+  const m = name.match(/^(.*?)(\.[^.]+)?$/);
+  for (let i = 2; ; i++){
+    const candidate = `${m[1]} (${i})${m[2] || ""}`;
+    if (!used.has(candidate)){
+      used.add(candidate);
+      return candidate;
+    }
+  }
 }
 
 /* ===== SHARED "CONTINUE WHERE YOU LEFT OFF" PERSISTENCE =====
@@ -1482,6 +1528,34 @@ function bcCreateColorPanel(container, { value = "#2563EB", swatches = BC_COLOR_
   return { setValue };
 }
 
+/* Floating color picker anchored to a button: a bc-color-panel in a fixed
+   popover that opens above the anchor (below when there's no room), clamps
+   on-screen, and closes on outside press, Esc, or any other popup opening.
+   open(hex) shows it preset to hex; onChange(hex) fires while dragging. */
+function bcCreateColorPopover(anchor, { value = "#2563EB", onChange } = {}){
+  const pop = document.createElement("div");
+  pop.className = "bc-color-popover";
+  pop.hidden = true;
+  document.body.appendChild(pop);
+  const panel = bcCreateColorPanel(pop, { value, onChange });
+  const close = () => { pop.hidden = true; };
+  function open(hex){
+    panel.setValue(hex || value);
+    pop.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + "px";
+    pop.style.top = Math.round(r.top > h + 16 ? r.top - h - 8 : r.bottom + 8) + "px";
+  }
+  bcRegisterPopup(close);
+  document.addEventListener("pointerdown", (e) => {
+    if (pop.hidden || pop.contains(e.target) || anchor.contains(e.target)) return;
+    close();
+  }, true);
+  bcRegisterEscapable(() => !pop.hidden, close, 105);
+  return { open, close, setValue: panel.setValue, isOpen: () => !pop.hidden };
+}
+
 /* Built-in menus/tooltips: any open dropdown, combo or info tooltip. */
 bcRegisterEscapable(
   () => bcDropdowns.some(d => !d.menu.hidden) || bcCombos.some(c => !c.menu.hidden) || bcInfoTooltips.some(o => !o.tooltip.hidden),
@@ -1492,6 +1566,85 @@ bcRegisterEscapable(
   },
   60
 );
+
+/* ===== Language switch =====
+   A page lists its translations as <link rel="alternate" hreflang="..">
+   (the build script writes them). This adds one nav button that links to
+   the other language's copy of the same page; it never redirects on its
+   own and just remembers the last choice. */
+(function(){
+  const FLAGS = {
+      en: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="8"/></svg>',
+      de: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#FFCE00"/><rect width="60" height="26.7" fill="#DD0000"/><rect width="60" height="13.3" fill="#000"/></svg>',
+      nl: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#21468B"/><rect width="60" height="26.7" fill="#fff"/><rect width="60" height="13.3" fill="#AE1C28"/></svg>',
+      fr: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#0055A4"/><rect x="40" width="20" height="40" fill="#EF4135"/></svg>',
+      ro: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#FCD116"/><rect width="20" height="40" fill="#002B7F"/><rect x="40" width="20" height="40" fill="#CE1126"/></svg>',
+      it: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="20" height="40" fill="#009246"/><rect x="40" width="20" height="40" fill="#CE2B37"/></svg>',
+      pt: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#009C3B"/><polygon points="30,5 55,20 30,35 5,20" fill="#FFDF00"/><circle cx="30" cy="20" r="8" fill="#002776"/></svg>',
+      ja: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="12" fill="#BC002D"/></svg>',
+      ko: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><g transform="rotate(-33.7 30 20)"><path d="M20 20A10 10 0 0 1 40 20A5 5 0 0 1 30 20A5 5 0 0 0 20 20z" fill="#CD2E3A"/><path d="M20 20A5 5 0 0 1 30 20A5 5 0 0 0 40 20A10 10 0 0 1 20 20z" fill="#0047A0"/></g><g fill="#000"><g transform="translate(10 8) rotate(-57)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 8) rotate(57)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="11" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g><g transform="translate(10 32) rotate(-123)"><rect x="-5.5" y="-4.5" width="11" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="11" height="1.8"/></g><g transform="translate(50 32) rotate(123)"><rect x="-5.5" y="-4.5" width="4.6" height="1.8"/><rect x="0.9" y="-4.5" width="4.6" height="1.8"/><rect x="-5.5" y="-0.9" width="4.6" height="1.8"/><rect x="0.9" y="-0.9" width="4.6" height="1.8"/><rect x="-5.5" y="2.7" width="4.6" height="1.8"/><rect x="0.9" y="2.7" width="4.6" height="1.8"/></g></g></svg>',
+      cs: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#D7141A"/><path d="M0 0l30 20L0 40z" fill="#11457E"/></svg>',
+      es: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/></svg>',
+      id: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#E70011"/><rect y="20" width="60" height="20" fill="#fff"/></svg>',
+      pl: '<svg viewBox="0 0 60 40"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#DC143C"/></svg>'
+    };
+  function applySavedLang(){
+    let saved = null;
+    try { saved = localStorage.getItem("bc-lang"); } catch (e) { /* storage unavailable */ }
+    const current = document.documentElement.lang || "en";
+    if (!saved || saved === current) return;
+    const target = document.querySelector('link[rel="alternate"][hreflang="' + saved + '"]');
+    if (!target) return;
+    const internal = document.referrer && new URL(document.referrer).origin === location.origin;
+    if (current !== "en" && !internal) return;
+    location.replace(new URL(target.href, location.href).pathname + location.search + location.hash);
+  }
+  applySavedLang();
+  function addLangButton(){
+    const nav = document.querySelector(".nav-right");
+    if (!nav || nav.querySelector(".nav-lang-wrap")) return;
+    const current = document.documentElement.lang || "en";
+    const ORDER = ["en", "nl", "de", "es", "fr", "it", "pl", "pt", "ro", "cs", "id", "ja", "ko"];
+    const alts = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].filter(l => l.hreflang !== "x-default").sort((a, b) => ORDER.indexOf(a.hreflang) - ORDER.indexOf(b.hreflang));
+    if (alts.length < 2) return;
+    const NAMES = { en: "English", cs: "Česky", pl: "Polski", id: "Indonesia", es: "Español", de: "Deutsch", nl: "Nederlands", fr: "Français", it: "Italiano", pt: "Português", ro: "Română", ja: "日本語", ko: "한국어" };
+    const wrap = document.createElement("div");
+    wrap.className = "nav-lang-wrap";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nav-theme-btn nav-lang-btn";
+    btn.innerHTML = FLAGS[current] || current.toUpperCase();
+    btn.title = NAMES[current] || current;
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+    const menu = document.createElement("div");
+    menu.className = "nav-lang-menu";
+    alts.forEach(l => {
+      const a = document.createElement("a");
+      a.href = new URL(l.href, location.href).pathname + location.search;
+      a.hreflang = l.hreflang;
+      a.innerHTML = (FLAGS[l.hreflang] || "") + "<span>" + (NAMES[l.hreflang] || l.hreflang) + "</span>";
+      if (l.hreflang === current) a.setAttribute("aria-current", "true");
+      a.addEventListener("click", () => { try { localStorage.setItem("bc-lang", l.hreflang); } catch (e) { /* storage unavailable */ } });
+      menu.appendChild(a);
+    });
+    const setOpen = open => { menu.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("bc-report-hover", () => setOpen(false));
+    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(e.detail > 0 && window.matchMedia("(hover: hover)").matches && window.innerWidth > 768 ? true : !menu.classList.contains("open")); });
+    document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    if (window.matchMedia("(hover: hover)").matches){
+      let closeTimer;
+      wrap.addEventListener("mouseenter", () => { clearTimeout(closeTimer); if (window.innerWidth > 768){ setOpen(true); document.dispatchEvent(new Event("bc-nav-hover")); } });
+      wrap.addEventListener("mouseleave", () => { clearTimeout(closeTimer); closeTimer = setTimeout(() => setOpen(false), 150); });
+    }
+    wrap.append(btn, menu);
+    nav.insertBefore(wrap, nav.firstChild);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addLangButton);
+  else addLangButton();
+})();
 
 /* ===== Share nudge — one-time floating banner =====
    Counts which tools a visitor has finished using (hooked into

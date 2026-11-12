@@ -15,7 +15,7 @@
      Shared logic — shared/site.js's bcSetupHelpBanner — only the step
      content lives here now. */
   bcSetupHelpBanner("cleanly", "ex", [
-    ["WELCOME_TO_CLEANLY", "Cleanly scans your images for hidden metadata — GPS location, camera model, timestamps — so you can strip it before sharing. Click or drop an image below to get started."],
+    ["WELCOME_TO_CLEANLY", "Cleanly scans your images for hidden metadata — GPS location, camera model, timestamps — so you can strip it before sharing. Click, drop, or press (A) to add an image to get started."],
     ["WHAT_IT_FINDS", "Once a file's in, we scan it and show exactly what's hiding inside — GPS location, camera model, timestamps, or editor data."],
     ["CHECK_BEFORE_STRIPPING", "Your files show up below once picked — check what was found, and remove any you don't need."],
     ["NOT_SURE_WHY_IT_MATTERS", "Scroll down to the guide further down the page — it explains what metadata actually reveals and why stripping it matters."],
@@ -350,6 +350,10 @@
         <div class="exif-file-actions">${actionButtonsHtml}</div>
         <button type="button" class="exif-file-remove bc-file-remove-btn" aria-label="${bcT("Remove")}" title="${bcT("Remove file")}">×</button>
       `;
+      el.querySelector(".exif-file-name").replaceWith(bcCreateRowNameInput(
+        item.outputBase !== undefined ? item.outputBase : defaultBaseOf(item),
+        value => { item.outputBase = value; schedulePersist(); }
+      ));
 
       el.querySelectorAll(".ex-heic-format-toggle").forEach(heicFormatToggleEl => {
         heicFormatToggleEl.querySelectorAll("button").forEach(btn => {
@@ -403,6 +407,7 @@
           return;
         }
         renderList();
+        showLoadedStatus();
       });
 
       const downloadBtn = el.querySelector(".ex-row-download-btn");
@@ -433,6 +438,12 @@
     else schedulePersist();
   }
 
+  function showLoadedStatus(){
+    status.textContent = files.length
+      ? bcT("{0} {1} loaded", [files.length, files.length === 1 ? "file" : "files"])
+      : "";
+  }
+
   async function addFiles(newFiles){
     const incoming = [...newFiles];
     const picked = incoming.filter(isImageFile);
@@ -446,6 +457,7 @@
       }
       return;
     }
+    continueBtn.hidden = true;
     for (const file of picked){
       const tags = isSvgFile(file) ? await readSvgFindings(file)
         : isHeicFile(file) ? heicFindings()
@@ -462,11 +474,13 @@
            becoming "Download" once item.stripped flips true (see
            actionButtonsHtml below). */
         wasAlreadyClean: tags.length === 0,
-        heicFormat: "png"
+        heicFormat: "png",
+        outputBase: pendingBases.get(file)
       });
     }
     revealAfterDropUI();
     renderList();
+    showLoadedStatus();
     /* Same partial-rejection gap Convert's applyPickedFiles() closed —
        the picked.length === 0 branch above only covers a wholly-
        unsupported batch; a mixed batch (e.g. 2 valid images + 1 .nef)
@@ -700,10 +714,20 @@
      Download button stays clickable for as many re-downloads as wanted.
      The only step in this flow that gets a privacy-check pair — cleaning
      itself never touches the network. */
+  const pendingBases = new WeakMap();
+  function defaultBaseOf(item){
+    return item.file.name.replace(/\.[^.]+$/, "");
+  }
+  function finalNameOf(item){
+    const ext = (item.strippedName.match(/\.[^.]+$/) || [""])[0];
+    return bcSafeBaseName(item.outputBase, defaultBaseOf(item)) + ext;
+  }
+
   function downloadEntry(item){
     startPrivacyCheck();
-    downloadBlob(item.strippedBlob, item.strippedName);
-    status.textContent = bcT("Downloaded {0}.", [item.strippedName]);
+    const name = finalNameOf(item);
+    downloadBlob(item.strippedBlob, name);
+    status.textContent = bcT("Downloaded {0}.", [name]);
     finishPrivacyCheck(document.getElementById("exPrivacyBadge"));
     renderList();
   }
@@ -731,6 +755,7 @@
       const storedFiles = await Promise.all(files.map(async item => ({
         name: item.file.name,
         type: item.file.type,
+        outputName: item.outputBase,
         bytes: await item.file.arrayBuffer()
       })));
       await bcDbPut(EX_DB_NAME, EX_DB_STORE, { files: storedFiles });
@@ -756,7 +781,11 @@
     continueBtn.addEventListener("click", () => {
       continueBtn.hidden = true;
       try {
-        const restored = saved.files.map(f => new File([f.bytes], f.name, { type: f.type }));
+        const restored = saved.files.map(f => {
+          const file = new File([f.bytes], f.name, { type: f.type });
+          if (typeof f.outputName === "string") pendingBases.set(file, f.outputName);
+          return file;
+        });
         addFiles(restored);
       } catch (err){
         console.error(err);

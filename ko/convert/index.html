@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convert – 무료 이미지 및 PDF 변환기 – BC Tools</title>
+<meta name="description" content="이미지를 JPG, PNG, WEBP, SVG, PDF 사이에서 브라우저에서 무료로 변환하세요. 업로드도 서버도 없고, 아무것도 기기 밖으로 나가지 않습니다.">
+<link rel="canonical" href="https://bitcrunching.com/ko/convert/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/convert/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/convert/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/convert/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/convert/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/convert/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/convert/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/convert/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/convert/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/convert/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/convert/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/convert/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convert/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
+<script src="/shared/i18n/ko.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Convert – 무료 이미지 및 PDF 변환기 – BC Tools">
+<meta property="og:description" content="이미지를 JPG, PNG, WEBP, SVG, PDF 사이에서 브라우저에서 무료로 변환하세요. 업로드도 서버도 없고, 아무것도 기기 밖으로 나가지 않습니다.">
+<meta property="og:url" content="https://bitcrunching.com/ko/convert/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Convert – 무료 이미지 및 PDF 변환기 – BC Tools">
+<meta name="twitter:description" content="이미지를 JPG, PNG, WEBP, SVG, PDF 사이에서 브라우저에서 무료로 변환하세요. 업로드도 서버도 없고, 아무것도 기기 밖으로 나가지 않습니다.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+<script src="/vendor/pdf-lib.min.js"></script>
+<script src="/vendor/pdf.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cvAfterDrop is revealed, so it never fights the dropdowns
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
+.tool-app:has(#cvAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cvAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cvAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cvResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cvAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Coudio already applies to #cdStatus for the same
+   reason; found via a 1100×322.5px banner-size audit (every other tool
+   renders exactly that pre-load, Convert/Compress were 354.5 — 32px of
+   dead space). */
+.tool-app:has(#cvAfterDrop[hidden]) #cvResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-convert{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Convert's own brand-tinted
+   border on top, the one genuinely tool-specific piece. Same
+   color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cv-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#7626f5;
+  color:#7626f5;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+/* Red and yellow are both functional here (close / collapse), unlike
+   the mainpage easter egg where only yellow does anything — so both
+   get their real traffic-light color instead of the muted grey used
+   for a purely decorative dot. */
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"가이드";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+#cvDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cvDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cvDrop.active{
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+.tool-app.active{
+  background:rgba(118,38,245,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cvAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. Was previously
+   nested inside #cvAfterDrop with a large negative top pulling it up
+   out of that box — worked, but was a one-off recipe instead of the
+   same positioning every other tool uses. */
+.cv-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cvAfterDrop:not([hidden])) .cv-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cv-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cv-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cv-back-btn{ display:none; }
+  .tool-app:has(#cvAfterDrop:not([hidden])) .cv-back-btn{ display:flex; }
+}
+
+.tool-io-row{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+
+/* .tool-controls is normally a 2-column grid pairing a format picker
+   with the primary button; here it now wraps only the Convert button
+   (the pickers moved into .tool-io-row above), so it needs to be a
+   single full-width column instead. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+.tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
+.tool-io-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:10px;
+}
+.io-label-short{ display:none; }
+
+/* Shape/color is the shared .bc-info-btn/.bc-info-tooltip
+   (shared/site.css) now — only the .tool-io-label flex layout above
+   stays local. Used to be this tool's own local .tool-io-info-btn/
+   -tooltip copy (the component's origin); Coudio's own use of the "i"
+   icon pointed at the shared version from the start, so Convert now
+   points at the same one instead of carrying a separate copy. */
+@media (max-width:640px){
+  .io-label-full{ display:none; }
+  .io-label-short{ display:inline; }
+}
+
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
+.tool-io-group .tool-format-select{ display:block; }
+@media (max-width:768px){
+  .tool-io-group .tool-format-select{ display:none !important; }
+}
+/* Mobile shortens both Input's and Output's placeholder — "Choose
+   format"/"Choose a format" don't fit as comfortably at phone widths
+   as they do on desktop — to just "Pick". Scoped to .is-placeholder
+   (toggled in convert-tool.js alongside the real textContent swap) so
+   this only applies before a format's actually chosen; once one is,
+   the label shows the real selection (e.g. "JPG") on mobile exactly
+   as it does on desktop. */
+@media (max-width:768px){
+  #cvInputTriggerLabel.is-placeholder,
+  #cvFormatTriggerLabel.is-placeholder{ font-size:0; }
+  #cvInputTriggerLabel.is-placeholder::before,
+  #cvFormatTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
+}
+
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
+
+.format-pick-intro{
+  max-width:680px;
+  margin:0 auto 32px;
+  text-align:center;
+  color:var(--text);
+  opacity:.8;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+/* Scoped to Convert specifically — .format-pick-group is shared with
+   Compress's level cards, which don't have this actions row. */
+.content-section-convert .format-pick-group{
+  padding:20px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+.content-section-convert .format-pick-sublist{
+  margin-bottom:16px;
+}
+.format-pick-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:auto;
+}
+.format-pick-action-btn{
+  width:100%;
+  height:40px;
+  padding:0 16px;
+  border-radius:14px;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+}
+/* Marks which format this card's Input/Output was last set to — stays
+   selected after the click so the card visibly reflects the tool's
+   current state, rather than looking like a one-shot action button.
+   Input and Output are tracked independently (see convert-tool.js), so
+   picking "I have this" here doesn't disturb any other card's "I need
+   this" selection and vice versa — a user can set both from one card,
+   or just the one they still need after already uploading a file. */
+.format-pick-action-btn.selected{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="클릭하여 도구 가이드 초기화" title="클릭하여 도구 가이드 초기화">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cvHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cvHelpClose" aria-label="닫고 다시 표시하지 않기"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cvHelpToggle" aria-label="최소화" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cvHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpBack">&lt; 뒤로</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cvHelpCloseMobile">닫기</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpNext">다음 &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cvHelpBody">
+    <div class="engine-status-row">&gt; <span id="cvHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-convert" role="img" aria-label="Convert 아이콘"></span>
+        Convert
+      </div>
+      <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="모든 파일 제거">×</button>
+
+    <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">클릭</span><span class="tool-drop-or-drop"> 또는 놓기 </span><span class="tool-drop-rest">이미지 또는 PDF</span></div>
+    <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>중단한 곳에서 이어서 하기</button>
+
+    <div class="tool-after-drop" id="cvAfterDrop" hidden>
+      <div class="tool-io-row">
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label">
+            <span class="io-label-full">예상 입력</span><span class="io-label-short">IN</span>
+            <button type="button" class="bc-info-btn" id="cvInputInfoBtn" aria-label="예상 입력이 무슨 뜻인가요?" aria-expanded="false">i</button>
+          </span>
+          <div class="bc-info-tooltip" id="cvInputInfoTooltip" hidden>업로드된 각 파일의 형식은 개별적으로 인식되므로 서로 다른 형식을 섞어도 문제없습니다. 모든 파일은 선택한 형식으로 변환됩니다.</div>
+          <!-- The real <select> below is the state/event backend every
+               existing bit of format logic (mutual-exclusion, URL
+               routing, auto-detect) already reads/writes — kept exactly
+               as it was, just visually hidden. This .bc-dropdown is the
+               real visible/interactive control now, kept in sync with
+               the select's value at every point convert-tool.js sets
+               one (see syncDropdownTrigger there). 5 options → the
+               plain shared dropdown, not the searchable combo. -->
+          <div class="bc-dropdown" id="cvInputDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvInputTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvInputTriggerLabel">형식 선택</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvInputMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/heic" data-label="HEIC" role="option" aria-selected="false">HEIC</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvInputSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>형식 선택</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="image/heic">HEIC</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+
+        <span class="tool-io-swap" aria-hidden="true">
+          <span class="tool-io-swap-arrow">&rarr;</span>
+        </span>
+
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label"><span class="io-label-full">출력</span><span class="io-label-short">출력</span></span>
+          <div class="bc-dropdown" id="cvFormatDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvFormatTriggerLabel">형식 선택</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvFormatMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvFormatSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>형식 선택</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-results" id="cvResults">
+      <button type="button" class="bc-add-tile" id="cvAddTile" aria-label="이미지 또는 PDF 추가" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">개별 파일</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cvConvertBtn" disabled title="변환 후 다운로드 (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">변환 후 다운로드</button>
+    </div>
+
+    <div class="tool-status" id="cvStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="convert">
+  <div class="content-section-article-wrap" id="cvWhyArticle" hidden>
+    <h3 id="cvWhyHeading"></h3>
+    <p id="cvWhyP1"></p>
+    <p id="cvWhyP2"></p>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>어떤 형식을 써야 할지 모르겠나요?</h3>
+    <p class="format-pick-intro">각 형식이 실제로 무엇에 쓰이는지 알아봅니다. 이미 가진 형식과 필요한 형식을 고르세요.</p>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p>
+        <ul class="format-pick-sublist">
+          <li>일상 사진에 최적.</li>
+          <li>작은 파일, 뛰어난 호환성.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/jpeg">이것이 있어요</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/jpeg">이것이 필요해요</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p>
+        <ul class="format-pick-sublist">
+          <li>로고, 스크린샷, 투명도에 최적.</li>
+          <li>무손실 품질.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/png">이것이 있어요</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/png">이것이 필요해요</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p>
+        <ul class="format-pick-sublist">
+          <li>웹사이트에 최적.</li>
+          <li>투명도를 지원하는 더 작은 파일.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/webp">이것이 있어요</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/webp">이것이 필요해요</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-heic" aria-hidden="true"></span> HEIC</p>
+        <ul class="format-pick-sublist">
+          <li>iPhone의 기본 사진 형식: 입력으로 허용됩니다.</li>
+          <li>더 넓은 호환성을 위해 JPG, PNG 또는 WEBP로 변환하세요.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/heic">이것이 있어요</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p>
+        <ul class="format-pick-sublist">
+          <li>여러 이미지를 하나의 문서로 공유하기에 최적.</li>
+          <li>당사의 Combine 도구로 합칠 수도 있습니다.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="application/pdf">이것이 있어요</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="application/pdf">이것이 필요해요</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>이미지 변환이 처음이신가요?</h3>
+    <p>모든 이미지 형식은 서로 다른 문제를 해결하기 위해 설계되었으며, 알맞은 형식을 고르는 것은 이미지를 준비할 때 내리는 거의 모든 결정보다 파일 크기와 품질에 더 큰 영향을 줍니다. 각 형식의 내부에서 실제로 어떤 일이 일어나는지, 그리고 언제 정말 중요한지 알아봅니다.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. 이미지 형식 완벽 가이드: JPG vs PNG vs WEBP</a></li>
+      <li><a href="#gr-article-2">2. 사진을 PDF로 바꾸는 방법(그리고 그래야 하는 이유)</a></li>
+      <li><a href="#gr-article-3">3. PDF에서 이미지 추출하기: 실전 가이드</a></li>
+      <li><a href="#gr-article-4">4. 이미지를 변환해야 할 때: 실제 시나리오</a></li>
+      <li><a href="#gr-article-5">5. 변환에서 흔한 실수(와 피하는 방법)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="convert">
+<div class="gr-article" id="gr-article-1"><h3>1. 이미지 형식 완벽 가이드: JPG vs PNG vs WEBP</h3>
+          <p>모든 이미지 형식은 서로 다른 문제를 해결하기 위해 설계되었으며, 알맞은 형식을 고르는 것은 이미지를 준비할 때 내리는 거의 모든 결정보다 파일 크기와 품질에 더 큰 영향을 줍니다. 각 형식의 내부에서 실제로 어떤 일이 일어나는지, 그리고 언제 정말 중요한지 알아봅니다.</p>
+
+          <h4>JPG (JPEG): 사진용 형식</h4>
+          <p>JPG는 손실 압축을 사용하며, 이는 파일 크기를 줄이기 위해 저장할 때마다 일부 이미지 데이터를 버린다는 뜻입니다. 완만한 색 전환, 자연스러운 노이즈, 선명한 가장자리가 없는 사진에는 이것이 놀랄 만큼 잘 작동합니다. 사람의 눈은 JPG가 버리는 특정 정보를 쉽게 알아채지 못하기 때문입니다. 그래서 JPG는 웹, 카메라, 휴대폰에서 사진의 기본 형식으로 남아 있습니다. 뛰어난 압축, 작은 파일, 보편적인 지원.</p>
+          <p>JPG가 할 수 없는 것은 투명도입니다. 형식에 알파 채널이 전혀 없으므로 투명한 배경이 필요하다면 JPG는 완전히 제외됩니다. 또한 다시 저장할 때마다 조금씩 저하되고(아래 실수 관련 문서에서 자세히 다룹니다), 텍스트나 로고처럼 선명한 가장자리가 있는 그래픽에서 어려움을 겪으며, 이때 압축 아티팩트가 딱딱한 선 주변의 흐릿함으로 눈에 띕니다.</p>
+
+          <h4>PNG: 무손실이며 투명도에 친화적인 형식</h4>
+          <p>PNG는 무손실 압축을 사용하여, 몇 번을 다시 저장해도 품질 손실 없이 모든 픽셀이 정확히 보존됩니다. 따라서 선명한 가장자리, 단색, 텍스트가 있는 것, 즉 로고, 스크린샷, 아이콘, 다이어그램에 알맞은 선택입니다. 부분 투명도(부드럽고 흐릿한 가장자리)를 포함한 투명도도 완전히 지원하는데, JPG는 이것을 전혀 할 수 없습니다.</p>
+          <p>대가는 크기입니다. 무손실 압축은 특히 미묘한 색 변화가 많은 사진에서 JPG의 손실 방식만큼 파일을 줄일 수 없습니다. PNG로 저장한 사진은 대부분의 사람들이 알아볼 수 없는 품질 차이를 위해 같은 사진을 JPG로 저장한 것보다 5–10배 쉽게 커질 수 있습니다.</p>
+
+          <h4>WEBP: 현대적인 만능 형식</h4>
+          <p>WEBP는 Google의 비교적 새로운 형식이며, 대부분의 경우 정말 두 세계의 장점을 모두 가졌습니다. 손실 압축과 무손실 압축을 모두 지원하고(필요에 따라 JPG처럼도 PNG처럼도 동작할 수 있음), 투명도를 지원하며, 같은 품질에서 보통 JPG나 PNG보다 작은 파일을 만듭니다. 사진에서는 JPG보다 25–35% 작은 경우가 많고, 그래픽에서는 PNG보다 훨씬 작습니다.</p>
+          <p>유일한 실제 제한은 오래된 소프트웨어와의 호환성입니다. 일부 오래된 이미지 편집기, 일부 이메일 클라이언트, 일부 오래된 기기는 WEBP를 잘 처리하지 못합니다. 현대 웹사이트에서는 이것이 더 이상 실제로 문제가 되는 경우가 드물지만, 소프트웨어를 통제할 수 없는 사람에게 파일을 보낸다면 한 번 생각해 볼 만합니다.</p>
+
+          <h4>HEIC: 벗어나고 싶어질 iPhone 형식</h4>
+          <p>HEIC(및 그 가까운 친척인 HEIF)는 iOS 11부터 Apple의 기본 사진 형식입니다. 같은 품질에서 JPG보다 더 잘 압축되어 iPhone이 자동으로 사용합니다. 문제는 호환성입니다. Apple이 아닌 대부분의 소프트웨어, 오래된 편집 도구, 많은 웹사이트와 업로드 양식은 여전히 HEIC 파일을 바로 열 수 없습니다.</p>
+          <p>Convert는 HEIC/HEIF를 입력으로 받아 전부 브라우저 안에서 디코딩하므로, iPhone에서 막 꺼낸 사진을 그대로 놓고 어디서나 열리는 JPG, PNG, WEBP로 받을 수 있습니다. HEIC 출력 옵션은 없습니다. 변환의 목적이 바로 그 호환성 격차를 없애는 것이기 때문입니다.</p>
+
+          <h4>빠른 결정 규칙</h4>
+          <p>투명도가 필요 없는 사진 → JPG 또는 WEBP. 투명도나 선명한 가장자리가 필요한 것(로고, 스크린샷, 그래픽) → PNG 또는 WEBP. 최신 브라우저를 지원하는 가장 작은 파일이 필요 → WEBP.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 사진을 PDF로 바꾸는 방법(그리고 그래야 하는 이유)</h3>
+          <p>이미지를 하나의 PDF로 변환하는 것은 Convert가 할 수 있는 가장 유용한 일 중 하나이지만 사람들이 바로 발견하지 못합니다. “이 사진 12장을 12개의 첨부 파일이 아니라 파일 하나로 보내려면 어떻게 하나요”에 대한 답입니다.</p>
+
+          <h4>이미지를 그냥 ZIP으로 묶지 않고 PDF로 합치는 이유</h4>
+          <p>ZIP 파일은 받는 사람이 다운로드하고, 압축을 풀고, 이미지를 하나씩 열어야 합니다. 대부분의 사람들은 이런 추가 단계를 귀찮아합니다. PDF는 브라우저나 거의 모든 기기에 이미 있는 기본 PDF 뷰어에서 바로 열리고, 페이지는 설정한 순서 그대로 나타납니다. 지원서(자기소개서, 이력서, 포트폴리오 샘플 순)나 순서를 유지해야 하는 스캔 서류에서는 이것이 매우 중요합니다.</p>
+          <p>또한 수많은 공식 및 준공식 제출에서 기대되는 형식이기도 합니다. 입사 지원서, 보험 청구, 세금 서류, 학교 과제, 임대 신청서는 낱개 이미지 폴더처럼 실수로 순서가 바뀌거나 분리될 수 없고 모호함이 없다는 이유로 “단일 PDF로 제출해 주세요”라고 명시하는 경우가 많습니다.</p>
+
+          <h4>단계별로</h4>
+          <p>이미지를 Convert에 놓으세요. 여러 장을 한 번에 선택할 수 있습니다. “PDF” 형식 버튼을 클릭하세요. 다른 형식과 달리 이 형식은 각 이미지를 따로 변환하지 않고, 모든 이미지를 하나의 PDF로 합쳐 각 이미지가 한 페이지가 됩니다. “변환 후 다운로드”를 클릭하면 선택한 모든 이미지가 업로드한 순서대로 페이지당 하나씩 들어 있는 PDF 파일 하나를 받게 됩니다.</p>
+          <p>여기서는 순서가 중요하므로 변환하기 전에 파일이 선택된 순서를 다시 확인하세요. 현재 Convert는 파일을 선택하거나 놓은 순서를 따르므로, 순서가 중요하다면(여러 페이지 스캔 문서처럼) 나타나길 원하는 순서대로 선택하거나 놓으세요.</p>
+
+          <h4>PDF 안의 이미지 품질에 관한 참고</h4>
+          <p>이미지가 있는 그대로 내장되므로, 해상도가 낮은 이미지는 PDF 안에서도 여전히 해상도가 낮게 보입니다. PDF로 변환해도 없던 디테일이 더해지지 않습니다. 인쇄용 포트폴리오 같은 것을 준비한다면, 불필요하게 거대한 카메라 원본 파일을 그대로 쏟아 넣어 열기 느리고 이메일로 보내기 어색한 부풀려진 PDF를 만드는 대신, 미리 이미지를 압축하거나 적당한 해상도로 줄이는 것이 좋습니다.</p>
+
+          <h4>이것이 잘못된 도구일 때</h4>
+          <p>이미 가지고 있는 PDF(원본 이미지가 아니라)를 합친다면 대신 Combine 도구가 필요합니다. Convert의 PDF 출력은 이미지를 새 PDF로 바꾸기 위한 것이며, 기존 PDF 문서를 합치기 위한 것이 아닙니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. PDF에서 이미지 추출하기: 실전 가이드</h3>
+          <p>반대 방향, 즉 기존 PDF에서 이미지를 꺼내는 것은 다른, 똑같이 흔한 문제를 해결합니다. PDF가 있고 한 페이지 또는 모든 페이지가 독립적인 이미지 파일로 필요한 경우입니다.</p>
+
+          <h4>이것이 필요한 흔한 이유</h4>
+          <p>PDF 프레젠테이션에서 슬라이드 한 장을 꺼내 이메일이나 채팅 메시지에 넣기. 스캔한 문서의 페이지를 추출해 이미지 편집기에서 개별적으로 편집하거나 주석 달기. PDF 보고서에서 다이어그램이나 차트를 가져와 다른 곳에서 재사용하기. 오래된 스캔 문서의 각 페이지를 더 널리 볼 수 있는 별도의 이미지 파일로 보관하기.</p>
+
+          <h4>실제로 작동하는 방식</h4>
+          <p>이미지 대신 PDF를 Convert에 놓으면 도구가 이를 자동으로 감지하고, PDF를 다른 PDF나 SVG로 변환하는 것은 의미가 없으므로 형식 옵션이 JPG, PNG, WEBP만 표시되도록 바뀝니다. 필요에 맞는 이미지 형식(더 작은 파일에는 JPG, PDF 페이지에 투명도나 선명한 텍스트가 있으면 PNG, 둘의 균형이 가장 좋은 WEBP)을 고르고 변환하세요.</p>
+          <p>PDF의 각 페이지는 별도의 이미지 파일이 됩니다. 10페이지 PDF를 JPG로 변환하면 페이지별로 자동 번호가 매겨진 개별 JPG 파일 10개가 나옵니다. 5페이지를 넘게 추출하면 열 번의 개별 다운로드를 일으키는 대신 자동으로 하나의 ZIP 다운로드로 묶입니다.</p>
+
+          <h4>해상도와 품질 고려 사항</h4>
+          <p>PDF 페이지는 일반적인 문서와 프레젠테이션에서 선명하고 읽기 쉬운 결과를 내도록 설계된 고정 배율로 이미지로 렌더링됩니다. 매우 상세한 다이어그램을 추출하거나 인쇄를 위해 특히 높은 해상도가 필요하다면, 인쇄에 결정적인 용도로 의존하기 전에 출력 품질을 확인할 가치가 있습니다. 디지털 용도로는 화면 해상도 추출이 보통 충분하고도 남지만, 매우 정교한 인쇄 작업에는 고DPI 추출을 위해 특별히 만들어진 다른 도구가 필요할 수 있습니다.</p>
+
+          <h4>여러 페이지 PDF와 파일 이름</h4>
+          <p>추출된 각 이미지에는 자동으로 페이지 번호가 라벨로 붙어서, 어떤 출력이 원본 문서의 어느 페이지에 해당하는지 한눈에 알 수 있습니다. 긴 PDF에서 전체가 아니라 특정 몇 페이지만 필요할 때 유용합니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 이미지를 변환해야 할 때: 실제 시나리오</h3>
+          <p>형식 간 기술적 차이를 아는 것과 눈앞의 상황에 실제로 어느 것이 적용되는지 아는 것은 별개입니다. 시나리오 기반으로 생각하는 방법을 소개합니다.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>상황</th><th>최적의 형식</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="상황">플랫폼이 특정 형식을 요구함</td><td data-label="최적의 형식">플랫폼이 무엇을 요구하든: 먼저 확인하세요</td></tr>
+              <tr><td data-label="상황">내 웹사이트 속도 높이기</td><td data-label="최적의 형식">WEBP</td></tr>
+              <tr><td data-label="상황">투명한 배경이 필요함</td><td data-label="최적의 형식">PNG 또는 WEBP</td></tr>
+              <tr><td data-label="상황">인쇄 또는 전문적인 용도 준비하기</td><td data-label="최적의 형식">PNG</td></tr>
+              <tr><td data-label="상황">장기 보관</td><td data-label="최적의 형식">PNG (또는 무손실 모드의 WEBP)</td></tr>
+            </tbody>
+          </table>
+
+          <h4>특정 형식만 받는 플랫폼에 업로드하기</h4>
+          <p>이것이 사람들이 변환기가 필요한 가장 흔한 이유입니다. 웹사이트, 앱, 제출 양식이 “JPG 또는 PNG만”이라고 지정하지만 이미지가 WEBP나 SVG인 경우입니다. Convert는 이를 몇 초 만에 해결합니다. 플랫폼이 요구하는 형식을 고르면 끝입니다. 잘못 짐작하면 왕복이 낭비되므로 항상 먼저 플랫폼이 명시한 요구 사항을 확인하세요.</p>
+
+          <h4>관리하는 웹사이트 속도 높이기</h4>
+          <p>자신의 웹사이트에 이미지를 업로드한다면, 오래된 JPG와 PNG 이미지를 WEBP로 변환하는 것은 할 수 있는 가장 가치가 높고 노력이 적게 드는 개선 중 하나입니다. 파일이 작아지면 페이지 로딩이 빨라지고, 이는 사용자 경험과 검색 엔진 순위 모두에 영향을 줍니다. 작은 아이콘이 한두 개뿐인 페이지보다 이미지가 많은 페이지(갤러리, 제품 목록, 사진이 많은 블로그)에서 더 중요합니다.</p>
+
+          <h4>투명한 배경이 필요할 때</h4>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
+
+          <h4>인쇄 또는 전문적인 용도 준비하기</h4>
+          <p>인쇄소와 전문 디자인 워크플로에는 때때로 특정 형식 요구 사항이 있습니다. 로고와 선명한 가장자리의 그래픽에는 PNG가 흔한 요구인데, JPG가 텍스트와 딱딱한 선 주변에 만들 수 있는 부드러운 압축 아티팩트를 피할 수 있기 때문입니다. 특정 인쇄소가 무엇을 원하는지 확실하지 않다면, PNG는 단순한 사진이 아닌 모든 것에 대해 보통 안전하고 무손실인 기본값입니다.</p>
+
+          <h4>보관 또는 장기 저장</h4>
+          <p>몇 년 동안 가능한 최고 화질로 보관하고 싶은 것이라면, JPG는 다시 저장할 때마다 조금씩 화질이 손실되므로 반복적으로 압축된 JPG보다 무손실 형식(PNG)이 장기적으로 더 안전한 선택입니다. 저장 공간이 실제 제약이라면 PNG보다 공간 효율이 좋으면서 JPG의 세대 손실도 피할 수 있는 WEBP의 무손실 모드와 비교해 보세요.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 변환에서 흔한 실수(와 피하는 방법)</h3>
+          <p>변환 문제의 대부분은 반복되는 몇 가지 실수에서 비롯됩니다. 주의할 점을 소개합니다.</p>
+
+          <h4>JPG를 JPG로 반복해서 다시 저장하기</h4>
+          <p>JPG를 열어 아주 조금이라도 편집하고 다시 저장할 때마다 품질이 조금씩 더 떨어집니다. 이를 세대 손실이라고 하며 누적됩니다. 이미지를 여러 번 편집할 거라면 편집하는 동안에는 무손실 형식(PNG)으로 작업하고, 마지막 내보내기 단계에서 한 번만 JPG로 변환하세요.</p>
+
+          <h4>실제로 투명도가 필요한데 JPG 사용하기</h4>
+          <p>이것은 변환기가 받는 가장 흔한 지원 질문입니다. “내 로고가 투명한 배경 대신 흰색 상자로 둘러싸인 이유가 뭐죠?” 답은 거의 항상 소스나 출력 형식이 JPG였기 때문입니다. JPG는 투명도를 전혀 표현할 수 없으며, 형식 자체에 알파 채널이라는 개념이 없으므로 어떤 설정이나 요령으로도 해결되지 않습니다. 투명도가 필요하다면 원본 이미지와 출력 형식 모두 이를 지원해야 합니다(PNG 또는 WEBP).</p>
+
+          <h4>옆으로만이 아니라 위로 변환하기</h4>
+          <p>작고 해상도가 낮은 이미지를 다른 형식으로 변환해도 디테일이 늘어나거나 실제 해상도가 높아지지 않습니다. 400×300 픽셀 JPG를 PNG로 변환해도 여전히 400×300 픽셀 이미지이며 그릇만 다를 뿐입니다. 더 큰 이미지가 필요하다면 처음부터 더 높은 해상도의 원본이 필요합니다. 형식 변환만으로는 촬영된 적 없는 디테일을 만들어 낼 수 없습니다.</p>
+
+          <h4>큰 사진에 기본값으로 PNG 선택하기</h4>
+          <p>PNG의 무손실 압축은 그래픽에는 환상적이지만 사진에는 맞지 않습니다. 대부분의 시청자가 인지하지 못할 품질 차이를 위해 필요 이상으로 훨씬 큰 파일이 만들어집니다. 휴가 사진 묶음을 “혹시 몰라서” 변환한다면 JPG나 WEBP가 훨씬 낫습니다. PNG는 투명도, 텍스트 또는 선명한 그래픽 가장자리가 있는 이미지에 특별히 아껴 두세요.</p>
+
+          <h4>중요한 곳에 보내기 전에 출력을 확인하지 않기</h4>
+          <p>고객, 고용주 또는 공식 제출용으로 가는 것이라면 보내기 전에 변환된 파일을 한 번 열어 볼 만합니다. 여러 페이지 PDF의 페이지 순서 확인, 투명도가 제대로 반영되었는지 확인, 파일이 예상 밖으로 거대하지 않은지 확인하는 것입니다. 몇 초면 되고, 제출이 반려되거나 난처한 재전송이 필요한 훨씬 시간이 많이 드는 문제를 막아 줍니다.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000015" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="소개"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="이용 약관"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="개인정보 처리방침"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="쿠키 정책"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/convert/convert-tool.js?v=50" defer></script>
+</body>
+</html>

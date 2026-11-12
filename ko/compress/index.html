@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compress – 무료 이미지 압축기 – BC Tools</title>
+<meta name="description" content="이미지를 브라우저에서 무료로 더 작은 파일 크기로 압축하세요. 화질 수준만 고르면 되고, 업로드가 필요 없으며 아무것도 기기 밖으로 나가지 않습니다.">
+<link rel="canonical" href="https://bitcrunching.com/ko/compress/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/compress/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/compress/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/compress/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/compress/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/compress/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/compress/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/compress/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/compress/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/compress/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/compress/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/compress/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
+<script src="/shared/i18n/ko.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Compress – 무료 이미지 압축기 – BC Tools">
+<meta property="og:description" content="이미지를 브라우저에서 무료로 더 작은 파일 크기로 압축하세요. 화질 수준만 고르면 되고, 업로드가 필요 없으며 아무것도 기기 밖으로 나가지 않습니다.">
+<meta property="og:url" content="https://bitcrunching.com/ko/compress/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Compress – 무료 이미지 압축기 – BC Tools">
+<meta name="twitter:description" content="이미지를 브라우저에서 무료로 더 작은 파일 크기로 압축하세요. 화질 수준만 고르면 되고, 업로드가 필요 없으며 아무것도 기기 밖으로 나가지 않습니다.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:#3FBFE8; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cpAfterDrop is revealed, so it never fights the level
+   buttons/Compress button once there's real content to interact with.
+   Same "jump" plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+.tool-app:has(#cpAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cpAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cpAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cpResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cpAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Convert gets for the same reason; found via a
+   1100×322.5px banner-size audit (every other tool renders exactly
+   that pre-load, Convert/Compress were 354.5 — 32px of dead space). */
+.tool-app:has(#cpAfterDrop[hidden]) #cpResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Compress's own
+   brand-tinted border on top, the one genuinely tool-specific piece.
+   Same color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cp-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#30c4ff;
+  color:#30c4ff;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"가이드";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shared/site.css's #page-compress .tool-controls{grid-template-columns:1fr;}
+   only fires inside the homepage SPA (id="page-compress" wrapper) — this
+   standalone page has no such ancestor, so .tool-controls was silently
+   falling back to the shared 2-column default (1fr 1.2fr) and squeezing
+   #cpControls' one child (the Compress button) into the first, narrower
+   column instead of stretching full width. Same local override Convert's
+   own index.html already carries for its own single-button #cvControls. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cp-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+
+/* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
+   .tool-format-select native dropdown (Convert's pattern, for a picker
+   with several options) — Compress never grew that select fallback, so
+   the three level buttons just vanished on mobile with nothing standing
+   in for them. Fixed by swapping them ≤768px for the site's existing
+   .option-change-btn (Congify's fps/crop/order pickers) instead of
+   stacking all 3 full-width — a plain Low/Medium/High pick reads better
+   as "tap to advance" on a phone than three repeated buttons. Desktop
+   never sees #cpLevelOptionChangeBtn at all (hidden by default below);
+   mobile hides the real three-button row instead and shows it. */
+.cp-level-option-change-btn{
+  display:none;
+}
+@media (max-width:768px){
+  .compress-level-buttons{
+    display:none;
+  }
+  .cp-level-option-change-btn{
+    display:flex;
+  }
+}
+
+#cpDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cpDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cpDrop.active{
+  border-color:#30c4ff;
+  background:rgba(48,196,255,.1);
+}
+.tool-app.active{
+  background:rgba(48,196,255,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cpAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. */
+.cp-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cpAfterDrop:not([hidden])) .cp-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cp-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cp-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cp-back-btn{ display:none; }
+  .tool-app:has(#cpAfterDrop:not([hidden])) .cp-back-btn{ display:flex; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">쿠키를 사용합니다. 아래에서 허용할 범주를 선택하세요. 다음을 참조하세요: <a data-goto="cookies">쿠키 정책</a> 자세한 내용.</p>
+  <p class="cookie-banner-text-mobile">허용할 범주를 선택하세요</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="쿠키 설정 내용 표시 전환" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">개발_도구_쿠키:</span>
+    </span>
+    <span>허용할 범주를 선택하세요</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="필수 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>필수(항상 켜짐)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>이것들은 쿠키 선택, 언어, 라이트/다크 테마 기억 같은 필수 기능을 유지합니다. 끌 수 없으며, 이 사이트의 다른 모든 것과 마찬가지로 기기 밖으로 나가지 않습니다.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="분석 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">분석 - 완벽한 개인정보 보호를 원하면 비활성화 상태로 유지하세요.</span><span class="cookie-label-docked">분석(Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>이를 통해 (Google Analytics)로 사용자가 웹사이트를 어떻게 탐색하는지에 대한 소중한 데이터를 받아 사용자 경험을 개선할 수 있습니다. 완전히 익명으로 남고 싶다면 이 옵션을 비활성화하는 것을 권장합니다.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="광고 쿠키에 대해 더 알아보기">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>광고(Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSense에서 광고를 표시하는 데 사용합니다. 현재 AdSense 승인을 기다리는 동안 사이트 전체에서 꺼져 있으므로 이 토글은 아직 효과가 없습니다.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">모두 허용</button>
+    <button type="button" id="cookieBannerSave">선택 확인</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Tools 로고" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="라이트 모드와 다크 모드 전환" title="라이트 모드와 다크 모드 전환">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="공유" title="공유">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">링크 복사</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="더 많은 공유 옵션"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">이메일</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="클릭하여 도구 가이드 초기화" title="클릭하여 도구 가이드 초기화">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cpHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cpHelpClose" aria-label="닫고 다시 표시하지 않기"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cpHelpToggle" aria-label="최소화" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cpHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpBack">&lt; 뒤로</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cpHelpCloseMobile">닫기</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpNext">다음 &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cpHelpBody">
+    <div class="engine-status-row">&gt; <span id="cpHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-compress" role="img" aria-label="Compress 아이콘"></span>
+        Compress
+      </div>
+      <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cp-back-btn bc-canvas-back-btn" id="cpBackBtn" data-goto="mainpage" aria-label="Creative Hub로 돌아가기" title="Creative Hub로 돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="모든 파일 제거">×</button>
+
+    <div class="tool-drop" id="cpDrop"><span class="tool-drop-click-word">클릭</span><span class="tool-drop-or-drop"> 또는 놓기 </span><span class="tool-drop-rest">이미지</span></div>
+    <input type="file" id="cpInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/svg+xml,image/tiff,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>중단한 곳에서 이어서 하기</button>
+
+    <div class="tool-after-drop" id="cpAfterDrop" hidden>
+      <div class="tool-controls" id="cpToolControls">
+        <div class="compress-level-buttons" id="cpLevelButtons">
+          <button type="button" class="tool-format-btn" data-quality="0.9" data-label="낮음" data-level-key="low">
+            <span>낮음</span><span class="level-sub">최고 화질</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.6" data-label="중간" data-level-key="medium">
+            <span>중간</span><span class="level-sub">균형</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.4" data-label="높음" data-level-key="high">
+            <span>높음</span><span class="level-sub">최저 화질</span>
+          </button>
+        </div>
+        <button type="button" class="option-change-btn option-change-btn-lg cp-level-option-change-btn" id="cpLevelOptionChangeBtn" title="압축 수준">
+          <span class="option-change-btn-label" id="cpLevelOptionChangeBtnLabel">낮음</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="selected-compression" id="cpSelectedCompression"></div>
+    </div>
+
+    <div class="tool-results" id="cpResults">
+      <button type="button" class="bc-add-tile" id="cpAddTile" aria-label="이미지 추가" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cpControls" hidden>
+      <div class="bc-segmented-toggle cp-download-mode-toggle" id="cpDownloadModeToggle" hidden>
+        <button type="button" id="cpDownloadModeSingleBtn" aria-pressed="false">개별 파일</button>
+        <button type="button" id="cpDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cpCompressBtn" disabled title="압축 후 다운로드 (D)" data-ga-event="tool_primary_action" data-ga-tool="compress">압축 후 다운로드</button>
+    </div>
+
+    <div class="tool-status" id="cpStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="compress">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>어떤 수준을 써야 할지 모르겠나요?</h3>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> 낮음</p>
+        <ul class="format-pick-sublist">
+          <li>가능한 최고 화질, 변화는 거의 보이지 않습니다.</li>
+          <li>인쇄, 보관, 전문 작업.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> 중간</p>
+        <ul class="format-pick-sublist">
+          <li>균형 잡힌 크기와 품질.</li>
+          <li>웹, 이메일, 일상적인 공유.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> 높음</p>
+        <ul class="format-pick-sublist">
+          <li>가장 작은 파일 크기, 눈에 띄는 손실이 더 큼.</li>
+          <li>미리보기, 빠른 공유, 초안.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>이미지 압축이 처음이신가요?</h3>
+    <p>압축은 하나의 슬라이더처럼 보이지만, 그 아래에서는 크기를 줄이는 두 가지 정말 다른 접근 방식이 작동하며, 어느 쪽이 작동하는지 알면 보게 되는 거의 모든 결과를 설명할 수 있습니다. 압축할 때 실제로 무슨 일이 일어나는지, 그리고 알맞은 수준을 고르는 방법을 알아봅니다.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. 이미지 압축은 실제로 어떻게 동작할까</a></li>
+      <li><a href="#gr-article-2">2. 용도에 맞는 압축 수준 고르기</a></li>
+      <li><a href="#gr-article-3">3. 웹용 압축: 화질 손실 없이 속도 높이기</a></li>
+      <li><a href="#gr-article-4">4. 압축할 때와 이미지를 그대로 둘 때</a></li>
+      <li><a href="#gr-article-5">5. 압축에서 흔한 실수(와 피하는 방법)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. 이미지 압축은 실제로 어떻게 동작할까</h3>
+          <p>압축은 하나의 슬라이더나 한 번의 클릭처럼 보이지만, 그 아래에서는 크기를 줄이는 두 가지 정말 다른 접근 방식이 작동하며, 어느 쪽이 작동하는지 이해하면 이런 도구에서 보게 되는 거의 모든 결과를 설명할 수 있습니다.</p>
+
+          <h4>손실 압축: 눈치채지 못할 것을 버리기</h4>
+          <p>JPG와 WEBP가 사용하는 손실 압축은 사람의 눈이 잘 인식하지 못하는 이미지 속 정보를 찾아내 버리는 방식으로 작동합니다. 미묘한 색 그라데이션은 단순화되고, 미세한 고주파 디테일은 매끄럽게 처리되며, 그 결과 평범한 시청자에게는 여전히 올바르게 보이면서 원본의 일부 크기에 불과한 파일이 될 수 있습니다. 문제는 이 버림이 영구적이라는 점입니다. 그 디테일이 사라지면 아무리 다시 열고 다시 저장해도 돌아오지 않으며, 이미 손실 압축된 파일을 반복해서 압축하면 매번 손실이 누적됩니다.</p>
+          <p>선택하는 “품질 비율” 또는 압축 수준이 이것이 얼마나 공격적으로 일어나는지를 제어합니다. 높은 품질 설정은 아주 조금만 버려 파일을 적당히 줄이고, 낮은 품질 설정은 훨씬 더 많이 버려 극적으로 줄이는 대신 가장자리 주변의 블록 현상, 번진 디테일, 하늘과 그라데이션의 색 띠 같은 눈에 보이는 아티팩트가 생깁니다.</p>
+
+          <h4>무손실 압축: 아무것도 잃지 않고 다시 포장하기</h4>
+          <p>PNG의 접근 방식인 무손실 압축은 완전히 다르게 작동합니다. ZIP 파일이 텍스트 문서를 한 글자도 바꾸지 않고 줄이는 것과 같은 방식으로, 정확히 같은 픽셀 데이터를 더 영리하고 효율적으로 저장하는 방법을 찾습니다. 아무것도 버려지지 않으므로 품질 변화 없이 원하는 만큼 압축하고 압축 해제할 수 있습니다. 단점은 크기 감소가 훨씬 작다는 것입니다. 데이터를 하나도 버리지 않고 줄일 수 있는 양에는 엄격한 수학적 한계가 있기 때문이며, 특히 무손실 재포장에 저항하는 미세하고 불규칙한 디테일로 가득한 사진 이미지에서 그렇습니다.</p>
+
+          <h4>Compress 도구가 PNG를 JPG로 변환하는 이유</h4>
+          <p>이것이 Compress가 압축 중에 PNG 사진을 자동으로 JPG로 변환하는 이유입니다. 무손실 압축만 거친 PNG 사진은 거의 줄어들지 않지만, 같은 사진에 손실 압축을 허용하면 극적으로 줄어들 수 있습니다. 실제 사진에서는 이 교환이 거의 항상 가치가 있습니다. 품질 차이는 일반적인 보기 크기에서 보이지 않고 파일 크기 차이는 엄청납니다. 사진이 아닌 PNG(스크린샷, 로고, 투명도나 선명한 텍스트가 있는 그래픽)는 사정이 다르며, 그래서 이 변환은 모든 PNG에 무작정 적용되지 않고 사진 같은 콘텐츠에 맞게 특별히 조정되어 있습니다.</p>
+
+          <h4>품질 슬라이더를 움직이면 실제로 일어나는 일</h4>
+          <p>내부적으로 품질 설정을 낮추면 이미지의 색과 디테일 정보가 저장되기 전에 더 거칠게 묶이고 단순화됩니다. 숫자를 반올림하는 것과 같다고 생각하세요. “품질 95”로 반올림하면 거의 아무것도 바뀌지 않지만 “품질 40”으로 반올림하면 훨씬 더 많이 바뀌고, 설명하는 데 필요한 공간도 훨씬 줄어듭니다. 보편적으로 “올바른” 숫자는 없으며 알맞은 설정은 이미지의 용도에 전적으로 달려 있습니다. 다음 문서가 바로 그 이야기입니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 용도에 맞는 압축 수준 고르기</h3>
+          <p>하나뿐인 “최고의” 압축 설정은 없습니다. 알맞은 수준은 이미지가 어디로 가고 무엇을 견뎌야 하는지에 전적으로 달려 있습니다. 시나리오별로 생각하는 방법을 소개합니다.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>대상</th><th>권장 수준</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="대상">소셜 미디어 / 메시징 앱</td><td data-label="권장 수준">중간</td></tr>
+              <tr><td data-label="대상">자신의 웹사이트 또는 온라인 스토어</td><td data-label="권장 수준">중간에서 높음</td></tr>
+              <tr><td data-label="대상">인쇄 또는 전문 고객 납품</td><td data-label="권장 수준">낮음, 또는 압축 건너뛰기</td></tr>
+              <tr><td data-label="대상">장기 보관</td><td data-label="권장 수준">낮음</td></tr>
+              <tr><td data-label="대상">이메일 첨부 파일 크기 제한</td><td data-label="권장 수준">높음</td></tr>
+            </tbody>
+          </table>
+
+          <h4>소셜 미디어와 메시징</h4>
+          <p>Instagram, WhatsApp, 대부분의 소셜 피드 같은 플랫폼은 무엇을 보내든 업로드되는 모든 이미지를 이미 (종종 공격적으로) 다시 압축합니다. 거의 압축되지 않은 거대한 파일을 여기에 업로드해도 얻는 것이 없습니다. 플랫폼이 어차피 자기 쪽에서 다시 압축하기 때문입니다. 중간에서 높은 압축 수준은 플랫폼 자체 처리 후에 실제로 보게 될 품질을 포기하지 않으면서 업로드를 빠르게, 원본 파일 크기를 합리적으로 유지해 줍니다.</p>
+
+          <h4>웹사이트와 온라인 스토어</h4>
+          <p>포트폴리오 사이트, 블로그, 제품 페이지처럼 직접 호스팅하는 것은 파일 크기가 페이지 로딩 속도에 직접 영향을 주고, 이는 방문자 경험에, 그리고 상업적인 경우 전환율과 검색 순위에 영향을 줍니다. 여기서는 더 공격적인 압축으로 기울 가치가 있습니다. 웹 보기에는 인쇄 수준의 디테일이 거의 필요하지 않고, 최적화되지 않은 거대한 이미지로 가득한 페이지는 사이트가 느리게 느껴지는 가장 흔한 이유 중 하나이기 때문입니다.</p>
+
+          <h4>인쇄와 전문적인 용도</h4>
+          <p>이곳은 보수적이어야 하는 유일한 곳입니다. 인쇄는 화면이 단순히 보여 주지 않는 디테일과 아티팩트를 드러내는데, 더 높은 유효 해상도와 종종 더 큰 물리적 크기로 보이기 때문입니다. 인쇄소, 갤러리 제출, 전문적인 고객 납품으로 가는 것이라면 그 특정 사본에는 약한 압축 수준을 쓰거나 압축을 건너뛰고, 압축되지 않았거나 약하게 압축된 마스터 파일을 신뢰할 수 있는 출처로 보관하세요.</p>
+
+          <h4>보관 및 장기 저장</h4>
+          <p>사진을 수년간 보관하는 것이 목적이라면(가족 사진, 아카이브, 나중에 원래 화질로 다시 보고 싶을 수 있는 것) 하나뿐인 사본에 강한 손실 압축을 피하세요. 디테일이 버려지면 나중에 사용 사례가 필요로 하더라도 복구할 수 없습니다. 합리적인 접근은 더 높은 품질의 아카이브용 사본을 보관하고, 특정 용도가 실제로 필요로 하는 것에 맞춰 필요할 때 별도로 압축한 버전을 만드는 것입니다.</p>
+
+          <h4>이메일 첨부 파일과 파일 크기 제한</h4>
+          <p>많은 이메일 제공업체는 첨부 파일 크기를 보통 총 25MB 정도로 제한합니다. 여러 장의 사진을 보낸다면 더 강한 압축 수준이 확실히 그 한도 아래로 맞춰 줍니다. 이는 현실적인 제약(이메일에 들어가는가)이 압축 수준 사이의 시각적 차이보다 더 중요한 몇 안 되는 경우이므로, 다른 용도보다 더 세게 압축하는 것을 두려워하지 마세요.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. 웹용 압축: 화질 손실 없이 속도 높이기</h3>
+          <p>이미지 무게는 웹사이트가 느려지는 가장 크고 가장 쉽게 고칠 수 있는 원인 중 하나이며, 어느 방향으로든 잘못하기 가장 쉬운 것 중 하나이기도 합니다. 압축이 너무 적으면 페이지가 기어가고, 너무 많으면 사진이 눈에 띄게 저하됩니다. 유용한 중간 지점에 도달하는 방법을 알아봅니다.</p>
+
+          <h4>이미지 크기가 속도에 그토록 중요한 이유</h4>
+          <p>콘텐츠가 많은 대부분의 페이지에서 이미지는 HTML, CSS, JavaScript를 합친 것보다 훨씬 많은, 페이지 전체 무게의 대부분을 차지합니다. 방문자의 페이지 로드 시간과 검색 엔진의 평가는 이미지 무게에 불균형적으로 큰 영향을 받으므로, 이미지를 제대로 압축하는 것은 대부분의 코드 수준 최적화보다 앞서는 가장 효과가 큰 성능 개선인 경우가 많습니다.</p>
+
+          <h4>이미지가 실제로 표시되는 방식에 압축 맞추기</h4>
+          <p>페이지에서 가로 400픽셀로 표시되는 이미지는 가볍게 압축한 4000픽셀 카메라 원본으로 제공할 필요가 없습니다. 실제 표시 크기에서 선명하게 보이는 데는 그만큼의 디테일이 필요하지 않습니다. 압축 수준을 걱정하기 전에 이미지 크기가 실제로 표시될 크기와 대략 맞는지 먼저 확인하세요. 큰 이미지를 압축하는 것은 더 큰 원인(불필요한 해상도)을 그대로 두고 증상만 치료하는 것입니다.</p>
+
+          <h4>웹용 형식 고르기</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>수확 체감의 지점</h4>
+          <p>압축은 손실되는 시각적 품질에 비례해 선형적으로 늘어나지 않습니다. 압축하지 않은 원본에서의 첫 번째 압축 구간은 눈에 띄는 변화 거의 없이 엄청난 파일 크기를 줄여 주지만, 압축을 점점 더 공격적인 영역으로 밀어붙일수록 줄어드는 크기는 점점 작아지고 눈에 보이는 손상은 점점 커집니다. 실제로 대부분의 사진은 “최대 압축”에 훨씬 못 미치는 지점에서 가장 알맞은 지점에 도달하며, 압축을 많이 할수록 항상 속도에 좋다고 가정하지 말고 압축된 이미지를 실제 표시 크기에서 확인해 볼 가치가 있습니다.</p>
+
+          <h4>사이트 전체의 이미지를 일괄 처리하기</h4>
+          <p>제품 카탈로그, 갤러리, 블로그의 지난 게시물 이미지처럼 많은 이미지를 한 번에 최적화한다면, 하나하나 눈대중으로 정하기보다 비슷한 콘텐츠 유형에는 일관된 압축 수준을 적용하세요. 그러면 사이트 전체의 시각적 품질이 일정하게 유지되고, 나중에 설정에 대한 생각이 바뀌어 처리 과정을 다시 할 때도 사례별로 다시 결정하지 않으므로 훨씬 빠릅니다.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 압축할 때와 이미지를 그대로 둘 때</h3>
+          <p>압축은 정말 유용한 도구이지만, 모든 상황의 모든 이미지에 자동으로 맞는 선택은 아닙니다. 건너뛰어야 할 때를 아는 것은 사용법을 아는 것만큼 중요합니다.</p>
+
+          <h4>이미지가 압축하기 좋은 후보라는 신호</h4>
+          <p>웹, 이메일, 메시지용으로 쓰일 큰 카메라 원본 사진은 거의 항상 압축의 이점을 얻습니다. 보통 대상이 필요로 하는 것보다 훨씬 많은 해상도와 파일 무게를 가지고 있기 때문입니다. 엄격한 크기 제한(이메일 첨부 용량 제한, 업로드 제한, 양식의 파일 크기 상한)에 걸리는 파일도 분명한 후보입니다. 압축은 이미지에서 콘텐츠를 자르거나 줄이지 않고 제한 아래로 내려가는 가장 빠른 방법인 경우가 많기 때문입니다.</p>
+
+          <h4>이미지를 그대로 둬야 한다는(또는 아주 약하게만 압축해야 한다는) 신호</h4>
+          <p>텍스트, 선명한 선, 단색이 있는 그래픽(스크린샷, 다이어그램, 로고, 스캔 문서)은 손실 방식으로 압축하면 결과가 좋지 않은 경향이 있습니다. 압축 아티팩트가 눈이 가장 잘 알아채는 가장자리와 텍스트 주변에 흐릿함과 색 번짐으로 나타나기 때문입니다. 이런 것들은 보통 PNG의 무손실 방식이나 아티팩트와 싸우는 대신 압축을 건너뛰는 편이 더 낫습니다.</p>
+          <p>한 번 압축된 것을 “만약을 위해” 가볍게 다시 압축해서는 안 됩니다. 이미 손실 압축된 JPG를 다시 압축해도 대부분의 경우 의미 있게 작아지지 않으며, 첫 번째 위에 두 번째 화질 손실이 겹쳐 아티팩트를 제거하는 대신 쌓기만 할 수 있습니다.</p>
+
+          <h4>마스터 사본 습관</h4>
+          <p>대부분의 후회를 피하게 해주는 간단한 규칙이 있습니다. 나중에 재사용할 수 있는 것은 고품질(또는 비압축) 마스터 사본을 하나 보관하고, 용도별로 그 마스터에서 압축본을 만드세요. 유일한 사본을 압축본으로 덮어쓰지 마세요. 저장 공간은 저렴하지만, 사라진 원본은 다시 만들 수 없습니다.</p>
+
+          <h4>습관이 아니라 대상으로 판단하기</h4>
+          <p>올바른 질문은 추상적인 “이 이미지를 압축해야 할까”가 아니라 “이 이미지가 가는 곳이 실제로 무엇을 필요로 하는가”입니다. 문자 메시지로 가는 사진은 원래 디테일이 거의 필요하지 않고, 큰 인쇄 배너로 가는 사진은 거의 전부가 필요합니다. 워크플로를 통과하는 모든 것에 습관적으로 같은 압축 수준을 적용하지 말고, 목적지가 기준을 정하게 하세요.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 압축에서 흔한 실수(와 피하는 방법)</h3>
+          <p>압축에 관한 대부분의 불만은 반복되는 몇 가지 실수로 거슬러 올라갑니다. 주의할 점을 소개합니다.</p>
+
+          <h4>같은 파일을 계속해서 압축하기</h4>
+          <p>손실 압축을 거칠 때마다 디테일이 조금씩 더 사라지고, 그 손실은 추가 압축마다 누적됩니다. 압축하고, 다시 열고, 편집하고, 다시 압축하기를 여러 번 한 파일은 깨끗한 원본에서 한 번만 압축한 것보다 눈에 띄게 나빠 보입니다. 항상 원본이나 압축되지 않은 마스터에서 압축하고, 이전에 압축된 사본에서 압축하지 마세요.</p>
+
+          <h4>유일한 사본 덮어쓰기</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>그래픽을 사진처럼 압축하기</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>결과를 확인하지 않고 압축 수준 선택하기</h4>
+          <p>가장 작은 파일을 얻고 넘어가려고 “최대 압축”을 고르고 싶어지지만, 그 설정은 출력을 실제 크기로 볼 때 명백히 보이는 아티팩트를 만드는 경우가 많습니다. 압축된 결과를 실제로 보게 될 크기로 빠르게 확인하는 데는 몇 초면 되고, 의도한 것보다 눈에 띄게 나쁜 것을 보내거나 게시하는 일을 막아 줍니다.</p>
+
+          <h4>대상 자체의 압축 무시하기</h4>
+          <p>어차피 압축할 플랫폼(대부분의 소셜 미디어와 메시징 앱)에 거의 압축되지 않은 거대한 파일을 업로드하면, 플랫폼 자체 처리가 무엇을 보냈든 최종 품질의 상당 부분을 결정하므로 시각적 이점 없이 업로드 시간과 대역폭만 낭비됩니다. 압축 노력을 “입력의 원본 품질이 높을수록 최종 출력 품질도 높다”는 가정이 아니라 목적지가 실제로 보존할 것에 맞추세요.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>회사</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="소개"><span class="footer-link-fun">우리의 우주</span><span class="footer-link-plain">소개</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">이미 답변됨</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="이용 약관"><span class="footer-link-fun">은하 핸드북</span><span class="footer-link-plain">이용 약관</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="개인정보 처리방침"><span class="footer-link-fun">외계 개인정보 프로토콜</span><span class="footer-link-plain">개인정보 처리방침</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="쿠키 정책"><span class="footer-link-fun">쿠키 목록</span><span class="footer-link-plain">쿠키 정책</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>시작하기:</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ko/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ko/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ko/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ko/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ko/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ko/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ko/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ko/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ko/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ko/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>문의하기</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discord 참여하기</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/compress/compress-tool.js?v=53" defer></script>
+</body>
+</html>

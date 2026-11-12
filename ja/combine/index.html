@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combine – 画像やPDFを1つのPDFに結合 – BC Tools</title>
+<meta name="description" content="複数の画像やPDFファイルを、ブラウザ上で無料で1つのPDFに結合できます。ドラッグしてページを並べ替えられ、アップロードも不要です。">
+<link rel="canonical" href="https://bitcrunching.com/ja/combine/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/combine/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/combine/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/combine/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/combine/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/combine/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/combine/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/combine/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/combine/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/combine/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/combine/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/combine/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/combine/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/combine/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/combine/">
+<script src="/shared/i18n/ja.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Combine – 画像やPDFを1つのPDFに結合 – BC Tools">
+<meta property="og:description" content="複数の画像やPDFファイルを、ブラウザ上で無料で1つのPDFに結合できます。ドラッグしてページを並べ替えられ、アップロードも不要です。">
+<meta property="og:url" content="https://bitcrunching.com/ja/combine/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Combine – 画像やPDFを1つのPDFに結合 – BC Tools">
+<meta name="twitter:description" content="複数の画像やPDFファイルを、ブラウザ上で無料で1つのPDFに結合できます。ドラッグしてページを並べ替えられ、アップロードも不要です。">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/pdf-lib.min.js"></script>
+<script src="/vendor/pdf.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:linear-gradient(155deg,#FF6961); }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cbAfterDrop is revealed, so it never fights the file list
+   /Combine button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active
+   class, toggled by shared/site.js's bcSetupBannerDropTarget) — not to
+   be confused with the :active pseudo-class just below, which is the
+   separate mouse-press-down effect. */
+.tool-app:has(#cbAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cbAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cbAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-combine{ animation:icon-wobble .5s ease; }
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"ガイド";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position stay here, same split as Compress's .cp-remove-btn.
+   Unlike Convert/Compress (where the drop zone is hidden once a file
+   loads, so #cvAfterDrop/#cpAfterDrop sit right under the header and a
+   small negative offset reaches the card corner), Combine keeps its
+   drop zone visible in the revealed state — so #cbAfterDrop starts far
+   down the card. The button is anchored to .tool-app itself instead and
+   shown only while files are loaded, via the same :has(#cbAfterDrop…)
+   toggle the hover rules above already use. */
+.cb-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cbAfterDrop:not([hidden])) .cb-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cb-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cb-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+/* Both guarded to the same mobile breakpoint as .bc-canvas-back-btn's
+   own display:flex — the plain display:none here overrides that
+   unconditional mobile display:flex until a file's actually loaded
+   (matching Remove's own reveal timing), and the :has() rule's higher
+   specificity then overrides that back to flex once it is. Without the
+   media guard on the :has() rule specifically, its higher specificity
+   would win over .bc-canvas-back-btn's media-scoped flex and show the
+   button on desktop too. */
+@media (max-width:768px){
+  .cb-back-btn{ display:none; }
+  .tool-app:has(#cbAfterDrop:not([hidden])) .cb-back-btn{ display:flex; }
+}
+
+/* Before a file is loaded the whole banner is the drop target, so the
+   dashed box blends in. Scoped to :not(.tool-drop-revealed) so it
+   doesn't cancel the shared .tool-drop-addpill's dashed border once it
+   collapses to the "＋ Add more files" pill. */
+#cbDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#cbDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cbDrop.active{
+  border-color:#FF6961;
+  background:rgba(236,111,99,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cbDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cbDrop.tool-drop-revealed.active{
+  border-color:#FF6961;
+  background:rgba(236,111,99,.1);
+}
+.tool-app.active{
+  background:rgba(236,111,99,.08);
+}
+.combine-file-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:20px;
+}
+
+/* Background/border-width/theme-flip now come from .result
+   (shared/site.css) — added as a second class on the markup
+   (class="combine-file-item result"). This only keeps the row
+   layout, drag cursor, and Combine's brand-tinted border. */
+.combine-file-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  border-radius:14px;
+  cursor:grab;
+  transition:opacity .15s ease, transform .15s ease, background .2s;
+}
+
+.combine-file-item:active{
+  cursor:grabbing;
+}
+
+.combine-file-item.dragging{
+  opacity:.4;
+}
+
+.combine-file-item.drag-over{
+  transform:translateY(4px);
+  border-color:rgba(255,255,255,.4);
+}
+
+.combine-drag-handle{
+  flex-shrink:0;
+  font-size:18px;
+  line-height:1;
+  color:var(--text);
+  opacity:.6;
+  user-select:none;
+  touch-action:none;
+}
+@media (hover:none), (max-width:768px){
+  .combine-drag-handle{ padding:12px 6px; margin:-12px -6px; }
+}
+.combine-file-item.touch-dragging{
+  position:relative;
+  z-index:5;
+  transition:none;
+}
+
+.combine-file-thumb-wrap{
+  position:relative;
+  flex-shrink:0;
+  width:76px;
+  height:96px;
+}
+.combine-file-thumb-wrap .combine-thumb-resize{
+  right:-8px;
+  bottom:-8px;
+  width:24px;
+  height:24px;
+  padding:0;
+  cursor:nwse-resize;
+}
+
+.combine-file-thumb{
+  width:100%;
+  height:100%;
+  border-radius:8px;
+  overflow:hidden;
+  background:rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.combine-file-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.combine-thumb-page{
+  position:relative;
+  flex-shrink:0;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.25);
+  box-sizing:content-box;
+}
+.combine-file-thumb:has(.combine-thumb-page){
+  border-radius:0;
+  overflow:visible;
+  background:none;
+}
+.combine-file-thumb .combine-thumb-page img{
+  position:absolute;
+  max-width:none;
+  object-fit:fill;
+  border-radius:0;
+  margin:0;
+  transition:none;
+}
+
+.combine-file-thumb-fallback{
+  font-size:15px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:var(--text);
+  opacity:.7;
+}
+
+.combine-file-index{
+  flex-shrink:0;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:rgba(29,36,54,.14);
+  color:var(--text);
+  font-weight:800;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s, color .2s;
+}
+html[data-theme="dark"] .combine-file-index{
+  background:rgba(255,255,255,.14);
+}
+
+.combine-file-meta{ display:contents; }
+.combine-file-name{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:700;
+  font-size:15px;
+  color:var(--text);
+  transition:color .2s;
+}
+
+.combine-file-size{
+  flex-shrink:0;
+  font-size:15px;
+  color:var(--text);
+  opacity:.8;
+}
+
+/* .combine-file-remove's own visual recipe now lives in shared
+   .bc-file-remove-btn (shared/site.css) — added as a second class
+   on the markup (class="combine-file-remove bc-file-remove-btn").
+   Kept as a class only as an addressing hook for its own JS
+   listener. */
+
+.combine-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px 20px;
+  margin-top:24px;
+}
+.combine-option{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+}
+.combine-option .bc-dropdown,
+.combine-option .option-change-btn{ min-width:170px; }
+.combine-option-name{ flex:1 1 220px; }
+.combine-file-rotate{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.combine-file-rotate svg{ width:16px; height:16px; }
+.combine-file-thumb img,
+.combine-file-thumb-fallback{ transition:transform .2s ease; }
+.combine-file-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+.cb-phone-dd{ display:none; }
+.cb-name-title{ display:none; }
+.cb-orient-rect{
+  display:block;
+  box-sizing:border-box;
+  width:14px;
+  height:22px;
+  margin:0 auto;
+  border:2.2px solid currentColor;
+  border-radius:3px;
+  transition:transform .3s cubic-bezier(.22,1,.36,1);
+}
+.cb-orient-rect[data-orient="landscape"]{ transform:rotate(90deg); }
+@media (max-width:768px){
+  .tool-wrap{ padding-left:10px; padding-right:10px; }
+  .tool-app{ max-width:max(97vw, 315px); padding-left:10px; padding-right:10px; }
+  .combine-file-item{ gap:8px; padding:12px 10px; }
+  .combine-file-meta{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-width:0;
+    gap:2px;
+  }
+  .combine-file-name{ flex:0 0 auto; }
+  .combine-option > .bc-label{ display:none; }
+  .combine-option .option-change-btn{ display:none; }
+  .combine-options{ flex-direction:column; align-items:center; gap:10px; }
+  .combine-option{ flex:0 0 auto; }
+  .combine-option .cb-phone-dd{ display:block; width:200px; min-width:0; }
+  .combine-option .cb-dd-trigger{ height:34px; font-size:15px; }
+  .cb-dd-value{ display:inline-flex; align-items:center; justify-content:center; }
+  .cb-dd-value .cb-orient-name{ display:none; }
+  .cb-phone-dd .bc-dropdown-option{ white-space:nowrap; }
+  .cb-phone-dd .bc-dropdown-option .cb-orient-rect{ margin:0 10px 0 0; flex-shrink:0; }
+  /* Congify's file name line (13px/700 bold, ">" prompt): "> Output name: combined.pdf" */
+  .combine-option .bc-name-field,
+  .combine-option .bc-name-field:hover,
+  .combine-option .bc-name-field:focus-within{
+    width:auto;
+    max-width:none;
+    min-width:0;
+    height:auto;
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--text);
+    justify-content:center;
+    gap:6px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+  }
+  .cb-name-title{ display:inline; order:-1; flex-shrink:0; }
+  .combine-option .bc-name-field input{
+    field-sizing:content;
+    flex:0 1 auto;
+    max-width:185px;
+    min-width:20px;
+    height:auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    border-bottom:1px solid transparent;
+    font:inherit;
+  }
+  .combine-option .bc-name-field input:hover{ border-bottom-color:var(--border-strong); }
+  .combine-option .bc-name-field input:focus{ border-bottom-color:var(--text); }
+  .combine-option .bc-name-ext{ font:inherit; flex-shrink:0; margin-left:-6px; opacity:.7; }
+  .combine-file-actions{ flex-direction:column; gap:8px; }
+  .combine-file-thumb-wrap .combine-thumb-resize{ display:none; }
+}
+
+.combine-primary-btn{
+  margin-top:24px;
+  width:100%;
+}
+/* Mobile shows just "Download" on the primary action button — the
+   fuller desktop label ("Convert and download", "Strip metadata and
+   download", etc.) doesn't fit well at phone widths, and "Download" is
+   what actually happens from the user's side either way. */
+@media (max-width:768px){
+  #cbCombineBtn{ font-size:0; }
+  #cbCombineBtn::before{
+    content:"Download";
+    font-size:20px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Cookieを使用しています。許可するカテゴリを以下から選択してください。詳細は当社の <a data-goto="cookies">Cookieポリシー</a> の詳細をご覧ください。</p>
+  <p class="cookie-banner-text-mobile">許可するカテゴリを選択</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie設定の内容の表示を切り替え" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">開発ツール_COOKIE：</span>
+    </span>
+    <span>許可するカテゴリを選択</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="必須Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>必須（常に有効）</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>これらは、Cookieの選択、言語、ライト/ダークテーマの記憶といった、基本的な機能を維持するためのものです。無効にすることはできず、このサイトの他のすべてのものと同様に、デバイスの外に出ることは決してありません。</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="分析用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">分析 - 完全なプライバシーを望む場合は、これを無効のままにしてください。</span><span class="cookie-label-docked">分析 (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>これにより、ユーザーがWebサイトをどのように移動しているかについて（Google Analytics）を通じて貴重なデータを受け取り、ユーザー体験を改善できます。完全に匿名のままでいたい場合は、このオプションを無効にすることをお勧めします。</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="広告用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>広告 (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSenseが広告を表示するために使用します。AdSenseの承認待ちのため、現在サイト全体でオフになっており、このトグルにはまだ効果がありません。</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">すべて許可</button>
+    <button type="button" id="cookieBannerSave">選択を確定</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Toolsのロゴ" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="ライトモードとダークモードを切り替え" title="ライトモードとダークモードを切り替え">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="共有" title="共有">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">リンクをコピー</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="その他の共有オプション"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">メール</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="クリックしてツールのガイドをリセット" title="クリックしてツールのガイドをリセット">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cbHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cbHelpClose" aria-label="閉じて今後は表示しない"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cbHelpToggle" aria-label="最小化" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cbHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cbHelpBack">&lt; 戻る</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cbHelpCloseMobile">閉じる</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cbHelpNext">次へ &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cbHelpBody">
+    <div class="engine-status-row">&gt; <span id="cbHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-combine" role="img" aria-label="Combineのアイコン"></span>
+        Combine
+      </div>
+      <span class="privacy-check-badge" id="cbPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cb-back-btn bc-canvas-back-btn" id="cbBackBtn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cb-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cbRemoveBtn" aria-label="すべてのファイルを削除">×</button>
+
+    <div class="tool-drop tool-drop-addpill" id="cbDrop"><span class="tool-drop-click-word">クリック</span><span class="tool-drop-or-drop"> またはドロップ </span><span class="tool-drop-rest">PDFまたはJPG画像</span></div>
+    <input type="file" id="cbInput" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cbContinueBtn" hidden>前回の続きから再開</button>
+
+    <div class="tool-after-drop" id="cbAfterDrop" hidden>
+      <div class="combine-file-list" id="cbFileList"></div>
+
+      <div class="combine-options" id="cbOptions">
+        <div class="combine-option">
+          <span class="bc-label">画像のページサイズ</span>
+          <button type="button" class="option-change-btn" id="cbSizeBtn" title="画像のページサイズ">
+            <span class="option-change-btn-label" id="cbSizeBtnLabel">A4に合わせる</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">ページの向き</span>
+          <button type="button" class="option-change-btn" id="cbOrientBtn" title="ページの向き">
+            <span class="option-change-btn-label" id="cbOrientBtnLabel">縦</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">余白</span>
+          <button type="button" class="option-change-btn" id="cbMarginBtn" title="ページの余白">
+            <span class="option-change-btn-label" id="cbMarginBtnLabel">余白なし</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option">
+          <span class="bc-label">画像の品質</span>
+          <button type="button" class="option-change-btn" id="cbQualityBtn" title="画像の品質">
+            <span class="option-change-btn-label" id="cbQualityBtnLabel">元のまま</span>
+            <span class="option-change-btn-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="combine-option combine-option-name">
+          <span class="bc-label">結合後のファイル名</span>
+          <div class="bc-name-field">
+            <input type="text" id="cbFileName" value="combined" maxlength="80" aria-label="結合後のファイル名" spellcheck="false" autocomplete="off">
+            <span class="bc-name-ext">.pdf</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="tool-primary-btn combine-primary-btn" id="cbCombineBtn" disabled title="PDFを結合してダウンロード (D)" data-ga-event="tool_primary_action" data-ga-tool="combine">PDFを結合してダウンロード</button>
+    </div>
+
+    <div class="tool-status" id="cbStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="combine">
+  <div class="content-section-article-wrap">
+    <h3>画像の結合は初めてですか？</h3>
+    <p>Combineの仕事は一見とても簡単に見えます。複数のファイルを1つのPDFにまとめるだけですが、人が最もつまずくのは結合そのものではなく、ページが意図した順序に収まるようにすることです。ページ順が実際にどう決まるのか、そして毎回正しくするにはどうするかを紹介します。</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. PDFを毎回正しい順序で結合する方法</a></li>
+      <li><a href="#gr-article-2">2. 応募書類を結合する：カバーレター、履歴書、ポートフォリオ</a></li>
+      <li><a href="#gr-article-3">3. ページ順を崩さずにスキャン文書を結合する</a></li>
+      <li><a href="#gr-article-4">4. 結合するときと、ファイルを分けておくとき</a></li>
+      <li><a href="#gr-article-5">5. 結合でよくある間違い（と回避方法）</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="combine">
+<div class="gr-article" id="gr-article-1"><h3>1. PDFを毎回正しい順序で結合する方法</h3>
+          <p>Combineの仕事は一見とても簡単です。複数のファイルを取って1つのPDFに結合するだけですが、最もつまずきやすいのは結合そのものではなく、ページが意図した順序に収まるようにすることです。</p>
+
+          <h4>Combineがページ順を決める仕組み</h4>
+          <p>Combine merges your files in the exact order shown in its list, top to bottom. It doesn't try to guess a "correct" order from file names, dates, or content, because there's no universal rule for what you want. The list is also fully in your hands: drag any file up or down (by touch on a phone) and the merged PDF follows. PDFs are added as they are, and every JPG or PNG becomes one page.</p>
+
+          <h4>ファイル名が誤解を招くことがある理由</h4>
+          <p>A common assumption is that files will merge in alphabetical or numerical order automatically. If your file picker happens to list them that way and you select them all at once, the list often starts in that order, but that's a side effect of the picker, not a promise. Files added one at a time land in the order you added them, whatever their names say. Either way, the list is what counts, and you can fix it by dragging.</p>
+
+          <h4>結合前の確実な事前チェック</h4>
+          <p>Each file in the list shows a preview of its page, and the list is the real order the merge will use. If something's out of place, drag it to the right spot. This thirty-second check is far faster than downloading a merged PDF, discovering page 4 is actually supposed to be page 2, and starting over.</p>
+
+          <h4>ファイル名で順序を確実にする</h4>
+          <p>If you regularly merge multi-file sets — scanned pages, multi-part reports, sequential chapters — prefix the file names with numbers: 01-cover.pdf, 02-resume.pdf, 03-portfolio.pdf. Adding them all at once will then usually give you the right order from the start, and any stragglers are a quick drag away.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. 応募書類を結合する：カバーレター、履歴書、ポートフォリオ</h3>
+          <p>求人やインターンへの応募は、PDF結合ツールを使う最も一般的な理由の一つで、構成を正しく整えることが、応募の受け取られ方に実際に影響することがあります。</p>
+
+          <h4>雇用主が複数の添付ファイルより1つのPDFを好む理由</h4>
+          <p>採用担当者は何十、何百という応募を、たいていスマートフォンで、あるいは会議の合間にざっと確認します。応募書類が3〜4個の別々の添付ファイル（カバーレター、履歴書、ポートフォリオ、推薦状）で届くと、全体像をつかむために複数のファイルを開いて行き来する必要があり、一つが見落とされたり、別の場所に保存されたり、そもそも開かれなかったりしがちです。きちんと順序が整った1つのPDFなら、その手間が完全になくなります。1クリックですべてが、意図した読み順で開きます。</p>
+
+          <h4>ほとんどの応募書類でうまくいく順序</h4>
+          <p>妥当な初期の並び順は、最初にカバーレター（最も短く、文脈を示す）、次に履歴書（ほとんどの審査担当者が最も見たい中核）、最後にポートフォリオ、資格証明書、推薦状などの補足資料です。応募のどの職種かも分からないままポートフォリオから始めるのではなく、文脈、中身、裏付けの順で読みたいという、ほとんどの人の自然な読み方に沿っています。</p>
+
+          <h4>異なる形式で始まったファイルを結合する</h4>
+          <p>It's common for a cover letter to exist as a Word-exported PDF, a resume as a separate PDF, and portfolio samples as image files (photos of physical work, screenshots of digital projects, scanned certificates). Combine takes all of that in one go: drop the PDFs and the JPG or PNG images together, and each image becomes its own page. Only images in other formats, such as WEBP or HEIC, need a quick trip through Convert first.</p>
+
+          <h4>ファイルサイズを妥当に保つ</h4>
+          <p>Portfolio images, especially camera photos of physical work or high-resolution screenshots, can be unnecessarily large. Switch the image quality option to Smaller or Smallest and Combine shrinks the images inside the PDF, showing the new size of each file as you go. A large, slow-to-open attachment is a small but real point of friction for anyone reviewing it under time pressure.</p>
+
+          <h4>提出前の再確認</h4>
+          <p>結合したら、最終的なPDFを開いて、最初から最後まで一度スクロールしてください。順序違いのページ、誤って含まれた下書きバージョン、想定どおりに変換されなかったポートフォリオ画像など、実際に見るまで気づけない小さなミスが見つかります。雇用主がすでに開いてしまってから発見するのは、はるかに恥ずかしいものです。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. ページ順を崩さずにスキャン文書を結合する</h3>
+          <p>契約書、フォーム、身分証明書、複数ページの手紙といったスキャンされた書類には、スキャンが行われる方法ゆえの、独特な順序の問題があります。</p>
+
+          <h4>スキャンされたページが他のファイルより順序を崩しやすい理由</h4>
+          <p>Many scanners and scanning apps save each page as a separate file with a generic, auto-generated name (scan001.pdf, IMG_2024.jpg, and so on), sometimes numbered by the order pages were physically fed into the scanner and sometimes not. If you scanned a stack of pages out of physical order, or a multi-function printer numbered them unexpectedly, the file names won't reliably reflect the document's true reading order, so a list sorted by name can silently produce a document with pages out of sequence.</p>
+
+          <h4>最も安全な方法：ファイル名だけでなく、内容を確認する</h4>
+          <p>Before merging, glance at each page's preview in the list rather than trusting the file name alone. It only takes a few seconds to confirm page one is really the top of the document and page two follows it, and it's the most reliable way to avoid sending a scrambled document to a bank, government office, or landlord.</p>
+
+          <h4>混在するスキャン：一部のページは撮影、一部はスキャン</h4>
+          <p>It's common to have a proper scan for most pages and a phone photo for one or two (a page that didn't fit on the scanner bed, or was scanned later as an afterthought). Combine takes PDFs and JPG or PNG images side by side, so this isn't a problem technically. A photographed page often looks different in lighting and framing from a true scan, though, so if the document's appearance matters, re-scan the odd one out.
+
+          <h4>Sideways or upside-down pages</h4>
+          <p>Phone photos and scans often come in rotated. Use the rotate button on that file to turn the picture a quarter at a time; the page keeps its shape and the previews update straight away, so you can see the fix before you download.</p></p>
+
+          <h4>複数ページの契約書と署名ページ</h4>
+          <p>署名ページのある契約書やフォームでは、そのページが文書の他の部分に対して正確な位置に収まる必要があります。署名ページが間違った位置に結合されると、法的文書が無効または不完全に見えることがあるからです。上の結合前プレビューチェックが最も重要になるケースとして扱ってください。順序付きのプレビューリストを5秒見るだけで、署名し直して再送する羽目になる文書を避けられます。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 結合するときと、ファイルを分けておくとき</h3>
+          <p>すべてを1つのPDFにまとめるのが常に最善とは限りません。別々のファイルのほうが本当に受け取る人のためになることもあるので、今どちらの状況なのかを知る価値があります。</p>
+
+          <table class="info-table-combine">
+            <thead>
+              <tr><th>状況</th><th>結合するか、分けておくか</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="状況">順番に読まれる複数ページの応募書類やレポート</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">プラットフォームが単一のPDFを明示的に求めている</td><td data-label="結合するか、分けておくか">Combine</td></tr>
+              <tr><td data-label="状況">受け取る人が各ファイルを個別に扱う必要がある</td><td data-label="結合するか、分けておくか">分けておく</td></tr>
+              <tr><td data-label="状況">無関係な参照ファイルの大量のバッチ</td><td data-label="結合するか、分けておくか">分けておく、またはZIP</td></tr>
+            </tbody>
+          </table>
+
+          <h4>結合が明らかに正しい選択のとき</h4>
+          <p>特定の順序で読まれるべきもの（複数ページの応募書類、スキャンした契約書、導入のあとに裏付けデータが続く報告書）は、1つのファイルにすることで大きなメリットがあります。読み手が意図した順にすべてに触れることが保証され、ページを順不同に開いたり、何かを飛ばしたりすることがなくなります。フォームやプラットフォームが「単一のPDF」を明示的に求める場面も判断は簡単です。要求されたものを結合して提出するだけです。</p>
+
+          <h4>別々のファイルのほうが受け取る人のためになるとき</h4>
+          <p>受け取る側がドキュメントを個別に扱う必要がある場合（たとえば、請求書だけを経理に転送し、納品書は自分の記録用に残す場合）、1つのファイルにまとめると、必要な部分だけを取り出したり印刷し直したりする必要が生じ、作業が楽にならずむしろ難しくなります。同様に、別々の場所に保管する本当に無関係な複数の文書を送る場合は、まとめたPDFと格闘させるよりも、別々のファイルのほうが、それぞれを自分のやり方で扱えます。</p>
+
+          <h4>参考資料の大規模なコレクション</h4>
+          <p>順番に読むことを想定していない、緩やかに関連した画像や文書の大きなセット（たとえば参考写真の大量のバッチ）を送る場合、バラバラのファイルのZIPアーカイブのほうが、巨大な1つのPDFより実際に役立つことがあります。受け取る側は、1枚の写真を探すために巨大な文書をスクロールするのではなく、個々のアイテムを閲覧して開けるからです。</p>
+
+          <h4>手早く判断する方法</h4>
+          <p>ファイルが最初から最後まで通して読むべき一つのまとまり（結合する）なのか、たまたま一緒に送られる複数の独立したもの（分けておく、またはZIPにする）なのかを考えましょう。ほとんどの応募書類、契約書、複数ページのスキャン文書は明らかに前者に当たり、ほとんどの参考資料、まとめて納品する成果物、個別に扱える文書は後者に当たります。</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. 結合でよくある間違い（と回避方法）</h3>
+          <p>Combineはシンプルなツールですが、避けられるミスがいくつかあるだけで、使う人が感じる不満のほとんどを占めます。</p>
+
+          <h4>プレビューを確認せず、ファイル名で順序を信用する</h4>
+          <p>File names don't always reflect the order you want, especially for scans and downloads with auto-generated names. Look at the list before you download rather than assuming it came out right.</p>
+
+          <h4>「便宜上」無関係な文書を1つのファイルにまとめる</h4>
+          <p>Combining unrelated documents just to have fewer files often backfires: the recipient has to scroll through a large merged file to find the one section they need. Reserve combining for documents that belong together as one read.</p>
+
+          <h4>送信前に最終ファイルを確認しない</h4>
+          <p>Open the merged PDF and skim it once before it goes anywhere important. That catches an out-of-order page, a duplicated document, or a page that didn't render the way you expected.</p>
+
+          <h4>Leaving a page sideways</h4>
+          <p>A photo taken with the phone turned, or a page scanned the wrong way up, ends up sideways in the merged PDF and is a hassle to fix afterwards. Rotate it in the list before you download; the preview shows the result at once.</p>
+
+          <h4>必要以上に巨大な結合ファイルを送る</h4>
+          <p>Merging several already-large PDFs or high-resolution scans produces a combined file that inherits all of their weight. Before downloading, set the image quality to Smaller or Smallest and check the size shown on each file. A slow-to-open, oversized PDF is a common complaint from recipients on slower connections or older devices.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000017" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>会社</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="私たちについて"><span class="footer-link-fun">私たちの宇宙</span><span class="footer-link-plain">私たちについて</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">回答済み</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="利用規約"><span class="footer-link-fun">銀河ハンドブック</span><span class="footer-link-plain">利用規約</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="プライバシーポリシー"><span class="footer-link-fun">エイリアン・プライバシー・プロトコル</span><span class="footer-link-plain">プライバシーポリシー</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookieポリシー"><span class="footer-link-fun">Cookie一覧</span><span class="footer-link-plain">Cookieポリシー</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>はじめに：</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>お問い合わせ</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discordに参加</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/combine/combine-tool.js?v=69" defer></script>
+</body>
+</html>

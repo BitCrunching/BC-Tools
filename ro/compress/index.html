@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compress – Compresor gratuit de imagini – BC Tools</title>
+<meta name="description" content="Comprimă gratuit imaginile la o dimensiune mai mică, chiar în browser. Alege nivelul de calitate — fără încărcări, nimic nu îți părăsește dispozitivul.">
+<link rel="canonical" href="https://bitcrunching.com/ro/compress/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/compress/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/compress/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/compress/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/compress/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/compress/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/compress/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/compress/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/compress/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/compress/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/compress/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/compress/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/compress/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/compress/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/compress/">
+<script src="/shared/i18n/ro.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Compress – Compresor gratuit de imagini – BC Tools">
+<meta property="og:description" content="Comprimă gratuit imaginile la o dimensiune mai mică, chiar în browser. Alege nivelul de calitate — fără încărcări, nimic nu îți părăsește dispozitivul.">
+<meta property="og:url" content="https://bitcrunching.com/ro/compress/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Compress – Compresor gratuit de imagini – BC Tools">
+<meta name="twitter:description" content="Comprimă gratuit imaginile la o dimensiune mai mică, chiar în browser. Alege nivelul de calitate — fără încărcări, nimic nu îți părăsește dispozitivul.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:#3FBFE8; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cpAfterDrop is revealed, so it never fights the level
+   buttons/Compress button once there's real content to interact with.
+   Same "jump" plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+.tool-app:has(#cpAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cpAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cpAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cpResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cpAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Convert gets for the same reason; found via a
+   1100×322.5px banner-size audit (every other tool renders exactly
+   that pre-load, Convert/Compress were 354.5 — 32px of dead space). */
+.tool-app:has(#cpAfterDrop[hidden]) #cpResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-compress{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Compress's own
+   brand-tinted border on top, the one genuinely tool-specific piece.
+   Same color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cp-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#30c4ff;
+  color:#30c4ff;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GHID";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shared/site.css's #page-compress .tool-controls{grid-template-columns:1fr;}
+   only fires inside the homepage SPA (id="page-compress" wrapper) — this
+   standalone page has no such ancestor, so .tool-controls was silently
+   falling back to the shared 2-column default (1fr 1.2fr) and squeezing
+   #cpControls' one child (the Compress button) into the first, narrower
+   column instead of stretching full width. Same local override Convert's
+   own index.html already carries for its own single-button #cvControls. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cp-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+
+/* shared/site.css hides .tool-format-btn entirely ≤768px in favor of a
+   .tool-format-select native dropdown (Convert's pattern, for a picker
+   with several options) — Compress never grew that select fallback, so
+   the three level buttons just vanished on mobile with nothing standing
+   in for them. Fixed by swapping them ≤768px for the site's existing
+   .option-change-btn (Congify's fps/crop/order pickers) instead of
+   stacking all 3 full-width — a plain Low/Medium/High pick reads better
+   as "tap to advance" on a phone than three repeated buttons. Desktop
+   never sees #cpLevelOptionChangeBtn at all (hidden by default below);
+   mobile hides the real three-button row instead and shows it. */
+.cp-level-option-change-btn{
+  display:none;
+}
+@media (max-width:768px){
+  .compress-level-buttons{
+    display:none;
+  }
+  .cp-level-option-change-btn{
+    display:flex;
+  }
+}
+
+#cpDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cpDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cpDrop.active{
+  border-color:#30c4ff;
+  background:rgba(48,196,255,.1);
+}
+.tool-app.active{
+  background:rgba(48,196,255,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cpAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. */
+.cp-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cpAfterDrop:not([hidden])) .cp-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cp-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cp-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cp-back-btn{ display:none; }
+  .tool-app:has(#cpAfterDrop:not([hidden])) .cp-back-btn{ display:flex; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Folosim cookie-uri. Alege mai jos ce categorii permiți — vezi <a data-goto="cookies">Politica privind cookie-urile</a> pentru detalii.</p>
+  <p class="cookie-banner-text-mobile">Alege ce categorii permiți</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Comută conținutul setărilor cookie" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIE-URI_DEV_TOOLS:</span>
+    </span>
+    <span>Alege ce categorii permiți</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mai multe despre cookie-urile necesare">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necesare (mereu active)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Acestea păstrează esențialul funcțional — își amintesc alegerea ta privind cookie-urile, limba și tema deschisă/închisă. Nu pot fi dezactivate și, ca tot restul de pe acest site, nu îți părăsesc niciodată dispozitivul.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mai multe despre cookie-urile de analiză">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analiză - Pentru confidențialitate deplină, păstreaz-o dezactivată.</span><span class="cookie-label-docked">Analiză (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Acest lucru ne permite să îmbunătățim experiența utilizatorului primind date valoroase prin (Google Analytics) despre cum navighează utilizatorii prin site-ul nostru - Dacă vrei să rămâi complet anonim, îți recomandăm să dezactivezi această opțiune.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mai multe despre cookie-urile de publicitate">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicitate (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Folosit de Google AdSense pentru a afișa reclame. În prezent dezactivat pe tot site-ul în timp ce așteptăm aprobarea AdSense, deci acest comutator nu are încă niciun efect.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Acceptă tot</button>
+    <button type="button" id="cookieBannerSave">Confirmă alegerile</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Sigla BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Comută între modul deschis și închis" title="Comută între modul deschis și închis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partajează" title="Partajează">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiază linkul</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Mai multe opțiuni de partajare"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Dă clic pentru a reseta ghidul instrumentului" title="Dă clic pentru a reseta ghidul instrumentului">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Înapoi la Creative Hub" title="Înapoi la Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cpHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cpHelpClose" aria-label="Închide și nu mai afișa"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cpHelpToggle" aria-label="Micșorează" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cpHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpBack">&lt; ÎNAPOI</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cpHelpCloseMobile">ÎNCHIDE</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cpHelpNext">URMĂTORUL &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cpHelpBody">
+    <div class="engine-status-row">&gt; <span id="cpHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-compress" role="img" aria-label="Pictograma Compress"></span>
+        Compress
+      </div>
+      <span class="privacy-check-badge" id="cpPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cp-back-btn bc-canvas-back-btn" id="cpBackBtn" data-goto="mainpage" aria-label="Înapoi la Creative Hub" title="Înapoi la Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cp-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cpRemoveBtn" aria-label="Elimină toate fișierele">×</button>
+
+    <div class="tool-drop" id="cpDrop"><span class="tool-drop-click-word">Clic</span><span class="tool-drop-or-drop"> sau trage </span><span class="tool-drop-rest">imagini</span></div>
+    <input type="file" id="cpInput" accept="image/jpeg,image/png,image/webp,image/bmp,image/svg+xml,image/tiff,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cpContinueBtn" hidden>Continuă de unde ai rămas</button>
+
+    <div class="tool-after-drop" id="cpAfterDrop" hidden>
+      <div class="tool-controls" id="cpToolControls">
+        <div class="compress-level-buttons" id="cpLevelButtons">
+          <button type="button" class="tool-format-btn" data-quality="0.9" data-label="Scăzut" data-level-key="low">
+            <span>Scăzut</span><span class="level-sub">Cea mai bună calitate</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.6" data-label="Mediu" data-level-key="medium">
+            <span>Mediu</span><span class="level-sub">Echilibrat</span>
+          </button>
+          <button type="button" class="tool-format-btn" data-quality="0.4" data-label="Ridicat" data-level-key="high">
+            <span>Ridicat</span><span class="level-sub">Cea mai mică calitate</span>
+          </button>
+        </div>
+        <button type="button" class="option-change-btn option-change-btn-lg cp-level-option-change-btn" id="cpLevelOptionChangeBtn" title="Nivel de compresie">
+          <span class="option-change-btn-label" id="cpLevelOptionChangeBtnLabel">Scăzut</span>
+          <span class="option-change-btn-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="selected-compression" id="cpSelectedCompression"></div>
+    </div>
+
+    <div class="tool-results" id="cpResults">
+      <button type="button" class="bc-add-tile" id="cpAddTile" aria-label="Adaugă imagini" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cpControls" hidden>
+      <div class="bc-segmented-toggle cp-download-mode-toggle" id="cpDownloadModeToggle" hidden>
+        <button type="button" id="cpDownloadModeSingleBtn" aria-pressed="false">Fișiere separate</button>
+        <button type="button" id="cpDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cpCompressBtn" disabled title="Comprimă și descarcă (D)" data-ga-event="tool_primary_action" data-ga-tool="compress">Comprimă și descarcă</button>
+    </div>
+
+    <div class="tool-status" id="cpStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="compress">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>Nu ești sigur ce nivel să folosești?</h3>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-low" aria-hidden="true"></span> Scăzut</p>
+        <ul class="format-pick-sublist">
+          <li>Cea mai bună calitate posibilă, schimbare abia vizibilă.</li>
+          <li>Tipar, arhivare, lucru profesional.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-medium" aria-hidden="true"></span> Mediu</p>
+        <ul class="format-pick-sublist">
+          <li>Dimensiune și calitate echilibrate.</li>
+          <li>Web, e-mail, partajare de zi cu zi.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-high" aria-hidden="true"></span> Ridicat</p>
+        <ul class="format-pick-sublist">
+          <li>Cea mai mică dimensiune de fișier, pierdere mai vizibilă.</li>
+          <li>Previzualizări, partajare rapidă, ciorne.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>Ești nou în comprimarea imaginilor?</h3>
+    <p>Compresia pare un singur glisor, dar dedesubt două abordări cu adevărat diferite fac micșorarea, iar știind care dintre ele lucrează explici aproape orice rezultat vei vedea. Iată ce se întâmplă de fapt când comprimi și cum alegi nivelul potrivit.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Cum funcționează de fapt compresia imaginilor</a></li>
+      <li><a href="#gr-article-2">2. Alegerea nivelului potrivit de compresie pentru cazul tău</a></li>
+      <li><a href="#gr-article-3">3. Compresia pentru web: viteză fără a sacrifica calitatea</a></li>
+      <li><a href="#gr-article-4">4. Când să comprimi și când să lași o imagine în pace</a></li>
+      <li><a href="#gr-article-5">5. Greșeli frecvente la compresie (și cum să le eviți)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="compress">
+<div class="gr-article" id="gr-article-1"><h3>1. Cum funcționează de fapt compresia imaginilor</h3>
+          <p>Compresia pare un singur glisor sau un singur clic, dar dedesubt două abordări cu adevărat diferite fac micșorarea, iar înțelegerea celei care lucrează explică aproape orice rezultat vei vedea de la un instrument ca acesta.</p>
+
+          <h4>Compresie cu pierderi: aruncarea a ceea ce nu vei observa</h4>
+          <p>Compresia cu pierderi, cea folosită de JPG și WEBP, funcționează identificând informațiile dintr-o imagine pe care ochiul uman le percepe slab și eliminându-le. Gradientele subtile de culoare sunt simplificate, detaliile fine de înaltă frecvență sunt netezite, iar rezultatul este un fișier care poate fi o fracțiune din originalul ca dimensiune, arătând totuși corect pentru un privitor ocazional. Problema este că această eliminare este permanentă — odată ce detaliul a dispărut, nicio redeschidere sau resalvare nu îl readuce, iar comprimarea repetată a unui fișier deja comprimat cu pierderi agravează pierderea de fiecare dată.</p>
+          <p>„Raportul de calitate” sau nivelul de compresie pe care îl alegi controlează cât de agresiv se întâmplă asta. O setare de calitate ridicată aruncă foarte puțin și micșorează fișierul modest; o setare de calitate scăzută aruncă mult mai mult și îl micșorează dramatic, cu prețul unor artefacte vizibile — blocuri în jurul marginilor, detalii șterse, benzi de culoare pe cer și în gradiente.</p>
+
+          <h4>Compresie fără pierderi: reîmpachetare fără a pierde nimic</h4>
+          <p>Compresia fără pierderi, abordarea PNG, funcționează complet diferit: găsește modalități mai inteligente și mai eficiente de a stoca exact aceleași date de pixeli, la fel cum un fișier ZIP micșorează un document text fără a schimba un singur caracter din el. Nimic nu este aruncat, așa că poți comprima și decomprima de câte ori vrei, fără nicio schimbare de calitate. Compromisul este că reducerea de dimensiune este mult mai mică, deoarece există o limită matematică fermă a cât poți micșora datele fără a arunca nimic din ele — mai ales pentru imaginile fotografice, pline de tipul de detaliu fin și neregulat care se împotrivește reîmpachetării fără pierderi.</p>
+
+          <h4>De ce instrumentul nostru Compress convertește PNG în JPG</h4>
+          <p>Iată de ce Compress convertește automat fotografiile PNG în JPG în timpul compresiei: o fotografie PNG trecută doar prin compresie fără pierderi abia se micșorează, dar aceeași fotografie lăsată să folosească compresie cu pierderi se poate micșora dramatic. Pentru o fotografie propriu-zisă, acest schimb merită aproape întotdeauna — diferența de calitate este invizibilă la dimensiunile normale de vizualizare, iar diferența de dimensiune este enormă. Este o altă poveste pentru PNG-urile care nu sunt fotografii (capturi de ecran, sigle, grafice cu transparență sau text ascuțit), motiv pentru care această conversie este reglată special pentru conținut de tip fotografie, nu aplicată orbește fiecărui PNG.</p>
+
+          <h4>Ce se întâmplă de fapt când muți glisorul de calitate</h4>
+          <p>Intern, o setare de calitate mai joasă mărește cât de grosier sunt grupate și simplificate informațiile de culoare și detaliu ale imaginii înainte de stocare. Gândește-te ca la rotunjirea numerelor: rotunjirea „calității 95” abia schimbă ceva, în timp ce rotunjirea „calității 40” schimbă mult mai mult, dar ocupă și mult mai puțin spațiu pentru a fi descrisă. Nu există un număr universal „corect” — setarea potrivită depinde în întregime de pentru ce va fi folosită imaginea, exact subiectul următorului articol.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Alegerea nivelului potrivit de compresie pentru cazul tău</h3>
+          <p>Nu există o singură setare de compresie „cea mai bună” — nivelul potrivit depinde în întregime de unde ajunge imaginea și de ce trebuie să reziste. Iată cum să te gândești la asta pe scenarii.</p>
+
+          <table class="info-table-compress">
+            <thead>
+              <tr><th>Destinație</th><th>Nivel recomandat</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Destinație">Rețele sociale / aplicații de mesagerie</td><td data-label="Nivel recomandat">Mediu</td></tr>
+              <tr><td data-label="Destinație">Propriul tău site web sau magazin online</td><td data-label="Nivel recomandat">Mediu spre ridicat</td></tr>
+              <tr><td data-label="Destinație">Tipar sau livrare profesională către client</td><td data-label="Nivel recomandat">Scăzut sau fără compresie</td></tr>
+              <tr><td data-label="Destinație">Arhivare pe termen lung</td><td data-label="Nivel recomandat">Scăzut</td></tr>
+              <tr><td data-label="Destinație">Limite de dimensiune pentru atașamentele de e-mail</td><td data-label="Nivel recomandat">Ridicat</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Rețele sociale și mesagerie</h4>
+          <p>Platforme precum Instagram, WhatsApp și majoritatea fluxurilor sociale recomprimă deja fiecare imagine pe care o încarci, adesea agresiv, indiferent ce le trimiți. Încărcarea unui fișier uriaș, abia comprimat, nu îți aduce nimic — platforma îl va comprima oricum din nou la ea. Un nivel de compresie moderat-spre-ridicat îți păstrează încărcarea rapidă și dimensiunea fișierului original rezonabilă, fără a renunța la nicio calitate pe care ai vedea-o oricum după procesarea proprie a platformei.</p>
+
+          <h4>Site-uri web și magazine online</h4>
+          <p>Pentru tot ce găzduiești tu însuți — un site de portofoliu, un blog, o pagină de produs — dimensiunea fișierelor afectează direct cât de repede se încarcă pagina, ceea ce influențează atât experiența vizitatorilor, cât și, pentru orice este comercial, ratele de conversie și poziția în căutări. Aici merită să te înclini spre o compresie mai agresivă, deoarece vizualizarea pe web rareori are nevoie de detalii la nivel de tipar, iar o pagină plină de imagini uriașe, neoptimizate, este unul dintre cele mai frecvente motive pentru care site-urile par lente.</p>
+
+          <h4>Tipar și utilizare profesională</h4>
+          <p>Acesta este singurul loc în care vrei să fii conservator. Tiparul dezvăluie detalii și artefacte pe care un ecran pur și simplu nu le arată, deoarece este privit la o rezoluție efectivă mai mare și adesea la o dimensiune fizică mai mare. Pentru orice merge la o tipografie, la o galerie sau la o livrare profesională către client, folosește un nivel ușor de compresie sau sari peste compresie pentru acea copie anume și păstrează un fișier master necomprimat sau ușor comprimat ca sursă de adevăr.</p>
+
+          <h4>Arhivare și stocare pe termen lung</h4>
+          <p>Dacă scopul este să păstrezi o fotografie ani de zile — fotografii de familie, o arhivă, orice ai vrea să revezi mai târziu la calitate completă — evită compresia puternică cu pierderi pe singura ta copie. Odată ce detaliile sunt aruncate, nu mai pot fi recuperate, chiar dacă o utilizare ulterioară se dovedește a avea nevoie de ele. O abordare rezonabilă este să păstrezi o copie de arhivă de calitate mai înaltă și să generezi separat versiuni comprimate, la cerere, pentru ce are nevoie de fapt o anumită utilizare.</p>
+
+          <h4>Atașamente de e-mail și limite de dimensiune a fișierelor</h4>
+          <p>Mulți furnizori de e-mail limitează dimensiunea atașamentelor, de obicei în jur de 25 MB în total. Dacă trimiți mai multe fotografii, un nivel mai puternic de compresie te aduce sub acest plafon în mod sigur. Acesta este unul dintre puținele cazuri în care constrângerea practică (încape sau nu în e-mail) contează mai mult decât diferența vizuală dintre nivelurile de compresie, așa că nu te teme să comprimi mai tare decât ai face pentru alte utilizări.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Compresia pentru web: viteză fără a sacrifica calitatea</h3>
+          <p>Greutatea imaginilor este unul dintre cei mai mari factori, și cei mai ușor de remediat, ai unui site lent, și este totodată unul dintre cele mai ușor de greșit în ambele direcții — prea puțină compresie și paginile se târăsc, prea multă și fotografiile arată vizibil degradate. Iată cum nimerești mijlocul util.</p>
+
+          <h4>De ce contează atât de mult dimensiunea imaginii pentru viteză</h4>
+          <p>Pe majoritatea paginilor cu mult conținut, imaginile reprezintă marea majoritate a greutății totale a paginii — mult mai mult decât HTML, CSS sau JavaScript la un loc. Timpul de încărcare a paginii pentru un vizitator, precum și evaluarea acestuia de către motoarele de căutare, sunt influențate disproporționat de cât de grele sunt imaginile tale, ceea ce înseamnă că o comprimare corectă este adesea cea mai eficientă schimbare de performanță disponibilă, înaintea majorității optimizărilor de cod.</p>
+
+          <h4>Potrivirea compresiei cu modul în care va fi afișată de fapt imaginea</h4>
+          <p>O imagine afișată pe o pagină la 400 de pixeli lățime nu trebuie livrată ca un fișier original de cameră de 4000 de pixeli, comprimat ușor — are nevoie de mult mai puține detalii ca să arate clară la dimensiunea reală de afișare. Înainte să te gândești deloc la nivelul de compresie, asigură-te că dimensiunile imaginii se potrivesc aproximativ cu cât de mare va apărea; comprimarea unei imagini supradimensionate înseamnă să tratezi simptomul și să lași cauza mai mare (rezoluția inutilă) la locul ei.</p>
+
+          <h4>Alegerea unui format pentru web</h4>
+          <p>For photographic content, JPG or WEBP at a moderate-to-strong compression level is almost always the right call — visitors browsing a page don't need print-level fidelity, and the speed benefit of a smaller file is very real and very noticeable, especially on mobile connections. For flat-color graphics, screenshots, or anything with text and sharp edges, lossless PNG usually looks better and can even end up smaller than a heavily artifacted lossy version of the same graphic.</p>
+
+          <h4>Punctul randamentelor descrescătoare</h4>
+          <p>Compresia nu scade liniar odată cu calitatea vizuală pierdută — prima bucată de compresie dintr-un original necomprimat elimină o cantitate enormă de dimensiune a fișierului aproape fără schimbări vizibile, în timp ce împingerea compresiei tot mai adânc în teritoriul agresiv elimină progresiv tot mai puțină dimensiune pentru tot mai multe stricăciuni vizibile. În practică, majoritatea fotografiilor ating un punct optim cu mult înainte de „compresia maximă”, și merită să verifici o imagine comprimată la dimensiunea ei reală de afișare, în loc să presupui că mai multă compresie înseamnă mereu mai multă viteză.</p>
+
+          <h4>Procesarea în lot a imaginilor unui întreg site</h4>
+          <p>Dacă optimizezi multe imagini deodată — un catalog de produse, o galerie, arhiva de imagini a unui blog — aplică un nivel de compresie consecvent pentru tipuri de conținut similare, în loc să le evaluezi din ochi pe fiecare în parte. Asta păstrează calitatea vizuală consecventă pe tot site-ul și face mult mai rapid să refaci procesul mai târziu dacă te răzgândești asupra setării, deoarece nu mai decizi de la caz la caz.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Când să comprimi și când să lași o imagine în pace</h3>
+          <p>Compresia este un instrument cu adevărat util, dar nu este automat mișcarea potrivită pentru fiecare imagine în fiecare situație — să știi când s-o sari este la fel de important ca să știi cum s-o folosești.</p>
+
+          <h4>Semne că o imagine este un bun candidat pentru compresie</h4>
+          <p>Fotografiile mari, originale de cameră, destinate web-ului, e-mailului sau mesageriei aproape întotdeauna au de câștigat — de obicei conțin mult mai multă rezoluție și greutate decât are nevoie destinația. Orice fișier care atinge o limită strictă de dimensiune (o limită de atașament de e-mail, o restricție de încărcare, un plafon de dimensiune al unui formular) este și el un candidat evident, deoarece compresia este adesea cea mai rapidă cale de a coborî sub limită fără a decupa sau a redimensiona conținut din imagine.</p>
+
+          <h4>Semne că ar trebui să lași o imagine în pace (sau s-o comprimi foarte ușor)</h4>
+          <p>Graficele cu text, linii ascuțite sau culori plate — capturi de ecran, diagrame, sigle, documente scanate — tind să se comprime prost cu metodele cu pierderi, deoarece artefactele de compresie apar ca neclaritate și franjuri de culoare exact acolo unde ochiul observă cel mai mult: în jurul marginilor și al textului. Acestea sunt de obicei mai bine servite de abordarea fără pierderi a PNG sau de renunțarea la compresie, în loc să te lupți cu artefactele.</p>
+          <p>Ceea ce a fost deja comprimat o dată nu ar trebui comprimat din nou „pentru siguranță”. Recomprimarea unui JPG deja comprimat cu pierderi nu îl micșorează semnificativ în majoritatea cazurilor și poate introduce o a doua rundă de pierdere de calitate peste prima, adunând artefacte în loc să le elimine.</p>
+
+          <h4>Obiceiul copiei master</h4>
+          <p>O regulă simplă care evită cele mai multe regrete: păstrează o copie master de înaltă calitate (sau necomprimată) a oricărui lucru pe care l-ai putea reutiliza și generează versiuni comprimate din acel master, după cum e nevoie pentru fiecare utilizare, în loc să-ți suprascrii singura copie cu una comprimată. Spațiul de stocare e ieftin; recrearea unui original pierdut nu mai e posibilă odată ce a dispărut.</p>
+
+          <h4>Judecând după destinație, nu după obicei</h4>
+          <p>Întrebarea potrivită nu este „ar trebui să comprim această imagine” în abstract, ci „de ce are nevoie de fapt locul unde ajunge această imagine”. O fotografie destinată unui mesaj text are nevoie de aproape niciunul din detaliile ei originale; una destinată unui banner tipărit mare are nevoie de aproape toate. Lasă destinația să stabilească ștacheta, în loc să aplici același nivel de compresie din obișnuință la tot ce trece prin fluxul tău de lucru.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Greșeli frecvente la compresie (și cum să le eviți)</h3>
+          <p>Majoritatea plângerilor despre compresie duc la un set restrâns de greșeli repetabile. Iată la ce să fii atent.</p>
+
+          <h4>Comprimarea aceluiași fișier iar și iar</h4>
+          <p>Fiecare trecere de compresie cu pierderi aruncă puțin mai multe detalii, iar pierderea se adună cu fiecare trecere în plus — un fișier comprimat, redeschis, editat și recomprimat de mai multe ori va arăta vizibil mai rău decât unul comprimat o singură dată dintr-un original curat. Comprimă întotdeauna din original sau dintr-un master necomprimat, nu dintr-o copie deja comprimată.</p>
+
+          <h4>Suprascrierea singurei tale copii</h4>
+          <p>Compressing in place and deleting the original is the most common way people lose full quality for good. Keep the original somewhere safe until you're certain you won't need it at higher quality.</p>
+
+          <h4>Comprimarea graficelor ca și cum ar fi fotografii</h4>
+          <p>Screenshots, logos, and text-heavy graphics smudge under the lossy compression that works well on photographs. Use a much lighter level for them, or leave them as PNG.</p>
+
+          <h4>Alegerea unui nivel de compresie fără a verifica rezultatul</h4>
+          <p>Este tentant să alegi „compresia maximă” pentru cel mai mic fișier posibil și să mergi mai departe, dar acea setare introduce adesea artefacte evident vizibile odată ce te uiți de fapt la rezultat la dimensiunea reală. O verificare rapidă a rezultatului comprimat — la dimensiunea la care va fi de fapt văzut — durează secunde și previne trimiterea sau publicarea a ceva care arată vizibil mai rău decât intenționai.</p>
+
+          <h4>Ignorarea compresiei proprii a destinației</h4>
+          <p>Încărcarea unui fișier uriaș, abia comprimat, pe o platformă care îl va comprima oricum (majoritatea rețelelor sociale și aplicațiilor de mesagerie) irosește timp de încărcare și lățime de bandă fără niciun beneficiu vizual, deoarece procesarea proprie a platformei determină o mare parte din calitatea finală, indiferent ce ai trimis. Potrivește efortul de compresie cu ceea ce va păstra de fapt destinația, nu cu presupunerea că „mai multă calitate originală la intrare înseamnă mai multă calitate finală la ieșire”.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Companie</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Despre noi"><span class="footer-link-fun">Universul nostru</span><span class="footer-link-plain">Despre noi</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Întrebări frecvente"><span class="footer-link-fun">Deja răspuns</span><span class="footer-link-plain">Întrebări frecvente</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Termenii de utilizare"><span class="footer-link-fun">Manualul galactic</span><span class="footer-link-plain">Termenii de utilizare</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politica de confidențialitate"><span class="footer-link-fun">Protocol extraterestru de confidențialitate</span><span class="footer-link-plain">Politica de confidențialitate</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politica privind cookie-urile"><span class="footer-link-fun">Registrul cookie-urilor</span><span class="footer-link-plain">Politica privind cookie-urile</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primii pași cu</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ro/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ro/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ro/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ro/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ro/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ro/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ro/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ro/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ro/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ro/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ro/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactează-ne</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Intră pe Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/compress/compress-tool.js?v=53" defer></script>
+</body>
+</html>

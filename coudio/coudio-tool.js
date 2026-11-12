@@ -16,7 +16,7 @@
   const continueBtn = document.getElementById("cdContinueBtn");
 
   bcSetupHelpBanner("coudio", "cd", [
-    ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click or drop one or more files below to get started."],
+    ["WELCOME_TO_COUDIO", "Coudio converts audio and video between MP3, WAV, OGG, AIFF, AU, CAF, and VOC — entirely in your browser. Click, drop, or press (A) to add one or more files to get started."],
     ["PICK_YOUR_FORMAT", "Every file is fully independent — pick its own Output format (MP3/OGG also let you pick a bitrate) and its own output name, right on its row."],
     ["CHECK_BEFORE_CONVERTING", "Each row has its own player — give a file a quick listen before hitting its own Convert button."],
     ["YOU_ARE_SET", "Hit a row's Download button to convert and save that file — no need to wait for the others — or press D to download every file in turn. Close this with the red dot and we won't show it again."]
@@ -759,9 +759,7 @@
      any other file. */
   async function convertEntry(entry){
     const btn = entry.row.querySelector(".cd-row-convert-btn");
-    const idleLabel = btn.textContent;
     btn.disabled = true;
-    btn.textContent = bcT("Converting…");
     entry.row.classList.remove("cd-file-row-error");
     entry.row.removeAttribute("title");
     statusEl.textContent = bcT("Converting {0}...", [entry.file.name]);
@@ -771,7 +769,6 @@
       const { blob, ext } = await convertOneFile(entry.file, entry.outputFormat, entry.bitrate);
       const outName = (entry.outputName.trim() || "converted") + "." + ext;
       downloadBlob(blob, outName);
-      btn.textContent = bcT("Done");
       statusEl.textContent = bcT("Done — {0} converted successfully.", [outName]);
     } catch (err){
       console.error(err);
@@ -783,14 +780,10 @@
          forever, never actually reacting to a failed conversion. */
       entry.row.classList.add("cd-file-row-error");
       entry.row.title = bcT("Couldn't convert \"{0}\" — it may not be a valid or supported audio/video file.", [entry.file.name]) + `\n(${err.message || err})`;
-      btn.textContent = bcT("Failed");
       statusEl.textContent = bcT("Couldn't convert {0}. Make sure it's a valid audio or video file.", [entry.file.name]);
     } finally {
       finishPrivacyCheck(document.getElementById("cdPrivacyBadge"));
-      setTimeout(() => {
-        btn.textContent = idleLabel;
-        btn.disabled = false;
-      }, 1800);
+      btn.disabled = false;
     }
   }
 

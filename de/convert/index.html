@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convert – Kostenloser Bild- & PDF-Konverter – BC Tools</title>
+<meta name="description" content="Konvertiere Bilder kostenlos zwischen JPG, PNG, WEBP, SVG und PDF – direkt im Browser. Keine Uploads, kein Server, nichts verlässt dein Gerät.">
+<link rel="canonical" href="https://bitcrunching.com/de/convert/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/convert/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/convert/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/convert/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/convert/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/convert/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/convert/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/convert/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/convert/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/convert/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/convert/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/convert/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convert/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convert/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convert/">
+<script src="/shared/i18n/de.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Convert – Kostenloser Bild- & PDF-Konverter – BC Tools">
+<meta property="og:description" content="Konvertiere Bilder kostenlos zwischen JPG, PNG, WEBP, SVG und PDF – direkt im Browser. Keine Uploads, kein Server, nichts verlässt dein Gerät.">
+<meta property="og:url" content="https://bitcrunching.com/de/convert/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Convert – Kostenloser Bild- & PDF-Konverter – BC Tools">
+<meta name="twitter:description" content="Konvertiere Bilder kostenlos zwischen JPG, PNG, WEBP, SVG und PDF – direkt im Browser. Keine Uploads, kein Server, nichts verlässt dein Gerät.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<script src="/vendor/jszip.min.js"></script>
+<script src="/vendor/pdf-lib.min.js"></script>
+<script src="/vendor/pdf.min.js"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:linear-gradient(155deg,#B84CFF); }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cvAfterDrop is revealed, so it never fights the dropdowns
+   or Convert button once there's real content to interact with. Same
+   "jump" plays while a file is being dragged over the banner (.active,
+   toggled by shared/site.js's bcSetupBannerDropTarget) — tried a wobble
+   keyframe there first and it read as too much; this hover recipe
+   already existed and felt better once actually tested live. */
+.tool-app:has(#cvAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cvAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cvAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cvResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cvAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Coudio already applies to #cdStatus for the same
+   reason; found via a 1100×322.5px banner-size audit (every other tool
+   renders exactly that pre-load, Convert/Compress were 354.5 — 32px of
+   dead space). */
+.tool-app:has(#cvAfterDrop[hidden]) #cvResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-convert{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Convert's own brand-tinted
+   border on top, the one genuinely tool-specific piece. Same
+   color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cv-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+.result-heic-preview-btn{
+  display:block;
+  width:calc(100% - 20px);
+  margin:10px auto 0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+.result-heic-preview-btn:hover{
+  border-color:#7626f5;
+  color:#7626f5;
+}
+.result-heic-preview-btn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+/* Red and yellow are both functional here (close / collapse), unlike
+   the mainpage easter egg where only yellow does anything — so both
+   get their real traffic-light color instead of the muted grey used
+   for a purely decorative dot. */
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"ANLEITUNG";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+#cvDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cvDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cvDrop.active{
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+.tool-app.active{
+  background:rgba(118,38,245,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cvAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. Was previously
+   nested inside #cvAfterDrop with a large negative top pulling it up
+   out of that box — worked, but was a one-off recipe instead of the
+   same positioning every other tool uses. */
+.cv-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cvAfterDrop:not([hidden])) .cv-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cv-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cv-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cv-back-btn{ display:none; }
+  .tool-app:has(#cvAfterDrop:not([hidden])) .cv-back-btn{ display:flex; }
+}
+
+.tool-io-row{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+
+/* .tool-controls is normally a 2-column grid pairing a format picker
+   with the primary button; here it now wraps only the Convert button
+   (the pickers moved into .tool-io-row above), so it needs to be a
+   single full-width column instead. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+/* Width/spacing is the one local piece .bc-segmented-toggle (shared/
+   site.css) leaves to each use — segment chrome only comes from there. */
+.cv-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+.tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
+.tool-io-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:10px;
+}
+.io-label-short{ display:none; }
+
+/* Shape/color is the shared .bc-info-btn/.bc-info-tooltip
+   (shared/site.css) now — only the .tool-io-label flex layout above
+   stays local. Used to be this tool's own local .tool-io-info-btn/
+   -tooltip copy (the component's origin); Coudio's own use of the "i"
+   icon pointed at the shared version from the start, so Convert now
+   points at the same one instead of carrying a separate copy. */
+@media (max-width:640px){
+  .io-label-full{ display:none; }
+  .io-label-short{ display:inline; }
+}
+
+/* Input/Output pickers are always the custom .bc-dropdown on this
+   page, never the native <select> other tools swap in for mobile —
+   .tool-format-select here is purely a hidden state-backend
+   (convert-tool.js reads/writes its .value and dispatches "change" on
+   it; the visible pill above it is what the user actually interacts
+   with). shared/site.css's mobile rule forces
+   .tool-format-select{display:block!important} for tools that DO want
+   the native select on mobile, which was leaking through here too and
+   rendering it as a second, chevron-less duplicate of the row above —
+   this !important is what's needed to actually beat that. */
+.tool-io-group .tool-format-select{ display:block; }
+@media (max-width:768px){
+  .tool-io-group .tool-format-select{ display:none !important; }
+}
+/* Mobile shortens both Input's and Output's placeholder — "Choose
+   format"/"Choose a format" don't fit as comfortably at phone widths
+   as they do on desktop — to just "Pick". Scoped to .is-placeholder
+   (toggled in convert-tool.js alongside the real textContent swap) so
+   this only applies before a format's actually chosen; once one is,
+   the label shows the real selection (e.g. "JPG") on mobile exactly
+   as it does on desktop. */
+@media (max-width:768px){
+  #cvInputTriggerLabel.is-placeholder,
+  #cvFormatTriggerLabel.is-placeholder{ font-size:0; }
+  #cvInputTriggerLabel.is-placeholder::before,
+  #cvFormatTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
+}
+
+/* .tool-io-swap/.tool-io-swap-arrow now live in shared/site.css —
+   Coudio became a second consumer of this exact "→ between two 74px
+   pickers" pattern, so it was promoted out of here. */
+
+.format-pick-intro{
+  max-width:680px;
+  margin:0 auto 32px;
+  text-align:center;
+  color:var(--text);
+  opacity:.8;
+  font-size:clamp(17px, 1.8vw, 19px);
+  line-height:1.6;
+}
+
+/* Scoped to Convert specifically — .format-pick-group is shared with
+   Compress's level cards, which don't have this actions row. */
+.content-section-convert .format-pick-group{
+  padding:20px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+.content-section-convert .format-pick-sublist{
+  margin-bottom:16px;
+}
+.format-pick-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:auto;
+}
+.format-pick-action-btn{
+  width:100%;
+  height:40px;
+  padding:0 16px;
+  border-radius:14px;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:700;
+}
+/* Marks which format this card's Input/Output was last set to — stays
+   selected after the click so the card visibly reflects the tool's
+   current state, rather than looking like a one-shot action button.
+   Input and Output are tracked independently (see convert-tool.js), so
+   picking "I have this" here doesn't disturb any other card's "I need
+   this" selection and vice versa — a user can set both from one card,
+   or just the one they still need after already uploading a file. */
+.format-pick-action-btn.selected{
+  background:var(--btn-fill);
+  border-color:var(--btn-fill);
+  color:var(--btn-fill-text);
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Wir verwenden Cookies. Wähle unten, welche Kategorien du erlauben möchtest – siehe unsere <a data-goto="cookies">Cookie-Richtlinie</a> für Details.</p>
+  <p class="cookie-banner-text-mobile">Wähle, welche Kategorien erlaubt sind</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie-Einstellungen ein- oder ausblenden" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Wähle, welche Kategorien erlaubt sind</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Mehr zu notwendigen Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Notwendig (immer aktiv)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Sie halten das Wesentliche am Laufen – sie merken sich deine Cookie-Auswahl, deine Sprache und dein helles/dunkles Design. Sie lassen sich nicht abschalten und verlassen, wie alles auf dieser Seite, nie dein Gerät.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Mehr zu Analyse-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analyse – für volle Privatsphäre deaktiviert lassen.</span><span class="cookie-label-docked">Analyse (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>So können wir die Nutzererfahrung verbessern, indem wir über (Google Analytics) wertvolle Daten darüber erhalten, wie Nutzer auf unserer Website navigieren – wenn du vollständig anonym bleiben möchtest, empfehlen wir, diese Option zu deaktivieren.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Mehr zu Werbe-Cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Werbung (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Wird von Google AdSense zum Anzeigen von Werbung genutzt. Derzeit auf der gesamten Seite abgeschaltet, bis AdSense uns freigibt – dieser Schalter hat also noch keine Wirkung.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Alle akzeptieren</button>
+    <button type="button" id="cookieBannerSave">Auswahl bestätigen</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC-Tools-Logo" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Zwischen hellem und dunklem Modus wechseln" title="Zwischen hellem und dunklem Modus wechseln">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Teilen" title="Teilen">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Link kopieren</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Weitere Optionen zum Teilen"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-Mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Klicken, um die Anleitung des Tools zurückzusetzen" title="Klicken, um die Anleitung des Tools zurückzusetzen">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zurück zum Creative Hub" title="Zurück zum Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cvHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cvHelpClose" aria-label="Schließen und nicht mehr anzeigen"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cvHelpToggle" aria-label="Minimieren" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cvHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpBack">&lt; ZURÜCK</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cvHelpCloseMobile">SCHLIESSEN</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cvHelpNext">WEITER &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cvHelpBody">
+    <div class="engine-status-row">&gt; <span id="cvHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-convert" role="img" aria-label="Convert-Symbol"></span>
+        Convert
+      </div>
+      <span class="privacy-check-badge" id="cvPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cv-back-btn bc-canvas-back-btn" id="cvBackBtn" data-goto="mainpage" aria-label="Zurück zum Creative Hub" title="Zurück zum Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cv-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cvRemoveBtn" aria-label="Alle Dateien entfernen">×</button>
+
+    <div class="tool-drop" id="cvDrop"><span class="tool-drop-click-word">Klicke</span><span class="tool-drop-or-drop"> oder ziehe </span><span class="tool-drop-rest">Bilder oder ein PDF hierher</span></div>
+    <input type="file" id="cvInput" accept="image/*,.svg,.pdf,application/pdf,.heic,.heif,image/heic,image/heif" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cvContinueBtn" hidden>Dort weitermachen, wo du aufgehört hast</button>
+
+    <div class="tool-after-drop" id="cvAfterDrop" hidden>
+      <div class="tool-io-row">
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label">
+            <span class="io-label-full">Erwartete Eingabe</span><span class="io-label-short">IN</span>
+            <button type="button" class="bc-info-btn" id="cvInputInfoBtn" aria-label="Was bedeutet „Erwartete Eingabe“?" aria-expanded="false">i</button>
+          </span>
+          <div class="bc-info-tooltip" id="cvInputInfoTooltip" hidden>Das Format jeder hochgeladenen Datei wird einzeln erkannt, sodass das Mischen verschiedener Formate kein Problem ist. Jede Datei wird in das gewählte Format konvertiert.</div>
+          <!-- The real <select> below is the state/event backend every
+               existing bit of format logic (mutual-exclusion, URL
+               routing, auto-detect) already reads/writes — kept exactly
+               as it was, just visually hidden. This .bc-dropdown is the
+               real visible/interactive control now, kept in sync with
+               the select's value at every point convert-tool.js sets
+               one (see syncDropdownTrigger there). 5 options → the
+               plain shared dropdown, not the searchable combo. -->
+          <div class="bc-dropdown" id="cvInputDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvInputTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvInputTriggerLabel">Format wählen</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvInputMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/heic" data-label="HEIC" role="option" aria-selected="false">HEIC</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvInputSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Format wählen</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="image/heic">HEIC</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+
+        <span class="tool-io-swap" aria-hidden="true">
+          <span class="tool-io-swap-arrow">&rarr;</span>
+        </span>
+
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label"><span class="io-label-full">Ausgabe</span><span class="io-label-short">AUS</span></span>
+          <div class="bc-dropdown" id="cvFormatDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cvFormatTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cvFormatTriggerLabel">Wähle ein Format</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cvFormatMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="image/jpeg" data-label="JPG" role="option" aria-selected="false">JPG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/png" data-label="PNG" role="option" aria-selected="false">PNG</button>
+              <button type="button" class="bc-dropdown-option" data-value="image/webp" data-label="WEBP" role="option" aria-selected="false">WEBP</button>
+              <button type="button" class="bc-dropdown-option" data-value="application/pdf" data-label="PDF" role="option" aria-selected="false">PDF</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cvFormatSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Wähle ein Format</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+            <option value="application/pdf">PDF</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-results" id="cvResults">
+      <button type="button" class="bc-add-tile" id="cvAddTile" aria-label="Bilder oder ein PDF hinzufügen" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cvControls" hidden>
+      <div class="bc-segmented-toggle cv-download-mode-toggle" id="cvDownloadModeToggle" hidden>
+        <button type="button" id="cvDownloadModeSingleBtn" aria-pressed="false">Einzelne Dateien</button>
+        <button type="button" id="cvDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cvConvertBtn" disabled title="Konvertieren und herunterladen (D)" data-ga-event="tool_primary_action" data-ga-tool="convert">Konvertieren und herunterladen</button>
+    </div>
+
+    <div class="tool-status" id="cvStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="convert">
+  <div class="content-section-article-wrap" id="cvWhyArticle" hidden>
+    <h3 id="cvWhyHeading"></h3>
+    <p id="cvWhyP1"></p>
+    <p id="cvWhyP2"></p>
+  </div>
+
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000013"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>Unsicher, welches Format du nehmen sollst?</h3>
+    <p class="format-pick-intro">Hier siehst du, wofür jedes Format eigentlich gut ist. Wähle das Format, das du hast, und das, das du brauchst.</p>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-jpg" aria-hidden="true"></span> JPG</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal für Alltagsfotos.</li>
+          <li>Kleine Dateien, hervorragende Kompatibilität.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/jpeg">Das habe ich</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/jpeg">Das brauche ich</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-png" aria-hidden="true"></span> PNG</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal für Logos, Screenshots und Transparenz.</li>
+          <li>Verlustfreie Qualität.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/png">Das habe ich</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/png">Das brauche ich</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-webp" aria-hidden="true"></span> WEBP</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal für Websites.</li>
+          <li>Kleinere Dateien mit Transparenzunterstützung.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/webp">Das habe ich</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="image/webp">Das brauche ich</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-heic" aria-hidden="true"></span> HEIC</p>
+        <ul class="format-pick-sublist">
+          <li>Standard-Fotoformat des iPhones – wird als Eingabe akzeptiert.</li>
+          <li>Konvertiere es in JPG, PNG oder WEBP für bessere Kompatibilität.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="image/heic">Das habe ich</button>
+        </div>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name"><span class="fmt-icon fmt-icon-pdf" aria-hidden="true"></span> PDF</p>
+        <ul class="format-pick-sublist">
+          <li>Ideal, um mehrere Bilder als ein Dokument zu teilen.</li>
+          <li>Du kannst sie auch mit unserem Combine-Tool zusammenführen.</li>
+        </ul>
+        <div class="format-pick-actions">
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-input="application/pdf">Das habe ich</button>
+          <button type="button" class="format-pick-action-btn bc-hover-fill" data-set-output="application/pdf">Das brauche ich</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>Neu beim Konvertieren von Bildern?</h3>
+    <p>Jedes Bildformat wurde entwickelt, um ein anderes Problem zu lösen, und die richtige Wahl beeinflusst Dateigröße und Qualität stärker als fast jede andere Entscheidung bei der Bildvorbereitung. Hier erfährst du, was bei jedem Format tatsächlich unter der Haube passiert und wann es wirklich darauf ankommt.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Der komplette Leitfaden zu Bildformaten: JPG vs PNG vs WEBP</a></li>
+      <li><a href="#gr-article-2">2. So machst du aus Fotos ein PDF (und warum du das willst)</a></li>
+      <li><a href="#gr-article-3">3. Bilder aus einem PDF extrahieren: ein praktischer Leitfaden</a></li>
+      <li><a href="#gr-article-4">4. Wann du deine Bilder konvertieren solltest: Szenarien aus der Praxis</a></li>
+      <li><a href="#gr-article-5">5. Häufige Konvertierungsfehler (und wie du sie vermeidest)</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="convert">
+<div class="gr-article" id="gr-article-1"><h3>1. Der komplette Leitfaden zu Bildformaten: JPG vs PNG vs WEBP</h3>
+          <p>Jedes Bildformat wurde entwickelt, um ein anderes Problem zu lösen, und die richtige Wahl beeinflusst Dateigröße und Qualität stärker als fast jede andere Entscheidung bei der Bildvorbereitung. Hier erfährst du, was bei jedem Format tatsächlich unter der Haube passiert und wann es wirklich darauf ankommt.</p>
+
+          <h4>JPG (JPEG): das Fotoformat</h4>
+          <p>JPG nutzt verlustbehaftete Komprimierung, das heißt, bei jedem Speichern werden einige Bilddaten verworfen, um die Dateigröße zu verringern. Bei Fotografien – mit ihren fließenden Farbübergängen, natürlichem Rauschen und fehlenden harten Kanten – funktioniert das erstaunlich gut, da das menschliche Auge die konkreten Informationen, die JPG verwirft, kaum bemerkt. Deshalb bleibt JPG das Standardformat der Fotografie im Web, in Kameras und Handys: hervorragende Komprimierung, kleine Dateien, universelle Unterstützung.</p>
+          <p>Was JPG nicht kann, ist Transparenz. Das Format hat überhaupt keinen Alphakanal; wenn du also einen durchsichtigen Hintergrund brauchst, scheidet JPG komplett aus. Außerdem verschlechtert es sich bei jedem erneuten Speichern ein wenig (mehr dazu im Fehler-Artikel unten) und tut sich schwer mit scharfkantigen Grafiken wie Text oder Logos, bei denen die Kompressionsartefakte als Unschärfe um harte Linien sichtbar werden.</p>
+
+          <h4>PNG: das verlustfreie, transparenzfähige Format</h4>
+          <p>PNG nutzt verlustfreie Komprimierung – jedes Pixel bleibt exakt erhalten, ohne Qualitätsverlust, egal wie oft du erneut speicherst. Das macht es zur richtigen Wahl für alles mit scharfen Kanten, flachen Farben oder Text: Logos, Screenshots, Icons, Diagramme. Es unterstützt zudem Transparenz vollständig, auch teilweise Transparenz (weiche, ausgefranste Kanten), was JPG schlicht nicht kann.</p>
+          <p>Der Preis ist die Größe. Verlustfreie Komprimierung schrumpft eine Datei bei weitem nicht so stark wie der verlustbehaftete Ansatz von JPG, besonders bei Fotos mit vielen feinen Farbnuancen. Ein als PNG gespeichertes Foto kann leicht 5–10-mal größer sein als dasselbe Foto als JPG – für einen Qualitätsunterschied, den die meisten nicht sehen können.</p>
+
+          <h4>WEBP: der moderne Allrounder</h4>
+          <p>WEBP ist Googles neueres Format und in den meisten Fällen wirklich das Beste aus beiden Welten: Es unterstützt verlustbehaftete und verlustfreie Komprimierung (kann also je nach Bedarf wie JPG oder wie PNG arbeiten), unterstützt Transparenz und erzeugt bei gleicher Qualität meist kleinere Dateien als JPG oder PNG – oft 25–35 % kleiner als JPG bei Fotos und deutlich kleiner als PNG bei Grafiken.</p>
+          <p>Die einzige echte Einschränkung ist die Kompatibilität mit älterer Software – einige ältere Bildeditoren, einige E-Mail-Programme und einige ältere Geräte kommen mit WEBP nicht gut zurecht. Für eine moderne Website ist das kaum noch ein praktisches Problem, aber wenn du eine Datei an jemanden schickst, dessen Software du nicht kontrollierst, lohnt sich ein Gedanke daran.</p>
+
+          <h4>HEIC: das iPhone-Format, das du lieber umwandeln willst</h4>
+          <p>HEIC (und sein enger Verwandter HEIF) ist seit iOS 11 Apples Standard-Fotoformat – bei gleicher Qualität komprimiert es besser als JPG, weshalb iPhones es automatisch verwenden. Der Haken ist die Kompatibilität: Die meiste Nicht-Apple-Software, ältere Bearbeitungstools und viele Websites und Upload-Formulare können eine HEIC-Datei noch immer nicht direkt öffnen.</p>
+          <p>Convert akzeptiert HEIC/HEIF als Eingabe und dekodiert es vollständig in deinem Browser, sodass du ein Foto direkt vom iPhone hineinziehen und ein JPG, PNG oder WEBP zurückbekommen kannst, das überall aufgeht. Eine HEIC-Ausgabe gibt es nicht, denn der Sinn der Konvertierung ist ja, diese Kompatibilitätslücke hinter sich zu lassen.</p>
+
+          <h4>Die schnelle Entscheidungsregel</h4>
+          <p>Fotos ohne Transparenzbedarf → JPG oder WEBP. Alles, was Transparenz oder scharfe Kanten braucht (Logos, Screenshots, Grafiken) → PNG oder WEBP. Kleinstmögliche Datei mit Unterstützung moderner Browser → WEBP.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. So machst du aus Fotos ein PDF (und warum du das willst)</h3>
+          <p>Bilder in ein einziges PDF zu konvertieren ist eine der nützlichsten Funktionen von Convert, die man nicht sofort entdeckt – die Antwort auf „wie schicke ich diese 12 Fotos als eine Datei statt als 12 einzelne Anhänge?“.</p>
+
+          <h4>Warum Bilder zu einem PDF zusammenführen statt einfach zu zippen</h4>
+          <p>Eine ZIP-Datei verlangt vom Empfänger, sie herunterzuladen, zu entpacken und jedes Bild einzeln zu öffnen – zusätzliche Schritte, die die meisten nicht auf sich nehmen. Ein PDF öffnet sich direkt im Browser oder im eingebauten PDF-Viewer, den fast jedes Gerät hat, und die Seiten erscheinen in genau der festgelegten Reihenfolge – enorm wichtig etwa bei Bewerbungen (Anschreiben, dann Lebenslauf, dann Arbeitsproben) oder eingescannten Unterlagen, die in der richtigen Abfolge bleiben müssen.</p>
+          <p>Es ist außerdem das erwartete Format für eine riesige Bandbreite offizieller und halboffizieller Einreichungen: Bewerbungen, Versicherungsansprüche, Steuerunterlagen, Schulaufgaben und Mietbewerbungen verlangen häufig „bitte als einzelnes PDF einreichen“, genau weil das eindeutig ist und nicht versehentlich umsortiert oder auseinandergerissen werden kann wie ein Ordner mit losen Bildern.</p>
+
+          <h4>Schritt für Schritt</h4>
+          <p>Zieh deine Bilder in Convert – du kannst mehrere auf einmal auswählen. Klicke auf den Format-Button „PDF“; anders als bei den anderen Formaten konvertiert dieser nicht jedes Bild einzeln, sondern fasst alle in einem PDF zusammen, in dem jedes Bild eine eigene Seite wird. Klicke auf „Konvertieren und herunterladen“, und du erhältst eine einzige PDF-Datei mit allen ausgewählten Bildern, eines pro Seite, in der Reihenfolge deines Uploads.</p>
+          <p>Hier kommt es auf die Reihenfolge an, also prüfe vor dem Konvertieren, in welcher Reihenfolge deine Dateien ausgewählt wurden – Convert folgt derzeit der Reihenfolge, in der du sie gewählt oder abgelegt hast. Wenn die Abfolge wichtig ist (etwa bei einem mehrseitigen Scan), wähle oder lege sie in der gewünschten Reihenfolge ab.</p>
+
+          <h4>Ein Hinweis zur Bildqualität im PDF</h4>
+          <p>Da deine Bilder unverändert eingebettet werden, sieht ein Bild mit niedriger Auflösung im PDF immer noch niedrig aufgelöst aus – die Umwandlung in PDF fügt keine Details hinzu, die nicht da waren. Wenn du etwa ein gedrucktes Portfolio vorbereitest, lohnt es sich, Bilder vorher auf eine vernünftige Auflösung zu komprimieren oder zu verkleinern, statt unnötig riesige Kameraoriginale einzufügen, die ein aufgeblähtes PDF ergeben, das langsam aufgeht und umständlich zu mailen ist.</p>
+
+          <h4>Wann es das falsche Tool ist</h4>
+          <p>Wenn du bereits vorhandene PDFs zusammenführst (und keine rohen Bilder), brauchst du stattdessen das Combine-Tool – die PDF-Ausgabe von Convert dient speziell dazu, aus Bildern ein neues PDF zu machen, nicht dazu, vorhandene PDF-Dokumente zusammenzuführen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Bilder aus einem PDF extrahieren: ein praktischer Leitfaden</h3>
+          <p>Die Gegenrichtung – Bilder aus einem vorhandenen PDF herauszuziehen – löst ein anderes, ebenso häufiges Problem: Du hast ein PDF und brauchst nur eine Seite oder alle Seiten als eigenständige Bilddateien.</p>
+
+          <h4>Häufige Gründe, warum man das braucht</h4>
+          <p>Eine einzelne Folie aus einer PDF-Präsentation holen, um sie in eine E-Mail oder Chat-Nachricht einzufügen. Die Seiten eines eingescannten Dokuments extrahieren, um sie einzeln in einem Bildeditor zu bearbeiten oder zu kommentieren. Ein Diagramm aus einem PDF-Bericht für die Wiederverwendung an anderer Stelle greifen. Jede Seite eines alten Scans als separate, allgemeiner betrachtbare Bilddatei archivieren.</p>
+
+          <h4>Wie es tatsächlich funktioniert</h4>
+          <p>Zieh statt eines Bildes ein PDF in Convert, und das Tool erkennt es automatisch – die Formatoptionen ändern sich und zeigen nur noch JPG, PNG und WEBP, da die Umwandlung eines PDFs in ein anderes PDF oder in SVG keinen Sinn ergibt. Wähle das Bildformat, das zu dir passt (JPG für kleinere Dateien, PNG, wenn die PDF-Seiten Transparenz oder scharfen Text enthalten, WEBP für die beste Balance aus beidem), und konvertiere.</p>
+          <p>Jede PDF-Seite wird zu einer eigenen Bilddatei. Ein 10-seitiges PDF, in JPG konvertiert, ergibt 10 einzelne JPG-Dateien, automatisch nach Seite nummeriert. Wenn du mehr als 5 Seiten extrahierst, werden sie automatisch in einem einzigen ZIP-Download gebündelt, statt zehn einzelne Downloads auszulösen.</p>
+
+          <h4>Überlegungen zu Auflösung und Qualität</h4>
+          <p>PDF-Seiten werden in einem festen Maßstab zu Bildern gerendert, der für scharfe, lesbare Ergebnisse bei typischen Dokumenten und Präsentationen ausgelegt ist. Wenn du ein sehr detailliertes Diagramm extrahierst oder besonders hohe Auflösung für den Druck brauchst, solltest du die Ausgabequalität prüfen, bevor du dich bei druckkritischen Dingen darauf verlässt – die Extraktion in Bildschirmauflösung reicht für digitale Zwecke meist völlig, sehr feine Druckarbeiten brauchen aber unter Umständen ein anderes Tool, das speziell für Extraktion mit hohem DPI gebaut ist.</p>
+
+          <h4>Mehrseitige PDFs und Dateinamen</h4>
+          <p>Jedes extrahierte Bild wird automatisch mit seiner Seitenzahl beschriftet, sodass du auf einen Blick siehst, welche Ausgabe zu welcher Seite des Originaldokuments gehört – praktisch, wenn du ein langes PDF durcharbeitest und nur eine Handvoll bestimmter Seiten brauchst statt des Ganzen.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Wann du deine Bilder konvertieren solltest: Szenarien aus der Praxis</h3>
+          <p>Die technischen Unterschiede zwischen Formaten zu kennen ist eine Sache – zu wissen, welcher für deine konkrete Situation gilt, eine andere. Hier eine szenariobasierte Denkweise.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Situation</th><th>Bestes Format</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Situation">Eine Plattform verlangt ein bestimmtes Format</td><td data-label="Bestes Format">Was auch immer die Plattform verlangt – zuerst prüfen</td></tr>
+              <tr><td data-label="Situation">Die eigene Website beschleunigen</td><td data-label="Bestes Format">WEBP</td></tr>
+              <tr><td data-label="Situation">Transparenter Hintergrund nötig</td><td data-label="Bestes Format">PNG oder WEBP</td></tr>
+              <tr><td data-label="Situation">Vorbereitung für Druck oder professionelle Nutzung</td><td data-label="Bestes Format">PNG</td></tr>
+              <tr><td data-label="Situation">Langzeitarchivierung</td><td data-label="Bestes Format">PNG (oder WEBP im verlustfreien Modus)</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Upload auf eine Plattform, die nur bestimmte Formate akzeptiert</h4>
+          <p>Das ist der häufigste Grund, warum man überhaupt einen Konverter braucht: Eine Website, App oder ein Einreichungsformular verlangt „nur JPG oder PNG“, aber dein Bild liegt als WEBP oder SVG vor. Convert erledigt das in Sekunden – wähle das Format, das die Plattform fordert, und fertig. Prüfe immer zuerst die genannten Anforderungen der Plattform, denn falsches Raten kostet eine Extrarunde.</p>
+
+          <h4>Eine selbst betreute Website beschleunigen</h4>
+          <p>Wenn du Bilder auf deine eigene Website lädst, ist die Umwandlung alter JPG- und PNG-Bilder in WEBP eine der wertvollsten Verbesserungen mit dem geringsten Aufwand – kleinere Dateien bedeuten schnellere Ladezeiten, was Nutzererlebnis und Suchmaschinen-Ranking beeinflusst. Das zählt mehr bei bildlastigen Seiten (Galerien, Produktlisten, Blogs mit vielen Fotos) als bei einer Seite mit nur ein oder zwei kleinen Icons.</p>
+
+          <h4>Einen transparenten Hintergrund brauchen</h4>
+          <p>If you have a JPG (which can't have transparency) and you need to place it over a colored background, a design template, or another image, you'll need to convert it — but converting only changes the file type: a JPG's solid background stays solid inside the PNG. Actually removing a background needs a background-removal tool, not a format converter.</p>
+
+          <h4>Vorbereitung für Druck oder professionelle Nutzung</h4>
+          <p>Druckereien und professionelle Design-Workflows haben manchmal bestimmte Formatvorgaben – PNG für Logos und Grafiken mit scharfen Kanten ist üblich, da es die weichen Kompressionsartefakte vermeidet, die JPG um Text und harte Linien herum erzeugen kann. Wenn du nicht weißt, was eine bestimmte Druckerei will, ist PNG meist ein sicherer, verlustfreier Standard für alles, was kein gewöhnliches Foto ist.</p>
+
+          <h4>Archivierung oder Langzeitspeicherung</h4>
+          <p>Für alles, was du jahrelang in bestmöglicher Qualität aufbewahren willst, sind verlustfreie Formate (PNG) die sicherere Langzeitwahl gegenüber wiederholt komprimierten JPGs, da JPG bei jedem erneuten Speichern etwas Qualität verliert. Wenn Speicherplatz eine echte Einschränkung ist, wäge das gegen den verlustfreien Modus von WEBP ab, der platzsparender als PNG ist und dennoch den Generationsverlust von JPG vermeidet.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Häufige Konvertierungsfehler (und wie du sie vermeidest)</h3>
+          <p>Die meisten Konvertierungsprobleme stammen von einer Handvoll wiederkehrender Fehler. Darauf solltest du achten.</p>
+
+          <h4>JPG immer wieder als JPG speichern</h4>
+          <p>Jedes Mal, wenn ein JPG geöffnet, auch nur leicht bearbeitet und erneut gespeichert wird, verliert es etwas mehr Qualität – das nennt sich Generationsverlust und summiert sich. Wenn du ein Bild mehrfach bearbeitest, arbeite während der Bearbeitung in einem verlustfreien Format (PNG) und konvertiere erst als letzten Exportschritt, einmal, am Ende, zu JPG.</p>
+
+          <h4>JPG verwenden, obwohl du eigentlich Transparenz brauchst</h4>
+          <p>Das ist die häufigste Support-Frage, die Konverter bekommen: „Warum hat mein Logo einen weißen Kasten drumherum statt eines transparenten Hintergrunds?“ Die Antwort lautet fast immer, dass das Quell- oder Ausgabeformat JPG war, das Transparenz gar nicht darstellen kann – keine Einstellung und kein Trick hilft, da das Format selbst keinen Alphakanal kennt. Wenn du Transparenz brauchst, müssen Quellbild und Ausgabeformat sie beide unterstützen (PNG oder WEBP).</p>
+
+          <h4>„Nach oben“ konvertieren statt nur „zur Seite“</h4>
+          <p>Ein kleines Bild mit niedriger Auflösung in ein anderes Format umzuwandeln fügt keine Details hinzu und erhöht nicht die tatsächliche Auflösung – ein JPG mit 400×300 Pixeln, in PNG konvertiert, ist immer noch ein Bild mit 400×300 Pixeln, nur in einem anderen Behälter. Wenn du ein größeres Bild brauchst, brauchst du von vornherein das Original in höherer Auflösung; die Formatkonvertierung allein kann keine Details erzeugen, die nie erfasst wurden.</p>
+
+          <h4>PNG standardmäßig für große Fotos wählen</h4>
+          <p>Die verlustfreie Komprimierung von PNG ist für Grafiken fantastisch, passt aber schlecht zu Fotografien, wo sie viel größere Dateien als nötig erzeugt – für einen Qualitätsunterschied, den die meisten Betrachter nicht bemerken. Wenn du einen Stapel Urlaubsfotos „zur Sicherheit“ konvertierst, dienen dir JPG oder WEBP viel besser – heb PNG gezielt für Bilder mit Transparenz, Text oder scharfen grafischen Kanten auf.</p>
+
+          <h4>Das Ergebnis vor dem Versand an wichtige Stellen nicht prüfen</h4>
+          <p>Bei allem, was an einen Kunden, einen Arbeitgeber oder eine offizielle Einreichung geht, lohnt es sich, die konvertierte Datei vor dem Versand einmal zu öffnen – die Seitenreihenfolge in einem mehrseitigen PDF bestätigen, prüfen, ob die Transparenz richtig angekommen ist, oder sicherstellen, dass die Datei nicht unerwartet riesig ist. Das dauert ein paar Sekunden und erspart das viel zeitaufwendigere Problem einer zurückgewiesenen Einreichung oder eines peinlichen erneuten Versands.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000015" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Unternehmen</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Über uns"><span class="footer-link-fun">Unser Universum</span><span class="footer-link-plain">Über uns</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Schon beantwortet</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Nutzungsbedingungen"><span class="footer-link-fun">Galaktisches Handbuch</span><span class="footer-link-plain">Nutzungsbedingungen</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Datenschutzerklärung"><span class="footer-link-fun">Außerirdisches Datenschutzprotokoll</span><span class="footer-link-plain">Datenschutzerklärung</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookie-Richtlinie"><span class="footer-link-fun">Cookie-Register</span><span class="footer-link-plain">Cookie-Richtlinie</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Erste Schritte mit</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/de/convert/">Convert</a>
+          <a class="footer-dash-link" href="/de/compress/">Compress</a>
+          <a class="footer-dash-link" href="/de/combine/">Combine</a>
+          <a class="footer-dash-link" href="/de/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/de/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/de/congify/">Congify</a>
+          <a class="footer-dash-link" href="/de/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/de/codify/">Codify</a>
+          <a class="footer-dash-link" href="/de/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/de/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/de/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktiere uns</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Tritt unserem Discord bei</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/convert/convert-tool.js?v=50" defer></script>
+</body>
+</html>

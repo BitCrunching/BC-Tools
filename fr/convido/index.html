@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/vendor/jszip.min.js"></script>
+<title>Convido – Convertisseur vidéo gratuit – BC Tools</title>
+<meta name="description" content="Convertis gratuitement des vidéos entre MP4, WebM, MOV et MKV, directement dans ton navigateur. Aucun envoi, rien ne quitte ton appareil.">
+<link rel="canonical" href="https://bitcrunching.com/fr/convido/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/convido/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/convido/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/convido/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/convido/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/convido/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/convido/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/convido/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/convido/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/convido/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/convido/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/convido/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/convido/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/convido/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/convido/">
+<script src="/shared/i18n/fr.js?v=11"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Convido – Convertisseur vidéo gratuit – BC Tools">
+<meta property="og:description" content="Convertis gratuitement des vidéos entre MP4, WebM, MOV et MKV, directement dans ton navigateur. Aucun envoi, rien ne quitte ton appareil.">
+<meta property="og:url" content="https://bitcrunching.com/fr/convido/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Convido – Convertisseur vidéo gratuit – BC Tools">
+<meta name="twitter:description" content="Convertis gratuitement des vidéos entre MP4, WebM, MOV et MKV, directement dans ton navigateur. Aucun envoi, rien ne quitte ton appareil.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=272">
+<style>
+.tool-app::before{ background:#B84CFF; }
+.tool-app{ min-height:322.5px; transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease; }
+
+/* Lively hover only while nothing's picked yet — :has() drops it the
+   moment #cnAfterDrop is revealed, so it never fights the level
+   buttons/Compress button once there's real content to interact with.
+   Same "jump" plays while a file is being dragged over the banner
+   (.active class, toggled by shared/site.js's bcSetupBannerDropTarget)
+   — not to be confused with the :active pseudo-class just below, which
+   is the separate mouse-press-down effect. */
+.tool-app:has(#cnAfterDrop[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over needs a bolder, unmistakable reaction than plain hover —
+   1.012/1.08 read fine when you're stationary hovering the banner, but
+   during an actual drag your attention is on the OS drag cursor, not
+   the banner, so the subtle version went unnoticed ("doesn't react to
+   drag"). Kept as its own rule, not folded back into the :hover one. */
+.tool-app:has(#cnAfterDrop[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+.tool-app:has(#cnAfterDrop[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+/* #cnResults reserves 32px (24px margin-top + its own 8px
+   padding-bottom) even pre-load, when its only child (#cnAddTile) is
+   itself hidden — nothing needs that space until a file's actually
+   loaded. Same fix Convert gets for the same reason; found via a
+   1100×322.5px banner-size audit (every other tool renders exactly
+   that pre-load, Convert/Compress were 354.5 — 32px of dead space). */
+.tool-app:has(#cnAfterDrop[hidden]) #cnResults{
+  display:none;
+}
+
+/* Just a fun easter egg on double-click — not a functional cue, so it's
+   fine that it's low priority and simple. */
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-convido{ animation:icon-wobble .5s ease; }
+/* Flips light/dark same as every on-banner control — see "On-banner
+   controls flip with theme" in shared/site.css's header comment.
+   Explicit html[data-theme=...] guards on BOTH sides (not just a bare
+   .result default) since shared/site.css's own
+   html[data-theme="light"] .result rule has higher specificity than a
+   plain .result{} here would — a bare selector silently lost to it. */
+/* Background/border-width/transition now come from the shared .result
+   default (shared/site.css) — this only adds Compress's own
+   brand-tinted border on top, the one genuinely tool-specific piece.
+   Same color at both themes, so no light/dark split needed here. */
+
+/* Shape/color is the shared .bc-file-remove-btn (shared/site.css, the
+   "beta remove btn") — only position stays here. Used to be
+   .result-remove (dark, hover-fade-only, meant for overlaying directly
+   on the thumbnail); switched to the always-visible translucent flip
+   button instead, same corner. */
+.cn-file-remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  z-index:2;
+}
+
+
+/* Reuses .engine-status-card/.engine-status-title/.engine-status-body/
+   .engine-status-row/.engine-status-value from shared/site.css — the
+   same "classified terminal" look as About's banner and the mainpage
+   easter egg, so this fits the site's established fun-banner style
+   instead of inventing a new one. Header/dots aren't in shared/site.css
+   yet (only the mainpage has used them so far), so they're defined
+   here for now. */
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ box-shadow:0 0 0 3px rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ box-shadow:0 0 0 3px rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* "CONVERT_GUIDE: STEP 1/5" doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUIDE";
+    font-size:15px;
+  }
+}
+
+.tool-after-drop[hidden]{ display:none; }
+
+/* Shared/site.css's #page-compress .tool-controls{grid-template-columns:1fr;}
+   only fires inside the homepage SPA (id="page-compress" wrapper) — this
+   standalone page has no such ancestor, so .tool-controls was silently
+   falling back to the shared 2-column default (1fr 1.2fr) and squeezing
+   #cnControls' one child (the Compress button) into the first, narrower
+   column instead of stretching full width. Same local override Convert's
+   own index.html already carries for its own single-button #cvControls. */
+.tool-controls{
+  grid-template-columns:1fr;
+}
+
+.cn-download-mode-toggle{
+  width:100%;
+  max-width:240px;
+  margin:0 auto 12px;
+}
+.bc-combo-input::placeholder{ color:currentColor; opacity:1; }
+.tool-io-row{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+.tool-io-group{ flex:1 1 0; min-width:0; position:relative; }
+.tool-io-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:10px;
+}
+.io-label-short{ display:none; }
+@media (max-width:640px){
+  .io-label-full{ display:none; }
+  .io-label-short{ display:inline; }
+}
+.tool-io-group .tool-format-select{ display:block; }
+@media (max-width:768px){
+  .tool-io-group .tool-format-select{ display:none !important; }
+  #cnOutTriggerLabel.is-placeholder{ font-size:0; }
+  #cnOutTriggerLabel.is-placeholder::before{
+    content:"Pick";
+    font-size:18px;
+  }
+}
+
+#cnDrop{
+  border-color:transparent;
+  background:transparent;
+}
+#cnDrop:not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cnDrop.active{
+  border-color:#7626f5;
+  background:rgba(118,38,245,.1);
+}
+.tool-app.active{
+  background:rgba(118,38,245,.08);
+}
+
+.tool-after-drop{
+  position:relative;
+}
+/* Shape/color is the shared .bc-remove-btn (shared/site.css) — only
+   size/position/reveal-timing stay here, same recipe as Cleanly's
+   .ex-remove-btn/Combine's .cb-remove-btn: a direct child of .tool-app
+   (not nested in #cnAfterDrop), shown via the same :has() toggle those
+   two use instead of relying on a hidden ancestor. */
+.cn-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+.tool-app:has(#cnAfterDrop:not([hidden])) .cn-remove-btn{ display:flex; }
+/* Shape/color/mobile-only-display is the shared .bc-canvas-back-btn
+   (shared/site.css) — only size/position/reveal-timing stay here, same
+   split as .cn-remove-btn/.bc-remove-btn above. Sits just to the left
+   of Remove, same corner, shown together with it. */
+.cn-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cn-back-btn{ display:none; }
+  .tool-app:has(#cnAfterDrop:not([hidden])) .cn-back-btn{ display:flex; }
+}
+
+.tool-results .result.cn-file-card{
+  position:relative;
+}
+.cn-thumb{
+  width:100%;
+  height:90px;
+  border-radius:10px;
+  margin-bottom:8px;
+  background:rgba(0,0,0,.28);
+  overflow:hidden;
+  position:relative;
+}
+.cn-thumb video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  pointer-events:none;
+}
+.cn-info-btn{
+  position:absolute;
+  left:6px;
+  bottom:6px;
+  width:20px;
+  height:20px;
+  border-color:rgba(255,255,255,.6);
+  background:rgba(0,0,0,.65);
+  color:#fff;
+  font-size:12px;
+}
+.cn-info-btn:hover,
+.cn-info-btn[aria-expanded="true"]{ border-color:#fff; background:rgba(0,0,0,.85); }
+.cn-info-btn[hidden]{ display:none; }
+.cn-info-tooltip{
+  position:fixed;
+  top:auto;
+  width:200px;
+  z-index:20;
+  padding:10px 12px;
+  font-size:12px;
+}
+#cnResults .cn-file-card{ height:179px; }
+.cn-file-card .result-size{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cn-info-tooltip p{ margin:0; }
+.cn-info-tooltip p + p{ margin-top:8px; }
+.cn-file-card.cn-file-card-error{
+  border-color:#ef4444;
+  background:rgba(239,68,68,.18);
+}
+.cn-convert-btn-working{ opacity:.85; }
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Nous utilisons des cookies. Choisissez ci-dessous les catégories à autoriser. Consultez notre <a data-goto="cookies">Politique de cookies</a> pour les détails.</p>
+  <p class="cookie-banner-text-mobile">Choisissez les catégories à autoriser</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Afficher/masquer le contenu des paramètres de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">COOKIES_OUTILS_DEV :</span>
+    </span>
+    <span>Choisissez les catégories à autoriser</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="En savoir plus sur les cookies nécessaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nécessaires (toujours actifs)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Ils maintiennent l'essentiel en état de marche : mémoriser votre choix de cookies, votre langue et votre thème clair/sombre. Ils ne peuvent pas être désactivés et, comme tout le reste sur ce site, ils ne quittent jamais votre appareil.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="En savoir plus sur les cookies statistiques">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Statistiques - Pour une confidentialité totale, gardez ceci désactivé.</span><span class="cookie-label-docked">Statistiques (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Cela nous permet d'améliorer l'expérience utilisateur en recevant des données précieuses via (Google Analytics) sur la façon dont les utilisateurs naviguent sur notre site. Si vous souhaitez rester totalement anonyme, nous recommandons de désactiver cette option.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="En savoir plus sur les cookies publicitaires">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicité (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Utilisé par Google AdSense pour afficher des publicités. Actuellement désactivé sur tout le site dans l'attente de l'approbation d'AdSense, donc ce réglage n'a pas encore d'effet.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Tout accepter</button>
+    <button type="button" id="cookieBannerSave">Confirmer les choix</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo de BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Basculer entre mode clair et mode sombre" title="Basculer entre mode clair et mode sombre">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">    
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Partager" title="Partager">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copier le lien</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Plus d'options de partage"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Cliquez pour réinitialiser le guide de l'outil" title="Cliquez pour réinitialiser le guide de l'outil">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Retour au Creative Hub" title="Retour au Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cnHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cnHelpClose" aria-label="Fermer et ne plus afficher"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cnHelpToggle" aria-label="Réduire" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cnHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cnHelpBack">&lt; RETOUR</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cnHelpCloseMobile">FERMER</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cnHelpNext">SUIVANT &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cnHelpBody">
+    <div class="engine-status-row">&gt; <span id="cnHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app">
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-convido" role="img" aria-label="Icône Convido"></span>
+        Convido
+      </div>
+      <span class="privacy-check-badge" id="cnPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cn-back-btn bc-canvas-back-btn" id="cnBackBtn" data-goto="mainpage" aria-label="Retour au Creative Hub" title="Retour au Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+    <button type="button" class="cn-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cnRemoveBtn" aria-label="Supprimer tous les fichiers">×</button>
+
+    <div class="tool-drop" id="cnDrop"><span class="tool-drop-click-word">Cliquer</span><span class="tool-drop-or-drop"> ou déposez </span><span class="tool-drop-rest">vidéos</span></div>
+    <input type="file" id="cnInput" accept="video/*,image/gif,.gif,.mov,.mp4,.m4v,.webm,.mkv,.3gp,.3gpp,.3g2,.ts,.m2ts,.mts" multiple hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cnContinueBtn" hidden>Reprendre là où vous en étiez</button>
+
+    <div class="tool-after-drop" id="cnAfterDrop" hidden>
+      <div class="tool-io-row">
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label">
+            <span class="io-label-full">Entrée attendue</span><span class="io-label-short">IN</span>
+            <button type="button" class="bc-info-btn" id="cnInInfoBtn" aria-label="Que signifie Entrée attendue ?" aria-expanded="false">i</button>
+          </span>
+          <div class="bc-info-tooltip" id="cnInInfoTooltip" hidden>Le format de chaque vidéo envoyée est reconnu séparément, mélanger des formats différents n'est donc pas un problème. Chaque vidéo est convertie dans le format choisi.</div>
+          <div class="bc-combo" id="cnInCombo">
+            <div class="bc-combo-trigger bc-combo-trigger-lg" id="cnInTrigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Format d'entrée attendu">
+              <input class="bc-combo-input" id="cnInField" placeholder="Choisir le format" readonly aria-label="Rechercher des formats d'entrée">
+              <span class="bc-combo-chevron" aria-hidden="true"></span>
+            </div>
+            <div class="bc-combo-menu" id="cnInMenu" role="listbox" hidden>
+              <button type="button" class="bc-combo-option" data-value="mp4" data-label="MP4" role="option" aria-selected="false"><span>MP4</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="mov" data-label="MOV" role="option" aria-selected="false"><span>MOV</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="mkv" data-label="MKV" role="option" aria-selected="false"><span>MKV</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="webm" data-label="WebM" role="option" aria-selected="false"><span>WebM</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="m4v" data-label="M4V" role="option" aria-selected="false"><span>M4V</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="ts" data-label="TS" role="option" aria-selected="false"><span>TS</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="m2ts" data-label="M2TS" role="option" aria-selected="false"><span>M2TS</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="mts" data-label="MTS" role="option" aria-selected="false"><span>MTS</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="3gp" data-label="3GP" role="option" aria-selected="false"><span>3GP</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="3gpp" data-label="3GPP" role="option" aria-selected="false"><span>3GPP</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="3g2" data-label="3G2" role="option" aria-selected="false"><span>3G2</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-value="gif" data-label="GIF" role="option" aria-selected="false"><span>GIF</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <div class="bc-combo-empty" id="cnInEmpty" hidden>Aucun résultat</div>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cnInSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Choisir le format</option>
+            <option value="3g2">3G2</option>
+            <option value="3gp">3GP</option>
+            <option value="3gpp">3GPP</option>
+            <option value="gif">GIF</option>
+            <option value="m2ts">M2TS</option>
+            <option value="m4v">M4V</option>
+            <option value="mkv">MKV</option>
+            <option value="mov">MOV</option>
+            <option value="mp4">MP4</option>
+            <option value="mts">MTS</option>
+            <option value="ts">TS</option>
+            <option value="webm">WebM</option>
+          </select>
+        </div>
+
+        <span class="tool-io-swap" aria-hidden="true">
+          <span class="tool-io-swap-arrow">&rarr;</span>
+        </span>
+
+        <div class="tool-io-group">
+          <span class="tool-io-label bc-label"><span class="io-label-full">Sortie</span><span class="io-label-short">SORTIE</span></span>
+          <div class="bc-dropdown" id="cnOutDropdown">
+            <button type="button" class="bc-dropdown-trigger bc-dropdown-trigger-lg" id="cnOutTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="bc-dropdown-trigger-label is-placeholder" id="cnOutTriggerLabel">Choisir un format</span>
+              <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown-menu" id="cnOutMenu" role="listbox" hidden>
+              <button type="button" class="bc-dropdown-option" data-value="mp4" data-label="MP4" role="option" aria-selected="false">MP4</button>
+              <button type="button" class="bc-dropdown-option" data-value="mov" data-label="MOV" role="option" aria-selected="false">MOV</button>
+              <button type="button" class="bc-dropdown-option" data-value="mkv" data-label="MKV" role="option" aria-selected="false">MKV</button>
+              <button type="button" class="bc-dropdown-option" data-value="webm" data-label="WebM" role="option" aria-selected="false">WebM</button>
+              <button type="button" class="bc-dropdown-option" data-value="avi" data-label="AVI" role="option" aria-selected="false">AVI</button>
+              <button type="button" class="bc-dropdown-option" data-value="flv" data-label="FLV" role="option" aria-selected="false">FLV</button>
+            </div>
+          </div>
+          <select class="tool-format-select" id="cnOutSelect" aria-hidden="true" tabindex="-1" style="display:none">
+            <option value="" selected disabled hidden>Choisir un format</option>
+            <option value="avi">AVI</option>
+            <option value="flv">FLV</option>
+            <option value="mkv">MKV</option>
+            <option value="mov">MOV</option>
+            <option value="mp4">MP4</option>
+            <option value="webm">WebM</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-results" id="cnResults">
+      <button type="button" class="bc-add-tile" id="cnAddTile" aria-label="Ajouter des vidéos" hidden>+</button>
+    </div>
+
+    <div class="tool-controls" id="cnControls" hidden>
+      <div class="bc-segmented-toggle cn-download-mode-toggle" id="cnDownloadModeToggle" hidden>
+        <button type="button" id="cnDownloadModeSingleBtn" aria-pressed="false">Fichiers individuels</button>
+        <button type="button" id="cnDownloadModeZipBtn" aria-pressed="true">.zip</button>
+      </div>
+      <button class="tool-primary-btn" id="cnConvertBtn" disabled title="Convertir et télécharger (D)" data-ga-event="tool_primary_action" data-ga-tool="convido">Convertir et télécharger</button>
+    </div>
+
+    <div class="tool-status" id="cnStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="convido">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000014"></ins>
+  </div>
+
+  <div class="content-section-format-wrap">
+    <h3>Vous ne savez pas quel format utiliser ?</h3>
+    <div class="format-pick-groups">
+      <div class="format-pick-group">
+        <p class="format-pick-name">MP4</p>
+        <ul class="format-pick-sublist">
+          <li>Se lit sur presque tous les téléphones, ordinateurs, navigateurs et applications de messagerie.</li>
+          <li>Le choix sûr quand tu ne sais pas où la vidéo sera regardée.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name">WebM</p>
+        <ul class="format-pick-sublist">
+          <li>Conçu pour le web : de petits fichiers qui se lisent dans tous les navigateurs modernes.</li>
+          <li>Intégrer une vidéo sur un site web.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name">MOV</p>
+        <ul class="format-pick-sublist">
+          <li>Le conteneur d'Apple, courant sur iPhone, Mac et dans les éditeurs vidéo.</li>
+          <li>Montage dans Final Cut, Premiere ou DaVinci Resolve.</li>
+        </ul>
+      </div>
+      <div class="format-pick-group">
+        <p class="format-pick-name">MKV</p>
+        <ul class="format-pick-sublist">
+          <li>Un conteneur flexible qui peut contenir presque n'importe quelle vidéo et audio.</li>
+          <li>Archivage et lecteurs multimédias comme VLC.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>Nouveau dans la conversion de vidéos ?</h3>
+    <p>MOV, MP4, WebM et MKV sont des conteneurs — la boîte dans laquelle une vidéo et son audio sont emballés — et non la compression elle-même. Quand la vidéo correspond déjà à la nouvelle boîte, Convido la réemballe simplement : quasi instantané, sans perte de qualité. Quand ce n'est pas le cas (par exemple une vidéo H.264 vers WebM), Convido la réencode, ce qui prend plus de temps et reste le seul cas où la qualité peut légèrement changer.</p>
+    <p class="gr-topics-lead">You also might be interested in:</p>
+    <ul class="gr-topics">
+      <li><a href="#gr-article-1">1. Conteneurs et codecs : ce qu'est vraiment un format vidéo</a></li>
+      <li><a href="#gr-article-2">2. Réemballer ou réencoder : rapide et sans perte ou plus lent</a></li>
+      <li><a href="#gr-article-3">3. Choisir le bon format de sortie</a></li>
+      <li><a href="#gr-article-4">4. Ce que Convido peut et ne peut pas lire</a></li>
+      <li><a href="#gr-article-5">5. Convertir dans ton navigateur : à quoi s'attendre</a></li>
+    </ul>
+    <div class="gr-inline" data-tool="convido">
+<div class="gr-article" id="gr-article-1"><h3>1. Conteneurs et codecs : ce qu'est vraiment un format vidéo</h3>
+          <p>Un fichier vidéo, c'est deux choses superposées. Le codec est la façon dont l'image et le son sont compressés (H.264, HEVC, VP9, AAC). Le conteneur est la boîte qui contient la vidéo compressée, l'audio et les informations de timing (MP4, MOV, MKV, WebM, AVI, FLV). Convertir entre conteneurs revient souvent à déplacer le même contenu dans une autre boîte.</p>
+
+          <table class="info-table-convert">
+            <thead>
+              <tr><th>Format</th><th>Idéal pour</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Format">MP4</td><td data-label="Idéal pour">Partage et envoi — se lit sur presque tous les téléphones, ordinateurs et applications</td></tr>
+              <tr><td data-label="Format">MOV</td><td data-label="Idéal pour">Appareils Apple et éditeurs vidéo comme Final Cut, Premiere et DaVinci Resolve</td></tr>
+              <tr><td data-label="Format">WebM</td><td data-label="Idéal pour">Sites web — de petits fichiers qui se lisent dans tous les navigateurs modernes</td></tr>
+              <tr><td data-label="Format">MKV</td><td data-label="Idéal pour">Archivage et lecteurs multimédias comme VLC — accepte presque tout</td></tr>
+              <tr><td data-label="Format">AVI</td><td data-label="Idéal pour">Anciens lecteurs et logiciels qui ne comprennent que l'AVI</td></tr>
+              <tr><td data-label="Format">FLV</td><td data-label="Idéal pour">Anciens lecteurs de l'ère Flash et installations de streaming héritées</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Which codecs fit which container</h4>
+          <p>MP4, MOV, MKV, AVI and FLV take H.264 video with AAC audio, so a typical phone or camera clip fits all of them and is simply re-packed. WebM takes VP8, VP9 or AV1 video with Opus or Vorbis audio, so an H.264 clip going into WebM has to be re-encoded, and so does a WebM clip going into MP4 or MOV (more on that in the output format article).</p>
+
+          <h4>Pourquoi l'extension peut tromper</h4>
+          <p>Renommer un fichier de .mov en .mp4 ne le convertit pas. Le contenu reste exactement le même, et certains lecteurs refusent les fichiers dont le nom et le contenu ne correspondent pas. Convido lit ce qui se trouve réellement dans le fichier, pas seulement son nom.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Réemballer ou réencoder : rapide et sans perte ou plus lent</h3>
+          <p>Quand la vidéo et l'audio de ton fichier correspondent déjà au nouveau format, Convido les réemballe simplement dans le nouveau conteneur. Cela prend une fraction de seconde, même pour un très gros fichier, et rien ne change dans l'image ou le son. Une vidéo de 143 Mo et dix minutes peut être réemballée de MOV en MP4 en bien moins d'une seconde.</p>
+
+          <h4>Quand Convido doit réencoder</h4>
+          <p>If the video or audio doesn't fit the new container — for example H.264 or HEVC video going into WebM, which only takes VP8, VP9 and AV1 — Convido re-encodes it. It also re-encodes WebM-style video and audio (VP9, AV1, Opus, Vorbis) going into MP4 or MOV, so the result plays on Apple devices. That takes longer, depends on your computer, and the picture is compressed a second time, so quality can change slightly.</p>
+
+          <h4>Le petit « i » sur une vidéo</h4>
+          <p>Un petit « i » apparaît sur l'aperçu d'une vidéo lorsqu'elle sera réencodée pour la sortie choisie. Choisis un format qui la garde telle quelle, comme MP4, MOV ou MKV pour la plupart des vidéos de caméra et de téléphone, et la note disparaît et le résultat devient instantané et sans perte.</p>
+
+          <h4>Taille du fichier après réencodage</h4>
+          <p>Un fichier réencodé peut être plus petit ou plus gros que l'original. Une vidéo déjà très fortement compressée peut grossir, car le nouvel encodeur ne sait pas à quel point l'original a été comprimé. Si le résultat est plus gros que souhaité, convertis vers un format qui réemballe, ou utilise Comprio pour le réduire ensuite.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Choisir le bon format de sortie</h3>
+          <p>Dans le doute, choisis MP4. C'est le format vidéo le plus largement pris en charge et il fonctionne sur les téléphones, ordinateurs, navigateurs, applications de messagerie et réseaux sociaux.</p>
+
+          <h4>WebM et MP4 ne sont pas interchangeables</h4>
+          <p>Videos recorded as WebM usually hold VP9 or AV1 video with Opus audio. QuickTime, iPhones and many editors can't play those inside an MP4 or MOV file, so when you convert a WebM to MP4 or MOV, Convido re-encodes it to H.264 and AAC (the small "i" tells you), and the result plays everywhere. That takes longer than a re-pack and compresses the picture a second time. MKV keeps the original codecs and re-packs instantly, which suits VLC and other media players.</p>
+
+          <h4>AVI et FLV</h4>
+          <p>Convido écrit l'AVI et le FLV avec de la vidéo H.264 et de l'audio AAC, que les lecteurs modernes gèrent. L'AVI n'a pas d'horodatage, donc une vidéo à fréquence d'images variable peut se décaler légèrement dans certains lecteurs, et un fichier AVI ne peut pas dépasser 4 Go. Utilise-les seulement quand un ancien lecteur ou programme les demande.</p>
+
+          <h4>Le WMV n'est pas disponible</h4>
+          <p>Les navigateurs ne peuvent pas encoder la vidéo WMV, donc Convido ne peut pas produire de fichiers WMV. Sous Windows, MP4 est pris en charge par Windows Media Player et toutes les applications Windows actuelles.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Ce que Convido peut et ne peut pas lire</h3>
+          <p>Convido lit les fichiers MP4, M4V, MOV, 3GP, 3GPP, 3G2, MKV, WebM, TS, M2TS, MTS et GIF. Le sélecteur de format d'entrée attendu se remplit d'après la première vidéo ajoutée, et chaque fichier est reconnu séparément, tu peux donc mélanger les formats dans un même lot.</p>
+
+          <h4>Formats que les navigateurs ne peuvent pas lire</h4>
+          <p>Les fichiers AVI, FLV, WMV, ASF, MPG, MPEG, VOB, MOD, MXF, DV, DVR, RM, RMVB, SWF, CAVS et OGG/OGV ne peuvent pas être ouverts dans un navigateur, donc Convido les ignore et le signale. Les fichiers RAW d'appareil photo et les fichiers audio seul sont aussi ignorés.</p>
+
+          <h4>Une vidéo dans un conteneur lisible peut quand même échouer</h4>
+          <p>Certains fichiers utilisent un codec que ton navigateur ne peut pas décoder — certains anciens formats de téléphone, par exemple. Ils s'affichent sur une carte rouge et sont listés dans la ligne d'état, et le reste du lot continue. Les anciens fichiers 3GP avec audio AMR peuvent être convertis sans son pour la même raison.</p>
+
+          <h4>Transformer un GIF en vidéo</h4>
+          <p>Un GIF n'a pas de codec vidéo, donc Convido décode chaque image et l'encode comme une vidéo normale avec son rythme d'origine. Les GIF sont souvent minuscules en fichier vidéo. Les zones transparentes deviennent blanches, car la vidéo n'a pas de transparence, et MP4, MOV, MKV, AVI et FLV exigent une taille paire, donc un GIF de taille impaire gagne un bord blanc d'un pixel (WebM garde la taille exacte). L'entrée GIF nécessite un navigateur avec décodeur d'images intégré, comme Chrome et Edge.</p>
+        
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. Convertir dans ton navigateur : à quoi s'attendre</h3>
+          <p>Convido fonctionne entièrement sur ton propre appareil. Rien n'est envoyé et aucun serveur n'intervient, tes vidéos restent donc privées et aucun site n'impose de limite de taille de fichier.</p>
+
+          <h4>Fichiers séparés ou un .zip</h4>
+          <p>Jusqu'à 5 vidéos se téléchargent une par une. De 6 à 20, tu peux choisir entre des fichiers séparés et un seul .zip, et au-delà de 20 le résultat est toujours un seul .zip pour que ton navigateur ne soit pas inondé de téléchargements. Un .zip est construit en mémoire, donc un lot de très grosses vidéos demande beaucoup de mémoire libre.</p>
+
+          <h4>Gardez l'onglet ouvert</h4>
+          <p>Les navigateurs ralentissent ou mettent en pause les onglets en arrière-plan, laisse donc l'onglet Convido visible pendant qu'il travaille. Appuyer de nouveau sur le bouton pendant le traitement annule la tâche.</p>
+
+          <h4>Vidéos très volumineuses et en très haute résolution</h4>
+          <p>Le réemballage est limité surtout par la mémoire libre, donc les très gros enregistrements demandent un onglet où rien d'autre ne tourne. Réencoder une vidéo 8K fonctionne mais prend du temps. Le H.264 ne peut pas encoder une image plus petite que quelques pixels ou avec un nombre impair de pixels, donc une vidéo de taille impaire convertie en MP4, MOV, MKV, AVI ou FLV devra peut-être passer en WebM.</p>
+
+          <h4>Fichiers endommagés</h4>
+          <p>Quand un fichier n'est endommagé qu'en son milieu, le réemballage copie les dégâts. Le résultat peut présenter des saccades alors que Convido indique que c'est terminé. Vérifie une conversion importante avant de supprimer l'original.</p>
+        
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000016" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Entreprise</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="À propos"><span class="footer-link-fun">Notre univers</span><span class="footer-link-plain">À propos</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">Déjà répondu</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Conditions d'utilisation"><span class="footer-link-fun">Manuel galactique</span><span class="footer-link-plain">Conditions d'utilisation</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Politique de confidentialité"><span class="footer-link-fun">Protocole extraterrestre de confidentialité</span><span class="footer-link-plain">Politique de confidentialité</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Politique de cookies"><span class="footer-link-fun">Registre des cookies</span><span class="footer-link-plain">Politique de cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Premiers pas avec</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/fr/convert/">Convert</a>
+          <a class="footer-dash-link" href="/fr/compress/">Compress</a>
+          <a class="footer-dash-link" href="/fr/combine/">Combine</a>
+          <a class="footer-dash-link" href="/fr/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/fr/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/fr/congify/">Congify</a>
+          <a class="footer-dash-link" href="/fr/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/fr/codify/">Codify</a>
+          <a class="footer-dash-link" href="/fr/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/fr/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/fr/convido/">Convido</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Contactez-nous</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Rejoignez notre Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=107" defer></script>
+<script src="/shared/report.js?v=30" defer></script>
+<script src="/convido/convido-muxers.js?v=2" defer></script>
+<script src="/convido/convido-tool.js?v=16" defer></script>
+</body>
+</html>
