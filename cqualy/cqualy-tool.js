@@ -4,33 +4,42 @@
    returns an AudioBuffer, peaks and playback state, so another surface
    can drive it later. */
 (function(){
-  const EQ_BANDS = [
-    { type: "lowshelf",  freq: 31 },
-    { type: "peaking",   freq: 60 },
-    { type: "peaking",   freq: 170 },
-    { type: "peaking",   freq: 310 },
-    { type: "peaking",   freq: 600 },
-    { type: "peaking",   freq: 1000 },
-    { type: "peaking",   freq: 3000 },
-    { type: "peaking",   freq: 6000 },
-    { type: "peaking",   freq: 12000 },
-    { type: "peaking",   freq: 14000 },
-    { type: "highshelf", freq: 16000 }
-  ];
+  bcSetupHelpBanner("cqualy", "cq", [
+    ["WELCOME_TO_CQUALY", "Cqualy shapes the sound of an audio or video file with an equalizer, entirely in your browser. Click, drop, or press (A) to add a file to get started."],
+    ["SHAPE_THE_SOUND", "Pick a preset (P) or move the band sliders, and the wave updates live. The band button (B) switches between 7, 11, 15 and 31 bands. Volume sits beside the wave; Balance and Speed are below the sliders. Click a label to reset it, or any dB value (U) to see % instead."],
+    ["LISTEN_AND_COMPARE", "Press (Space) or Play to listen, (←) and (→) to jump 5 seconds, or click the wave to seek. Drag the edges of the wave to trim: playback stays inside the selection and Download saves only that part. Click the time (T) to switch between elapsed and remaining."],
+    ["YOU_ARE_SET", "Name the file (R), choose MP3 or WAV, and hit Download (D). Channels (C) switch between Mono, Stereo, 5.1 and 7.1; 5.1 and 7.1 save as WAV. Close this with the red dot and we won't show it again."]
+  ]);
 
-  function makeFilter(audioCtx, band, gain){
+  const EQ_LAYOUTS = {
+    7: [60, 170, 400, 1000, 2400, 6000, 12000],
+    11: [31, 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000],
+    15: [25, 40, 63, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000],
+    31: [20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500, 16000, 20000]
+  };
+  const EQ_Q = { 7: 1.1, 11: 1.4, 15: 2.1, 31: 4.3 };
+  const BAND_COUNTS = [7, 11, 15, 31];
+
+  function bandsFor(count){
+    const freqs = EQ_LAYOUTS[count];
+    return freqs.map((freq, i) => ({ type: i === 0 ? "lowshelf" : i === freqs.length - 1 ? "highshelf" : "peaking", freq }));
+  }
+
+  function makeFilter(audioCtx, band, gain, q){
     const f = audioCtx.createBiquadFilter();
     f.type = band.type;
     f.frequency.value = band.freq;
     f.gain.value = gain;
-    if (band.type === "peaking") f.Q.value = 1.4;
+    if (band.type === "peaking") f.Q.value = q;
     return f;
   }
 
   function createEngine(){
     let ctx = null;
     let filters = [];
-    const gains = EQ_BANDS.map(() => 0);
+    let bands = bandsFor(11);
+    let bandQ = EQ_Q[11];
+    let gains = bands.map(() => 0);
     let buffer = null;
     let source = null;
     let playing = false;
@@ -46,19 +55,43 @@
     let volumeDb = 0;
     let rate = 1;
     let outChannels = 0;
+    let trimStart = 0;
+    let trimEnd = 0;
     let pan = 0;
     let master = null;
     let panner = null;
 
+    function buildFilters(){
+      filters = bands.map((band, i) => makeFilter(ctx, band, gains[i], bandQ));
+      filters.forEach((f, i) => f.connect(i + 1 < filters.length ? filters[i + 1] : master));
+    }
+
+    function setBands(nextBands, nextQ, nextGains){
+      const wasPlaying = playing;
+      if (wasPlaying){
+        offset = position();
+        playing = false;
+        stopSource();
+      }
+      bands = nextBands;
+      bandQ = nextQ;
+      gains = nextGains.slice();
+      if (ctx){
+        filters.forEach(f => f.disconnect());
+        buildFilters();
+      }
+      if (wasPlaying) play();
+      scheduleProcessed();
+    }
+
     function ensureContext(){
       if (ctx) return ctx;
       ctx = new (window.AudioContext || window.webkitAudioContext)();
-      filters = EQ_BANDS.map((band, i) => makeFilter(ctx, band, gains[i]));
       master = ctx.createGain();
       master.gain.value = Math.pow(10, volumeDb / 20);
       panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       if (panner) panner.pan.value = pan;
-      filters.forEach((f, i) => f.connect(i + 1 < filters.length ? filters[i + 1] : master));
+      buildFilters();
       if (panner){
         master.connect(panner);
         panner.connect(ctx.destination);
@@ -87,12 +120,12 @@
     function position(){
       if (!buffer) return 0;
       const t = playing ? offset + (ctx.currentTime - startedAt) * rate : offset;
-      return Math.min(Math.max(t, 0), buffer.duration);
+      return Math.min(Math.max(t, trimStart), trimEnd);
     }
 
     function play(){
       if (!buffer || playing) return;
-      if (offset >= buffer.duration - 0.01) offset = 0;
+      if (offset >= trimEnd - 0.01 || offset < trimStart) offset = trimStart;
       const audioCtx = ensureContext();
       if (audioCtx.state === "suspended") audioCtx.resume();
       source = audioCtx.createBufferSource();
@@ -101,13 +134,13 @@
       source.onended = () => {
         if (!playing) return;
         playing = false;
-        offset = buffer.duration;
+        offset = trimEnd;
         source = null;
         if (onEnd) onEnd();
       };
       source.playbackRate.value = rate;
       startedAt = audioCtx.currentTime;
-      source.start(0, offset);
+      source.start(0, offset, trimEnd - offset);
       playing = true;
     }
 
@@ -120,7 +153,7 @@
 
     function seek(seconds){
       if (!buffer) return;
-      const target = Math.min(Math.max(seconds, 0), buffer.duration);
+      const target = Math.min(Math.max(seconds, trimStart), trimEnd);
       const wasPlaying = playing;
       if (wasPlaying){
         playing = false;
@@ -135,6 +168,8 @@
       stopSource();
       buffer = next;
       offset = 0;
+      trimStart = 0;
+      trimEnd = next ? next.duration : 0;
       processed = null;
       processedPeak = 1;
       scheduleProcessed();
@@ -210,6 +245,23 @@
       });
     }
 
+    function setTrim(start, end){
+      if (!buffer) return;
+      const min = 0.05;
+      const s = Math.min(Math.max(start, 0), buffer.duration - min);
+      const e = Math.min(Math.max(end, s + min), buffer.duration);
+      const wasPlaying = playing;
+      if (wasPlaying){
+        offset = position();
+        playing = false;
+        stopSource();
+      }
+      trimStart = s;
+      trimEnd = e;
+      offset = Math.min(Math.max(offset, s), e);
+      if (wasPlaying) play();
+    }
+
     function setOutputChannels(n){
       outChannels = n;
     }
@@ -219,13 +271,14 @@
       const channels = final && outChannels
         ? outChannels
         : pan !== 0 ? Math.max(2, buffer.numberOfChannels) : buffer.numberOfChannels;
-      const off = new OfflineAudioContext(channels, Math.max(1, Math.ceil(buffer.length / rate)), buffer.sampleRate);
+      const span = final ? trimEnd - trimStart : buffer.duration;
+      const off = new OfflineAudioContext(channels, Math.max(1, Math.ceil(span * buffer.sampleRate / rate)), buffer.sampleRate);
       const src = off.createBufferSource();
       src.buffer = buffer;
       src.playbackRate.value = rate;
       let node = src;
-      EQ_BANDS.forEach((band, i) => {
-        const f = makeFilter(off, band, gains[i]);
+      bands.forEach((band, i) => {
+        const f = makeFilter(off, band, gains[i], bandQ);
         node.connect(f);
         node = f;
       });
@@ -240,7 +293,7 @@
         node = p;
       }
       node.connect(off.destination);
-      src.start();
+      if (final) src.start(0, trimStart, trimEnd - trimStart); else src.start();
       return off.startRendering();
     }
 
@@ -271,8 +324,10 @@
     }
 
     return {
-      decode, load, unload, play, pause, seek, position, peaks, setGain, setVolume, setPan, setRate, setOutputChannels, render,
+      decode, load, unload, play, pause, seek, position, peaks, setGain, setBands, setTrim, setVolume, setPan, setRate, setOutputChannels, render,
       get buffer(){ return buffer; },
+      get trimStart(){ return trimStart; },
+      get trimEnd(){ return trimEnd; },
       get playing(){ return playing; },
       set onEnd(fn){ onEnd = fn; },
       set onProcessed(fn){ onProcessed = fn; }
@@ -415,10 +470,23 @@
     return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
   }
 
+  const TIME_MODE_KEY = "bc-cqualy-time-mode";
+  let timeRemaining = false;
+  try { timeRemaining = localStorage.getItem(TIME_MODE_KEY) === "remaining"; } catch (err) { /* storage unavailable */ }
+
   function updateTime(){
-    const total = engine.buffer ? engine.buffer.duration : 0;
-    timeEl.textContent = formatTime(engine.position()) + " / " + formatTime(total);
+    const total = engine.buffer ? engine.trimEnd - engine.trimStart : 0;
+    const pos = engine.buffer ? engine.position() - engine.trimStart : 0;
+    const shown = timeRemaining ? "-" + formatTime(Math.ceil(total - pos)) : formatTime(pos);
+    timeEl.textContent = shown + " / " + formatTime(total);
   }
+
+  function toggleTimeMode(){
+    timeRemaining = !timeRemaining;
+    try { localStorage.setItem(TIME_MODE_KEY, timeRemaining ? "remaining" : "elapsed"); } catch (err) { /* storage unavailable */ }
+    updateTime();
+  }
+  timeEl.addEventListener("click", toggleTimeMode);
 
   function draw(){
     const dpr = window.devicePixelRatio || 1;
@@ -440,14 +508,18 @@
     }
 
     const mid = h / 2;
-    const progress = engine.position() / engine.buffer.duration;
+    const duration = engine.buffer.duration;
+    const progress = engine.position() / duration;
+    const startFrac = engine.trimStart / duration;
+    const endFrac = engine.trimEnd / duration;
     const color = getComputedStyle(canvas).color;
     for (let i = 0; i < columns; i++){
       const lo = peaks[i * 2], hi = peaks[i * 2 + 1];
       const top = mid + lo * mid * 0.92;
       const bottom = mid + hi * mid * 0.92;
       const barH = Math.max(2 * dpr, bottom - top);
-      ctx2d.globalAlpha = (i + 0.5) / columns <= progress ? 1 : 0.4;
+      const frac = (i + 0.5) / columns;
+      ctx2d.globalAlpha = frac < startFrac || frac > endFrac ? 0.12 : frac <= progress ? 1 : 0.4;
       ctx2d.fillStyle = color;
       ctx2d.fillRect(i * (barW + gap), top, barW, barH);
     }
@@ -455,6 +527,15 @@
     const x = Math.round(progress * w);
     ctx2d.fillStyle = color;
     ctx2d.fillRect(Math.min(x, w - Math.max(2, dpr)), 0, Math.max(2, Math.round(dpr * 1.5)), h);
+    [startFrac, endFrac].forEach(frac => {
+      const gripW = Math.round(8 * dpr);
+      const gripH = Math.round(30 * dpr);
+      const hx = Math.min(Math.max(frac * w, gripW / 2), w - gripW / 2);
+      ctx2d.fillRect(Math.round(hx - dpr), 0, Math.max(2, Math.round(2 * dpr)), h);
+      ctx2d.beginPath();
+      ctx2d.roundRect(Math.round(hx - gripW / 2), Math.round(mid - gripH / 2), gripW, gripH, Math.round(3 * dpr));
+      ctx2d.fill();
+    });
   }
 
   function tick(){
@@ -470,6 +551,7 @@
 
   function setPlayLabel(){
     playBtn.textContent = engine.playing ? bcT("Pause") : bcT("Play");
+    playBtn.title = engine.playing ? bcT("Pause (Space)") : bcT("Play (Space)");
   }
 
   function togglePlay(){
@@ -496,14 +578,60 @@
     refresh();
   }
 
-  let scrubbing = false;
+  const HANDLE_HIT = 12;
+  let drag = null;
+  const trimInfo = document.getElementById("cqTrimInfo");
+  const fmtTrim = s => formatTime(s) + "." + Math.floor((s % 1) * 10);
+
+  function updateTrimUI(){
+    const trimmed = !!engine.buffer && (engine.trimStart > 0.001 || engine.trimEnd < engine.buffer.duration - 0.001);
+    trimInfo.hidden = !trimmed;
+    if (trimmed) trimInfo.textContent = bcT("Trim") + " " + fmtTrim(engine.trimStart) + " – " + fmtTrim(engine.trimEnd);
+  }
+
+  function applyTrim(start, end){
+    if (!engine.buffer) return;
+    engine.setTrim(start, end);
+    updateTrimUI();
+    updateTime();
+    refresh();
+    schedulePersist();
+  }
+
+  trimInfo.addEventListener("click", () => { if (engine.buffer) applyTrim(0, engine.buffer.duration); });
+
+  function nearHandle(e){
+    if (!engine.buffer) return null;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const duration = engine.buffer.duration;
+    const sx = engine.trimStart / duration * rect.width;
+    const ex = engine.trimEnd / duration * rect.width;
+    const ds = Math.abs(x - sx), de = Math.abs(x - ex);
+    if (ds <= HANDLE_HIT && ds <= de) return "start";
+    if (de <= HANDLE_HIT) return "end";
+    return null;
+  }
+
+  function dragHandle(e){
+    const rect = canvas.getBoundingClientRect();
+    const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+    const t = ratio * engine.buffer.duration;
+    if (drag === "start") applyTrim(Math.min(t, engine.trimEnd - 0.05), engine.trimEnd);
+    else applyTrim(engine.trimStart, Math.max(t, engine.trimStart + 0.05));
+  }
+
   canvas.addEventListener("pointerdown", e => {
-    scrubbing = true;
+    drag = nearHandle(e) || "seek";
     canvas.setPointerCapture(e.pointerId);
-    seekFromEvent(e);
+    if (drag === "seek") seekFromEvent(e);
   });
-  canvas.addEventListener("pointermove", e => { if (scrubbing) seekFromEvent(e); });
-  const endScrub = () => { scrubbing = false; };
+  canvas.addEventListener("pointermove", e => {
+    if (drag === "seek") seekFromEvent(e);
+    else if (drag) dragHandle(e);
+    else canvas.style.cursor = nearHandle(e) ? "col-resize" : "pointer";
+  });
+  const endScrub = () => { drag = null; };
   canvas.addEventListener("pointerup", endScrub);
   canvas.addEventListener("pointercancel", endScrub);
 
@@ -530,6 +658,8 @@
   const presetMenu = document.getElementById("cqPresetMenu");
   const presetField = document.getElementById("cqPresetField");
   presetField.placeholder = bcT("Custom");
+  const initialPreset = presetMenu.querySelector(".bc-combo-option.active");
+  if (initialPreset) presetField.value = initialPreset.dataset.label;
   function setPresetCustom(){
     presetMenu.querySelectorAll(".bc-combo-option").forEach(o => {
       o.classList.remove("active");
@@ -546,41 +676,92 @@
     : (db > 0 ? "+" : "") + db + " dB";
   const formatHz = hz => hz >= 1000 ? (hz / 1000) + "k" : String(hz);
 
-  const sliders = EQ_BANDS.map((band, i) => {
-    const wrap = document.createElement("div");
-    wrap.className = "cq-band";
-    const valueEl = document.createElement("button");
-    valueEl.type = "button";
-    valueEl.className = "bc-body cq-band-value";
-    valueEl.title = bcT("Click to switch between dB and %");
-    valueEl.textContent = formatValue(0);
-    valueEl.addEventListener("click", toggleUnit);
-    const track = document.createElement("div");
-    track.className = "cq-band-track";
-    const range = document.createElement("input");
-    range.type = "range";
-    range.min = -12;
-    range.max = 12;
-    range.step = 0.5;
-    range.value = 0;
-    range.setAttribute("aria-label", formatHz(band.freq) + " Hz");
-    const hzEl = document.createElement("span");
-    hzEl.className = "bc-body cq-band-hz";
-    hzEl.textContent = formatHz(band.freq);
-    track.appendChild(range);
-    wrap.append(valueEl, track, hzEl);
-    bandsEl.appendChild(wrap);
-    range.addEventListener("input", () => {
-      engine.setGain(i, +range.value);
-      valueEl.textContent = formatValue(+range.value);
-      setPresetCustom();
+  const sliders = [];
+  let bandCount = 11;
+  let bandDefs = bandsFor(11);
+  const bandTitle = (freq, db) => formatHz(freq) + " Hz · " + formatValue(db) + " — " + bcT("double-click to reset");
+
+  function buildSliders(values){
+    bandsEl.textContent = "";
+    sliders.length = 0;
+    bandDefs.forEach((band, i) => {
+      const initial = values ? values[i] : 0;
+      const wrap = document.createElement("div");
+      wrap.className = "cq-band";
+      const valueEl = document.createElement("button");
+      valueEl.type = "button";
+      valueEl.className = "bc-body cq-band-value";
+      valueEl.title = bcT("Click to switch between dB and %") + " (U)";
+      valueEl.textContent = formatValue(initial);
+      valueEl.addEventListener("click", toggleUnit);
+      const track = document.createElement("div");
+      track.className = "cq-band-track";
+      const range = document.createElement("input");
+      range.type = "range";
+      range.min = -12;
+      range.max = 12;
+      range.step = 0.5;
+      range.value = initial;
+      range.setAttribute("aria-label", formatHz(band.freq) + " Hz");
+      range.title = bandTitle(band.freq, initial);
+      const hzEl = document.createElement("button");
+      hzEl.type = "button";
+      hzEl.className = "bc-body cq-band-hz";
+      hzEl.title = formatHz(band.freq) + " Hz — " + bcT("click to reset");
+      hzEl.textContent = formatHz(band.freq);
+      hzEl.addEventListener("click", () => {
+        range.value = 0;
+        range.dispatchEvent(new Event("input"));
+      });
+      track.appendChild(range);
+      wrap.append(valueEl, track, hzEl);
+      bandsEl.appendChild(wrap);
+      range.addEventListener("input", () => {
+        engine.setGain(i, +range.value);
+        valueEl.textContent = formatValue(+range.value);
+        range.title = bandTitle(band.freq, +range.value);
+        setPresetCustom();
+      });
+      range.addEventListener("dblclick", () => {
+        range.value = 0;
+        range.dispatchEvent(new Event("input"));
+      });
+      sliders.push({ range, valueEl });
     });
-    range.addEventListener("dblclick", () => {
-      range.value = 0;
-      range.dispatchEvent(new Event("input"));
+    bandsEl.classList.toggle("cq-bands-dense", bandDefs.length > 11);
+  }
+  buildSliders(null);
+
+  function resampleGains(values, fromFreqs, toFreqs){
+    return toFreqs.map(f => {
+      if (f <= fromFreqs[0]) return values[0];
+      const last = fromFreqs.length - 1;
+      if (f >= fromFreqs[last]) return values[last];
+      let k = 0;
+      while (fromFreqs[k + 1] < f) k++;
+      const t = (Math.log(f) - Math.log(fromFreqs[k])) / (Math.log(fromFreqs[k + 1]) - Math.log(fromFreqs[k]));
+      return Math.max(-12, Math.min(12, Math.round((values[k] + (values[k + 1] - values[k]) * t) * 2) / 2));
     });
-    return { range, valueEl };
-  });
+  }
+  const presetGains = key => resampleGains(PRESETS[key], EQ_LAYOUTS[11], bandDefs.map(b => b.freq));
+
+  const bandsBtn = document.getElementById("cqBandsBtn");
+  const bandOptions = BAND_COUNTS.map(n => ({ value: n, label: bcT("{0} bands", [n]) }));
+  const bandsCtl = bcRegisterOptionChangeBtn(bandsBtn, bandOptions, opt => setBandCount(opt.value), BAND_COUNTS.indexOf(11));
+
+  function setBandCount(n){
+    if (!EQ_LAYOUTS[n]) return;
+    const oldFreqs = bandDefs.map(b => b.freq);
+    const oldValues = sliders.map(sl => +sl.range.value);
+    const active = presetMenu.querySelector(".bc-combo-option.active");
+    bandCount = n;
+    bandDefs = bandsFor(n);
+    const values = active ? presetGains(active.dataset.preset) : resampleGains(oldValues, oldFreqs, bandDefs.map(b => b.freq));
+    engine.setBands(bandDefs, EQ_Q[n], values);
+    buildSliders(values);
+    bandsCtl.setIndex(BAND_COUNTS.indexOf(n));
+    schedulePersist();
+  }
 
   const outputUi = [];
 
@@ -594,13 +775,15 @@
   const outputEl = document.getElementById("cqOutput");
   const formatPan = p => p === 0 ? bcT("Center") : (p < 0 ? "L " : "R ") + Math.round(Math.abs(p) * 100) + "%";
   [
-    { label: bcT("Balance"), min: -1, max: 1, step: 0.05, initial: 0, format: formatPan, apply: v => engine.setPan(v), unitToggle: false },
+    { label: bcT("Balance"), min: -1, max: 1, step: 0.05, initial: 0, format: formatPan, apply: v => { engine.setPan(v); if (v !== 0 && outCh === 1) setOutChannels(2); }, unitToggle: false },
     { label: bcT("Speed"), min: 0.5, max: 2, step: 0.05, initial: 1, format: r => Math.round(r * 100) + "%", apply: v => engine.setRate(v), unitToggle: false }
   ].forEach(def => {
     const row = document.createElement("div");
     row.className = "cq-out-row";
-    const labelEl = document.createElement("span");
-    labelEl.className = "bc-label cq-out-label";
+    const labelEl = document.createElement("button");
+    labelEl.type = "button";
+    labelEl.className = "bc-label cq-reset-label cq-out-label";
+    labelEl.title = bcT("Click to reset");
     labelEl.textContent = def.label;
     const range = document.createElement("input");
     range.type = "range";
@@ -609,15 +792,17 @@
     range.step = def.step;
     range.value = def.initial;
     range.setAttribute("aria-label", def.label);
+    range.title = def.label + " — " + bcT("double-click to reset");
     const valueEl = document.createElement("button");
     valueEl.type = "button";
     valueEl.className = "bc-body cq-band-value cq-out-value";
     valueEl.textContent = def.format(def.initial);
     if (def.unitToggle){
-      valueEl.title = bcT("Click to switch between dB and %");
+      valueEl.title = bcT("Click to switch between dB and %") + " (U)";
       valueEl.addEventListener("click", toggleUnit);
     } else {
       valueEl.disabled = true;
+      valueEl.title = def.label;
     }
     const refresh = () => { valueEl.textContent = def.format(+range.value); };
     range.addEventListener("input", () => {
@@ -625,6 +810,10 @@
       refresh();
     });
     range.addEventListener("dblclick", () => {
+      range.value = def.initial;
+      range.dispatchEvent(new Event("input"));
+    });
+    labelEl.addEventListener("click", () => {
       range.value = def.initial;
       range.dispatchEvent(new Event("input"));
     });
@@ -639,7 +828,7 @@
     const valueEl = document.createElement("button");
     valueEl.type = "button";
     valueEl.className = "bc-body cq-band-value";
-    valueEl.title = bcT("Click to switch between dB and %");
+    valueEl.title = bcT("Click to switch between dB and %") + " (U)";
     valueEl.textContent = formatValue(0);
     valueEl.addEventListener("click", toggleUnit);
     const track = document.createElement("div");
@@ -651,9 +840,16 @@
     range.step = 0.5;
     range.value = 0;
     range.setAttribute("aria-label", bcT("Volume"));
-    const labelEl = document.createElement("span");
-    labelEl.className = "bc-body cq-band-hz";
+    range.title = bcT("Volume") + " — " + bcT("double-click to reset");
+    const labelEl = document.createElement("button");
+    labelEl.type = "button";
+    labelEl.className = "bc-label cq-reset-label";
+    labelEl.title = bcT("Click to reset");
     labelEl.textContent = bcT("Volume");
+    labelEl.addEventListener("click", () => {
+      range.value = 0;
+      range.dispatchEvent(new Event("input"));
+    });
     track.appendChild(range);
     wrap.append(valueEl, track, labelEl);
     document.getElementById("cqVolume").appendChild(wrap);
@@ -668,6 +864,10 @@
     });
     outputUi.push({ range, refresh });
   })();
+
+  document.getElementById("cqEqReset").addEventListener("click", () => {
+    presetMenu.querySelector('[data-preset="flat"]').click();
+  });
 
   const downloadBtn = document.getElementById("cqDownloadBtn");
   const formatTrigger = document.getElementById("cqFormatTrigger");
@@ -700,6 +900,16 @@
     }
   }
   downloadBtn.addEventListener("click", download);
+  bcRegisterKeyShortcut("d", downloadBtn);
+  bcRegisterKeyShortcut("r", { click(){
+    const nameInput = nameEl.querySelector("input");
+    if (!editor.hidden && nameInput){ nameInput.focus(); nameInput.select(); }
+  } });
+  bcRegisterKeyShortcut("c", { click(){ if (!editor.hidden) chBtn.click(); } });
+  bcRegisterKeyShortcut("u", { click(){ if (!editor.hidden) toggleUnit(); } });
+  bcRegisterKeyShortcut("t", { click(){ if (!editor.hidden) toggleTimeMode(); } });
+  bcRegisterKeyShortcut("p", { click(){ if (!editor.hidden) presetTrigger.click(); } });
+  bcRegisterKeyShortcut("b", { click(){ if (!editor.hidden) bandsBtn.click(); } });
 
   function applyBands(gains){
     gains.forEach((g, i) => {
@@ -710,7 +920,7 @@
   }
 
   bcRegisterCombo(presetTrigger, presetField, presetMenu, document.getElementById("cqPresetEmpty"), opt => {
-    applyBands(PRESETS[opt.dataset.preset]);
+    applyBands(presetGains(opt.dataset.preset));
     schedulePersist();
   });
 
@@ -724,6 +934,8 @@
     const ranges = (sel) => [...document.querySelectorAll(sel)].map(r => +r.value);
     const [balance, speed] = ranges("#cqOutput input");
     return {
+      trim: [engine.trimStart, engine.trimEnd],
+      bands: bandCount,
       gains: sliders.map(sl => +sl.range.value),
       volume: ranges("#cqVolume input")[0],
       balance,
@@ -760,7 +972,9 @@
 
   function applySettings(s){
     if (!s) return;
-    if (Array.isArray(s.gains)) s.gains.forEach((g, i) => { if (sliders[i]) setRange(sliders[i].range, g); });
+    if (s.bands && s.bands !== bandCount) setBandCount(s.bands);
+    if (Array.isArray(s.trim) && s.trim.length === 2) applyTrim(s.trim[0], s.trim[1]);
+    if (Array.isArray(s.gains) && s.gains.length === sliders.length) s.gains.forEach((g, i) => { if (sliders[i]) setRange(sliders[i].range, g); });
     if (s.preset){
       const opt = presetMenu.querySelector('[data-preset="' + s.preset + '"]');
       if (opt) opt.click();
@@ -827,7 +1041,9 @@
     currentName = file.name;
     outputBase = file.name.replace(/\.[^.]+$/, "") + " (eq)";
     nameEl.textContent = "";
-    nameEl.appendChild(bcCreateRowNameInput(outputBase, value => { outputBase = value; schedulePersist(); }));
+    const nameInput = bcCreateRowNameInput(outputBase, value => { outputBase = value; schedulePersist(); });
+    nameInput.title = bcT("Output file name") + " (R)";
+    nameEl.appendChild(nameInput);
     sourceChannels = buffer.numberOfChannels;
     chOpts.length = 0;
     [...new Set([1, 2, 6, 8, sourceChannels])].sort((x, y) => x - y).forEach(n => chOpts.push({ value: n, label: channelName(n) }));
@@ -835,6 +1051,7 @@
     drop.hidden = true;
     editor.hidden = false;
     peaks = null;
+    updateTrimUI();
     setPlayLabel();
     refresh();
   }
