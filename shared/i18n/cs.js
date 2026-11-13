@@ -224,7 +224,7 @@ window.BC_I18N = {
  "Adjusting a color's brightness or saturation while keeping the same hue": "Úprava jasu nebo sytosti barvy při zachování stejného odstínu",
  "Advanced": "Pokročilé",
  "Advertising (Google AdSense)": "Reklama (Google AdSense)",
- "After studying creative signals across different worlds, we found that lifeless interfaces and grey rectangles were causing a serious decrease in inspiration levels. The solution was obvious: more color brings more creativity.": "Po studiu tvůrčích signálů z různých světů jsme zjistili, že bezvládná rozhraní a šedé obdélníky vážně snižují úroveň inspirace. Řešení bylo zřejmé: víc barev přináší víc kreativity.",
+ "After studying creative signals across different worlds, we found that lifeless interfaces and grey rectangles were causing a serious decrease in inspiration levels. The solution was obvious: more color brings more creativity.": "Po důkladném studování signálů z různých světů jsme zjistili, že šedé obdélníky a nevýrazné tvůrčí prostředí vážně snižují úroveň inspirace. Řešení bylo zřejmé: víc barev přinese víc kreativity.",
  "Air, sparkle, hiss": "Vzdušnost, jiskra, šum",
  "Alien Privacy Protocol": "Mimozemský protokol soukromí",
  "All": "Vše",
