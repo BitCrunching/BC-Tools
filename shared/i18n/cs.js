@@ -1956,7 +1956,7 @@ window.BC_I18N = {
  "images or a PDF": "obrázky nebo PDF",
  "just one click away.": "stačí jedno kliknutí.",
  "no data leaks": "žádné úniky dat",
- "no server found": "žádný server nenalezen",
+ "no server found": "server nebyl nalezen",
  "no tools found (": "žádné nástroje nebyly nalezeny (",
  "not anonymous": "není anonymní",
  "one or more audio or video files": "jeden nebo více zvukových či video souborů",
