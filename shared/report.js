@@ -35,7 +35,7 @@
   btn.id = "navReportBtn";
   btn.className = "nav-theme-btn nav-report-btn";
   btn.setAttribute("aria-label", bcT("Report a bug"));
-  btn.title = bcT("Report a bug");
+  btn.title = bcT("Squash a Bug");
   btn.setAttribute("aria-haspopup", "dialog");
   btn.setAttribute("aria-expanded", "false");
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7.5a3 3 0 0 1 6 0"/><path d="M8 11a4 4 0 0 1 8 0v4a4 4 0 0 1-8 0z"/><path d="M12 11v8"/><path d="M8 13H4M16 13h4M8.5 8.5 5.5 6.5M15.5 8.5l3-2M8.5 17.5l-3 2M15.5 17.5l3 2"/></svg>';
