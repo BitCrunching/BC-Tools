@@ -1145,7 +1145,10 @@
   bcRegisterKeyShortcut("b", captionBoldBtn);
   bcRegisterKeyShortcut("i", captionItalicBtn);
   bcRegisterKeyShortcut("u", captionUnderlineBtn);
-  bcRegisterKeyShortcut("d", downloadBtn);
+  bcRegisterKeyShortcut("d", { click(){
+    if (downloadBtn.offsetParent) downloadBtn.click();
+    else if (!convertBtn.disabled && convertBtn.offsetParent) convertBtn.click();
+  } });
 
   /* ===== Dropdowns (Font / Color & style / Crop / Playback) =====
      Same trigger+menu pattern as Context's color dropdown: one open at
