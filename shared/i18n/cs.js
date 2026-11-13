@@ -1941,7 +1941,7 @@ window.BC_I18N = {
  "an audio or video file": "audio nebo video soubor",
  "an image": "obrázek",
  "circle": "kruh",
- "clean-ad environment enforced": "vynuceno prostředí bez reklam",
+ "clean-ad environment enforced": "vynuceno prostředí bez rušivých reklam",
  "click to copy, double-click to rename": "kliknutím zkopírujete, dvojklikem přejmenujete",
  "click to reset": "kliknutím vynulujete",
  "contact@bitcrunching.com": "contact@bitcrunching.com",
