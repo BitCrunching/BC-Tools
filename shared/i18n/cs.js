@@ -871,7 +871,7 @@ window.BC_I18N = {
  "GUIDE": "PRŮVODCE",
  "Galactic Handbook": "Galaktická příručka",
  "Get in touch with us": "Kontaktujte nás",
- "Get working with Creative Hub... a place where creativity travels faster than the speed of light.": "Pusťte se do práce s Creative Hub… místem, kde kreativita cestuje rychleji než světlo.",
+ "Get working with Creative Hub... a place where creativity travels faster than the speed of light.": "Pusťte se do práce s Creative Hubem… místem, kde kreativita cestuje rychleji než světlo.",
  "Getting started with": "Začínáme s",
  "GitHub Light": "GitHub Light",
  "GitHub Light: the one for bright contexts": "GitHub Light: ten pro světlé prostředí",
