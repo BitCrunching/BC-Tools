@@ -1576,7 +1576,7 @@ window.BC_I18N = {
  "Square": "Čtverec",
  "Square outline": "Čtverec (obrys)",
  "Squash a Bug": "Zašlápni brouka",
- "Start with Creative Hub:": "Začněte s Creative Hub:",
+ "Start with Creative Hub:": "Začněte s Creative Hubem:",
  "Staying inside the lines — literally": "Zůstat uvnitř čar — doslova",
  "Step by step": "Krok za krokem",
  "Stereo": "Stereo",
