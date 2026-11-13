@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cqualy – 無料のオーディオイコライザー – BC Tools</title>
+<meta name="description" content="イコライザーで音を整え、音の波として見られます。ブラウザーで無料。高速でプライベート。何もお使いの端末の外には出ません。">
+<link rel="canonical" href="https://bitcrunching.com/ja/cqualy/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/cqualy/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/cqualy/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/cqualy/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/cqualy/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/cqualy/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/cqualy/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/cqualy/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/cqualy/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/cqualy/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/cqualy/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/cqualy/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cqualy/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cqualy/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cqualy/">
+<script src="/shared/i18n/ja.js?v=14"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Cqualy – 無料のオーディオイコライザー – BC Tools">
+<meta property="og:description" content="イコライザーで音を整え、音の波として見られます。ブラウザーで無料。高速でプライベート。何もお使いの端末の外には出ません。">
+<meta property="og:url" content="https://bitcrunching.com/ja/cqualy/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cqualy – 無料のオーディオイコライザー – BC Tools">
+<meta name="twitter:description" content="イコライザーで音を整え、音の波として見られます。ブラウザーで無料。高速でプライベート。何もお使いの端末の外には出ません。">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=277">
+<style>
+.cs-shape{ background:#cf94ff; }
+/* ===== Portrait-phone notice (Codify's pattern) =====
+   Shown only by the media query, no JS; no dismiss, the tool doesn't work
+   at this width. Landscape phones and wider never see it. */
+.cq-orientation-notice{
+  display:none;
+}
+@media (max-width:640px) and (orientation:portrait){
+  .cq-orientation-notice{
+    display:flex;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    width:100dvw;
+    height:100dvh;
+    z-index:2000;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:32px;
+    text-align:center;
+    background:#1a1a22;
+    color:#fff;
+  }
+}
+/* Real .cq-back-btn (top-right corner of #page-cqualy) is covered by
+   this overlay like everything else in the tool, so it gets its own —
+   same shared .bc-canvas-back-btn shape/color, same data-goto
+   navigation (shared/site.js's delegate, no extra JS needed here). */
+.cq-orientation-notice .bc-canvas-back-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:flex;
+}
+/* Rotates from portrait to landscape and back — a literal demonstration
+   of the ask, not just a generic spinner. Pauses at each end (the
+   15%/65% holds) rather than rotating continuously, so it reads as
+   "turn it like this" instead of just spinning. */
+@keyframes cq-orientation-rotate{
+  0%, 15%{ transform:rotate(0deg); }
+  50%, 65%{ transform:rotate(90deg); }
+  100%{ transform:rotate(0deg); }
+}
+.cq-orientation-notice-icon{
+  width:56px;
+  height:56px;
+  animation:cq-orientation-rotate 2.4s ease-in-out infinite;
+}
+.cq-orientation-notice-icon svg{
+  width:100%;
+  height:100%;
+}
+.cq-orientation-notice-title{
+  font-size:20px;
+  font-weight:900;
+  max-width:320px;
+}
+.cq-orientation-notice-body{
+  font-size:15px;
+  opacity:.75;
+  max-width:320px;
+  line-height:1.5;
+}
+
+#page-cqualy::before{
+  background:#3FBFE8;
+}
+/* Lively springy hover, same feel as Convert's/Congify's. Targets the
+   whole .tool-app banner (not #cqDrop) since #cqDrop itself has a
+   transparent background — brightening it alone produces no visible
+   change, only the colored banner underneath actually shows it.
+   :has() drops it the moment a file is loaded and #cqDrop picks up
+   .tool-drop-revealed (see below — same pattern as Combine's #cbDrop,
+   it's never actually [hidden] once revealed, just restyled and left
+   in place as the "add more" affordance above the file list), so it
+   never fights the per-row controls once there's real content to
+   interact with. */
+#page-cqualy:has(#cqEditor[hidden]){
+  min-height:322.5px;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+/* Desktop-only min-height transition (see the plain #page-cqualy rule
+   above for why) — has to be redeclared here too, not merged into the
+   rule above, since this selector's specificity would otherwise drop
+   the plain #page-cqualy media-query rule's min-height entry entirely
+   rather than adding to it. */
+@media (min-width:769px){
+  #page-cqualy:has(#cqEditor[hidden]){
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease, min-height .35s cubic-bezier(.4,0,.2,1);
+  }
+}
+/* #cqStatus reserves 46px (22px margin-top + 24px min-height) even
+   with no message in it, which pre-upload just pushes the fixed
+   322.5px banner into overflow for no visible reason — nothing needs
+   that space until a conversion is actually running (or a rejected
+   file leaves a message here — the :empty guard is what lets that one
+   case through: setting textContent gives the element a text node, so
+   it's no longer :empty and this rule stops matching). */
+#page-cqualy:has(#cqEditor[hidden]) #cqStatus:empty{
+  display:none;
+}
+#page-cqualy:has(#cqEditor[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over gets a bolder, unmistakable reaction than plain hover —
+   this class is added by shared/site.js's bcSetupBannerDropTarget while
+   a file is being dragged over the banner. 1.012/1.08 read fine when
+   you're stationary hovering, but during an actual drag your attention
+   is on the OS drag cursor, not the banner, so anything that subtle
+   goes unnoticed ("doesn't react to drag") — see Convert/Compress/
+   Combine/Cleanly/Context/Congify's version of this same fix. Cqualy
+   missed it originally since it wasn't published yet when that fix
+   went out. */
+#page-cqualy:has(#cqEditor[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+#page-cqualy:has(#cqEditor[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Once loaded, real content (revealed drop banner + the compact 60px
+   rows) is shorter than the shared .tool-app default (min-height:402px)
+   would otherwise pad it out to — pinned to exactly 360px with one file
+   in, rather than leaving that extra dead space underneath. */
+#page-cqualy:has(#cqEditor:not([hidden])){
+  min-height:360px;
+}
+
+/* Drag-over highlight on the whole banner, same idea as Convert's —
+   cqualy-tool.js adds this class while a file is being dragged over
+   any part of the banner before an audio file is loaded. */
+.tool-app.active{
+  background:rgba(0,245,212,.08);
+}
+
+/* Same as Convert's #cvDrop / Congify's #gifDrop — before a file is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
+   so it doesn't cancel the shared .tool-drop-addpill's own dashed
+   border once it collapses to the "＋ Add more files" pill. */
+/* transition (instant border/background snap + desktop-only geometry
+   smoothing) now comes from the shared .tool-drop-addpill:not(.tool-drop-revealed)
+   rule in shared/site.css — originated here, ported there once Combine
+   and Cleanly turned out to have the exact same leftover-outline bug. */
+#cqDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#cqDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cqDrop.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cqDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cqDrop.tool-drop-revealed.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+
+.cq-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+#page-cqualy:has(#cqEditor:not([hidden])) .cq-remove-btn{ display:flex; }
+.cq-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cq-back-btn{ display:none; }
+  #page-cqualy:has(#cqEditor:not([hidden])) .cq-back-btn{ display:flex; }
+}
+
+.cq-editor{
+  position:relative;
+  margin-top:24px;
+}
+.cq-card{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px;
+  border:1px solid #3fbfe855;
+}
+.cq-top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  color:var(--text);
+}
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-cqualy{ animation:icon-wobble .5s ease; }
+.cq-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cq-ch-btn{ width:100px; flex:none; }
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ outline:3px solid rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ outline:3px solid rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* the guide title doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"ガイド";
+    font-size:15px;
+  }
+}
+.cq-wave-row{
+  display:flex;
+  align-items:stretch;
+  gap:12px;
+}
+.cq-vol{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:56px;
+  flex:none;
+}
+.cq-vol .cq-band{ flex:none; }
+.cq-vol .cq-band-track{ height:100px; }
+.cq-vol .cq-band-track input{ width:100px; }
+.cq-wave{
+  display:block;
+  flex:1;
+  min-width:0;
+  height:160px;
+  color:var(--text);
+  cursor:pointer;
+  touch-action:none;
+  border-radius:12px;
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="dark"] .cq-wave{ background:rgba(0,0,0,.2); }
+.cq-transport{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.cq-play-btn{
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.cq-eq{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cq-eq-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.cq-preset-combo{ width:146px; }
+.bc-combo-input::placeholder{ color:currentColor; opacity:1; }
+.cq-eq-bands{
+  display:flex;
+  justify-content:space-between;
+  gap:6px;
+}
+.cq-band{
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.cq-band-track{
+  position:relative;
+  width:28px;
+  height:150px;
+}
+.cq-band-track input{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:150px;
+  height:28px;
+  margin:0;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-band-hz{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-band-hz:hover,
+.cq-band-hz:focus-visible{ opacity:1; }
+.cq-band-value{
+  font-family:inherit;
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+}
+.cq-band-value:hover,
+.cq-band-value:focus-visible{ opacity:1; }
+.cq-output{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 28px;
+  margin-top:8px;
+}
+.cq-out-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.cq-out-label{ min-width:58px; }
+.cq-time{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-time:hover,
+.cq-time:focus-visible{ opacity:1; }
+.cq-bands-btn{ width:118px; flex:none; }
+.cq-bands-dense .cq-band{ position:relative; padding-top:21px; }
+.cq-bands-dense .cq-band-value{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:2;
+  visibility:hidden;
+  white-space:nowrap;
+}
+.cq-bands-dense .cq-band:hover .cq-band-value,
+.cq-bands-dense .cq-band:focus-within .cq-band-value{ visibility:visible; }
+.cq-bands-dense .cq-band:not(:nth-child(4n+1)) .cq-band-hz{ visibility:hidden; }
+.cq-trim-info{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.cq-trim-info[hidden]{ display:none; }
+.cq-trim-info:hover,
+.cq-trim-info:focus-visible{ opacity:1; }
+.cq-reset-label{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.cq-reset-label:hover,
+.cq-reset-label:focus-visible{ opacity:1; }
+.cq-out-row input{
+  flex:1;
+  min-width:0;
+  height:28px;
+  margin:0;
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-out-value{ min-width:58px; text-align:right; }
+.cq-out-value:disabled{ cursor:default; }
+@media (max-width:600px){
+  .cq-output{ grid-template-columns:1fr; }
+  .cq-eq-bands{ overflow-x:auto; justify-content:flex-start; padding-bottom:6px; }
+  .cq-band{ flex:0 0 52px; }
+  .cq-bands-dense .cq-band{ flex:0 0 30px; }
+}
+.cq-save{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.cq-format-dropdown{ width:auto; min-width:78px; }
+@media (max-width:600px){
+  .cq-transport{ flex-wrap:wrap; }
+  .cq-save{ margin-left:0; width:100%; }
+  .cq-save .tool-primary-btn{ flex:1; }
+  .cq-save{ flex-wrap:wrap; }
+  .cq-save .bc-dropdown{ flex:0 0 78px; }
+  .cq-save .cq-bands-btn,
+  .cq-save .cq-ch-btn{ flex:1 1 calc(50% - 6px); width:auto; min-width:0; }
+  .cq-save .cq-preset-combo{ flex:1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Cookieを使用しています。許可するカテゴリを以下から選択してください。詳細は当社の <a data-goto="cookies">Cookieポリシー</a> の詳細をご覧ください。</p>
+  <p class="cookie-banner-text-mobile">許可するカテゴリを選択</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Cookie設定の内容の表示を切り替え" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">開発ツール_COOKIE：</span>
+    </span>
+    <span>許可するカテゴリを選択</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="必須Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>必須（常に有効）</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>これらは、Cookieの選択、言語、ライト/ダークテーマの記憶といった、基本的な機能を維持するためのものです。無効にすることはできず、このサイトの他のすべてのものと同様に、デバイスの外に出ることは決してありません。</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="分析用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">分析 - 完全なプライバシーを望む場合は、これを無効のままにしてください。</span><span class="cookie-label-docked">分析 (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>これにより、ユーザーがWebサイトをどのように移動しているかについて（Google Analytics）を通じて貴重なデータを受け取り、ユーザー体験を改善できます。完全に匿名のままでいたい場合は、このオプションを無効にすることをお勧めします。</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="広告用Cookieについて詳しく">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>広告 (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Google AdSenseが広告を表示するために使用します。AdSenseの承認待ちのため、現在サイト全体でオフになっており、このトグルにはまだ効果がありません。</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">すべて許可</button>
+    <button type="button" id="cookieBannerSave">選択を確定</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="BC Toolsのロゴ" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="ライトモードとダークモードを切り替え" title="ライトモードとダークモードを切り替え">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="共有" title="共有">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">リンクをコピー</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="その他の共有オプション"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">メール</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="クリックしてツールのガイドをリセット" title="クリックしてツールのガイドをリセット">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cqHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cqHelpClose" aria-label="閉じて今後は表示しない"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cqHelpToggle" aria-label="最小化" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cqHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpBack">&lt; 戻る</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cqHelpCloseMobile">閉じる</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpNext">次へ &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cqHelpBody">
+    <div class="engine-status-row">&gt; <span id="cqHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-cqualy" data-category="sound">
+    <div class="cq-orientation-notice" id="cqOrientationNotice">
+      <button type="button" class="bc-canvas-back-btn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <div class="cq-orientation-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+          <line x1="11" y1="18" x2="13" y2="18"></line>
+        </svg>
+      </div>
+      <p class="cq-orientation-notice-title">Cqualyにはもっと大きな画面が必要です</p>
+      <p class="cq-orientation-notice-body">イコライザーは縦向きのスマートフォンには収まりません。パソコンでお試しいただくか、スマートフォンを横向きにしてください。</p>
+    </div>
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-cqualy" role="img" aria-label="Cqualy アイコン"></span>
+        <span>Cqualy</span>
+      </div>
+      <span class="privacy-check-badge" id="cqPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cq-back-btn bc-canvas-back-btn" id="cqBackBtn" data-goto="mainpage" aria-label="Creative Hubに戻る" title="Creative Hubに戻る">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+
+    <div class="tool-drop tool-drop-addpill" id="cqDrop"><span class="tool-drop-click-word">クリック</span><span class="tool-drop-or-drop"> またはドロップ </span><span class="tool-drop-rest">音声または動画ファイル</span></div>
+    <input type="file" id="cqInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.mp4,.m4v,.webm,.mov,.ogv" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cqContinueBtn" title="前回の続きから再開 (D)" hidden>前回の続きから再開</button>
+
+    <button type="button" class="cq-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cqRemoveBtn" aria-label="ファイルを削除" title="ファイルを削除">×</button>
+
+    <div class="cq-editor" id="cqEditor" hidden>
+      <div class="result cq-card">
+        <div class="cq-top">
+          <span class="cq-name" id="cqName"></span>
+          <button type="button" class="bc-body cq-trim-info" id="cqTrimInfo" title="クリックでトリミングをリセット" hidden></button>
+        </div>
+        <div class="cq-wave-row">
+          <canvas class="cq-wave" id="cqWave" title="端をドラッグしてトリミング。クリックまたはドラッグで位置へ移動、← → で5秒スキップ" aria-label="音の波形。クリックまたはドラッグで位置へ移動します。"></canvas>
+          <div class="cq-vol" id="cqVolume"></div>
+        </div>
+        <div class="cq-transport">
+          <button type="button" class="tool-primary-btn cq-play-btn" id="cqPlayBtn" title="再生 (スペース)" data-ga-event="tool_primary_action" data-ga-tool="cqualy">再生</button>
+          <button type="button" class="bc-body cq-time" id="cqTime" title="クリックで経過時間と残り時間を切り替え (T)">0:00 / 0:00</button>
+          <div class="cq-save">
+            <div class="bc-combo cq-preset-combo" id="cqPresetCombo">
+              <div class="bc-combo-trigger" id="cqPresetTrigger" title="プリセット (P)" aria-haspopup="listbox" aria-expanded="false" aria-label="プリセット">
+                <input class="bc-combo-input" id="cqPresetField" value="Flat" placeholder="カスタム" readonly aria-label="プリセットを検索">
+                <span class="bc-combo-chevron" aria-hidden="true"></span>
+              </div>
+              <div class="bc-combo-menu" id="cqPresetMenu" role="listbox" hidden>
+              <button type="button" class="bc-combo-option active" data-preset="flat" data-label="フラット" role="option" aria-selected="true"><span>フラット</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="bass" data-label="低音ブースト" role="option" aria-selected="false"><span>低音ブースト</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="treble" data-label="高音ブースト" role="option" aria-selected="false"><span>高音ブースト</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="voice" data-label="ボーカル" role="option" aria-selected="false"><span>ボーカル</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rock" data-label="ロック" role="option" aria-selected="false"><span>ロック</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="pop" data-label="ポップ" role="option" aria-selected="false"><span>ポップ</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="jazz" data-label="ジャズ" role="option" aria-selected="false"><span>ジャズ</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="classical" data-label="クラシック" role="option" aria-selected="false"><span>クラシック</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="electronic" data-label="エレクトロニック" role="option" aria-selected="false"><span>エレクトロニック</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiphop" data-label="ヒップホップ" role="option" aria-selected="false"><span>ヒップホップ</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="acoustic" data-label="アコースティック" role="option" aria-selected="false"><span>アコースティック</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="loudness" data-label="ラウドネス" role="option" aria-selected="false"><span>ラウドネス</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rumble" data-label="低域ノイズ低減" role="option" aria-selected="false"><span>低域ノイズ低減</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiss" data-label="ヒスノイズ低減" role="option" aria-selected="false"><span>ヒスノイズ低減</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <div class="bc-combo-empty" id="cqPresetEmpty" hidden>一致なし</div>
+              </div>
+            </div>
+            <button type="button" class="option-change-btn cq-bands-btn" id="cqBandsBtn" title="イコライザーのバンド (B)">
+              <span class="option-change-btn-label">11バンド</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="option-change-btn cq-ch-btn" id="cqChBtn" title="出力チャンネル (C)">
+              <span class="option-change-btn-label">ステレオ</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown cq-format-dropdown">
+              <button type="button" class="bc-dropdown-trigger" id="cqFormatTrigger" title="出力形式" aria-haspopup="listbox" aria-expanded="false" aria-label="出力形式">
+                <span class="bc-dropdown-trigger-label">MP3</span>
+                <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="bc-dropdown-menu" id="cqFormatMenu" role="listbox" hidden>
+                <button type="button" class="bc-dropdown-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true">MP3</button>
+                <button type="button" class="bc-dropdown-option" data-format="wav" data-label="WAV" role="option" aria-selected="false">WAV</button>
+              </div>
+            </div>
+            <button type="button" class="tool-primary-btn" id="cqDownloadBtn" title="ダウンロード (D)" data-ga-event="tool_primary_action" data-ga-tool="cqualy" data-ga-action="download">ダウンロード</button>
+          </div>
+        </div>
+        <div class="cq-eq">
+          <div class="cq-eq-head">
+            <button type="button" class="bc-label cq-reset-label" id="cqEqReset" title="クリックでイコライザーをリセット">イコライザー</button>
+          </div>
+          <div class="cq-eq-bands" id="cqBands"></div>
+          <div class="cq-output" id="cqOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-status" id="cqStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="cqualy">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000023"></ins>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>イコライザーは初めて？</h3>
+    <p>6 dBごとにバンドの強さがほぼ2倍になることをご存じですか？Cqualy では簡単なスライダーで音を整え、波形の変化をその場で確認できます。経験は必要ありません。この短いガイドで、各コントロールの働きとよくある音の問題の直し方を説明します。</p>
+    <p class="gr-topics-lead">必要な項目へ移動：</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. イコライザーの仕組み</span><span class="gr-toc-note">バンドとdB値の意味。</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. プリセットの選び方とカスタムにするタイミング</span><span class="gr-toc-note">どのプリセットがどの音に合うか。</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. よくある音の問題を直す</span><span class="gr-toc-note">濁り、刺さり、薄さ、ヒスノイズ：試すこと。</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. 音量、バランス、速度、トリミング、チャンネル</span><span class="gr-toc-note">その他のコントロールの働き。</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. MP3かWAVか、そして動画ファイルの使い方</span><span class="gr-toc-note">書き出しの選び方と動画の扱い方。</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="cqualy">
+<div class="gr-article" id="gr-article-1"><h3>1. イコライザーの仕組み</h3>
+          <p>音は低い音、中くらいの音、高い音の混ざり合いです。イコライザーはそれをバンドに分け、各バンドは1つの周波数（ヘルツ、Hz）に対応し、バンドごとに上げ下げできます。小さな数字は低音、大きな数字は高音です。</p>
+          <table>
+            <thead>
+              <tr><th>範囲</th><th>聞こえ方</th><th>主な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="範囲">20–120 Hz</td><td data-label="聞こえ方">低域のうなり、重み</td><td data-label="主な用途">キックドラム、ベースギター</td></tr>
+              <tr><td data-label="範囲">120–500 Hz</td><td data-label="聞こえ方">温かみ、箱鳴り</td><td data-label="主な用途">声やギターの厚み</td></tr>
+              <tr><td data-label="範囲">500 Hz〜4 kHz</td><td data-label="聞こえ方">存在感、明瞭さ</td><td data-label="主な用途">話し声、主役の楽器</td></tr>
+              <tr><td data-label="範囲">4〜20 kHz</td><td data-label="聞こえ方">空気感、きらめき、ヒスノイズ</td><td data-label="主な用途">シンバル、息づかい、細部</td></tr>
+            </tbody>
+          </table>
+          <p><strong>dB or %.</strong> 各スライダーは1つのバンドを-12〜+12 dBの範囲で動かします。0 dBのバンドは変わりません。dBの値をクリックすると、同じ設定を元の音量に対するパーセントで確認できます。</p>
+          <table>
+            <thead>
+              <tr><th>設定</th><th>パーセントで表示</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="設定">-12 dB</td><td data-label="パーセントで表示">25%</td></tr>
+              <tr><td data-label="設定">-6 dB</td><td data-label="パーセントで表示">50%</td></tr>
+              <tr><td data-label="設定">0 dB</td><td data-label="パーセントで表示">100%、変更なし</td></tr>
+              <tr><td data-label="設定">+6 dB</td><td data-label="パーセントで表示">200%</td></tr>
+              <tr><td data-label="設定">+12 dB</td><td data-label="パーセントで表示">約400%</td></tr>
+            </tbody>
+          </table>
+          <p><strong>上げる前に、まず下げる。</strong> 不要なバンドを下げるほうが、欲しいバンドを上げるよりクリーンに聞こえることが多いです。2〜4 dBの小さな調整で十分なことがよくあります。</p>
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. プリセットの選び方とカスタムにするタイミング</h3>
+          <p>プリセットは用意された曲線です。すべてのバンドを一度に動かし、その後も調整を続けられます。スライダーを動かすとすぐに、プリセットのボックスに「カスタム」と表示されます。</p>
+          <table>
+            <thead>
+              <tr><th>プリセット</th><th>最適な用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="プリセット">ボーカル</td><td data-label="最適な用途">ポッドキャスト、通話、インタビュー</td></tr>
+              <tr><td data-label="プリセット">低音ブースト</td><td data-label="最適な用途">小さなスピーカー、イヤホン、薄い録音</td></tr>
+              <tr><td data-label="プリセット">高音ブースト</td><td data-label="最適な用途">こもった、または鈍い録音</td></tr>
+              <tr><td data-label="プリセット">ロック、ポップ、エレクトロニック、ヒップホップ</td><td data-label="最適な用途">強い低音と明るい高音の音楽</td></tr>
+              <tr><td data-label="プリセット">ジャズ、クラシック、アコースティック</td><td data-label="最適な用途">自然で軽く整えた音楽</td></tr>
+              <tr><td data-label="プリセット">ラウドネス</td><td data-label="最適な用途">小音量で聴くとき、低音と高音が薄れる場合</td></tr>
+              <tr><td data-label="プリセット">低域ノイズ低減、ヒスノイズ低減</td><td data-label="最適な用途">風、持ち運びのノイズ、テープのヒスノイズ</td></tr>
+            </tbody>
+          </table>
+          <p><strong>バンドの数。</strong> バンドのボタンは7、11、15、31バンドを切り替えます。バンドが少ないと大まかな音色の調整が手早くできます。31バンドは1/3オクターブごとで、精密な補正向けです。切り替えてもプリセットや曲線は引き継がれます。</p>
+          <p><strong>自分の耳を信じて。</strong> プリセットは出発点であり、ルールではありません。調整しながらファイルを再生してください。スライダーを動かすたびに波形が更新されます。</p>
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. よくある音の問題を直す</h3>
+          <p>音の問題のほとんどは狭い範囲にあります。症状を見つけて、該当するバンドを少しずつ下げてください。</p>
+          <table>
+            <thead>
+              <tr><th>問題</th><th>試すこと</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="問題">濁った、箱鳴りのする声</td><td data-label="試すこと">200〜400 Hz付近のバンドを下げる</td></tr>
+              <tr><td data-label="問題">耳に刺さる、疲れる音</td><td data-label="試すこと">3〜6 kHzのバンドを下げる</td></tr>
+              <tr><td data-label="問題">薄くて弱い音</td><td data-label="試すこと">100〜250 Hz付近のバンドを上げる</td></tr>
+              <tr><td data-label="問題">ヒスノイズ</td><td data-label="試すこと">8 kHzより上のバンドを下げるか、ヒスノイズ低減を使う</td></tr>
+              <tr><td data-label="問題">低域ノイズや風切り音</td><td data-label="試すこと">60 Hzより下のバンドを下げるか、低域ノイズ低減を使う</td></tr>
+              <tr><td data-label="問題">話し声が聞き取りにくい</td><td data-label="試すこと">1〜3 kHz付近のバンドを上げる</td></tr>
+            </tbody>
+          </table>
+          <p><strong>ブーストを重ねすぎない。</strong> 多くのバンドを上げるとファイル全体が大きくなり、歪むことがあります。ブーストするときは、音量スライダーを下げて合わせてください。ブーストでクリップする場合、Cqualy は保存するファイルも自動で小さくします。</p>
+          <p><strong>ノイズは除去されません。</strong> イコライザーは周波数を下げるもので、消すものではありません。ヒスノイズを下げると、その周りの音もこもります。</p>
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. 音量、バランス、速度、トリミング、チャンネル</h3>
+          <p><strong>音量。</strong> 波形の横の縦スライダーは、ファイル全体を最大12 dB上げ下げします。ラベルをクリックするとリセットされます。</p>
+          <p><strong>バランス。</strong> 音を左または右のスピーカーに寄せます。中央は録音のままです。モノラルファイルはパンするとステレオになります。</p>
+          <p><strong>速度。</strong> 50%〜200%。速度はテープのように働きます。速いと音が高く短くなり、遅いと低く長くなります。</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="棒グラフ：4分の曲が5つの速度設定でどれくらいの長さになるか。">
+              <div class="gr-bar-row"><span class="gr-bar-label">50%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">8:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">75%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:66.7%"></span></span><span class="gr-bar-value">5:20</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">100%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:50%"></span></span><span class="gr-bar-value">4:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">150%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:33.3%"></span></span><span class="gr-bar-value">2:40</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">200%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:25%"></span></span><span class="gr-bar-value">2:00</span></div>
+            </div>
+            <figcaption>4分の曲が各速度でどれくらいの長さになるか。元の長さを速度で割って計算しています。</figcaption>
+          </figure>
+          <p><strong>トリミング。</strong> 波形の端にある2つのハンドルをドラッグします。再生は選択範囲の中にとどまり、ダウンロードはその部分だけを保存します。「トリミング」のラベルをクリックすると全体の長さに戻ります。</p>
+          <p><strong>チャンネル。</strong> 保存するファイルのモノラル、ステレオ、5.1、7.1。5.1と7.1はWAVで保存され、音は前方のスピーカーに出力されます。Cqualy はステレオファイルからサラウンド音声を作ることはしません。</p>
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. MP3かWAVか、そして動画ファイルの使い方</h3>
+          <table>
+            <thead>
+              <tr><th>形式</th><th>最適な用途</th><th>制限</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="形式">MP3</td><td data-label="最適な用途">どこでも再生できる小さなファイル</td><td data-label="制限">少し音質が落ちます。モノラルまたはステレオのみ。</td></tr>
+              <tr><td data-label="形式">WAV</td><td data-label="最適な用途">編集、保管、5.1と7.1</td><td data-label="制限">大きなファイル、MP3の約10倍。</td></tr>
+            </tbody>
+          </table>
+          <p><strong>共有にはMP3を選びましょう。</strong> Cqualy は高音質の320 kbpsでMP3を保存するため、元の音との違いはほとんど聞き取れません。ファイルを編集し続ける場合はWAVを選んでください。</p>
+          <p><strong>動画ファイル。</strong> MP4、M4V、WebM、MOV、OGVの動画をドロップすると、Cqualy がその音声を取り出します。ダウンロードは音声のみで、新しい音の動画ではありません。音声トラックのない動画は読み込めません。MKV、AVI、FLVの場合は、先にConvidoで動画をMP4に変換してください。</p>
+          <p><strong>ファイルはあなたの手元に残ります。</strong> すべてお使いのブラウザー内で動作します。何もアップロードされません。「前回の続きから再開」は最後のファイルと設定をこの端末にだけ保存し、赤い×をクリックすると消去されます。</p>
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000024" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>会社</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="私たちについて"><span class="footer-link-fun">私たちの宇宙</span><span class="footer-link-plain">私たちについて</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="FAQ"><span class="footer-link-fun">回答済み</span><span class="footer-link-plain">FAQ</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="利用規約"><span class="footer-link-fun">銀河ハンドブック</span><span class="footer-link-plain">利用規約</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="プライバシーポリシー"><span class="footer-link-fun">エイリアン・プライバシー・プロトコル</span><span class="footer-link-plain">プライバシーポリシー</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Cookieポリシー"><span class="footer-link-fun">Cookie一覧</span><span class="footer-link-plain">Cookieポリシー</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>はじめに：</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/ja/convert/">Convert</a>
+          <a class="footer-dash-link" href="/ja/compress/">Compress</a>
+          <a class="footer-dash-link" href="/ja/combine/">Combine</a>
+          <a class="footer-dash-link" href="/ja/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/ja/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ja/congify/">Congify</a>
+          <a class="footer-dash-link" href="/ja/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/ja/codify/">Codify</a>
+          <a class="footer-dash-link" href="/ja/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/ja/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/ja/convido/">Convido</a>
+          <a class="footer-dash-link" href="/ja/cqualy/">Cqualy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>お問い合わせ</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Discordに参加</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=106" defer></script>
+<script src="/shared/report.js?v=31" defer></script>
+<script src="/cqualy/cqualy-tool.js?v=36" defer></script>
+</body>
+</html>

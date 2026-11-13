@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cqualy – Audio ekvalizér zdarma – BC Tools</title>
+<meta name="description" content="Tvarujte zvuk ekvalizérem a sledujte ho jako zvukovou vlnu, zdarma ve vašem prohlížeči. Rychle a soukromě – nic neopustí vaše zařízení.">
+<link rel="canonical" href="https://bitcrunching.com/cs/cqualy/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/cqualy/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/cqualy/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/cqualy/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/cqualy/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/cqualy/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/cqualy/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/cqualy/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/cqualy/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/cqualy/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/cqualy/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/cqualy/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cqualy/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cqualy/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cqualy/">
+<script src="/shared/i18n/cs.js?v=14"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Cqualy – Audio ekvalizér zdarma – BC Tools">
+<meta property="og:description" content="Tvarujte zvuk ekvalizérem a sledujte ho jako zvukovou vlnu, zdarma ve vašem prohlížeči. Rychle a soukromě – nic neopustí vaše zařízení.">
+<meta property="og:url" content="https://bitcrunching.com/cs/cqualy/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cqualy – Audio ekvalizér zdarma – BC Tools">
+<meta name="twitter:description" content="Tvarujte zvuk ekvalizérem a sledujte ho jako zvukovou vlnu, zdarma ve vašem prohlížeči. Rychle a soukromě – nic neopustí vaše zařízení.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=277">
+<style>
+.cs-shape{ background:#cf94ff; }
+/* ===== Portrait-phone notice (Codify's pattern) =====
+   Shown only by the media query, no JS; no dismiss, the tool doesn't work
+   at this width. Landscape phones and wider never see it. */
+.cq-orientation-notice{
+  display:none;
+}
+@media (max-width:640px) and (orientation:portrait){
+  .cq-orientation-notice{
+    display:flex;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    width:100dvw;
+    height:100dvh;
+    z-index:2000;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:32px;
+    text-align:center;
+    background:#1a1a22;
+    color:#fff;
+  }
+}
+/* Real .cq-back-btn (top-right corner of #page-cqualy) is covered by
+   this overlay like everything else in the tool, so it gets its own —
+   same shared .bc-canvas-back-btn shape/color, same data-goto
+   navigation (shared/site.js's delegate, no extra JS needed here). */
+.cq-orientation-notice .bc-canvas-back-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:flex;
+}
+/* Rotates from portrait to landscape and back — a literal demonstration
+   of the ask, not just a generic spinner. Pauses at each end (the
+   15%/65% holds) rather than rotating continuously, so it reads as
+   "turn it like this" instead of just spinning. */
+@keyframes cq-orientation-rotate{
+  0%, 15%{ transform:rotate(0deg); }
+  50%, 65%{ transform:rotate(90deg); }
+  100%{ transform:rotate(0deg); }
+}
+.cq-orientation-notice-icon{
+  width:56px;
+  height:56px;
+  animation:cq-orientation-rotate 2.4s ease-in-out infinite;
+}
+.cq-orientation-notice-icon svg{
+  width:100%;
+  height:100%;
+}
+.cq-orientation-notice-title{
+  font-size:20px;
+  font-weight:900;
+  max-width:320px;
+}
+.cq-orientation-notice-body{
+  font-size:15px;
+  opacity:.75;
+  max-width:320px;
+  line-height:1.5;
+}
+
+#page-cqualy::before{
+  background:#3FBFE8;
+}
+/* Lively springy hover, same feel as Convert's/Congify's. Targets the
+   whole .tool-app banner (not #cqDrop) since #cqDrop itself has a
+   transparent background — brightening it alone produces no visible
+   change, only the colored banner underneath actually shows it.
+   :has() drops it the moment a file is loaded and #cqDrop picks up
+   .tool-drop-revealed (see below — same pattern as Combine's #cbDrop,
+   it's never actually [hidden] once revealed, just restyled and left
+   in place as the "add more" affordance above the file list), so it
+   never fights the per-row controls once there's real content to
+   interact with. */
+#page-cqualy:has(#cqEditor[hidden]){
+  min-height:322.5px;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+/* Desktop-only min-height transition (see the plain #page-cqualy rule
+   above for why) — has to be redeclared here too, not merged into the
+   rule above, since this selector's specificity would otherwise drop
+   the plain #page-cqualy media-query rule's min-height entry entirely
+   rather than adding to it. */
+@media (min-width:769px){
+  #page-cqualy:has(#cqEditor[hidden]){
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease, min-height .35s cubic-bezier(.4,0,.2,1);
+  }
+}
+/* #cqStatus reserves 46px (22px margin-top + 24px min-height) even
+   with no message in it, which pre-upload just pushes the fixed
+   322.5px banner into overflow for no visible reason — nothing needs
+   that space until a conversion is actually running (or a rejected
+   file leaves a message here — the :empty guard is what lets that one
+   case through: setting textContent gives the element a text node, so
+   it's no longer :empty and this rule stops matching). */
+#page-cqualy:has(#cqEditor[hidden]) #cqStatus:empty{
+  display:none;
+}
+#page-cqualy:has(#cqEditor[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over gets a bolder, unmistakable reaction than plain hover —
+   this class is added by shared/site.js's bcSetupBannerDropTarget while
+   a file is being dragged over the banner. 1.012/1.08 read fine when
+   you're stationary hovering, but during an actual drag your attention
+   is on the OS drag cursor, not the banner, so anything that subtle
+   goes unnoticed ("doesn't react to drag") — see Convert/Compress/
+   Combine/Cleanly/Context/Congify's version of this same fix. Cqualy
+   missed it originally since it wasn't published yet when that fix
+   went out. */
+#page-cqualy:has(#cqEditor[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+#page-cqualy:has(#cqEditor[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Once loaded, real content (revealed drop banner + the compact 60px
+   rows) is shorter than the shared .tool-app default (min-height:402px)
+   would otherwise pad it out to — pinned to exactly 360px with one file
+   in, rather than leaving that extra dead space underneath. */
+#page-cqualy:has(#cqEditor:not([hidden])){
+  min-height:360px;
+}
+
+/* Drag-over highlight on the whole banner, same idea as Convert's —
+   cqualy-tool.js adds this class while a file is being dragged over
+   any part of the banner before an audio file is loaded. */
+.tool-app.active{
+  background:rgba(0,245,212,.08);
+}
+
+/* Same as Convert's #cvDrop / Congify's #gifDrop — before a file is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
+   so it doesn't cancel the shared .tool-drop-addpill's own dashed
+   border once it collapses to the "＋ Add more files" pill. */
+/* transition (instant border/background snap + desktop-only geometry
+   smoothing) now comes from the shared .tool-drop-addpill:not(.tool-drop-revealed)
+   rule in shared/site.css — originated here, ported there once Combine
+   and Cleanly turned out to have the exact same leftover-outline bug. */
+#cqDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#cqDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cqDrop.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cqDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cqDrop.tool-drop-revealed.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+
+.cq-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+#page-cqualy:has(#cqEditor:not([hidden])) .cq-remove-btn{ display:flex; }
+.cq-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cq-back-btn{ display:none; }
+  #page-cqualy:has(#cqEditor:not([hidden])) .cq-back-btn{ display:flex; }
+}
+
+.cq-editor{
+  position:relative;
+  margin-top:24px;
+}
+.cq-card{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px;
+  border:1px solid #3fbfe855;
+}
+.cq-top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  color:var(--text);
+}
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-cqualy{ animation:icon-wobble .5s ease; }
+.cq-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cq-ch-btn{ width:100px; flex:none; }
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ outline:3px solid rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ outline:3px solid rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* the guide title doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"PRŮVODCE";
+    font-size:15px;
+  }
+}
+.cq-wave-row{
+  display:flex;
+  align-items:stretch;
+  gap:12px;
+}
+.cq-vol{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:56px;
+  flex:none;
+}
+.cq-vol .cq-band{ flex:none; }
+.cq-vol .cq-band-track{ height:100px; }
+.cq-vol .cq-band-track input{ width:100px; }
+.cq-wave{
+  display:block;
+  flex:1;
+  min-width:0;
+  height:160px;
+  color:var(--text);
+  cursor:pointer;
+  touch-action:none;
+  border-radius:12px;
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="dark"] .cq-wave{ background:rgba(0,0,0,.2); }
+.cq-transport{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.cq-play-btn{
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.cq-eq{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cq-eq-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.cq-preset-combo{ width:146px; }
+.bc-combo-input::placeholder{ color:currentColor; opacity:1; }
+.cq-eq-bands{
+  display:flex;
+  justify-content:space-between;
+  gap:6px;
+}
+.cq-band{
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.cq-band-track{
+  position:relative;
+  width:28px;
+  height:150px;
+}
+.cq-band-track input{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:150px;
+  height:28px;
+  margin:0;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-band-hz{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-band-hz:hover,
+.cq-band-hz:focus-visible{ opacity:1; }
+.cq-band-value{
+  font-family:inherit;
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+}
+.cq-band-value:hover,
+.cq-band-value:focus-visible{ opacity:1; }
+.cq-output{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 28px;
+  margin-top:8px;
+}
+.cq-out-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.cq-out-label{ min-width:58px; }
+.cq-time{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-time:hover,
+.cq-time:focus-visible{ opacity:1; }
+.cq-bands-btn{ width:118px; flex:none; }
+.cq-bands-dense .cq-band{ position:relative; padding-top:21px; }
+.cq-bands-dense .cq-band-value{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:2;
+  visibility:hidden;
+  white-space:nowrap;
+}
+.cq-bands-dense .cq-band:hover .cq-band-value,
+.cq-bands-dense .cq-band:focus-within .cq-band-value{ visibility:visible; }
+.cq-bands-dense .cq-band:not(:nth-child(4n+1)) .cq-band-hz{ visibility:hidden; }
+.cq-trim-info{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.cq-trim-info[hidden]{ display:none; }
+.cq-trim-info:hover,
+.cq-trim-info:focus-visible{ opacity:1; }
+.cq-reset-label{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.cq-reset-label:hover,
+.cq-reset-label:focus-visible{ opacity:1; }
+.cq-out-row input{
+  flex:1;
+  min-width:0;
+  height:28px;
+  margin:0;
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-out-value{ min-width:58px; text-align:right; }
+.cq-out-value:disabled{ cursor:default; }
+@media (max-width:600px){
+  .cq-output{ grid-template-columns:1fr; }
+  .cq-eq-bands{ overflow-x:auto; justify-content:flex-start; padding-bottom:6px; }
+  .cq-band{ flex:0 0 52px; }
+  .cq-bands-dense .cq-band{ flex:0 0 30px; }
+}
+.cq-save{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.cq-format-dropdown{ width:auto; min-width:78px; }
+@media (max-width:600px){
+  .cq-transport{ flex-wrap:wrap; }
+  .cq-save{ margin-left:0; width:100%; }
+  .cq-save .tool-primary-btn{ flex:1; }
+  .cq-save{ flex-wrap:wrap; }
+  .cq-save .bc-dropdown{ flex:0 0 78px; }
+  .cq-save .cq-bands-btn,
+  .cq-save .cq-ch-btn{ flex:1 1 calc(50% - 6px); width:auto; min-width:0; }
+  .cq-save .cq-preset-combo{ flex:1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Používáme cookies. Níže si vyberte, které kategorie povolit — viz naše <a data-goto="cookies">Zásady cookies</a> kde najdete podrobnosti.</p>
+  <p class="cookie-banner-text-mobile">Vyberte, které kategorie povolit</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Zobrazit nebo skrýt nastavení cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Vyberte, které kategorie povolit</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Více o nezbytných cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Nezbytné (vždy zapnuto)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Zajišťují základní fungování — pamatují si vaši volbu cookies, jazyk a světlý/tmavý motiv. Nelze je vypnout a stejně jako vše na tomto webu nikdy neopustí vaše zařízení.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Více o analytických cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analytika - Pro plné soukromí ji nechte vypnutou.</span><span class="cookie-label-docked">Analytika (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Díky tomu můžeme zlepšovat uživatelský zážitek na základě cenných dat z (Google Analytics) o tom, jak uživatelé web procházejí. Chcete-li zůstat zcela anonymní, doporučujeme tuto možnost vypnout.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Více o reklamních cookies">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Reklama (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Používá Google AdSense k zobrazování reklam. Na celém webu je momentálně vypnuto, dokud nedostaneme schválení AdSense, takže tento přepínač zatím nic nedělá.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Přijmout vše</button>
+    <button type="button" id="cookieBannerSave">Potvrdit výběr</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logo BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Přepnout světlý a tmavý režim" title="Přepnout světlý a tmavý režim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Sdílet" title="Sdílet">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Kopírovat odkaz</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Další možnosti sdílení"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">E-mail</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Klikněte pro obnovení průvodce nástrojem" title="Klikněte pro obnovení průvodce nástrojem">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Zpět do Creative Hub" title="Zpět do Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cqHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cqHelpClose" aria-label="Zavřít a už nezobrazovat"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cqHelpToggle" aria-label="Minimalizovat" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cqHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpBack">&lt; ZPĚT</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cqHelpCloseMobile">ZAVŘÍT</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpNext">DALŠÍ &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cqHelpBody">
+    <div class="engine-status-row">&gt; <span id="cqHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-cqualy" data-category="sound">
+    <div class="cq-orientation-notice" id="cqOrientationNotice">
+      <button type="button" class="bc-canvas-back-btn" data-goto="mainpage" aria-label="Zpět do Creative Hub" title="Zpět do Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <div class="cq-orientation-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+          <line x1="11" y1="18" x2="13" y2="18"></line>
+        </svg>
+      </div>
+      <p class="cq-orientation-notice-title">Cqualy potřebuje větší obrazovku</p>
+      <p class="cq-orientation-notice-body">Ekvalizér se nevejde na telefon držený na výšku. Zkuste ho na počítači, nebo telefon otočte na šířku.</p>
+    </div>
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-cqualy" role="img" aria-label="Ikona Cqualy"></span>
+        <span>Cqualy</span>
+      </div>
+      <span class="privacy-check-badge" id="cqPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cq-back-btn bc-canvas-back-btn" id="cqBackBtn" data-goto="mainpage" aria-label="Zpět do Creative Hub" title="Zpět do Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+
+    <div class="tool-drop tool-drop-addpill" id="cqDrop"><span class="tool-drop-click-word">Klikněte</span><span class="tool-drop-or-drop"> nebo přetáhněte </span><span class="tool-drop-rest">audio nebo video soubor</span></div>
+    <input type="file" id="cqInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.mp4,.m4v,.webm,.mov,.ogv" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cqContinueBtn" title="Pokračovat tam, kde jste skončili (D)" hidden>Pokračovat tam, kde jste skončili</button>
+
+    <button type="button" class="cq-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cqRemoveBtn" aria-label="Odebrat soubor" title="Odebrat soubor">×</button>
+
+    <div class="cq-editor" id="cqEditor" hidden>
+      <div class="result cq-card">
+        <div class="cq-top">
+          <span class="cq-name" id="cqName"></span>
+          <button type="button" class="bc-body cq-trim-info" id="cqTrimInfo" title="Kliknutím vynulujete ořez" hidden></button>
+        </div>
+        <div class="cq-wave-row">
+          <canvas class="cq-wave" id="cqWave" title="Tažením za okraje oříznete. Kliknutím nebo tažením přeskočíte na pozici, ← → posun o 5 sekund" aria-label="Zvuková vlna. Kliknutím nebo tažením přeskočíte na pozici."></canvas>
+          <div class="cq-vol" id="cqVolume"></div>
+        </div>
+        <div class="cq-transport">
+          <button type="button" class="tool-primary-btn cq-play-btn" id="cqPlayBtn" title="Přehrát (mezerník)" data-ga-event="tool_primary_action" data-ga-tool="cqualy">Přehrát</button>
+          <button type="button" class="bc-body cq-time" id="cqTime" title="Kliknutím přepnete mezi uplynulým a zbývajícím časem (T)">0:00 / 0:00</button>
+          <div class="cq-save">
+            <div class="bc-combo cq-preset-combo" id="cqPresetCombo">
+              <div class="bc-combo-trigger" id="cqPresetTrigger" title="Předvolba (P)" aria-haspopup="listbox" aria-expanded="false" aria-label="Předvolba">
+                <input class="bc-combo-input" id="cqPresetField" value="Flat" placeholder="Vlastní" readonly aria-label="Hledat předvolby">
+                <span class="bc-combo-chevron" aria-hidden="true"></span>
+              </div>
+              <div class="bc-combo-menu" id="cqPresetMenu" role="listbox" hidden>
+              <button type="button" class="bc-combo-option active" data-preset="flat" data-label="Plochá" role="option" aria-selected="true"><span>Plochá</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="bass" data-label="Zesílení basů" role="option" aria-selected="false"><span>Zesílení basů</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="treble" data-label="Zesílení výšek" role="option" aria-selected="false"><span>Zesílení výšek</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="voice" data-label="Hlas" role="option" aria-selected="false"><span>Hlas</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rock" data-label="Rock" role="option" aria-selected="false"><span>Rock</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="pop" data-label="Pop" role="option" aria-selected="false"><span>Pop</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="jazz" data-label="Jazz" role="option" aria-selected="false"><span>Jazz</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="classical" data-label="Klasická" role="option" aria-selected="false"><span>Klasická</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="electronic" data-label="Elektronická" role="option" aria-selected="false"><span>Elektronická</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiphop" data-label="Hip-hop" role="option" aria-selected="false"><span>Hip-hop</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="acoustic" data-label="Akustická" role="option" aria-selected="false"><span>Akustická</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="loudness" data-label="Loudness" role="option" aria-selected="false"><span>Loudness</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rumble" data-label="Potlačení dunění" role="option" aria-selected="false"><span>Potlačení dunění</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiss" data-label="Potlačení šumu" role="option" aria-selected="false"><span>Potlačení šumu</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <div class="bc-combo-empty" id="cqPresetEmpty" hidden>Nic nenalezeno</div>
+              </div>
+            </div>
+            <button type="button" class="option-change-btn cq-bands-btn" id="cqBandsBtn" title="Pásma ekvalizéru (B)">
+              <span class="option-change-btn-label">11 pásem</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="option-change-btn cq-ch-btn" id="cqChBtn" title="Výstupní kanály (C)">
+              <span class="option-change-btn-label">Stereo</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown cq-format-dropdown">
+              <button type="button" class="bc-dropdown-trigger" id="cqFormatTrigger" title="Výstupní formát" aria-haspopup="listbox" aria-expanded="false" aria-label="Výstupní formát">
+                <span class="bc-dropdown-trigger-label">MP3</span>
+                <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="bc-dropdown-menu" id="cqFormatMenu" role="listbox" hidden>
+                <button type="button" class="bc-dropdown-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true">MP3</button>
+                <button type="button" class="bc-dropdown-option" data-format="wav" data-label="WAV" role="option" aria-selected="false">WAV</button>
+              </div>
+            </div>
+            <button type="button" class="tool-primary-btn" id="cqDownloadBtn" title="Stáhnout (D)" data-ga-event="tool_primary_action" data-ga-tool="cqualy" data-ga-action="download">Stáhnout</button>
+          </div>
+        </div>
+        <div class="cq-eq">
+          <div class="cq-eq-head">
+            <button type="button" class="bc-label cq-reset-label" id="cqEqReset" title="Kliknutím vynulujete ekvalizér">Ekvalizér</button>
+          </div>
+          <div class="cq-eq-bands" id="cqBands"></div>
+          <div class="cq-output" id="cqOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-status" id="cqStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="cqualy">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000023"></ins>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>Nováček v ekvalizérech?</h3>
+    <p>Věděli jste, že každých 6 dB zhruba zdvojnásobí sílu pásma? Cqualy vám umožní tvarovat zvuk jednoduchými posuvníky a sledovat, jak se mění vlna. Zkušenosti nejsou potřeba: tyto krátké návody vysvětlují, co každý ovladač dělá a jak opravit běžné problémy se zvukem.</p>
+    <p class="gr-topics-lead">Přejděte na to, co potřebujete:</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. Jak funguje ekvalizér</span><span class="gr-toc-note">Co znamenají pásma a hodnoty dB.</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. Výběr předvolby a kdy zvolit vlastní nastavení</span><span class="gr-toc-note">Která předvolba se hodí k jakému zvuku.</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. Řešení běžných problémů se zvukem</span><span class="gr-toc-note">Kalný, drsný, tenký, šumivý: co zkusit.</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. Hlasitost, vyvážení, rychlost, ořez a kanály</span><span class="gr-toc-note">Co dělají ostatní ovladače.</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. MP3 nebo WAV a práce s videosoubory</span><span class="gr-toc-note">Výběr exportu a jak funguje video.</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="cqualy">
+<div class="gr-article" id="gr-article-1"><h3>1. Jak funguje ekvalizér</h3>
+          <p>Zvuk je směs nízkých, středních a vysokých tónů. Ekvalizér ho rozdělí na pásma, každé vázané na jednu frekvenci v hertzích (Hz), a umožní každé pásmo zesílit nebo zeslabit. Nízká čísla jsou basy. Vysoká čísla jsou výšky.</p>
+          <table>
+            <thead>
+              <tr><th>Rozsah</th><th>Co uslyšíte</th><th>Typické použití</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Rozsah">20–120 Hz</td><td data-label="Co uslyšíte">Dunění, váha</td><td data-label="Typické použití">Basové bubny, basová kytara</td></tr>
+              <tr><td data-label="Rozsah">120–500 Hz</td><td data-label="Co uslyšíte">Teplo, dutost</td><td data-label="Typické použití">Tělo hlasů a kytar</td></tr>
+              <tr><td data-label="Rozsah">500 Hz–4 kHz</td><td data-label="Co uslyšíte">Přítomnost, srozumitelnost</td><td data-label="Typické použití">Řeč, hlavní nástroje</td></tr>
+              <tr><td data-label="Rozsah">4–20 kHz</td><td data-label="Co uslyšíte">Vzdušnost, jiskra, šum</td><td data-label="Typické použití">Činely, dech, detaily</td></tr>
+            </tbody>
+          </table>
+          <p><strong>dB or %.</strong> Každý posuvník mění pásmo od -12 do +12 dB. Pásmo na 0 dB zůstává beze změny. Kliknutím na libovolnou hodnotu dB uvidíte totéž nastavení jako procento původní hlasitosti.</p>
+          <table>
+            <thead>
+              <tr><th>Nastavení</th><th>Jako procenta</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Nastavení">-12 dB</td><td data-label="Jako procenta">25%</td></tr>
+              <tr><td data-label="Nastavení">-6 dB</td><td data-label="Jako procenta">50%</td></tr>
+              <tr><td data-label="Nastavení">0 dB</td><td data-label="Jako procenta">100 %, beze změny</td></tr>
+              <tr><td data-label="Nastavení">+6 dB</td><td data-label="Jako procenta">200%</td></tr>
+              <tr><td data-label="Nastavení">+12 dB</td><td data-label="Jako procenta">Asi 400 %</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Nejdřív ubírejte, potom přidávejte.</strong> Snížení nechtěných pásem zní obvykle čistěji než zesílení chtěných. Často stačí malé změny o 2 až 4 dB.</p>
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Výběr předvolby a kdy zvolit vlastní nastavení</h3>
+          <p>Předvolba je hotová křivka. Změní všechna pásma najednou a potom ji můžete dál upravovat. Jakmile pohnete posuvníkem, v poli předvoleb se zobrazí Vlastní.</p>
+          <table>
+            <thead>
+              <tr><th>Předvolba</th><th>Nejlepší pro</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Předvolba">Hlas</td><td data-label="Nejlepší pro">Podcasty, hovory, rozhovory</td></tr>
+              <tr><td data-label="Předvolba">Zesílení basů</td><td data-label="Nejlepší pro">Malé reproduktory, sluchátka, tenké nahrávky</td></tr>
+              <tr><td data-label="Předvolba">Zesílení výšek</td><td data-label="Nejlepší pro">Matné nebo tlumené nahrávky</td></tr>
+              <tr><td data-label="Předvolba">Rock, pop, elektronická, hip-hop</td><td data-label="Nejlepší pro">Hudba se silnými basy a jasnými výškami</td></tr>
+              <tr><td data-label="Předvolba">Jazz, klasická, akustická</td><td data-label="Nejlepší pro">Přirozená, lehce upravená hudba</td></tr>
+              <tr><td data-label="Předvolba">Loudness</td><td data-label="Nejlepší pro">Tichý poslech, kdy basy a výšky slábnou</td></tr>
+              <tr><td data-label="Předvolba">Potlačení dunění, potlačení šumu</td><td data-label="Nejlepší pro">Vítr, hluk při držení a šum pásky</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Kolik pásem.</strong> Tlačítko pásem přepíná mezi 7, 11, 15 a 31 pásmy. Méně pásem je rychlých pro hrubé úpravy tónu. 31 pásem, každé o třetinu oktávy, je pro přesné opravy. Vaše předvolba nebo křivka se při přepnutí přenese.</p>
+          <p><strong>Věřte svým uším.</strong> Předvolby jsou výchozí body, ne pravidla. Při úpravách soubor přehrávejte. Vlna se mění, jak hýbete každým posuvníkem.</p>
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Řešení běžných problémů se zvukem</h3>
+          <p>Většina problémů se zvukem leží v úzkém rozsahu. Najděte příznak a postupně snižujte odpovídající pásma.</p>
+          <table>
+            <thead>
+              <tr><th>Problém</th><th>Co zkusit</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Problém">Kalný, dutý hlas</td><td data-label="Co zkusit">Snižte pásma kolem 200 až 400 Hz</td></tr>
+              <tr><td data-label="Problém">Drsný, únavný zvuk</td><td data-label="Co zkusit">Snižte pásma mezi 3 a 6 kHz</td></tr>
+              <tr><td data-label="Problém">Tenký, slabý zvuk</td><td data-label="Co zkusit">Zesilte pásma kolem 100 až 250 Hz</td></tr>
+              <tr><td data-label="Problém">Šum</td><td data-label="Co zkusit">Snižte pásma nad 8 kHz nebo použijte Potlačení šumu</td></tr>
+              <tr><td data-label="Problém">Dunění nebo hluk větru</td><td data-label="Co zkusit">Snižte pásma pod 60 Hz nebo použijte Potlačení dunění</td></tr>
+              <tr><td data-label="Problém">Špatně srozumitelná řeč</td><td data-label="Co zkusit">Zesilte pásma kolem 1 až 3 kHz</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Nezesilujte všechno najednou.</strong> Zesílení mnoha pásem zvýší hlasitost celého souboru a může zkreslit zvuk. Když zesilujete, snižte posuvník Hlasitost. Cqualy také uložený soubor zeslabí, pokud by zesílení způsobilo přebuzení.</p>
+          <p><strong>Šum se neodstraní.</strong> Ekvalizér frekvence ztlumí, nesmaže je. Potlačení šumu také zatlumí zvuk kolem něj.</p>
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Hlasitost, vyvážení, rychlost, ořez a kanály</h3>
+          <p><strong>Hlasitost.</strong> Svislý posuvník vedle vlny zvyšuje nebo snižuje celý soubor až o 12 dB. Kliknutím na jeho štítek ho vynulujete.</p>
+          <p><strong>Vyvážení.</strong> Posune zvuk k levému nebo pravému reproduktoru. Střed ponechá nahrávku beze změny. Mono soubor se po vyvážení stane stereo.</p>
+          <p><strong>Rychlost.</strong> Od 50 % do 200 %. Rychlost funguje jako u pásku: rychleji je výš a kratší, pomaleji je níž a delší.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="Sloupcový graf: jak dlouho trvá čtyřminutová skladba při pěti nastaveních rychlosti.">
+              <div class="gr-bar-row"><span class="gr-bar-label">50%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">8:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">75%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:66.7%"></span></span><span class="gr-bar-value">5:20</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">100%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:50%"></span></span><span class="gr-bar-value">4:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">150%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:33.3%"></span></span><span class="gr-bar-value">2:40</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">200%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:25%"></span></span><span class="gr-bar-value">2:00</span></div>
+            </div>
+            <figcaption>Délka čtyřminutové skladby při každé rychlosti, vypočtená jako původní délka dělená rychlostí.</figcaption>
+          </figure>
+          <p><strong>Ořez.</strong> Tažením za dva úchyty na okrajích vlny. Přehrávání zůstává uvnitř výběru a Stáhnout uloží jen tuto část. Kliknutím na štítek Ořez se vrátíte k celé délce.</p>
+          <p><strong>Kanály.</strong> Mono, stereo, 5.1 nebo 7.1 pro uložený soubor. 5.1 a 7.1 se ukládají jako WAV a zvuk jde do předních reproduktorů. Cqualy nevytváří prostorový zvuk ze stereo souboru.</p>
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. MP3 nebo WAV a práce s videosoubory</h3>
+          <table>
+            <thead>
+              <tr><th>Formát</th><th>Nejlepší pro</th><th>Omezení</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formát">MP3</td><td data-label="Nejlepší pro">Malé soubory, které se přehrají všude</td><td data-label="Omezení">Trochu snižuje kvalitu. Pouze mono nebo stereo.</td></tr>
+              <tr><td data-label="Formát">WAV</td><td data-label="Nejlepší pro">Úpravy, archivace, 5.1 a 7.1</td><td data-label="Omezení">Velké soubory, zhruba desetinásobek MP3.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Pro sdílení zvolte MP3.</strong> Cqualy ukládá MP3 ve vysokých 320 kb/s, takže rozdíl oproti originálu je těžké slyšet. WAV zvolte, když budete soubor dál upravovat.</p>
+          <p><strong>Videosoubory.</strong> Přetáhněte video MP4, M4V, WebM, MOV nebo OGV a Cqualy z něj vezme zvuk. Stažený soubor je jen audio, ne video s novým zvukem. Video bez zvukové stopy nelze načíst. U MKV, AVI nebo FLV nejdřív převeďte video do MP4 pomocí Convida.</p>
+          <p><strong>Vaše soubory zůstávají u vás.</strong> Vše běží ve vašem prohlížeči. Nic se nenahrává. Funkce Pokračovat, kde jste skončili uchovává poslední soubor a nastavení jen na tomto zařízení a kliknutí na červený křížek je smaže.</p>
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000024" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Společnost</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="O nás"><span class="footer-link-fun">Náš vesmír</span><span class="footer-link-plain">O nás</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Časté dotazy"><span class="footer-link-fun">Už zodpovězeno</span><span class="footer-link-plain">Časté dotazy</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Podmínky použití"><span class="footer-link-fun">Galaktická příručka</span><span class="footer-link-plain">Podmínky použití</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Zásady ochrany soukromí"><span class="footer-link-fun">Mimozemský protokol soukromí</span><span class="footer-link-plain">Zásady ochrany soukromí</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Zásady cookies"><span class="footer-link-fun">Registr cookies</span><span class="footer-link-plain">Zásady cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Začínáme s</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/cs/convert/">Convert</a>
+          <a class="footer-dash-link" href="/cs/compress/">Compress</a>
+          <a class="footer-dash-link" href="/cs/combine/">Combine</a>
+          <a class="footer-dash-link" href="/cs/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/cs/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/cs/congify/">Congify</a>
+          <a class="footer-dash-link" href="/cs/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/cs/codify/">Codify</a>
+          <a class="footer-dash-link" href="/cs/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/cs/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/cs/convido/">Convido</a>
+          <a class="footer-dash-link" href="/cs/cqualy/">Cqualy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Kontaktujte nás</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Připojte se na náš Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=106" defer></script>
+<script src="/shared/report.js?v=31" defer></script>
+<script src="/cqualy/cqualy-tool.js?v=36" defer></script>
+</body>
+</html>
