@@ -230,7 +230,7 @@ window.BC_I18N = {
  "All": "Vše",
  "All content, code, custom styling, layout structures, and graphical assets featured on BC Tools are the exclusive property of BitCrunching and are protected by international copyright laws.": "Veškerý obsah, kód, vlastní styly, struktury rozvržení a grafické prvky na BC Tools jsou výhradním vlastnictvím BitCrunching a jsou chráněny mezinárodními autorskými zákony.",
  "All three of the above are dark themes; GitHub Light is the one genuinely light option, matching GitHub's own default code rendering. It's the right pick for a slide deck or document that's otherwise light-themed, where a dark code block would stand out as a jarring, disconnected rectangle rather than fitting the surrounding design.": "Všechny tři výše uvedené jsou tmavé motivy; GitHub Light je jediná skutečně světlá možnost, odpovídající výchozímu vykreslování kódu na GitHubu. Je to správná volba pro prezentaci nebo dokument, který je jinak ve světlém stylu, kde by tmavý blok kódu vyčníval jako rušivý, nesouvisející obdélník místo zapadnutí do okolního návrhu.",
- "Already Answered": "Už zodpovězeno",
+ "Already Answered": "Dávno zodpovězeno",
  "Already low bitrate:": "Už nízký datový tok:",
  "Also known on Earth as the About Us page.": "Na Zemi také známo jako stránka O nás.",
  "Also known on Earth as the Cookie Policy page.": "Na Zemi také známo jako stránka Zásady cookies.",
