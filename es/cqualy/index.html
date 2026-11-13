@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<!-- Applies the saved light/dark theme before anything paints — the
+     real applyTheme logic lives in shared/site.js (loaded with defer,
+     so it only runs after the page is parsed); this tiny early inline
+     copy exists only to prevent a flash of the *other* theme on load.
+     Without it, the browser paints once using :root's default (light)
+     tokens before that deferred script ever runs — confirmed directly
+     (a dark-mode reload visibly flashed light for 2 frames before
+     flipping dark). Keep this in sync with shared/site.js's own
+     light/dark default logic if that ever changes. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem("bc-theme");
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+  } catch(e){}
+  /* Moved up from shared/site.js (deferred, so it only ran after full
+     HTML parsing) — set here instead so the browser's own native scroll
+     restoration is disabled from the very first possible moment, not
+     after it may have already had a chance to act. shared/site.js still
+     owns the actual restore-to-the-right-position logic; this one line
+     is just the earliest possible "opt out of the native one" flag. */
+  try { history.scrollRestoration = "manual"; } catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cqualy – Ecualizador de audio gratis – BC Tools</title>
+<meta name="description" content="Moldea tu sonido con un ecualizador y velo como una onda de sonido, gratis en tu navegador. Rápido y privado: nada sale nunca de tu dispositivo.">
+<link rel="canonical" href="https://bitcrunching.com/es/cqualy/">
+<link rel="alternate" hreflang="en" href="https://bitcrunching.com/cqualy/">
+<link rel="alternate" hreflang="cs" href="https://bitcrunching.com/cs/cqualy/">
+<link rel="alternate" hreflang="de" href="https://bitcrunching.com/de/cqualy/">
+<link rel="alternate" hreflang="es" href="https://bitcrunching.com/es/cqualy/">
+<link rel="alternate" hreflang="fr" href="https://bitcrunching.com/fr/cqualy/">
+<link rel="alternate" hreflang="id" href="https://bitcrunching.com/id/cqualy/">
+<link rel="alternate" hreflang="it" href="https://bitcrunching.com/it/cqualy/">
+<link rel="alternate" hreflang="ja" href="https://bitcrunching.com/ja/cqualy/">
+<link rel="alternate" hreflang="ko" href="https://bitcrunching.com/ko/cqualy/">
+<link rel="alternate" hreflang="nl" href="https://bitcrunching.com/nl/cqualy/">
+<link rel="alternate" hreflang="pl" href="https://bitcrunching.com/pl/cqualy/">
+<link rel="alternate" hreflang="pt" href="https://bitcrunching.com/pt/cqualy/">
+<link rel="alternate" hreflang="ro" href="https://bitcrunching.com/ro/cqualy/">
+<link rel="alternate" hreflang="x-default" href="https://bitcrunching.com/cqualy/">
+<script src="/shared/i18n/es.js?v=14"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BC Tools">
+<meta property="og:title" content="Cqualy – Ecualizador de audio gratis – BC Tools">
+<meta property="og:description" content="Moldea tu sonido con un ecualizador y velo como una onda de sonido, gratis en tu navegador. Rápido y privado: nada sale nunca de tu dispositivo.">
+<meta property="og:url" content="https://bitcrunching.com/es/cqualy/">
+<meta property="og:image" content="https://bitcrunching.com/share.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cqualy – Ecualizador de audio gratis – BC Tools">
+<meta name="twitter:description" content="Moldea tu sonido con un ecualizador y velo como una onda de sonido, gratis en tu navegador. Rápido y privado: nada sale nunca de tu dispositivo.">
+<meta name="twitter:image" content="https://bitcrunching.com/share.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+<link rel="apple-touch-icon" href="/favicon.svg?v=4">
+
+<!-- GA4 — gated behind Consent Mode until cookie consent is granted -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied"
+  });
+  gtag("js", new Date());
+  gtag("config", "G-0V94NKKLF7");
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0V94NKKLF7"></script>
+
+<link rel="stylesheet" href="/shared/site.css?v=276">
+<style>
+.cs-shape{ background:#cf94ff; }
+/* ===== Portrait-phone notice (Codify's pattern) =====
+   Shown only by the media query, no JS; no dismiss, the tool doesn't work
+   at this width. Landscape phones and wider never see it. */
+.cq-orientation-notice{
+  display:none;
+}
+@media (max-width:640px) and (orientation:portrait){
+  .cq-orientation-notice{
+    display:flex;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    width:100dvw;
+    height:100dvh;
+    z-index:2000;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:32px;
+    text-align:center;
+    background:#1a1a22;
+    color:#fff;
+  }
+}
+/* Real .cq-back-btn (top-right corner of #page-cqualy) is covered by
+   this overlay like everything else in the tool, so it gets its own —
+   same shared .bc-canvas-back-btn shape/color, same data-goto
+   navigation (shared/site.js's delegate, no extra JS needed here). */
+.cq-orientation-notice .bc-canvas-back-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:flex;
+}
+/* Rotates from portrait to landscape and back — a literal demonstration
+   of the ask, not just a generic spinner. Pauses at each end (the
+   15%/65% holds) rather than rotating continuously, so it reads as
+   "turn it like this" instead of just spinning. */
+@keyframes cq-orientation-rotate{
+  0%, 15%{ transform:rotate(0deg); }
+  50%, 65%{ transform:rotate(90deg); }
+  100%{ transform:rotate(0deg); }
+}
+.cq-orientation-notice-icon{
+  width:56px;
+  height:56px;
+  animation:cq-orientation-rotate 2.4s ease-in-out infinite;
+}
+.cq-orientation-notice-icon svg{
+  width:100%;
+  height:100%;
+}
+.cq-orientation-notice-title{
+  font-size:20px;
+  font-weight:900;
+  max-width:320px;
+}
+.cq-orientation-notice-body{
+  font-size:15px;
+  opacity:.75;
+  max-width:320px;
+  line-height:1.5;
+}
+
+#page-cqualy::before{
+  background:#3FBFE8;
+}
+/* Lively springy hover, same feel as Convert's/Congify's. Targets the
+   whole .tool-app banner (not #cqDrop) since #cqDrop itself has a
+   transparent background — brightening it alone produces no visible
+   change, only the colored banner underneath actually shows it.
+   :has() drops it the moment a file is loaded and #cqDrop picks up
+   .tool-drop-revealed (see below — same pattern as Combine's #cbDrop,
+   it's never actually [hidden] once revealed, just restyled and left
+   in place as the "add more" affordance above the file list), so it
+   never fights the per-row controls once there's real content to
+   interact with. */
+#page-cqualy:has(#cqEditor[hidden]){
+  min-height:322.5px;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease;
+}
+/* Desktop-only min-height transition (see the plain #page-cqualy rule
+   above for why) — has to be redeclared here too, not merged into the
+   rule above, since this selector's specificity would otherwise drop
+   the plain #page-cqualy media-query rule's min-height entry entirely
+   rather than adding to it. */
+@media (min-width:769px){
+  #page-cqualy:has(#cqEditor[hidden]){
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1), filter .2s ease, min-height .35s cubic-bezier(.4,0,.2,1);
+  }
+}
+/* #cqStatus reserves 46px (22px margin-top + 24px min-height) even
+   with no message in it, which pre-upload just pushes the fixed
+   322.5px banner into overflow for no visible reason — nothing needs
+   that space until a conversion is actually running (or a rejected
+   file leaves a message here — the :empty guard is what lets that one
+   case through: setting textContent gives the element a text node, so
+   it's no longer :empty and this rule stops matching). */
+#page-cqualy:has(#cqEditor[hidden]) #cqStatus:empty{
+  display:none;
+}
+#page-cqualy:has(#cqEditor[hidden]):hover{
+  filter:brightness(1.08);
+  transform:scale(1.012);
+}
+/* Drag-over gets a bolder, unmistakable reaction than plain hover —
+   this class is added by shared/site.js's bcSetupBannerDropTarget while
+   a file is being dragged over the banner. 1.012/1.08 read fine when
+   you're stationary hovering, but during an actual drag your attention
+   is on the OS drag cursor, not the banner, so anything that subtle
+   goes unnoticed ("doesn't react to drag") — see Convert/Compress/
+   Combine/Cleanly/Context/Congify's version of this same fix. Cqualy
+   missed it originally since it wasn't published yet when that fix
+   went out. */
+#page-cqualy:has(#cqEditor[hidden]).active{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+#page-cqualy:has(#cqEditor[hidden]):active{
+  transform:scale(.99);
+  transition-duration:.1s;
+}
+
+/* Once loaded, real content (revealed drop banner + the compact 60px
+   rows) is shorter than the shared .tool-app default (min-height:402px)
+   would otherwise pad it out to — pinned to exactly 360px with one file
+   in, rather than leaving that extra dead space underneath. */
+#page-cqualy:has(#cqEditor:not([hidden])){
+  min-height:360px;
+}
+
+/* Drag-over highlight on the whole banner, same idea as Convert's —
+   cqualy-tool.js adds this class while a file is being dragged over
+   any part of the banner before an audio file is loaded. */
+.tool-app.active{
+  background:rgba(0,245,212,.08);
+}
+
+/* Same as Convert's #cvDrop / Congify's #gifDrop — before a file is
+   loaded the whole banner is the click/drop target, so the dashed box
+   blends into it (no border, no fill). Scoped to :not(.tool-drop-revealed)
+   so it doesn't cancel the shared .tool-drop-addpill's own dashed
+   border once it collapses to the "＋ Add more files" pill. */
+/* transition (instant border/background snap + desktop-only geometry
+   smoothing) now comes from the shared .tool-drop-addpill:not(.tool-drop-revealed)
+   rule in shared/site.css — originated here, ported there once Combine
+   and Cleanly turned out to have the exact same leftover-outline bug. */
+#cqDrop:not(.tool-drop-revealed){
+  border-color:transparent;
+  background:transparent;
+}
+#cqDrop:not(.tool-drop-revealed):not(.active):hover{
+  border-color:transparent;
+  transform:none;
+}
+#cqDrop.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+/* Revealed-state "＋ Add more files" pill is the shared
+   .tool-drop-addpill (shared/site.css) — opted in via the class on
+   #cqDrop's markup. Only the brand-coloured drag-over state stays
+   local. */
+#cqDrop.tool-drop-revealed.active{
+  border-color:#18C98A;
+  background:rgba(0,245,212,.1);
+}
+
+.cq-remove-btn{
+  position:absolute;
+  top:16px;
+  right:16px;
+  z-index:6;
+  font-size:18px;
+  display:none;
+}
+#page-cqualy:has(#cqEditor:not([hidden])) .cq-remove-btn{ display:flex; }
+.cq-back-btn{
+  position:absolute;
+  top:16px;
+  right:52px;
+  z-index:6;
+}
+@media (max-width:768px){
+  .cq-back-btn{ display:none; }
+  #page-cqualy:has(#cqEditor:not([hidden])) .cq-back-btn{ display:flex; }
+}
+
+.cq-editor{
+  position:relative;
+  margin-top:24px;
+}
+.cq-card{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px;
+  border:1px solid #3fbfe855;
+}
+.cq-top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  color:var(--text);
+}
+@keyframes tool-app-wobble{
+  0%, 100%{ transform:scale(1) rotate(0deg); }
+  25%{ transform:scale(1.02) rotate(-1deg); }
+  50%{ transform:scale(.99) rotate(1deg); }
+  75%{ transform:scale(1.015) rotate(-.5deg); }
+}
+.tool-app.wobble{ animation:tool-app-wobble .5s ease; }
+@keyframes icon-wobble{
+  0%, 100%{ transform:rotate(0deg) scale(1); }
+  25%{ transform:rotate(-10deg) scale(1.12); }
+  50%{ transform:rotate(8deg) scale(.95); }
+  75%{ transform:rotate(-4deg) scale(1.05); }
+}
+.tool-app.wobble .tool-logo .icon-cqualy{ animation:icon-wobble .5s ease; }
+.cq-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cq-ch-btn{ width:100px; flex:none; }
+.help-banner{
+  margin:48px auto 0;
+  width:calc(100% - 36px);
+}
+.help-banner[hidden]{ display:none; }
+.help-banner.collapsed .help-banner-header{ border-bottom:none; }
+.help-banner.collapsed .engine-status-body{ display:none; }
+
+.help-banner-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+}
+.help-banner-dot{
+  border-radius:50%;
+  background:#6b7280;
+  opacity:.6;
+}
+.help-banner-dot-red{
+  padding:0;
+  border:none;
+  background:#ef4444;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-red:hover{ outline:3px solid rgba(239,68,68,.35); }
+.help-banner-dot-yellow{
+  padding:0;
+  border:none;
+  background:#facc15;
+  opacity:1;
+  cursor:pointer;
+}
+.help-banner-dot-yellow:hover{ outline:3px solid rgba(250,204,21,.35); }
+.help-banner-header .engine-status-title{ margin-left:6px; }
+
+.help-banner-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+/* Mobile swaps the fiddly-to-tap traffic-light dots (close/minimize)
+   for one plain CLOSE button in the nav row, between Back and Next —
+   dismisses for good, same as the red dot on desktop. Minimize isn't
+   offered on mobile; one clear action beats three cramped small ones
+   on a touch target this size. */
+.help-banner-close-mobile{ display:none; }
+@media (max-width:768px){
+  .help-banner-dot{ display:none; }
+  .help-banner-close-mobile{ display:block; }
+  /* the guide title doesn't fit next to Back/Close/Next on a
+     phone-width header — keep the real text (still readable to screen
+     readers) but render it visually as just "GUIDE". */
+  .help-banner-header .engine-status-title{ font-size:0; }
+  .help-banner-header .engine-status-title::before{
+    content:"GUÍA";
+    font-size:15px;
+  }
+}
+.cq-wave-row{
+  display:flex;
+  align-items:stretch;
+  gap:12px;
+}
+.cq-vol{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:56px;
+  flex:none;
+}
+.cq-vol .cq-band{ flex:none; }
+.cq-vol .cq-band-track{ height:100px; }
+.cq-vol .cq-band-track input{ width:100px; }
+.cq-wave{
+  display:block;
+  flex:1;
+  min-width:0;
+  height:160px;
+  color:var(--text);
+  cursor:pointer;
+  touch-action:none;
+  border-radius:12px;
+  background:rgba(255,255,255,.2);
+}
+html[data-theme="dark"] .cq-wave{ background:rgba(0,0,0,.2); }
+.cq-transport{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.cq-play-btn{
+  height:40px;
+  padding:0 18px;
+  font-size:14px;
+}
+.cq-eq{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cq-eq-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.cq-preset-combo{ width:146px; }
+.bc-combo-input::placeholder{ color:currentColor; opacity:1; }
+.cq-eq-bands{
+  display:flex;
+  justify-content:space-between;
+  gap:6px;
+}
+.cq-band{
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.cq-band-track{
+  position:relative;
+  width:28px;
+  height:150px;
+}
+.cq-band-track input{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:150px;
+  height:28px;
+  margin:0;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-band-hz{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-band-hz:hover,
+.cq-band-hz:focus-visible{ opacity:1; }
+.cq-band-value{
+  font-family:inherit;
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+}
+.cq-band-value:hover,
+.cq-band-value:focus-visible{ opacity:1; }
+.cq-output{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 28px;
+  margin-top:8px;
+}
+.cq-out-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.cq-out-label{ min-width:58px; }
+.cq-time{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.cq-time:hover,
+.cq-time:focus-visible{ opacity:1; }
+.cq-bands-btn{ width:118px; flex:none; }
+.cq-bands-dense .cq-band{ position:relative; padding-top:21px; }
+.cq-bands-dense .cq-band-value{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:2;
+  visibility:hidden;
+  white-space:nowrap;
+}
+.cq-bands-dense .cq-band:hover .cq-band-value,
+.cq-bands-dense .cq-band:focus-within .cq-band-value{ visibility:visible; }
+.cq-bands-dense .cq-band:not(:nth-child(4n+1)) .cq-band-hz{ visibility:hidden; }
+.cq-trim-info{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.cq-trim-info[hidden]{ display:none; }
+.cq-trim-info:hover,
+.cq-trim-info:focus-visible{ opacity:1; }
+.cq-reset-label{
+  background:none;
+  border:none;
+  padding:0;
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.cq-reset-label:hover,
+.cq-reset-label:focus-visible{ opacity:1; }
+.cq-out-row input{
+  flex:1;
+  min-width:0;
+  height:28px;
+  margin:0;
+  accent-color:var(--text);
+  cursor:pointer;
+}
+.cq-out-value{ min-width:58px; text-align:right; }
+.cq-out-value:disabled{ cursor:default; }
+@media (max-width:600px){
+  .cq-output{ grid-template-columns:1fr; }
+  .cq-eq-bands{ overflow-x:auto; justify-content:flex-start; padding-bottom:6px; }
+  .cq-band{ flex:0 0 52px; }
+  .cq-bands-dense .cq-band{ flex:0 0 30px; }
+}
+.cq-save{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.cq-format-dropdown{ width:auto; min-width:78px; }
+@media (max-width:600px){
+  .cq-transport{ flex-wrap:wrap; }
+  .cq-save{ margin-left:0; width:100%; }
+  .cq-save .tool-primary-btn{ flex:1; }
+  .cq-save{ flex-wrap:wrap; }
+  .cq-save .bc-dropdown{ flex:0 0 78px; }
+  .cq-save .cq-bands-btn,
+  .cq-save .cq-ch-btn{ flex:1 1 calc(50% - 6px); width:auto; min-width:0; }
+  .cq-save .cq-preset-combo{ flex:1 1 100%; }
+}
+</style>
+</head>
+<body>
+<div id="cookieBanner" class="cookie-banner" hidden>
+  <p class="cookie-banner-text-floating">Usamos cookies. Elige abajo qué categorías permitir; consulta nuestra <a data-goto="cookies">Política de cookies</a> para más detalles.</p>
+  <p class="cookie-banner-text-mobile">Elige qué categorías permitir</p>
+  <p class="cookie-banner-text-docked">
+    <span class="cookie-dock-inline-label">
+      <span class="cookie-settings-btn-dot engine-status-dot-red" aria-hidden="true"></span><button type="button" class="cookie-settings-btn-dot engine-status-dot-yellow cookie-dock-toggle" id="cookieDockToggle" aria-label="Mostrar u ocultar los ajustes de cookies" aria-expanded="false"></button><span class="cookie-settings-btn-dot engine-status-dot-green" aria-hidden="true"></span>
+      <span class="cookie-dock-title">DEV_TOOLS_COOKIES:</span>
+    </span>
+    <span>Elige qué categorías permitir</span>
+  </p>
+  <div class="cookie-banner-categories">
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailNecessary" aria-label="Más sobre las cookies necesarias">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span>Necesarias (siempre activas)</span>
+          <input type="checkbox" checked disabled>
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailNecessary" hidden>Mantienen lo esencial en funcionamiento: recuerdan tu elección de cookies, tu idioma y tu tema claro/oscuro. No se pueden desactivar y, como todo en este sitio, nunca salen de tu dispositivo.</p>
+    </div>
+    <div class="cookie-cat">
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAnalytics" aria-label="Más sobre las cookies de analítica">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span class="cookie-label-float">Analítica: para total privacidad, mantenla desactivada.</span><span class="cookie-label-docked">Analítica (Google Analytics)</span> <span class="cookie-toggle-status" id="cookieStatusAnalytics"></span></span>
+          <input type="checkbox" id="cookieToggleAnalytics">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAnalytics" hidden>Nos permite mejorar la experiencia de usuario al recibir datos valiosos a través de (Google Analytics) sobre cómo navegan los usuarios por nuestro sitio. Si quieres permanecer totalmente en el anonimato, recomendamos desactivar esta opción.</p>
+    </div>
+    <div class="cookie-cat" hidden>
+      <div class="cookie-cat-row">
+        <button type="button" class="cookie-cat-arrow" aria-expanded="false" aria-controls="cookieCatDetailAdvertising" aria-label="Más sobre las cookies de publicidad">&gt;</button>
+        <label class="cookie-toggle-row">
+          <span><span>Publicidad (Google AdSense)</span> <span class="cookie-toggle-status" id="cookieStatusAdvertising"></span></span>
+          <input type="checkbox" id="cookieToggleAdvertising">
+        </label>
+      </div>
+      <p class="cookie-cat-detail" id="cookieCatDetailAdvertising" hidden>Las usa Google AdSense para mostrar anuncios. Actualmente están desactivadas en todo el sitio mientras esperamos la aprobación de AdSense, así que este interruptor aún no tiene efecto.</p>
+    </div>
+  </div>
+  <div class="cookie-banner-actions">
+    <span class="cookie-settings-btn-cursor cookie-banner-saved-cursor">_</span><span class="cookie-banner-saved" id="cookieBannerSaved" aria-live="polite"></span>
+    <button type="button" id="cookieBannerAcceptAll">Aceptar todas</button>
+    <button type="button" id="cookieBannerSave">Confirmar elecciones</button>
+  </div>
+</div>
+<div id="app-shell">
+<div class="site-nav">
+  <button type="button" class="site-nav-brand" data-goto="mainpage">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDQ3NCAzMzEiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoyOyI+CiAgICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xMjI2LjM3NSwtNzU1LjYzMzY2OSkiPgogICAgICAgIDxnIGlkPSJCQy1Ub29scyIgc2VyaWY6aWQ9IkJDIFRvb2xzIiB0cmFuc2Zvcm09Im1hdHJpeCgxLDAsMCwxLC0xLC01Ni4xMDc2MTgpIj4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMC43MDcxMDcsLTAuNzA3MTA3LDAuNzA3MTA3LDAuNzA3MTA3LC02MzYuNTM2MDcyLDk5NS45NjA5OTUpIj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNDkzLjUsMTI0OEwxNDkzLjUsMTQ2Ni41TDEyNzUsMTQ2Ni41QzEyNzUsMTM0NS44MjYgMTM3Mi44MjYsMTI0OCAxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyOSwzNiw1NSk7Ii8+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTUwNC4xMjUsMTI0OEwxNTA0LjEyNSwxNDY2LjVMMTQ5My41LDE0NzcuMTI1TDEyNzUsMTQ3Ny4xMjVMMTI2NC4zNzUsMTQ2Ni41QzEyNjQuMzc1LDEzMzkuOTU4IDEzNjYuOTU4LDEyMzcuMzc1IDE0OTMuNSwxMjM3LjM3NUwxNTA0LjEyNSwxMjQ4Wk0xNDkzLjUsMTI0OEMxMzcyLjgyNiwxMjQ4IDEyNzUsMTM0NS44MjYgMTI3NSwxNDY2LjVMMTQ5My41LDE0NjYuNUwxNDkzLjUsMTI0OFoiIHN0eWxlPSJmaWxsOnJnYigyMTIsMjE5LDIzOCk7Ii8+CiAgICAgICAgICAgIDwvZz4KICAgICAgICAgICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoLTAuNzA3MTA3LDAuNzA3MTA3LC0wLjcwNzEwNywtMC43MDcxMDcsMzU2NC41MzYwNzIsOTU3Ljc3NzI1OSkiPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTE0OTMuNSwxMjQ4TDE0OTMuNSwxNDY2LjVMMTI3NSwxNDY2LjVDMTI3NSwxMzQ1LjgyNiAxMzcyLjgyNiwxMjQ4IDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDIxMiwyMTksMjM4KTsiLz4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNTA0LjEyNSwxMjQ4TDE1MDQuMTI1LDE0NjYuNUwxNDkzLjUsMTQ3Ny4xMjVMMTI3NSwxNDc3LjEyNUwxMjY0LjM3NSwxNDY2LjVDMTI2NC4zNzUsMTMzOS45NTggMTM2Ni45NTgsMTIzNy4zNzUgMTQ5My41LDEyMzcuMzc1TDE1MDQuMTI1LDEyNDhaTTE0OTMuNSwxMjQ4QzEzNzIuODI2LDEyNDggMTI3NSwxMzQ1LjgyNiAxMjc1LDE0NjYuNUwxNDkzLjUsMTQ2Ni41TDE0OTMuNSwxMjQ4WiIgc3R5bGU9ImZpbGw6cmdiKDI5LDM2LDU1KTsiLz4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+Cg==" alt="Logotipo de BC Tools" class="site-logo">
+    <span class="brand-text">BC Tools</span>
+  </button>
+    <div class="nav-terminal" id="navTerminal" role="status" aria-live="polite">
+      <span class="nav-terminal-prompt" aria-hidden="true">&gt;</span> <span id="navTerminalText"></span><span class="nav-terminal-cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="nav-right" id="navRight">
+        <button type="button" class="nav-theme-btn" id="navThemeBtn" aria-label="Cambiar entre modo claro y oscuro" title="Cambiar entre modo claro y oscuro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+        </button>
+                <div class="nav-share-wrap">
+      <button id="navShareBtn" type="button" class="nav-share-btn" aria-label="Compartir" title="Compartir">
+        <svg class="nav-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4L21.5 10.5L14 17V13.3C9.2 13.3 5.6 15.4 3.5 20.5C3.9 13.6 7.6 8.6 14 8Z"></path>
+        </svg>
+      </button>
+      <div class="nav-share-menu" id="navShareMenu">
+        <button type="button" class="nav-share-priority" data-share="copy">Copiar enlace</button>
+        <button type="button" class="nav-share-more-toggle" id="navShareMoreToggle" aria-expanded="false" aria-controls="navShareMoreList" aria-label="Más opciones para compartir"><span class="nav-share-more-arrow" aria-hidden="true">&#9660;</span></button>
+        <div class="nav-share-more-list" id="navShareMoreList" hidden>
+          <button type="button" data-share="whatsapp">WhatsApp</button>
+          <button type="button" data-share="facebook">Facebook</button>
+          <button type="button" data-share="x">X (Twitter)</button>
+          <button type="button" data-share="linkedin">LinkedIn</button>
+          <button type="button" data-share="email">Correo electrónico</button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-exit-group">
+      <button type="button" class="nav-help-btn" id="navHelpBtn" aria-label="Haz clic para reiniciar la guía de la herramienta" title="Haz clic para reiniciar la guía de la herramienta">?</button>
+      <button type="button" class="nav-close-btn visible" id="navCloseBtn" data-goto="mainpage" aria-label="Volver a Creative Hub" title="Volver a Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main>
+<div class="help-banner engine-status-card" id="cqHelpBanner" hidden>
+  <div class="help-banner-header">
+    <button type="button" class="help-banner-dot help-banner-dot-red" id="cqHelpClose" aria-label="Cerrar y no volver a mostrar"></button>
+    <button type="button" class="help-banner-dot help-banner-dot-yellow" id="cqHelpToggle" aria-label="Minimizar" aria-expanded="true"></button>
+    <span class="help-banner-dot" aria-hidden="true"></span>
+    <span class="engine-status-title" id="cqHelpStep"></span>
+    <div class="help-banner-nav">
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpBack">&lt; ATRÁS</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn help-banner-close-mobile" id="cqHelpCloseMobile">CERRAR</button>
+      <button type="button" class="bc-hover-fill help-banner-term-btn" id="cqHelpNext">SIGUIENTE &gt;</button>
+    </div>
+  </div>
+  <div class="engine-status-body" id="cqHelpBody">
+    <div class="engine-status-row">&gt; <span id="cqHelpText"></span></div>
+  </div>
+</div>
+<div class="tool-wrap">
+  <div class="tool-app" id="page-cqualy" data-category="sound">
+    <div class="cq-orientation-notice" id="cqOrientationNotice">
+      <button type="button" class="bc-canvas-back-btn" data-goto="mainpage" aria-label="Volver a Creative Hub" title="Volver a Creative Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      <div class="cq-orientation-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+          <line x1="11" y1="18" x2="13" y2="18"></line>
+        </svg>
+      </div>
+      <p class="cq-orientation-notice-title">Cqualy necesita una pantalla más grande</p>
+      <p class="cq-orientation-notice-body">Un ecualizador no cabe en un teléfono en vertical. Pruébalo en el ordenador o gira el teléfono de lado.</p>
+    </div>
+    <div class="tool-header">
+      <div class="tool-logo">
+        <span class="gfx-md icon-cqualy" role="img" aria-label="Icono de Cqualy"></span>
+        <span>Cqualy</span>
+      </div>
+      <span class="privacy-check-badge" id="cqPrivacyBadge" aria-live="polite"></span>
+    </div>
+
+    <button type="button" class="cq-back-btn bc-canvas-back-btn" id="cqBackBtn" data-goto="mainpage" aria-label="Volver a Creative Hub" title="Volver a Creative Hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="M11 18l-6-6 6-6"></path>
+      </svg>
+    </button>
+
+    <div class="tool-drop tool-drop-addpill" id="cqDrop"><span class="tool-drop-click-word">Haz clic</span><span class="tool-drop-or-drop"> o suelta </span><span class="tool-drop-rest">un archivo de audio o vídeo</span></div>
+    <input type="file" id="cqInput" accept="audio/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-m4v,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.mp4,.m4v,.webm,.mov,.ogv" hidden>
+    <button type="button" class="tool-primary-btn tool-continue-btn" id="cqContinueBtn" title="Continuar donde lo dejaste (D)" hidden>Continuar donde lo dejaste</button>
+
+    <button type="button" class="cq-remove-btn bc-remove-btn bc-canvas-remove-btn" id="cqRemoveBtn" aria-label="Quitar archivo" title="Quitar archivo">×</button>
+
+    <div class="cq-editor" id="cqEditor" hidden>
+      <div class="result cq-card">
+        <div class="cq-top">
+          <span class="cq-name" id="cqName"></span>
+          <button type="button" class="bc-body cq-trim-info" id="cqTrimInfo" title="Haz clic para restablecer el recorte" hidden></button>
+        </div>
+        <div class="cq-wave-row">
+          <canvas class="cq-wave" id="cqWave" title="Arrastra los bordes para recortar. Haz clic o arrastra para saltar a una posición, ← → avanzan 5 segundos" aria-label="Onda de sonido. Haz clic o arrastra para saltar a una posición."></canvas>
+          <div class="cq-vol" id="cqVolume"></div>
+        </div>
+        <div class="cq-transport">
+          <button type="button" class="tool-primary-btn cq-play-btn" id="cqPlayBtn" title="Reproducir (Espacio)" data-ga-event="tool_primary_action" data-ga-tool="cqualy">Reproducir</button>
+          <button type="button" class="bc-body cq-time" id="cqTime" title="Haz clic para alternar entre el tiempo transcurrido y el restante (T)">0:00 / 0:00</button>
+          <div class="cq-save">
+            <div class="bc-combo cq-preset-combo" id="cqPresetCombo">
+              <div class="bc-combo-trigger" id="cqPresetTrigger" title="Preajuste (P)" aria-haspopup="listbox" aria-expanded="false" aria-label="Preajuste">
+                <input class="bc-combo-input" id="cqPresetField" value="Flat" placeholder="Personalizado" readonly aria-label="Buscar preajustes">
+                <span class="bc-combo-chevron" aria-hidden="true"></span>
+              </div>
+              <div class="bc-combo-menu" id="cqPresetMenu" role="listbox" hidden>
+              <button type="button" class="bc-combo-option active" data-preset="flat" data-label="Plana" role="option" aria-selected="true"><span>Plana</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="bass" data-label="Más graves" role="option" aria-selected="false"><span>Más graves</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="treble" data-label="Más agudos" role="option" aria-selected="false"><span>Más agudos</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="voice" data-label="Voz" role="option" aria-selected="false"><span>Voz</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rock" data-label="Rock" role="option" aria-selected="false"><span>Rock</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="pop" data-label="Pop" role="option" aria-selected="false"><span>Pop</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="jazz" data-label="Jazz" role="option" aria-selected="false"><span>Jazz</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="classical" data-label="Clásica" role="option" aria-selected="false"><span>Clásica</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="electronic" data-label="Electrónica" role="option" aria-selected="false"><span>Electrónica</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiphop" data-label="Hip-hop" role="option" aria-selected="false"><span>Hip-hop</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="acoustic" data-label="Acústica" role="option" aria-selected="false"><span>Acústica</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="loudness" data-label="Loudness" role="option" aria-selected="false"><span>Loudness</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="rumble" data-label="Reducir retumbo" role="option" aria-selected="false"><span>Reducir retumbo</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <button type="button" class="bc-combo-option" data-preset="hiss" data-label="Reducir siseo" role="option" aria-selected="false"><span>Reducir siseo</span><span class="bc-combo-option-check" aria-hidden="true">✓</span></button>
+              <div class="bc-combo-empty" id="cqPresetEmpty" hidden>Sin coincidencias</div>
+              </div>
+            </div>
+            <button type="button" class="option-change-btn cq-bands-btn" id="cqBandsBtn" title="Bandas del ecualizador (B)">
+              <span class="option-change-btn-label">11 bandas</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="option-change-btn cq-ch-btn" id="cqChBtn" title="Canales de salida (C)">
+              <span class="option-change-btn-label">Estéreo</span>
+              <span class="option-change-btn-icon" aria-hidden="true"></span>
+            </button>
+            <div class="bc-dropdown cq-format-dropdown">
+              <button type="button" class="bc-dropdown-trigger" id="cqFormatTrigger" title="Formato de salida" aria-haspopup="listbox" aria-expanded="false" aria-label="Formato de salida">
+                <span class="bc-dropdown-trigger-label">MP3</span>
+                <span class="bc-dropdown-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="bc-dropdown-menu" id="cqFormatMenu" role="listbox" hidden>
+                <button type="button" class="bc-dropdown-option active" data-format="mp3" data-label="MP3" role="option" aria-selected="true">MP3</button>
+                <button type="button" class="bc-dropdown-option" data-format="wav" data-label="WAV" role="option" aria-selected="false">WAV</button>
+              </div>
+            </div>
+            <button type="button" class="tool-primary-btn" id="cqDownloadBtn" title="Descargar (D)" data-ga-event="tool_primary_action" data-ga-tool="cqualy" data-ga-action="download">Descargar</button>
+          </div>
+        </div>
+        <div class="cq-eq">
+          <div class="cq-eq-head">
+            <button type="button" class="bc-label cq-reset-label" id="cqEqReset" title="Haz clic para restablecer el ecualizador">Ecualizador</button>
+          </div>
+          <div class="cq-eq-bands" id="cqBands"></div>
+          <div class="cq-output" id="cqOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-status" id="cqStatus"></div>
+  </div>
+</div>
+
+<div class="content-section-convert" data-tool="cqualy">
+  <div class="ad-slot ad-slot-banner">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000023"></ins>
+  </div>
+
+  <div class="content-section-article-wrap">
+    <h3>¿Eres nuevo con los ecualizadores?</h3>
+    <p>¿Sabías que cada 6 dB aproximadamente duplican la fuerza de una banda? Cqualy te permite moldear el sonido con controles sencillos y ver cómo cambia la onda mientras tanto. No hace falta experiencia: estas guías breves explican qué hace cada control y cómo arreglar problemas de sonido habituales.</p>
+    <p class="gr-topics-lead">Salta a lo que necesitas:</p>
+    <ul class="gr-topics gr-toc">
+      <li><a href="#gr-article-1"><span class="gr-toc-title">1. Cómo funciona un ecualizador</span><span class="gr-toc-note">Qué significan las bandas y los valores en dB.</span></a></li>
+      <li><a href="#gr-article-2"><span class="gr-toc-title">2. Elegir un preajuste y cuándo personalizarlo</span><span class="gr-toc-note">Qué preajuste va con cada sonido.</span></a></li>
+      <li><a href="#gr-article-3"><span class="gr-toc-title">3. Cómo arreglar problemas de sonido habituales</span><span class="gr-toc-note">Turbio, áspero, fino, con siseo: qué probar.</span></a></li>
+      <li><a href="#gr-article-4"><span class="gr-toc-title">4. Volumen, balance, velocidad, recorte y canales</span><span class="gr-toc-note">Qué hacen los demás controles.</span></a></li>
+      <li><a href="#gr-article-5"><span class="gr-toc-title">5. MP3 o WAV y cómo usar archivos de vídeo</span><span class="gr-toc-note">Elegir una exportación y cómo funciona el vídeo.</span></a></li>
+    </ul>
+    <div class="gr-inline" data-tool="cqualy">
+<div class="gr-article" id="gr-article-1"><h3>1. Cómo funciona un ecualizador</h3>
+          <p>El sonido es una mezcla de tonos graves, medios y agudos. Un ecualizador lo divide en bandas, cada una ligada a una frecuencia en hercios (Hz), y te deja subir o bajar cada banda. Los números bajos son graves. Los números altos son agudos.</p>
+          <table>
+            <thead>
+              <tr><th>Rango</th><th>Qué oyes</th><th>Uso habitual</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Rango">20–120 Hz</td><td data-label="Qué oyes">Retumbo, peso</td><td data-label="Uso habitual">Bombos, bajo</td></tr>
+              <tr><td data-label="Rango">120–500 Hz</td><td data-label="Qué oyes">Calidez, sonido encajonado</td><td data-label="Uso habitual">Cuerpo de voces y guitarras</td></tr>
+              <tr><td data-label="Rango">500 Hz–4 kHz</td><td data-label="Qué oyes">Presencia, claridad</td><td data-label="Uso habitual">Habla, instrumentos solistas</td></tr>
+              <tr><td data-label="Rango">4–20 kHz</td><td data-label="Qué oyes">Aire, brillo, siseo</td><td data-label="Uso habitual">Platillos, respiración, detalle</td></tr>
+            </tbody>
+          </table>
+          <p><strong>dB or %.</strong> Cada control mueve una banda de -12 a +12 dB. Una banda a 0 dB queda intacta. Haz clic en cualquier valor en dB para ver el mismo ajuste como porcentaje del volumen original.</p>
+          <table>
+            <thead>
+              <tr><th>Ajuste</th><th>Como porcentaje</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Ajuste">-12 dB</td><td data-label="Como porcentaje">25%</td></tr>
+              <tr><td data-label="Ajuste">-6 dB</td><td data-label="Como porcentaje">50%</td></tr>
+              <tr><td data-label="Ajuste">0 dB</td><td data-label="Como porcentaje">100 %, sin cambios</td></tr>
+              <tr><td data-label="Ajuste">+6 dB</td><td data-label="Como porcentaje">200%</td></tr>
+              <tr><td data-label="Ajuste">+12 dB</td><td data-label="Como porcentaje">Unos 400 %</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Primero recorta, luego sube.</strong> Bajar las bandas que no quieres suele sonar más limpio que subir las que sí quieres. A menudo bastan cambios pequeños de 2 a 4 dB.</p>
+</div>
+<div class="gr-article" id="gr-article-2"><h3>2. Elegir un preajuste y cuándo personalizarlo</h3>
+          <p>Un preajuste es una curva ya preparada. Mueve todas las bandas a la vez y después puedes seguir ajustando. En cuanto mueves un control deslizante, el cuadro de preajustes muestra Personalizado.</p>
+          <table>
+            <thead>
+              <tr><th>Preajuste</th><th>Ideal para</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Preajuste">Voz</td><td data-label="Ideal para">Pódcast, llamadas, entrevistas</td></tr>
+              <tr><td data-label="Preajuste">Más graves</td><td data-label="Ideal para">Altavoces pequeños, auriculares, grabaciones finas</td></tr>
+              <tr><td data-label="Preajuste">Más agudos</td><td data-label="Ideal para">Grabaciones apagadas o sordas</td></tr>
+              <tr><td data-label="Preajuste">Rock, pop, electrónica, hip-hop</td><td data-label="Ideal para">Música con graves potentes y agudos brillantes</td></tr>
+              <tr><td data-label="Preajuste">Jazz, clásica, acústica</td><td data-label="Ideal para">Música natural, ligeramente moldeada</td></tr>
+              <tr><td data-label="Preajuste">Loudness</td><td data-label="Ideal para">Escucha a bajo volumen, cuando los graves y agudos se pierden</td></tr>
+              <tr><td data-label="Preajuste">Reducir retumbo, Reducir siseo</td><td data-label="Ideal para">Viento, ruido de manipulación y siseo de cinta</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Cuántas bandas.</strong> El botón de bandas cambia entre 7, 11, 15 y 31 bandas. Menos bandas son rápidas para cambios de tono amplios. 31 bandas, de un tercio de octava cada una, sirven para correcciones precisas. Tu preajuste o curva se conserva al cambiar.</p>
+          <p><strong>Confía en tus oídos.</strong> Los preajustes son puntos de partida, no reglas. Reproduce el archivo mientras ajustas. La forma de onda se actualiza al mover cada control.</p>
+</div>
+<div class="gr-article" id="gr-article-3"><h3>3. Cómo arreglar problemas de sonido habituales</h3>
+          <p>La mayoría de los problemas de sonido están en un rango estrecho. Encuentra el síntoma y baja poco a poco las bandas correspondientes.</p>
+          <table>
+            <thead>
+              <tr><th>Problema</th><th>Qué probar</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Problema">Voz turbia y encajonada</td><td data-label="Qué probar">Baja las bandas alrededor de 200 a 400 Hz</td></tr>
+              <tr><td data-label="Problema">Sonido áspero y cansado</td><td data-label="Qué probar">Baja las bandas entre 3 y 6 kHz</td></tr>
+              <tr><td data-label="Problema">Sonido fino y débil</td><td data-label="Qué probar">Sube las bandas alrededor de 100 a 250 Hz</td></tr>
+              <tr><td data-label="Problema">Siseo</td><td data-label="Qué probar">Baja las bandas por encima de 8 kHz, o usa Reducir siseo</td></tr>
+              <tr><td data-label="Problema">Retumbo o ruido de viento</td><td data-label="Qué probar">Baja las bandas por debajo de 60 Hz, o usa Reducir retumbo</td></tr>
+              <tr><td data-label="Problema">Habla difícil de entender</td><td data-label="Qué probar">Sube las bandas alrededor de 1 a 3 kHz</td></tr>
+            </tbody>
+          </table>
+          <p><strong>No subas todo a la vez.</strong> Subir muchas bandas hace más fuerte todo el archivo y puede distorsionarlo. Si subes, baja el control de Volumen para compensar. Cqualy también reduce el archivo guardado si una subida llegara a saturar.</p>
+          <p><strong>El ruido no se elimina.</strong> Un ecualizador baja las frecuencias, no las borra. Reducir el siseo también apaga el sonido que tiene al lado.</p>
+</div>
+<div class="gr-article" id="gr-article-4"><h3>4. Volumen, balance, velocidad, recorte y canales</h3>
+          <p><strong>Volumen.</strong> El control vertical junto a la onda sube o baja todo el archivo hasta 12 dB. Haz clic en su etiqueta para restablecerlo.</p>
+          <p><strong>Balance.</strong> Mueve el sonido hacia el altavoz izquierdo o derecho. Centro lo deja como se grabó. Un archivo mono pasa a estéreo cuando lo desplazas.</p>
+          <p><strong>Velocidad.</strong> De 50 % a 200 %. La velocidad funciona como una cinta: más rápido es más agudo y más corto, más lento es más grave y más largo.</p>
+          <figure class="gr-chart">
+            <div class="gr-bars" role="img" aria-label="Gráfico de barras: cuánto dura una canción de cuatro minutos con cinco ajustes de velocidad.">
+              <div class="gr-bar-row"><span class="gr-bar-label">50%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:100%"></span></span><span class="gr-bar-value">8:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">75%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:66.7%"></span></span><span class="gr-bar-value">5:20</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">100%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:50%"></span></span><span class="gr-bar-value">4:00</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">150%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:33.3%"></span></span><span class="gr-bar-value">2:40</span></div>
+              <div class="gr-bar-row"><span class="gr-bar-label">200%</span><span class="gr-bar-track"><span class="gr-bar" style="--v:25%"></span></span><span class="gr-bar-value">2:00</span></div>
+            </div>
+            <figcaption>Duración de una canción de cuatro minutos a cada velocidad, calculada como la duración original dividida por la velocidad.</figcaption>
+          </figure>
+          <p><strong>Recorte.</strong> Arrastra los dos tiradores de los bordes de la onda. La reproducción se queda dentro de la selección y Descargar guarda solo esa parte. Haz clic en la etiqueta Recorte para recuperar la duración completa.</p>
+          <p><strong>Canales.</strong> Mono, estéreo, 5.1 o 7.1 para el archivo guardado. 5.1 y 7.1 se guardan como WAV y el sonido va a los altavoces frontales. Cqualy no crea sonido envolvente a partir de un archivo estéreo.</p>
+</div>
+<div class="gr-article" id="gr-article-5"><h3>5. MP3 o WAV y cómo usar archivos de vídeo</h3>
+          <table>
+            <thead>
+              <tr><th>Formato</th><th>Ideal para</th><th>Límite</th></tr>
+            </thead>
+            <tbody>
+              <tr><td data-label="Formato">MP3</td><td data-label="Ideal para">Archivos pequeños que suenan en todas partes</td><td data-label="Límite">Pierde un poco de calidad. Solo mono o estéreo.</td></tr>
+              <tr><td data-label="Formato">WAV</td><td data-label="Ideal para">Edición, archivo, 5.1 y 7.1</td><td data-label="Límite">Archivos grandes, unas diez veces un MP3.</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Elige MP3 para compartir.</strong> Cqualy guarda el MP3 a unos altos 320 kbps, así que la diferencia con el original es difícil de oír. Elige WAV cuando vayas a seguir editando el archivo.</p>
+          <p><strong>Archivos de vídeo.</strong> Suelta un vídeo MP4, M4V, WebM, MOV u OGV y Cqualy toma su sonido. La descarga es solo audio, no un vídeo con sonido nuevo. Un vídeo sin pista de sonido no se puede cargar. Con MKV, AVI o FLV, convierte antes el vídeo a MP4 con Convido.</p>
+          <p><strong>Tus archivos se quedan contigo.</strong> Todo se ejecuta en tu navegador. No se sube nada. Continuar donde lo dejaste guarda tu último archivo y tus ajustes solo en este dispositivo, y hacer clic en la cruz roja los borra.</p>
+</div>
+</div>
+  </div>
+
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3037236608651508" data-ad-slot="0000000024" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  </div>
+</div>
+</main>
+<div class="footer-dashboard" id="siteFooterDashboard">
+  <div class="footer-dashboard-inner">
+    <div class="footer-dashboard-col">
+      <h3>Empresa</h3>
+      <button type="button" class="footer-dash-link" data-goto="about" title="Sobre nosotros"><span class="footer-link-fun">Nuestro universo</span><span class="footer-link-plain">Sobre nosotros</span></button>
+      <button type="button" class="footer-dash-link" data-goto="faq" title="Preguntas frecuentes"><span class="footer-link-fun">Ya respondido</span><span class="footer-link-plain">Preguntas frecuentes</span></button>
+      <button type="button" class="footer-dash-link" data-goto="terms" title="Términos de uso"><span class="footer-link-fun">Manual galáctico</span><span class="footer-link-plain">Términos de uso</span></button>
+      <button type="button" class="footer-dash-link" data-goto="privacy" title="Política de privacidad"><span class="footer-link-fun">Protocolo alienígena de privacidad</span><span class="footer-link-plain">Política de privacidad</span></button>
+      <button type="button" class="footer-dash-link" data-goto="cookies" title="Política de cookies"><span class="footer-link-fun">Registro de cookies</span><span class="footer-link-plain">Política de cookies</span></button>
+    </div>
+    <div class="footer-getting-started-group">
+      <h3>Primeros pasos con</h3>
+      <div class="footer-getting-started-columns">
+        <div class="footer-dashboard-col footer-getting-started">
+          <a class="footer-dash-link" href="/es/convert/">Convert</a>
+          <a class="footer-dash-link" href="/es/compress/">Compress</a>
+          <a class="footer-dash-link" href="/es/combine/">Combine</a>
+          <a class="footer-dash-link" href="/es/cleanly/">Cleanly</a>
+          <a class="footer-dash-link" href="/es/context/">Context</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/es/congify/">Congify</a>
+          <a class="footer-dash-link" href="/es/coudio/">Coudio</a>
+          <a class="footer-dash-link" href="/es/codify/">Codify</a>
+          <a class="footer-dash-link" href="/es/colorfy/">Colorfy</a>
+          <a class="footer-dash-link" href="/es/comprio/">Comprio</a>
+        </div>
+        <div class="footer-dashboard-col footer-getting-started-more">
+          <a class="footer-dash-link" href="/es/convido/">Convido</a>
+          <a class="footer-dash-link" href="/es/cqualy/">Cqualy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-dashboard-col" id="footerContactSection">
+      <h3>Ponte en contacto con nosotros</h3>
+      <span class="footer-dash-text"><a href="mailto:contact@bitcrunching.com">contact@bitcrunching.com</a></span>
+      <span class="footer-dash-text"><a href="https://discord.gg/vZNN9vwHS7" target="_blank" rel="noopener">Únete a nuestro Discord</a></span>
+    </div>
+  </div>
+</div>
+
+<footer id="siteFooter">
+  <div>&copy; <span id="year"></span> BitCrunching</div>
+</footer>
+</div>
+
+<script src="/shared/site.js?v=106" defer></script>
+<script src="/shared/report.js?v=31" defer></script>
+<script src="/cqualy/cqualy-tool.js?v=36" defer></script>
+</body>
+</html>
